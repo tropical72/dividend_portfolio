@@ -1,11 +1,12 @@
 from kivy.config import Config
+
 # 윈도우 크기 설정
 Config.set('graphics', 'width', '1200')
 Config.set('graphics', 'height', '800')
 
+import logging
 import os
 import sys
-import logging
 
 # 로그 과다 출력으로 인한 성능 저하 방지
 logging.getLogger('yfinance').setLevel(logging.ERROR)
@@ -14,23 +15,15 @@ logging.getLogger('peewee').setLevel(logging.ERROR)
 # 프로젝트 루트를 path에 추가하여 src.backend 임포트 가능하게 설정
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from kivy.lang import Builder
-from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.screenmanager import MDScreenManager
-from kivymd.uix.bottomnavigation import MDBottomNavigation, MDBottomNavigationItem
-from kivymd.uix.label import MDLabel
-from kivymd.uix.boxlayout import MDBoxLayout
-
-from src.backend.api import DividendBackend
-
-
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
+from kivy.lang import Builder
 from kivy.metrics import dp
+from kivymd.app import MDApp
 from kivymd.uix.datatables import MDDataTable
 from kivymd.uix.menu import MDDropdownMenu
 
+from src.backend.api import DividendBackend
 
 # KV Language로 UI 레이아웃 정의 (가독성을 위해 파이썬 코드 내 문자열로 포함)
 KV = """

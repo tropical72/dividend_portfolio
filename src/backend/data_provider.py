@@ -1,10 +1,10 @@
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-import pandas as pd
-import yfinance as yf
 import OpenDartReader
+import pandas as pd
 import requests
+import yfinance as yf
 from bs4 import BeautifulSoup
 
 
@@ -22,7 +22,11 @@ class StockDataProvider:
             url = f"https://finance.naver.com/item/main.naver?code={code}"
             
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/91.0.4472.124 Safari/537.36"
+                )
             }
             res = requests.get(url, headers=headers)
             res.raise_for_status()
@@ -97,7 +101,7 @@ class StockDataProvider:
         
         # [Strategy for KR] 한국 종목은 네이버 금융 최우선
         if is_kr:
-            print(f"[Debug] KR stock detected. Trying Naver Finance first...")
+            print("[Debug] KR stock detected. Trying Naver Finance first...")
             naver_data = self.get_kr_stock_price_from_naver(ticker_symbol)
             if naver_data:
                 current_price = naver_data["price"]
@@ -140,7 +144,7 @@ class StockDataProvider:
 
         # 모든 방법 실패 시 에러 반환
         if current_price is None:
-            print(f"[Debug] Failed to find price via all methods.")
+            print("[Debug] Failed to find price via all methods.")
             return {
                 "error": f"Invalid ticker or no data found: {ticker_symbol}",
                 "symbol": ticker_symbol

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, List
+from typing import Any
 
 
 class StorageManager:

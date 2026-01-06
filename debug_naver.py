@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 def test_naver(code):
     url = f"https://finance.naver.com/item/main.naver?code={code}"
     print(f"Testing URL: {url}")

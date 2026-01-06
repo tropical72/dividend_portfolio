@@ -1,5 +1,6 @@
 from src.backend.api import DividendBackend
 
+
 def test_invalid_tickers():
     backend = DividendBackend()
     

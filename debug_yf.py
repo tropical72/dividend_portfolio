@@ -1,12 +1,14 @@
-import yfinance as yf
 import datetime
+
+import yfinance as yf
+
 
 def check_data():
     ticker = yf.Ticker("AAPL")
     info = ticker.info
     
     print("--- Debug Info ---")
-    print(f"Symbol: AAPL")
+    print("Symbol: AAPL")
     print(f"Dividend Yield (Raw): {info.get('dividendYield')}")
     print(f"Ex-Dividend Date (Raw): {info.get('exDividendDate')}")
     

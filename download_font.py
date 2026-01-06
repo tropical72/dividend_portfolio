@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 
 def download_font():
     # URL 수정: otf -> ttf

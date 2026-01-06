@@ -1,5 +1,6 @@
 import yfinance as yf
 
+
 def check_kr_stock():
     ticker_symbol = "441640.KS"
     ticker = yf.Ticker(ticker_symbol)
