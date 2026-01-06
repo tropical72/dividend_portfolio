@@ -1,0 +1,29 @@
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.ruff]
+# Black과 호환되는 줄 길이 설정
+line-length = 88
+target-version = "py311"
+
+# 검사할 규칙 선택 (E: 에러, F: Pyflakes, I: Import 정렬)
+select = ["E", "F", "I"]
+ignore = []
+
+# 자동 수정(fix) 가능 여부
+fix = true
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true  # yfinance 등 일부 라이브러리 타입 스텁 누락 방지
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

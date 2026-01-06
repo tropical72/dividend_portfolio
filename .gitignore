@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Data & Secrets (개인정보 및 API Key 포함 파일 제외)
+data/settings.json
+data/watchlist.json
+data/portfolios.json
+data/chat_history.json
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

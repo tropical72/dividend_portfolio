@@ -1,0 +1,11 @@
+kivy
+kivymd
+yfinance
+OpenDartReader
+requests
+pandas
+certifi
+black
+ruff
+mypy
+pytest
