@@ -8,28 +8,26 @@
 
 | ID | 도메인 | 작업명 (Task) | 구현 | 테스트 | 상태 | Git Commit ID |
 |:---|:---|:---|:---|:---|:---|:---|
-| **[T-00-1.1]** | System | FastAPI 기초 인프라 및 /health API | Done | Pass | Done | 6bcff66 |
-| **[T-00-1.2]** | System | Mocking 환경 및 주식 정보 조회 API | Done | Pass | Done | dc06bca |
-| **[T-00-1.3]** | System | 영속성(Watchlist/Settings) CRUD API | Done | Pass | Done | c3145fc |
-| **[T-00-2.1]** | System | React 프로젝트 초기화 및 레이아웃 | Done | Pass | Done | 12cd166 |
-| **[T-00-2.2]** | System | Playwright E2E 테스트 인프라 구축 | Done | Pass | Done | 12cd166 |
-| **[T-00-0.4]** | System | 통합 실행 스크립트 구축 (run_dev.py) | Done | Pass | Done | 8337fd6 |
-| **[T-01-1.1]** | Watchlist | 종목 추가/조회 백엔드 로직 API화 | Done | Pass | Done | 127ab60 |
-| **[T-01-1.2]** | Watchlist | 종목 삭제 및 포트폴리오 무결성 체크 | Done | Pass | Done | d9eaff4 |
-| **[T-01-2.1]** | Watchlist | React 기반 데이터 테이블 및 입력 UI | Done | Pass | Done | fd41a4c |
-| **[T-01-1.3]** | Watchlist | 필수 데이터 필드 보강 (REQ-WCH-03.1) | Done | Pass | Done | - |
-| **[T-01-2.3]** | Watchlist | 테이블 컬럼 확장 및 데이터 바인딩 | Done | Pass | Done | - |
-| **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 카테고리 API | Pending | Pending | Pending | - |
-| **[T-02-1.2]** | Portfolio | 실시간 비중/통화 계산 엔진 API | Pending | Pending | Pending | - |
-| **[T-02-2.1]** | Portfolio | 3단 카테고리 레이아웃 및 종목 관리 UI | Pending | Pending | Pending | - |
-| **[T-02-2.2]** | Portfolio | 비중 입력 및 100% 검증 색상 피드백 | Pending | Pending | Pending | - |
-| **[T-03-1.1]** | Analysis | 시뮬레이션 엔진(Historical/Yield) API | Pending | Pending | Pending | - |
-| **[T-03-2.1]** | Analysis | Recharts 기반 월별 배당 막대 그래프 | Pending | Pending | Pending | - |
-| **[T-03-2.2]** | Analysis | 계산 방식 선택 및 상태 동기화 UI | Pending | Pending | Pending | - |
-| **[T-04-1.1]** | AI Advisor | Gemini/ChatGPT API 어댑터 구현 | Pending | Pending | Pending | - |
-| **[T-04-1.2]** | AI Advisor | 대화 기록 영속성 및 슬라이딩 윈도우 | Pending | Pending | Pending | - |
-| **[T-04-2.1]** | AI Advisor | Markdown 채팅 UI 및 스트리밍 피드백 | Pending | Pending | Pending | - |
+| **[T-00]** | System | 인프라 및 도구 구축 (0.1 ~ 2.2) | Done | Pass | Done | 23ef0d3 |
+| **[T-01-1.1]** | Watchlist | 종목 추가/조회 API | Done | Pass | Done | 127ab60 |
+| **[T-01-1.2]** | Watchlist | 삭제 무결성 체크 | Done | Pass | Done | d9eaff4 |
+| **[T-01-1.3]** | Watchlist | 필수 필드 보강 (Backend) | Done | Pass | Done | a209741 |
+| **[T-01-2.1]** | Watchlist | 테이블 및 입력 UI | Done | Pass | Done | fd41a4c |
+| **[T-01-2.2]** | Watchlist | 로딩 및 알림 UX | Done | Pass | Done | 784a83c |
+| **[T-01-2.3]** | Watchlist | 컬럼 확장 및 바인딩 | Done | Pass | Done | a209741 |
+| **[T-01-1.4]** | Watchlist | 배당 주기 및 지급 월 분석 (API) | Pending | Pending | Pending | - |
+| **[T-01-2.4]** | Watchlist | 테이블 정렬 및 컨텍스트 메뉴 (UI) | Pending | Pending | Pending | - |
+| **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 영속성 | Pending | Pending | Pending | - |
+| **[T-02-1.2]** | Portfolio | 환율 및 계산 엔진 | Pending | Pending | Pending | - |
+| **[T-02-2.1]** | Portfolio | 3단 카테고리 대시보드 UI | Pending | Pending | Pending | - |
+| **[T-02-2.2]** | Portfolio | 실시간 비중 검증 및 피드백 | Pending | Pending | Pending | - |
+| **[T-03-1.1]** | Analysis | Historical 대표값 로직 엔진 | Pending | Pending | Pending | - |
+| **[T-03-2.1]** | Analysis | Recharts 월별 배당 막대 그래프 | Pending | Pending | Pending | - |
+| **[T-03-2.2]** | Analysis | 스플릿터 및 UI 고도화 | Pending | Pending | Pending | - |
+| **[T-04-1.1]** | AI Advisor | Gemini/ChatGPT 통합 어댑터 | Pending | Pending | Pending | - |
+| **[T-04-1.2]** | AI Advisor | 슬라이딩 윈도우 및 영속성 | Pending | Pending | Pending | - |
+| **[T-04-2.1]** | AI Advisor | Markdown 채팅 및 로딩 UI | Pending | Pending | Pending | - |
 
 ---
-*모든 Task는 테스트 선행(Test-First) 방식으로 진행되며, 100% 통과 후 Commit 됩니다.*
-*마지막 업데이트: 2026-02-16*
+*모든 Task는 테스트 선행(Test-First) 방식으로 진행되며, 100% 통과 후 커밋 승인을 요청합니다.*
+*마지막 업데이트: 2026-02-17*
