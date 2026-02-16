@@ -17,8 +17,8 @@
     - [x] **1.2.1** Pytest 기반 외부 API Mocking 환경 구축 (yfinance 등)
     - [x] **1.2.2** 주식 정보 조회 API 엔드포인트 구현
 - **Task 1.3: 영속성 및 설정 API**
-    - [ ] **1.3.1** Watchlist 데이터 CRUD API 연동
-    - [ ] **1.3.2** 설정(Settings) 데이터 읽기/쓰기 API 연동
+    - [x] **1.3.1** Watchlist 데이터 CRUD API 연동
+    - [x] **1.3.2** 설정(Settings) 데이터 읽기/쓰기 API 연동
 
 ### [Phase 2] Frontend & Test 인프라 (React/Playwright)
 - **Task 2.1: React 프로젝트 초기화**

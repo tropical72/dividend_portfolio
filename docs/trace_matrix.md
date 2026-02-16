@@ -9,8 +9,8 @@
 | ID | 도메인 | 작업명 (Task) | 구현 | 테스트 | 상태 | Git Commit ID |
 |:---|:---|:---|:---|:---|:---|:---|
 | **[T-00-1.1]** | System | FastAPI 기초 인프라 및 /health API | Done | Pass | Done | 6bcff66 |
-| **[T-00-1.2]** | System | Mocking 환경 및 주식 정보 조회 API | Done | Pass | Done | - |
-| **[T-00-1.3]** | System | 영속성(Watchlist/Settings) CRUD API | Pending | Pending | Pending | - |
+| **[T-00-1.2]** | System | Mocking 환경 및 주식 정보 조회 API | Done | Pass | Done | dc06bca |
+| **[T-00-1.3]** | System | 영속성(Watchlist/Settings) CRUD API | Done | Pass | Done | - |
 | **[T-00-2.1]** | System | React 프로젝트 초기화 및 레이아웃 | Pending | Pending | Pending | - |
 | **[T-00-2.2]** | System | Playwright E2E 테스트 인프라 구축 | Pending | Pending | Pending | - |
 | **[T-01-1.1]** | Watchlist | 종목 추가/조회 백엔드 로직 API화 | Pending | Pending | Pending | - |
