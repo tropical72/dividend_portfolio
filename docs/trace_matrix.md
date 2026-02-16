@@ -17,7 +17,8 @@
 | **[T-01-1.1]** | Watchlist | 종목 추가/조회 백엔드 로직 API화 | Done | Pass | Done | 127ab60 |
 | **[T-01-1.2]** | Watchlist | 종목 삭제 및 포트폴리오 무결성 체크 | Done | Pass | Done | d9eaff4 |
 | **[T-01-2.1]** | Watchlist | React 기반 데이터 테이블 및 입력 UI | Done | Pass | Done | fd41a4c |
-| **[T-01-2.2]** | Watchlist | 추가 중 로딩 상태 및 알림/팝업 UX | Done | Pass | Done | - |
+| **[T-01-1.3]** | Watchlist | 필수 데이터 필드 보강 (REQ-WCH-03.1) | Done | Pass | Done | - |
+| **[T-01-2.3]** | Watchlist | 테이블 컬럼 확장 및 데이터 바인딩 | Done | Pass | Done | - |
 | **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 카테고리 API | Pending | Pending | Pending | - |
 | **[T-02-1.2]** | Portfolio | 실시간 비중/통화 계산 엔진 API | Pending | Pending | Pending | - |
 | **[T-02-2.1]** | Portfolio | 3단 카테고리 레이아웃 및 종목 관리 UI | Pending | Pending | Pending | - |

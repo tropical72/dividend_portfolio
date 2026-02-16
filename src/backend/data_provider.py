@@ -193,6 +193,22 @@ class StockDataProvider:
             except Exception:
                 pass
 
+        # 최근 배당 정보 보강 [REQ-WCH-03.1]
+        last_div_amount = info.get("lastDividendValue") or 0.0
+        if last_div_amount == 0.0:
+            div_hist = ticker.dividends
+            if not div_hist.empty:
+                last_div_amount = float(div_hist.iloc[-1])
+
+        # 최근 배당 수익률 (최근 배당금 / 현재가 기준)
+        last_div_yield = 0.0
+        if current_price > 0:
+            last_div_yield = (last_div_amount / current_price) * 100
+
+        # 과거 월 평균 배당금 (최근 1년 합계 / 12)
+        annual_historical = self.calculate_historical_annual_dividend(ticker_symbol)
+        past_avg_monthly_div = annual_historical / 12.0
+
         return {
             "symbol": ticker_symbol,
             "name": info.get("longName") or info.get("shortName") or ticker_symbol,
@@ -201,6 +217,9 @@ class StockDataProvider:
             "dividend_yield": dividend_yield,
             "one_yr_return": one_yr_return,
             "ex_div_date": ex_div_date_str,
+            "last_div_amount": last_div_amount,
+            "last_div_yield": last_div_yield,
+            "past_avg_monthly_div": past_avg_monthly_div,
         }
 
     def get_dividend_history(self, ticker_symbol: str) -> pd.Series:

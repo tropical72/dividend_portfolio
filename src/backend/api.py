@@ -25,7 +25,14 @@ class DividendBackend:
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
-        """저장된 관심 종목 목록을 반환합니다."""
+        """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
+        # 기존 데이터 호환성을 위해 필수 필드 기본값 보정
+        for item in self.watchlist:
+            item.setdefault("one_yr_return", 0.0)
+            item.setdefault("ex_div_date", "-")
+            item.setdefault("last_div_amount", 0.0)
+            item.setdefault("last_div_yield", 0.0)
+            item.setdefault("past_avg_monthly_div", 0.0)
         return self.watchlist
 
     def get_settings(self) -> Dict[str, Any]:

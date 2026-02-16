@@ -13,6 +13,8 @@
     - 시나리오: 'Add' 클릭 후 Mock API가 성공 응답을 주면 테이블에 즉시 행이 추가되는가?
 - **[TEST-WCH-2.2.1] 로딩 상태 UI**
     - 시나리오: API 응답이 오기 전까지 버튼이 'disabled' 상태이며 텍스트가 바뀌는가?
+- **[TEST-WCH-2.3.1] 필수 컬럼 노출 확인 (REQ-WCH-03.1)**
+    - 시나리오: 테이블 헤더에 Ticker, Name, Price, Yield, Return, Ex-Div Date, Last Amount, Last Yield, Monthly Div 9개 항목이 모두 존재하는가?
 
 ## [Manual/UX] 수동 테스트
 - [ ] 테이블 컬럼 폭이 다양한 해상도에서 적절히 유지되는가?
