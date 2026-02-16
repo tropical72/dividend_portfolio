@@ -14,7 +14,7 @@ data["column_widths"] = {
     "price": 30,
     "yield": 30,
     "rtn": 30,
-    "date": 40
+    "date": 40,
 }
 
 with open(settings_path, "w", encoding="utf-8") as f:

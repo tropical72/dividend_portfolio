@@ -25,7 +25,7 @@ class StorageManager:
         path = self._get_path(filename)
         if not os.path.exists(path):
             return default_value if default_value is not None else {}
-        
+
         try:
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read().strip()

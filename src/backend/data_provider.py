@@ -20,7 +20,7 @@ class StockDataProvider:
         try:
             code = ticker_symbol.split(".")[0]  # .KS, .KQ 제거
             url = f"https://finance.naver.com/item/main.naver?code={code}"
-            
+
             headers = {
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -30,22 +30,22 @@ class StockDataProvider:
             }
             res = requests.get(url, headers=headers)
             res.raise_for_status()
-            
+
             # 네이버 금융은 EUC-KR을 사용하는 경우가 많음
             soup = BeautifulSoup(res.content, "html.parser", from_encoding="euc-kr")
-            
+
             # 현재가 추출
             no_today = soup.find("p", {"class": "no_today"})
             if not no_today:
                 return {}
-            
+
             price_span = no_today.find("span", {"class": "blind"})
             if not price_span:
                 return {}
-            
+
             price_str = price_span.text.replace(",", "")
             current_price = float(price_str)
-            
+
             # 종목명 추출
             name = ticker_symbol
             wrap_company = soup.find("div", {"class": "wrap_company"})
@@ -54,12 +54,8 @@ class StockDataProvider:
                 if h2:
                     name = h2.text.strip()
 
-            return {
-                "price": current_price,
-                "name": name,
-                "currency": "KRW"
-            }
-            
+            return {"price": current_price, "name": name, "currency": "KRW"}
+
         except Exception as e:
             print(f"Naver Finance Error for {ticker_symbol}: {e}")
             return {}
@@ -71,34 +67,35 @@ class StockDataProvider:
 
         try:
             clean_ticker = ticker_symbol.split(".")[0]
-            
+
             df = self.dart.dividend(clean_ticker)
             if df is not None and not df.empty:
-                row = df[df['separate_combined'] == '연결']
+                row = df[df["separate_combined"] == "연결"]
                 if row.empty:
                     row = df
-                
+
                 latest_row = row.iloc[0]
-                annual_div = float(str(latest_row.get('thstrm', 0)).replace(',', ''))
-                yield_val = float(str(latest_row.get('yield', 0)).replace(',', '')) if latest_row.get('yield') else 0.0
-                
-                return {
-                    "annual_dividend": annual_div,
-                    "yield": yield_val
-                }
+                annual_div = float(str(latest_row.get("thstrm", 0)).replace(",", ""))
+                yield_val = (
+                    float(str(latest_row.get("yield", 0)).replace(",", ""))
+                    if latest_row.get("yield")
+                    else 0.0
+                )
+
+                return {"annual_dividend": annual_div, "yield": yield_val}
         except Exception as e:
             print(f"DART Query Error for {ticker_symbol}: {e}")
-        
+
         return {}
 
     def get_stock_info(self, ticker_symbol: str) -> Dict[str, Any]:
         """티커에 대한 기본 정보와 현재가를 가져옵니다."""
         print(f"[Debug] Searching info for: {ticker_symbol}")
-        
+
         info = {}
         current_price = None
         is_kr = ".KS" in ticker_symbol or ".KQ" in ticker_symbol
-        
+
         # [Strategy for KR] 한국 종목은 네이버 금융 최우선
         if is_kr:
             print("[Debug] KR stock detected. Trying Naver Finance first...")
@@ -115,11 +112,13 @@ class StockDataProvider:
         # [Strategy for US/Global or Naver Failed] yfinance 시도
         try:
             yf_info = ticker.info
-            info.update(yf_info) # 기존 정보 업데이트
+            info.update(yf_info)  # 기존 정보 업데이트
             print(f"[Debug] yfinance info retrieved. Keys: {len(yf_info)}")
-            
+
             if current_price is None:
-                current_price = info.get("currentPrice") or info.get("regularMarketPrice")
+                current_price = info.get("currentPrice") or info.get(
+                    "regularMarketPrice"
+                )
                 print(f"[Debug] Price from yfinance info: {current_price}")
         except Exception as e:
             print(f"[Debug] yfinance info failed: {e}")
@@ -127,11 +126,11 @@ class StockDataProvider:
         # [Fallback 1] fast_info
         if current_price is None:
             try:
-                current_price = ticker.fast_info.get('last_price')
+                current_price = ticker.fast_info.get("last_price")
                 print(f"[Debug] Price from fast_info: {current_price}")
             except Exception:
                 pass
-        
+
         # [Fallback 2] history (1mo)
         if current_price is None:
             try:
@@ -147,7 +146,7 @@ class StockDataProvider:
             print("[Debug] Failed to find price via all methods.")
             return {
                 "error": f"Invalid ticker or no data found: {ticker_symbol}",
-                "symbol": ticker_symbol
+                "symbol": ticker_symbol,
             }
 
         # 성공 시 데이터 조합
@@ -168,7 +167,7 @@ class StockDataProvider:
             dividend_yield = 0.0
         else:
             if 0 < dividend_yield < 0.2:
-                    dividend_yield *= 100
+                dividend_yield *= 100
 
         # [DART Fallback/Override for KR]
         if is_kr:
@@ -177,7 +176,9 @@ class StockDataProvider:
                 if dart_info.get("yield", 0) > 0:
                     dividend_yield = dart_info["yield"]
                 elif dart_info.get("annual_dividend", 0) > 0 and current_price > 0:
-                    dividend_yield = (dart_info["annual_dividend"] / current_price) * 100
+                    dividend_yield = (
+                        dart_info["annual_dividend"] / current_price
+                    ) * 100
 
         # [YF Fallback] 배당률 정보가 여전히 없으면 과거 이력으로 직접 계산
         if dividend_yield == 0.0:
@@ -190,7 +191,9 @@ class StockDataProvider:
         ex_div_timestamp = info.get("exDividendDate")
         if ex_div_timestamp:
             try:
-                ex_div_date_str = datetime.datetime.fromtimestamp(ex_div_timestamp).strftime('%Y-%m-%d')
+                ex_div_date_str = datetime.datetime.fromtimestamp(
+                    ex_div_timestamp
+                ).strftime("%Y-%m-%d")
             except Exception:
                 pass
 
