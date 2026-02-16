@@ -11,8 +11,9 @@
 | **[T-00-1.1]** | System | FastAPI 기초 인프라 및 /health API | Done | Pass | Done | 6bcff66 |
 | **[T-00-1.2]** | System | Mocking 환경 및 주식 정보 조회 API | Done | Pass | Done | dc06bca |
 | **[T-00-1.3]** | System | 영속성(Watchlist/Settings) CRUD API | Done | Pass | Done | c3145fc |
-| **[T-00-2.1]** | System | React 프로젝트 초기화 및 레이아웃 | Done | Pass | Done | - |
-| **[T-00-2.2]** | System | Playwright E2E 테스트 인프라 구축 | Done | Pass | Done | - |
+| **[T-00-2.1]** | System | React 프로젝트 초기화 및 레이아웃 | Done | Pass | Done | 12cd166 |
+| **[T-00-2.2]** | System | Playwright E2E 테스트 인프라 구축 | Done | Pass | Done | 12cd166 |
+| **[T-00-0.4]** | System | 통합 실행 스크립트 구축 (run_dev.py) | Pending | Pending | In Progress | - |
 | **[T-01-1.1]** | Watchlist | 종목 추가/조회 백엔드 로직 API화 | Pending | Pending | Pending | - |
 | **[T-01-1.2]** | Watchlist | 종목 삭제 및 포트폴리오 무결성 체크 | Pending | Pending | Pending | - |
 | **[T-01-2.1]** | Watchlist | React 기반 데이터 테이블 및 입력 UI | Pending | Pending | Pending | - |

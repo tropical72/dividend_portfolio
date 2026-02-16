@@ -7,7 +7,7 @@
 *   **Context Synchronization (MUST):** 세션 시작 시 반드시 `docs/trace_matrix.md`를 확인하여 전체 진척도를 파악하고, 작업할 도메인 폴더의 문서를 읽어야 한다.
 *   **Automated Testing (MUST):** 모든 기능 구현 후에는 반드시 Playwright 또는 Pytest를 통해 자동 검증을 수행한다. 검증 시 '외부 API Mocking'과 '테스트 DB 격리' 원칙을 반드시 준수한다.
 *   **Test-First Approach (TDD):** 코드를 수정하기 전, 해당 기능을 검증할 테스트 코드를 먼저 작성하여 실패(Red)를 확인한 후 구현(Green)에 착수한다.
-*   **Atomic Work Unit:** 모든 작업은 테스트-구현-커밋이 한 세트로 이루어지는 Micro-Task 단위로 쪼개어 진행한다.
+*   **Atomic Work Unit:** 모든 작업은 테스트-구현-커밋이 한 세트로 이루어지는 Micro-Task 단위로 쪼개어 진행한다. 테스트가 100% 통과되면 사용자 승인 없이 자동으로 커밋을 수행한 후 보고한다.
 *   **Comprehensive Korean Comments (MUST):** 모든 코드에는 한글 주석을 충실하게 기입한다. 특히 클래스/함수의 역할(Docstring), 복잡한 로직의 이유, 주요 변수의 의미를 명확히 설명해야 한다.
 *   **Structure Maintenance (MUST):** 프로젝트의 디렉토리 구조가 변경될 경우, 반드시 `GEMINI.md`의 '4. 프로젝트 디렉토리 구조' 섹션을 즉시 업데이트하여 최신 상태를 유지해야 한다.
 *   **커뮤니케이션:** 모든 대화는 한국어로 진행한다.
