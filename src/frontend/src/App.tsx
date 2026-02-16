@@ -8,16 +8,17 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn } from "./lib/utils";
+import { WatchlistTab } from "./components/WatchlistTab";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
- * 카드 레이아웃, Emerald 강조색, Lucide 아이콘을 활용합니다.
  */
 function App() {
   const [activeTab, setActiveTab] = useState("watchlist");
   const [health, setHealth] = useState<string>("checking...");
 
   useEffect(() => {
+    // 백엔드 연결 상태 확인
     fetch("http://localhost:8000/health")
       .then((res) => res.json())
       .then((data) => setHealth(data.status))
@@ -101,12 +102,18 @@ function App() {
 
         {/* 메인 섹션 */}
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-          </h2>
-          <div className="h-96 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
-            {activeTab} 컨텐츠가 여기에 구현될 예정입니다.
-          </div>
+          {activeTab === "watchlist" ? (
+            <WatchlistTab />
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              </h2>
+              <div className="h-96 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
+                {activeTab} 컨텐츠가 여기에 구현될 예정입니다.
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

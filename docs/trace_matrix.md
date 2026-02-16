@@ -15,8 +15,8 @@
 | **[T-00-2.2]** | System | Playwright E2E 테스트 인프라 구축 | Done | Pass | Done | 12cd166 |
 | **[T-00-0.4]** | System | 통합 실행 스크립트 구축 (run_dev.py) | Done | Pass | Done | 8337fd6 |
 | **[T-01-1.1]** | Watchlist | 종목 추가/조회 백엔드 로직 API화 | Done | Pass | Done | 127ab60 |
-| **[T-01-1.2]** | Watchlist | 종목 삭제 및 포트폴리오 무결성 체크 | Done | Pass | Done | - |
-| **[T-01-2.1]** | Watchlist | React 기반 데이터 테이블 및 입력 UI | Pending | Pending | Pending | - |
+| **[T-01-1.2]** | Watchlist | 종목 삭제 및 포트폴리오 무결성 체크 | Done | Pass | Done | d9eaff4 |
+| **[T-01-2.1]** | Watchlist | React 기반 데이터 테이블 및 입력 UI | Done | Pass | Done | - |
 | **[T-01-2.2]** | Watchlist | 추가 중 로딩 상태 및 알림/팝업 UX | Pending | Pending | Pending | - |
 | **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 카테고리 API | Pending | Pending | Pending | - |
 | **[T-02-1.2]** | Portfolio | 실시간 비중/통화 계산 엔진 API | Pending | Pending | Pending | - |

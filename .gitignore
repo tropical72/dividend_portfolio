@@ -9,11 +9,19 @@ venv/
 env/
 .venv/
 
-# Data & Secrets (개인정보 및 API Key 포함 파일 제외)
-data/settings.json
-data/watchlist.json
-data/portfolios.json
-data/chat_history.json
+# Data & Secrets (개인 사용자 정보 및 API 키 파일 절대 금지)
+data/*.json
+.env
+.env.*
+!.env.example
+
+# Frontend (Node.js)
+node_modules/
+dist/
+dist-ssr
+*.local
+src/frontend/test-results/
+src/frontend/playwright-report/
 
 # IDE & OS
 .vscode/

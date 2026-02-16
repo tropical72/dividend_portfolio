@@ -12,7 +12,7 @@ test.describe("Initial UI Flow", () => {
     // 2. 제목이 올바르게 렌더링되는지 확인 (명시적 상태 대기) [GS-TEST-03.2]
     const title = page.locator("h1");
     await expect(title).toBeVisible({ timeout: 10000 });
-    await expect(title).toContainText("Dividend Portfolio");
+    await expect(title).toContainText("DiviFlow");
   });
 
   test("탭 전환 동작 확인", async ({ page }) => {
