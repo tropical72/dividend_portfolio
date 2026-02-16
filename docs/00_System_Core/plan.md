@@ -14,8 +14,8 @@
     - [x] **1.1.1** 서버 스캐폴딩 및 기동 테스트 (`/health`)
     - [ ] **1.1.2** FastAPI와 기존 `DividendBackend` 로직 연결 기초
 - **Task 1.2: Mocking 및 데이터 API**
-    - [ ] **1.2.1** Pytest 기반 외부 API Mocking 환경 구축 (yfinance 등)
-    - [ ] **1.2.2** 주식 정보 조회 API 엔드포인트 구현
+    - [x] **1.2.1** Pytest 기반 외부 API Mocking 환경 구축 (yfinance 등)
+    - [x] **1.2.2** 주식 정보 조회 API 엔드포인트 구현
 - **Task 1.3: 영속성 및 설정 API**
     - [ ] **1.3.1** Watchlist 데이터 CRUD API 연동
     - [ ] **1.3.2** 설정(Settings) 데이터 읽기/쓰기 API 연동
