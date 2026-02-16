@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ListTodo } from "lucide-react";
+import { cn } from "../lib/utils";
 
 /** 관심종목 데이터 구조 정의 */
 interface Stock {
@@ -19,6 +20,10 @@ export function WatchlistTab() {
   const [country, setCountry] = useState("US");
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [status, setStatus] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -27,6 +32,12 @@ export function WatchlistTab() {
       .then((res) => setWatchlist(res.data || []))
       .catch(console.error);
   }, []);
+
+  /** 알림 메시지를 표시하고 3초 후 삭제합니다. */
+  const showStatus = (message: string, type: "success" | "error") => {
+    setStatus({ message, type });
+    setTimeout(() => setStatus(null), 3000);
+  };
 
   /** 종목 추가 핸들러 */
   const addStock = async () => {
@@ -42,10 +53,12 @@ export function WatchlistTab() {
       if (result.success) {
         setWatchlist((prev) => [...prev, result.data]);
         setTicker("");
+        showStatus(result.message || "종목이 추가되었습니다.", "success");
       } else {
-        alert(result.message);
+        showStatus(result.message || "추가에 실패했습니다.", "error");
       }
     } catch (err) {
+      showStatus("서버 통신 중 오류가 발생했습니다.", "error");
       console.error(err);
     } finally {
       setIsAdding(false);
@@ -53,7 +66,21 @@ export function WatchlistTab() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 relative">
+      {/* 상태 알림 메시지 (애니메이션 적용) */}
+      {status && (
+        <div
+          className={cn(
+            "absolute -top-4 right-0 px-4 py-2 rounded-lg text-sm font-medium shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-top-2",
+            status.type === "success"
+              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+              : "bg-red-500/20 text-red-400 border border-red-500/30",
+          )}
+        >
+          {status.message}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <ListTodo className="text-emerald-400" /> Watchlist
