@@ -1,0 +1,10 @@
+# 모든 파일의 줄바꿈을 Git 저장소 내에서는 LF로 유지하도록 강제합니다.
+* text=auto eol=lf
+
+# 특정 파일 타입에 대한 명시적 설정
+*.py text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
