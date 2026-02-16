@@ -14,9 +14,7 @@ async def test_get_stock_info_mocked():
     ticker = "AAPL"
 
     # 2. 우리 API 서버를 호출
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/api/stock/{ticker}")
 
     assert response.status_code == 200
@@ -30,9 +28,7 @@ async def test_get_stock_info_mocked():
 @pytest.mark.asyncio
 async def test_get_stock_info_invalid_ticker():
     ticker = "INVALID_TICKER_999"
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/api/stock/{ticker}")
 
     # 실패 시 응답 구조 확인
@@ -40,6 +36,4 @@ async def test_get_stock_info_invalid_ticker():
     data = response.json()
     assert data["success"] is False
     # 실제 메시지: "Invalid ticker or no data found: INVALID_TICKER_999"
-    assert (
-        "invalid" in data["message"].lower() or "not found" in data["message"].lower()
-    )
+    assert "invalid" in data["message"].lower() or "not found" in data["message"].lower()

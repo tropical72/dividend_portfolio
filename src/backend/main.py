@@ -16,17 +16,22 @@ backend = DividendBackend(data_dir=DATA_DIR)
 
 # --- [데이터 모델 정의] ---
 
+
 class StockRequest(BaseModel):
     """관심종목 추가 요청을 위한 데이터 모델"""
+
     ticker: str
     country: Optional[str] = "US"
 
+
 class SettingsRequest(BaseModel):
     """애플리케이션 설정 업데이트를 위한 데이터 모델"""
+
     dart_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
     default_investment_goal: Optional[str] = None
+
 
 # [CORS 설정] React 프론트엔드와의 통신 허용
 app.add_middleware(
@@ -37,10 +42,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check():
     """서버 가동 상태를 확인하는 헬스체크 엔드포인트"""
     return {"status": "ok"}
+
 
 @app.get("/api/stock/{ticker}")
 async def get_stock_info(ticker: str):
@@ -53,25 +60,30 @@ async def get_stock_info(ticker: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/watchlist")
 async def get_watchlist():
     """저장된 관심종목 전체 목록을 반환합니다."""
     return {"success": True, "data": backend.get_watchlist()}
+
 
 @app.post("/api/watchlist")
 async def add_to_watchlist(req: StockRequest):
     """새로운 종목을 관심종목에 추가합니다."""
     return backend.add_to_watchlist(req.ticker, req.country)
 
+
 @app.delete("/api/watchlist/{ticker}")
 async def remove_from_watchlist(ticker: str):
     """관심종목에서 특정 종목을 제거합니다."""
     return backend.remove_from_watchlist(ticker)
 
+
 @app.get("/api/settings")
 async def get_settings():
     """저장된 설정 정보를 반환합니다."""
     return {"success": True, "data": backend.get_settings()}
+
 
 @app.post("/api/settings")
 async def update_settings(req: SettingsRequest):

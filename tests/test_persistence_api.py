@@ -34,9 +34,7 @@ async def test_watchlist_persistence():
     ticker = "AAPL"
 
     # 1. 종목 추가
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         await ac.post("/api/watchlist", json={"ticker": ticker})
 
         # 2. 조회 확인
@@ -57,9 +55,7 @@ async def test_settings_persistence():
 
     new_key = "secret_dart_key"
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # 1. 설정 저장
         await ac.post("/api/settings", json={"dart_api_key": new_key})
 

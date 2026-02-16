@@ -18,6 +18,7 @@ def kill_process_by_port(port):
     except Exception:
         pass
 
+
 def run_dev():
     """백엔드와 프론트엔드를 실행하고 브라우저를 여는 메인 함수"""
     print("[System] Preparing development environment...")
@@ -26,7 +27,7 @@ def run_dev():
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
     python_exe = os.path.join(root_dir, "venv", "Scripts", "python")
-    
+
     # 1. 백엔드 실행 (FastAPI)
     print("[Backend] Starting FastAPI server...")
     backend_cmd = [python_exe, "-m", "uvicorn", "src.backend.main:app", "--port", "8000"]
@@ -51,6 +52,7 @@ def run_dev():
         backend_proc.terminate()
         frontend_proc.terminate()
         print("[Exit] Cleaned up successfully.")
+
 
 if __name__ == "__main__":
     run_dev()

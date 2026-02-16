@@ -116,9 +116,7 @@ class StockDataProvider:
             print(f"[Debug] yfinance info retrieved. Keys: {len(yf_info)}")
 
             if current_price is None:
-                current_price = info.get("currentPrice") or info.get(
-                    "regularMarketPrice"
-                )
+                current_price = info.get("currentPrice") or info.get("regularMarketPrice")
                 print(f"[Debug] Price from yfinance info: {current_price}")
         except Exception as e:
             print(f"[Debug] yfinance info failed: {e}")
@@ -176,9 +174,7 @@ class StockDataProvider:
                 if dart_info.get("yield", 0) > 0:
                     dividend_yield = dart_info["yield"]
                 elif dart_info.get("annual_dividend", 0) > 0 and current_price > 0:
-                    dividend_yield = (
-                        dart_info["annual_dividend"] / current_price
-                    ) * 100
+                    dividend_yield = (dart_info["annual_dividend"] / current_price) * 100
 
         # [YF Fallback] 배당률 정보가 여전히 없으면 과거 이력으로 직접 계산
         if dividend_yield == 0.0:
@@ -191,9 +187,9 @@ class StockDataProvider:
         ex_div_timestamp = info.get("exDividendDate")
         if ex_div_timestamp:
             try:
-                ex_div_date_str = datetime.datetime.fromtimestamp(
-                    ex_div_timestamp
-                ).strftime("%Y-%m-%d")
+                ex_div_date_str = datetime.datetime.fromtimestamp(ex_div_timestamp).strftime(
+                    "%Y-%m-%d"
+                )
             except Exception:
                 pass
 
