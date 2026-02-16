@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* 전역 폰트 및 기본 스타일 설정 */
+:root {
+  font-family: "Malgun Gothic", sans-serif;
+}
+
+/* body 태그에 Tailwind 유틸리티 클래스 적용 */
+body {
+  @apply bg-slate-900 text-slate-100 min-h-screen;
+}

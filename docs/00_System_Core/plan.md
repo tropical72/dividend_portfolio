@@ -22,11 +22,11 @@
 
 ### [Phase 2] Frontend & Test 인프라 (React/Playwright)
 - **Task 2.1: React 프로젝트 초기화**
-    - [ ] **2.1.1** Vite + TS + Tailwind 스캐폴딩
-    - [ ] **2.1.2** 전역 상태 관리 및 라우팅 구조(Tab 전환) 구축
+    - [x] **2.1.1** Vite + TS + Tailwind 스캐폴딩
+    - [x] **2.1.2** 전역 상태 관리 및 라우팅 구조(Tab 전환) 구축
 - **Task 2.2: 자동화 테스트 환경**
-    - [ ] **2.2.1** Playwright 연동 및 기초 E2E 시나리오 작성
-    - [ ] **2.2.2** Playwright용 API Interceptor (Mocking) 유틸리티 구현
+    - [x] **2.2.1** Playwright 연동 및 기초 E2E 시나리오 작성
+    - [x] **2.2.2** Playwright용 API Interceptor (Mocking) 유틸리티 구현
 
 ## 📅 향후 작업 일정 (Backlog)
 - [ ] [SYS-04] pywebview를 이용한 데스크톱 패키징 (Phase 3)
