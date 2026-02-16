@@ -45,9 +45,12 @@ def run_dev():
     frontend_proc = subprocess.Popen(frontend_cmd, cwd=frontend_dir)
 
     # 3. 브라우저 자동 실행
-    print("🌐 브라우저 연결 시도...")
-    time.sleep(3)
-    webbrowser.open("http://localhost:5173")
+    print("🌐 브라우저 연결 시도 (5초 대기)...")
+    time.sleep(5) # Vite 서버 준비 시간 충분히 확보
+    
+    url = "http://localhost:5173"
+    print(f"🔗 접속 주소: {url}")
+    webbrowser.open(url)
 
     print("\n✅ 모든 서버가 안전하게 실행되었습니다. (종료: Ctrl+C)")
     
