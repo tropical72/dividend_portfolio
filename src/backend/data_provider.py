@@ -209,6 +209,9 @@ class StockDataProvider:
         annual_historical = self.calculate_historical_annual_dividend(ticker_symbol)
         past_avg_monthly_div = annual_historical / 12.0
 
+        # 배당 주기 및 지급 월 분석 [REQ-WCH-03.2]
+        cycle_info = self.analyze_dividend_cycle(ticker_symbol)
+
         return {
             "symbol": ticker_symbol,
             "name": info.get("longName") or info.get("shortName") or ticker_symbol,
@@ -220,7 +223,44 @@ class StockDataProvider:
             "last_div_amount": last_div_amount,
             "last_div_yield": last_div_yield,
             "past_avg_monthly_div": past_avg_monthly_div,
+            "dividend_frequency": cycle_info["frequency"],
+            "payment_months": cycle_info["months"],
         }
+
+    def analyze_dividend_cycle(self, ticker_symbol: str) -> Dict[str, Any]:
+        """최근 1년 배당 이력을 분석하여 주기와 지급 월을 반환합니다."""
+        dividends = self.get_dividend_history(ticker_symbol)
+        if dividends.empty:
+            return {"frequency": "None", "months": []}
+
+        # Timezone 처리
+        if dividends.index.tz is not None:
+            dividends.index = dividends.index.tz_localize(None)
+
+        one_year_ago = datetime.datetime.now() - datetime.timedelta(days=365)
+        recent = dividends[dividends.index >= one_year_ago]
+
+        if recent.empty:
+            # 최근 1년 이력이 없으면 전체 이력 중 마지막 4개를 참고하거나 None 반환
+            return {"frequency": "None", "months": []}
+
+        # 지급 월 추출 (중복 제거 및 정렬)
+        months = sorted(list(set(recent.index.month)))
+        count = len(recent)
+
+        # 주기 판별 로직
+        if count >= 10:
+            frequency = "Monthly"
+        elif 3 <= count <= 5:
+            frequency = "Quarterly"
+        elif count == 2:
+            frequency = "Semi-Annually"
+        elif count == 1:
+            frequency = "Annually"
+        else:
+            frequency = "Irregular"
+
+        return {"frequency": frequency, "months": months}
 
     def get_dividend_history(self, ticker_symbol: str) -> pd.Series:
         """과거 배당 이력을 가져옵니다."""

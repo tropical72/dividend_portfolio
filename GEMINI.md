@@ -16,6 +16,11 @@
 *   **커뮤니케이션:** 모든 대화는 한국어로 진행한다.
 
 ## 2. 문서 체계 및 관리 가이드
+*   **SDD Quad-Update Rule (MUST):** 새로운 요구사항이나 기능 변경 발생 시, 구현 전 반드시 다음 4종의 문서를 동시에 업데이트하여 정합성을 유지해야 한다.
+    1.  `docs/trace_matrix.md`: 전체 작업 ID 부여 및 상태 관리.
+    2.  `docs/{Domain}/requirement.md`: 상세 비즈니스/시스템 요구사항 명세.
+    3.  `docs/{Domain}/plan.md`: Micro-Task 단위의 구현 계획 수립.
+    4.  `docs/{Domain}/test.md`: 자동/수동 테스트 시나리오 정의.
 *   **`docs/trace_matrix.md`:** 전체 요구사항 추적 및 상태 관리 마스터 시트.
 *   **`docs/{Domain}/requirement.md`:** 도메인별 상세 명세.
 *   **`docs/{Domain}/plan.md`:** 도메인별 Micro-Task 및 진척 관리.

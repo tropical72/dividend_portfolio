@@ -31,5 +31,9 @@
     - [x] **2.2.1** Playwright 연동 및 기초 E2E 시나리오 작성
     - [x] **2.2.2** Playwright용 API Interceptor (Mocking) 유틸리티 구현
 
+- **Task 2.3: 설정 및 API 키 관리 UI**
+    - [ ] **2.3.1** API 키(OpenDart, Gemini) 입력 및 저장 UI 구현 (Settings Tab)
+    - [ ] **2.3.2** API 키 유효성 검사 및 저장 후 실시간 반영 로직 구현
+
 ## 📅 향후 작업 일정 (Backlog)
 - [ ] [SYS-04] pywebview를 이용한 데스크톱 패키징 (Phase 3)

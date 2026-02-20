@@ -14,6 +14,12 @@
 - **[REQ-SYS-03.1] 로컬 스토리지:** 브라우저의 LocalStorage가 아닌, 백엔드(Python)를 통한 파일 저장 방식 유지.
 - **[REQ-SYS-03.2] API 키 보안:** 클라이언트(JS)에 키를 노출하지 않고 백엔드에서만 처리 및 관리.
 
+## [REQ-SYS-04] API 키 및 사용자 설정 관리 UI
+- **[REQ-SYS-04.1] 설정 전용 탭:** 사용자가 API 키(OpenDart, Gemini 등)를 입력하고 수정할 수 있는 전용 UI 탭 제공.
+- **[REQ-SYS-04.2] 보안 처리:** 입력된 API 키는 UI 노출 시 마스킹(Masking) 처리(예: `1f8f...fd1`) 지원.
+- **[REQ-SYS-04.3] 즉시 반영:** API 키 저장 시 백엔드 엔진(Data Provider 등)에 즉시 반영되어 재시작 없이 데이터 수집 가능.
+- **[REQ-SYS-04.4] 유효성 검사:** 키 저장 시 간단한 연결 테스트를 통해 유효성 여부 피드백 제공.
+
 ## Related Files
 - `src/backend/server.py` (FastAPI Entry Point)
 - `src/frontend/src/` (React Source)

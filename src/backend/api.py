@@ -33,6 +33,8 @@ class DividendBackend:
             item.setdefault("last_div_amount", 0.0)
             item.setdefault("last_div_yield", 0.0)
             item.setdefault("past_avg_monthly_div", 0.0)
+            item.setdefault("dividend_frequency", "None")
+            item.setdefault("payment_months", [])
         return self.watchlist
 
     def get_settings(self) -> Dict[str, Any]:
