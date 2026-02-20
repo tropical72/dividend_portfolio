@@ -20,7 +20,10 @@
 - **[REQ-WCH-03.3] 테이블 기능:** 모든 데이터는 읽기 전용(Read-only)이며, 헤더 클릭 시 정렬 기능 제공.
 - **[REQ-WCH-03.4] 금액 포맷팅:** 모든 주가 및 배당금은 [GS-UI-01] 표준 포맷을 따름.
 
-## Related Files
+## [REQ-WCH-04] 한국 종목 데이터 표준 (DART 우선)
+- **[REQ-WCH-04.1] Source of Truth:** 한국 종목(.KS, .KQ)의 배당 관련 모든 필드는 DART(OpenDart) 데이터를 최우선으로 하며, yfinance 데이터는 참고용으로만 사용함.
+- **[REQ-WCH-04.2] 과거 이력 분석:** 최근 1년 내 공시가 없더라도, DART에 기록된 최근 3개년 배당 이력을 분석하여 `Cycle`과 `Monthly` 수입을 산출함.
+- **[REQ-WCH-04.3] 배당락일 추정:** 한국 정기배당의 경우 해당 회계연도 종료일(보통 12/31)을 배당락일로 자동 매핑함.
 - `src/frontend/main.py` (Watchlist 테이블 UI)
 - `src/backend/api.py` (종목 추가/삭제 로직)
 - `src/backend/data_provider.py` (yfinance/DART 데이터 수집)

@@ -66,13 +66,13 @@ def test_dividend_cycle_analysis():
 
     # 3. 한국 분기배당 종목 (삼성전자 - 005930.KS)
     info_samsung = provider.get_stock_info("005930.KS")
-    if info_samsung["dividend_frequency"] != "None":
-        assert info_samsung["dividend_frequency"] == "Quarterly"
-        assert len(info_samsung["payment_months"]) >= 1
+    assert info_samsung["dividend_frequency"] == "Quarterly"
+    assert info_samsung["last_div_amount"] > 0
+    assert info_samsung["past_avg_monthly_div"] > 100  # 약 118원 수준 예상
+    assert info_samsung["ex_div_date"] != "-"
 
     # 4. 한국 반기배당 종목 (맥쿼리인프라 - 088980.KS)
     info_macquarie = provider.get_stock_info("088980.KS")
-    if info_macquarie["dividend_frequency"] != "None":
-        assert info_macquarie["dividend_frequency"] == "Semi-Annually"
-        # 반기배당은 보통 6, 12월 또는 1, 7월 등 2회
-        assert len(info_macquarie["payment_months"]) == 2
+    assert info_macquarie["dividend_frequency"] == "Semi-Annually"
+    assert info_macquarie["past_avg_monthly_div"] > 50  # 약 65원 수준 예상
+    assert info_macquarie["ex_div_date"].startswith("202")  # 정확한 연도 포함 확인

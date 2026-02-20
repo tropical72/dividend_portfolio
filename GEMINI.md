@@ -17,6 +17,10 @@
 
 ## 2. 문서 체계 및 관리 가이드
 *   **SDD Quad-Update Rule (MUST):** 새로운 요구사항이나 기능 변경 발생 시, 구현 전 반드시 다음 4종의 문서를 동시에 업데이트하여 정합성을 유지해야 한다.
+*   **Defect & Regression Protocol (MUST):** 사용자로부터 보고된 결함(Defect)은 반드시 다음 절차를 따른다.
+    1.  `requirement.md`: 결함 수정 후의 '기대 동작'을 명확히 정의하여 업데이트.
+    2.  `test.md`: 해당 결함의 재발을 방지하기 위한 **회귀 테스트(Regression Test)** 케이스 추가.
+    3.  `trace_matrix.md`: 결함 수정용 ID(`[D-ID]`)를 부여하여 진행 상황 추적.
     1.  `docs/trace_matrix.md`: 전체 작업 ID 부여 및 상태 관리.
     2.  `docs/{Domain}/requirement.md`: 상세 비즈니스/시스템 요구사항 명세.
     3.  `docs/{Domain}/plan.md`: Micro-Task 단위의 구현 계획 수립.
