@@ -16,11 +16,11 @@
 | **[T-01-2.2]** | Watchlist | 로딩 및 알림 UX | Done | Pass | Done | 784a83c |
 | **[T-01-2.3]** | Watchlist | 컬럼 확장 및 바인딩 | Done | Pass | Done | a209741 |
 | **[T-01-1.4]** | Watchlist | 배당 주기 및 지급 월 분석 (API) | Done | Pass | Done | d8bc2cc |
-| **[T-01-1.5]** | Watchlist | 한국 종목 DART 데이터 전수 보정 | Done | Pass | Done | (Pending Commit) |
+| **[T-01-1.5]** | Watchlist | 한국 종목 DART 데이터 전수 보정 | Done | Pass | Done | 2c4a169 |
 | **[T-00-2.3]** | System | API 키 및 사용자 설정 관리 UI | Done | Pass | Done | 188d02f |
 | **[T-01-2.4]** | Watchlist | 테이블 정렬 및 컨텍스트 메뉴 (UI) | Done | Pass | Done | 188d02f |
 | **[T-01-2.5]** | Watchlist | UX 폴리싱 (모달/스크롤/배당 주기 UI) | Done | Pass | Done | 2c4a169 |
-| **[T-01-2.6]** | Watchlist | 다중 선택 및 일괄 삭제 기능 | Done | Pass | Done | (Pending Commit) |
+| **[T-01-2.6]** | Watchlist | 다중 선택 및 일괄 삭제 기능 | Done | Pass | Done | 7eebead |
 | **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 영속성 | Pending | Pending | Pending | - |
 | **[T-02-1.2]** | Portfolio | 환율 및 계산 엔진 | Pending | Pending | Pending | - |
 | **[T-02-2.1]** | Portfolio | 3단 카테고리 대시보드 UI | Pending | Pending | Pending | - |
@@ -34,4 +34,4 @@
 
 ---
 *모든 Task는 테스트 선행(Test-First) 방식으로 진행되며, 100% 통과 후 커밋 승인을 요청합니다.*
-*마지막 업데이트: 2026-02-17*
+*마지막 업데이트: 2026-02-21*

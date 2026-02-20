@@ -133,7 +133,6 @@ export function WatchlistTab() {
     const targets = symbol === "BULK" ? Array.from(selectedSymbols) : [symbol];
     
     try {
-      // 순차적으로 삭제 요청 (벌크 API가 없으므로 루프 처리)
       await Promise.all(targets.map(t => 
         fetch(`http://localhost:8000/api/watchlist/${t}`, { method: "DELETE" })
       ));
@@ -188,18 +187,17 @@ export function WatchlistTab() {
         </div>
       )}
 
-      {/* 커스텀 삭제 확인 모달 */}
+      {/* 커스텀 삭제 확인 모달 [D-02] - 마우스 옆에 즉시 노출 */}
       {deleteConfirm && (
         <div 
-          className="fixed inset-0 z-[100] bg-slate-950/20 backdrop-blur-[1px] animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] bg-slate-950/10 backdrop-blur-[1px] animate-in fade-in duration-200"
           onClick={() => setDeleteConfirm(null)}
         >
           <div 
-            className="absolute bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-[280px] w-full shadow-2xl animate-in zoom-in-95 duration-200"
+            className="fixed bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-[260px] w-full shadow-[0_25px_50px_rgba(0,0,0,0.6)] animate-in zoom-in-95 slide-in-from-top-1 duration-150"
             style={{ 
-              top: Math.min(window.innerHeight - 250, Math.max(50, deleteConfirm.y)), 
-              left: Math.min(window.innerWidth - 300, Math.max(150, deleteConfirm.x)),
-              transform: 'translate(-50%, -10%)' 
+              top: Math.min(window.innerHeight - 240, deleteConfirm.y + 10), 
+              left: Math.min(window.innerWidth - 270, deleteConfirm.x + 10),
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -212,11 +210,11 @@ export function WatchlistTab() {
               </button>
             </div>
             <h3 className="text-base font-bold text-slate-50 mb-1">
-              {deleteConfirm.symbol === "BULK" ? `${selectedSymbols.size}개 종목 삭제` : "삭제하시겠습니까?"}
+              {deleteConfirm.symbol === "BULK" ? `${selectedSymbols.size}개 삭제` : "삭제하시겠습니까?"}
             </h3>
             <p className="text-slate-400 text-[11px] mb-5 leading-relaxed">
               {deleteConfirm.symbol === "BULK" 
-                ? "선택한 모든 종목을 관심종목에서 제거합니다." 
+                ? "선택한 항목을 모두 제거합니다." 
                 : <><span className="text-red-400 font-bold">{deleteConfirm.symbol}</span> 종목을 제거합니다.</>}
             </p>
             <div className="flex gap-2">
@@ -237,7 +235,10 @@ export function WatchlistTab() {
             <PlusCircle size={18} /> Add to Portfolio
           </button>
           <div className="h-px bg-slate-800 mx-2 my-1" />
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors" onClick={(e) => setDeleteConfirm({ symbol: contextMenu.symbol, x: e.clientX, y: e.clientY })}>
+          <button 
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors" 
+            onClick={(e) => setDeleteConfirm({ symbol: contextMenu.symbol, x: e.clientX, y: e.clientY })}
+          >
             <Trash2 size={18} /> Delete Stock
           </button>
         </div>
@@ -248,10 +249,12 @@ export function WatchlistTab() {
           <h2 className="flex items-center gap-2 text-2xl font-bold">
             <ListTodo className="text-emerald-400" /> Watchlist
           </h2>
-          {/* [NEW] 일괄 삭제 버튼 */}
           {selectedSymbols.size > 0 && (
             <button 
-              onClick={(e) => setDeleteConfirm({ symbol: "BULK", x: e.clientX, y: e.clientY })}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setDeleteConfirm({ symbol: "BULK", x: rect.left + rect.width / 2, y: rect.bottom + 10 });
+              }}
               className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all animate-in fade-in slide-in-from-left-2"
             >
               <Trash2 size={14} /> Delete ({selectedSymbols.size})
@@ -274,9 +277,14 @@ export function WatchlistTab() {
         <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-slate-800/50 text-slate-400 font-bold whitespace-nowrap sticky top-0 z-10">
             <tr>
-              {/* [NEW] 전체 선택 체크박스 */}
               <th className="px-4 py-5 w-10 text-center">
-                <button onClick={toggleSelectAll} className="text-slate-500 hover:text-emerald-400 transition-colors">
+                <button 
+                  onClick={toggleSelectAll} 
+                  className="text-slate-500 hover:text-emerald-400 transition-colors"
+                  role="checkbox"
+                  aria-checked={selectedSymbols.size === watchlist.length && watchlist.length > 0}
+                  aria-label="Select all stocks"
+                >
                   {selectedSymbols.size === watchlist.length && watchlist.length > 0 ? <CheckSquare size={18} className="text-emerald-400" /> : <Square size={18} />}
                 </button>
               </th>
@@ -318,14 +326,17 @@ export function WatchlistTab() {
                 onContextMenu={(e) => onContextMenu(e, item.symbol)}
                 onClick={() => toggleSelect(item.symbol)}
               >
-                {/* [NEW] 행별 체크박스 */}
                 <td className="px-4 py-4 text-center">
-                  <button className={cn(
-                    "transition-colors",
-                    selectedSymbols.has(item.symbol) ? "text-emerald-400" : "text-slate-700 group-hover:text-slate-500"
-                  )}>
+                  <div 
+                    className={cn(
+                      "transition-colors",
+                      selectedSymbols.has(item.symbol) ? "text-emerald-400" : "text-slate-700 group-hover:text-slate-500"
+                    )}
+                    role="checkbox"
+                    aria-checked={selectedSymbols.has(item.symbol)}
+                  >
                     {selectedSymbols.has(item.symbol) ? <CheckSquare size={16} /> : <Square size={16} />}
-                  </button>
+                  </div>
                 </td>
                 <td className="px-4 py-4 font-bold text-emerald-400 tracking-tight">{item.symbol}</td>
                 <td className="px-4 py-4 text-slate-300 truncate max-w-[120px]" title={item.name}>{item.name}</td>
