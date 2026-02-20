@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
+import { SettingsTab } from "./components/SettingsTab";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -104,6 +105,8 @@ function App() {
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
           {activeTab === "watchlist" ? (
             <WatchlistTab />
+          ) : activeTab === "settings" ? (
+            <SettingsTab />
           ) : (
             <>
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

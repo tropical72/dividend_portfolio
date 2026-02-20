@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { ListTodo } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { 
+  ListTodo, 
+  ChevronUp, 
+  ChevronDown, 
+  MoreVertical, 
+  PlusCircle, 
+  Trash2 
+} from "lucide-react";
 import { cn } from "../lib/utils";
 
 /** 관심종목 데이터 구조 정의 [REQ-WCH-03.1] */
@@ -16,9 +23,14 @@ interface Stock {
   past_avg_monthly_div: number;
 }
 
+type SortConfig = {
+  key: keyof Stock | null;
+  direction: "asc" | "desc";
+};
+
 /**
  * 관심종목(Watchlist) 탭 컴포넌트
- * 필수 9개 컬럼을 안전하게 렌더링하며 종목 추가 기능을 제공합니다.
+ * [REQ-WCH-01.2] 컨텍스트 메뉴, [REQ-WCH-03.3] 정렬 기능 포함
  */
 export function WatchlistTab() {
   const [ticker, setTicker] = useState("");
@@ -26,6 +38,12 @@ export function WatchlistTab() {
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  
+  // [NEW] 정렬 상태 관리
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: "asc" });
+  
+  // [NEW] 컨텍스트 메뉴 상태 관리
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, symbol: string } | null>(null);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -35,11 +53,41 @@ export function WatchlistTab() {
       .catch(console.error);
   }, []);
 
+  // [NEW] 우클릭 메뉴 닫기용 전역 클릭 핸들러
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
   /** 알림 메시지 표시 */
   const showStatus = (message: string, type: "success" | "error") => {
     setStatus({ message, type });
     setTimeout(() => setStatus(null), 3000);
   };
+
+  /** 정렬 핸들러 [REQ-WCH-03.3] */
+  const handleSort = (key: keyof Stock) => {
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  /** 정렬된 데이터 계산 */
+  const sortedWatchlist = useMemo(() => {
+    if (!sortConfig.key) return watchlist;
+    
+    return [...watchlist].sort((a, b) => {
+      const aVal = a[sortConfig.key!];
+      const bVal = b[sortConfig.key!];
+
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [watchlist, sortConfig]);
 
   /** 종목 추가 핸들러 */
   const addStock = async () => {
@@ -61,10 +109,41 @@ export function WatchlistTab() {
       }
     } catch (err) {
       showStatus("서버 통신 오류", "error");
-      console.error(err);
     } finally {
       setIsAdding(false);
     }
+  };
+
+  /** 종목 삭제 핸들러 (UI 연동) */
+  const removeStock = async (symbol: string) => {
+    if (!confirm(`${symbol} 종목을 삭제하시겠습니까?`)) return;
+    
+    try {
+      const res = await fetch(`http://localhost:8000/api/watchlist/${symbol}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (result.success) {
+        setWatchlist((prev) => prev.filter(item => item.symbol !== symbol));
+        showStatus(result.message || "삭제 완료", "success");
+      } else {
+        showStatus(result.message || "삭제 실패", "error");
+      }
+    } catch (err) {
+      showStatus("삭제 실패: 서버 오류", "error");
+    }
+  };
+
+  /** 컨텍스트 메뉴 이벤트 핸들러 [REQ-WCH-01.2] */
+  const onContextMenu = (e: React.MouseEvent, symbol: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, symbol });
+  };
+
+  /** 정렬 아이콘 렌더러 */
+  const SortIcon = ({ columnKey }: { columnKey: keyof Stock }) => {
+    if (sortConfig.key !== columnKey) return <div className="w-4" />;
+    return sortConfig.direction === "asc" ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />;
   };
 
   return (
@@ -72,10 +151,32 @@ export function WatchlistTab() {
       {/* 알림 토스트 */}
       {status && (
         <div className={cn(
-          "absolute -top-4 right-0 px-4 py-2 rounded-lg text-sm font-medium shadow-lg animate-in fade-in slide-in-from-top-2",
+          "absolute -top-4 right-0 px-4 py-2 rounded-lg text-sm font-medium shadow-lg animate-in fade-in slide-in-from-top-2 z-50",
           status.type === "success" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
         )}>
           {status.message}
+        </div>
+      )}
+
+      {/* [NEW] 컨텍스트 메뉴 레이어 */}
+      {contextMenu && (
+        <div 
+          className="fixed bg-slate-900 border border-slate-700 rounded-lg shadow-2xl py-2 z-[100] min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button 
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors"
+            onClick={() => showStatus("포트폴리오 기능은 다음 Phase에서 제공됩니다.", "error")}
+          >
+            <PlusCircle size={16} /> Add to Portfolio
+          </button>
+          <div className="h-px bg-slate-800 my-1" />
+          <button 
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+            onClick={() => removeStock(contextMenu.symbol)}
+          >
+            <Trash2 size={16} /> Delete Stock
+          </button>
         </div>
       )}
 
@@ -99,20 +200,42 @@ export function WatchlistTab() {
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-800/50 text-slate-400 font-medium whitespace-nowrap">
             <tr>
-              <th className="px-4 py-4">Ticker</th>
-              <th className="px-4 py-4">Name</th>
-              <th className="px-4 py-4">Price</th>
-              <th className="px-4 py-4 text-right">Yield</th>
-              <th className="px-4 py-4 text-right">1-Yr Rtn</th>
-              <th className="px-4 py-4 text-center">Ex-Div</th>
-              <th className="px-4 py-4 text-right">Last Amt</th>
-              <th className="px-4 py-4 text-right">L.Yield</th>
-              <th className="px-4 py-4 text-right">Monthly</th>
+              <th className="px-4 py-4 cursor-pointer hover:bg-slate-700/50 transition-colors group" onClick={() => handleSort("symbol")}>
+                <div className="flex items-center gap-1">Ticker <SortIcon columnKey="symbol" /></div>
+              </th>
+              <th className="px-4 py-4 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("name")}>
+                <div className="flex items-center gap-1">Name <SortIcon columnKey="name" /></div>
+              </th>
+              <th className="px-4 py-4 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("price")}>
+                <div className="flex items-center gap-1">Price <SortIcon columnKey="price" /></div>
+              </th>
+              <th className="px-4 py-4 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_yield")}>
+                <div className="flex items-center justify-end gap-1">Yield <SortIcon columnKey="dividend_yield" /></div>
+              </th>
+              <th className="px-4 py-4 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("one_yr_return")}>
+                <div className="flex items-center justify-end gap-1">1-Yr Rtn <SortIcon columnKey="one_yr_return" /></div>
+              </th>
+              <th className="px-4 py-4 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("ex_div_date")}>
+                <div className="flex items-center justify-center gap-1">Ex-Div <SortIcon columnKey="ex_div_date" /></div>
+              </th>
+              <th className="px-4 py-4 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("last_div_amount")}>
+                <div className="flex items-center justify-end gap-1">Last Amt <SortIcon columnKey="last_div_amount" /></div>
+              </th>
+              <th className="px-4 py-4 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("last_div_yield")}>
+                <div className="flex items-center justify-end gap-1">L.Yield <SortIcon columnKey="last_div_yield" /></div>
+              </th>
+              <th className="px-4 py-4 text-right cursor-pointer hover:bg-slate-700/50 transition-colors font-bold" onClick={() => handleSort("past_avg_monthly_div")}>
+                <div className="flex items-center justify-end gap-1">Monthly <SortIcon columnKey="past_avg_monthly_div" /></div>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
-            {watchlist.map((item) => (
-              <tr key={item.symbol} className="hover:bg-slate-800/30 transition-colors">
+            {sortedWatchlist.map((item) => (
+              <tr 
+                key={item.symbol} 
+                className="hover:bg-slate-800/30 transition-colors group cursor-default"
+                onContextMenu={(e) => onContextMenu(e, item.symbol)}
+              >
                 <td className="px-4 py-4 font-bold text-emerald-400">{item.symbol}</td>
                 <td className="px-4 py-4 text-slate-300 truncate max-w-[100px]" title={item.name}>{item.name}</td>
                 <td className="px-4 py-4 text-slate-100 whitespace-nowrap">{item.currency || "USD"} {(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
@@ -124,7 +247,7 @@ export function WatchlistTab() {
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold">{(item.past_avg_monthly_div || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
-            {watchlist.length === 0 && (
+            {sortedWatchlist.length === 0 && (
               <tr><td colSpan={9} className="px-6 py-12 text-center text-slate-500 italic">No stocks added yet.</td></tr>
             )}
           </tbody>

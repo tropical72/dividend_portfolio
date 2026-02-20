@@ -229,7 +229,16 @@ class StockDataProvider:
 
     def analyze_dividend_cycle(self, ticker_symbol: str) -> Dict[str, Any]:
         """최근 1년 배당 이력을 분석하여 주기와 지급 월을 반환합니다."""
+        is_kr = ".KS" in ticker_symbol or ".KQ" in ticker_symbol
         dividends = self.get_dividend_history(ticker_symbol)
+        
+        # [Strategy for KR] DART 데이터를 통한 배당 이력 보강
+        if is_kr and (dividends.empty or len(dividends) < 2):
+            print(f"[Debug] KR stock {ticker_symbol} history empty in YF. Trying DART...")
+            kr_history = self.get_kr_dividend_history_from_dart(ticker_symbol)
+            if not kr_history.empty:
+                dividends = kr_history
+
         if dividends.empty:
             return {"frequency": "None", "months": []}
 
@@ -261,6 +270,46 @@ class StockDataProvider:
             frequency = "Irregular"
 
         return {"frequency": frequency, "months": months}
+
+    def get_kr_dividend_history_from_dart(self, ticker_symbol: str) -> pd.Series:
+        """DART에서 한국 종목의 과거 배당 이력을 yfinance 스타일로 가져옵니다."""
+        if not self.dart:
+            return pd.Series(dtype=float)
+
+        try:
+            clean_ticker = ticker_symbol.split(".")[0]
+            df = self.dart.dividend(clean_ticker)
+            if df is None or df.empty:
+                return pd.Series(dtype=float)
+
+            # 연결 재무제표 기준 필터링
+            df = df[df["separate_combined"].str.contains("연결", na=False)]
+            if df.empty:
+                df = self.dart.dividend(clean_ticker)
+
+            hist_data = {}
+            # 최근 3기(thstrm, frstrm, lwstrm) 데이터를 분석하여 연도별 배당금 추출
+            # 한국 배당주는 보통 연말(12월) 기준 4월 지급이 많으므로 4월 1일로 가상 날짜 부여
+            for _, row in df.iterrows():
+                # 주당 배당금(thstrm) 추출
+                try:
+                    amount = float(str(row.get("thstrm", 0)).replace(",", ""))
+                    if amount > 0:
+                        # 배당 기수(period) 정보 등을 활용하여 지급일 추정
+                        # 간단하게 현재 연도 4월 1일 등으로 매핑 (추후 고도화 가능)
+                        year = datetime.datetime.now().year
+                        date = datetime.datetime(year, 4, 1)
+                        hist_data[date] = amount
+                except Exception:
+                    continue
+            
+            if hist_data:
+                series = pd.Series(hist_data).sort_index()
+                return series
+        except Exception as e:
+            print(f"DART History Error for {ticker_symbol}: {e}")
+
+        return pd.Series(dtype=float)
 
     def get_dividend_history(self, ticker_symbol: str) -> pd.Series:
         """과거 배당 이력을 가져옵니다."""

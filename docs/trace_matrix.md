@@ -15,9 +15,9 @@
 | **[T-01-2.1]** | Watchlist | 테이블 및 입력 UI | Done | Pass | Done | fd41a4c |
 | **[T-01-2.2]** | Watchlist | 로딩 및 알림 UX | Done | Pass | Done | 784a83c |
 | **[T-01-2.3]** | Watchlist | 컬럼 확장 및 바인딩 | Done | Pass | Done | a209741 |
-| **[T-01-1.4]** | Watchlist | 배당 주기 및 지급 월 분석 (API) | Done | Pass | Done | (Pending Commit) |
-| **[T-00-2.3]** | System | API 키 및 사용자 설정 관리 UI | Pending | Pending | Pending | - |
-| **[T-01-2.4]** | Watchlist | 테이블 정렬 및 컨텍스트 메뉴 (UI) | Pending | Pending | Pending | - |
+| **[T-01-1.4]** | Watchlist | 배당 주기 및 지급 월 분석 (API) | Done | Pass | Done | d8bc2cc |
+| **[T-00-2.3]** | System | API 키 및 사용자 설정 관리 UI | Done | Pass | Done | (Pending Commit) |
+| **[T-01-2.4]** | Watchlist | 테이블 정렬 및 컨텍스트 메뉴 (UI) | Done | Pass | Done | (Pending Commit) |
 | **[T-02-1.1]** | Portfolio | 포트폴리오 CRUD 및 영속성 | Pending | Pending | Pending | - |
 | **[T-02-1.2]** | Portfolio | 환율 및 계산 엔진 | Pending | Pending | Pending | - |
 | **[T-02-2.1]** | Portfolio | 3단 카테고리 대시보드 UI | Pending | Pending | Pending | - |
