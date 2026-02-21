@@ -7,6 +7,7 @@ import type { PortfolioItem } from "../types";
  * [REQ-PRT-01, 03] 포트폴리오 설계 및 시뮬레이션 탭
  */
 export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>> }) {
+  const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("My New Portfolio");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
@@ -79,22 +80,34 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
   const handleReset = () => {
     if (window.confirm("현재 작성 중인 내용이 모두 사라집니다. 초기화할까요?")) {
       setItems([]);
+      setPortfolioId(null);
       setPortfolioName("My New Portfolio");
       setCapitalUsd(10000);
       showStatus("초기화되었습니다.", "success");
     }
   };
 
-  /** 저장 [REQ-PRT-01.4, 01.5] */
+  /** 저장 [REQ-PRT-01.4, 04.1] */
   const handleSave = async () => {
+    if (!portfolioName.trim()) {
+      showStatus("포트폴리오 이름을 입력해주세요.", "error");
+      return;
+    }
+
     if (Math.abs(analysis.totalWeight - 100) > 0.01) {
       showStatus("비중 합계가 정확히 100%여야 합니다.", "error");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:8000/api/portfolios", {
-        method: "POST",
+      const url = portfolioId 
+        ? `http://localhost:8000/api/portfolios/${portfolioId}`
+        : "http://localhost:8000/api/portfolios";
+      
+      const method = portfolioId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: portfolioName,
@@ -105,7 +118,10 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
       });
       const result = await res.json();
       if (result.success) {
-        showStatus("포트폴리오가 저장되었습니다.", "success");
+        if (!portfolioId && result.data?.id) {
+          setPortfolioId(result.data.id);
+        }
+        showStatus(portfolioId ? "업데이트되었습니다." : "저장되었습니다.", "success");
       } else {
         showStatus(result.message || "저장 실패", "error");
       }

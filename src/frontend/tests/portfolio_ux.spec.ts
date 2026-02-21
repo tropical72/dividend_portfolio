@@ -43,6 +43,19 @@ test.describe("Portfolio Editor UX - Basic Structure", () => {
     await expect(krwInput).not.toHaveValue("14,255,000"); 
   });
 
+  test("should block saving when portfolio name is empty", async ({ page }) => {
+    // 1. 이름 비우기
+    const nameInput = page.getByPlaceholder(/포트폴리오 이름을 입력하세요/i);
+    await nameInput.fill("");
+    
+    // 2. 저장 시도
+    const saveBtn = page.getByRole("button", { name: /포트폴리오 저장/i });
+    await saveBtn.click({ force: true });
+
+    // 3. 경고 메시지 확인
+    await expect(page.getByText(/포트폴리오 이름을 입력해주세요/i)).toBeVisible();
+  });
+
   test("should show analysis results card", async ({ page }) => {
     await expect(page.getByText(/Expected Income/i)).toBeVisible();
     await expect(page.getByText(/Annual Dividend/i).first()).toBeVisible();
