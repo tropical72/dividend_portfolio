@@ -10,6 +10,7 @@ import {
 import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
+import { PortfolioTab } from "./components/PortfolioTab";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -105,6 +106,9 @@ function App() {
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
           <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
             <WatchlistTab />
+          </div>
+          <div className={cn(activeTab === "portfolio" ? "block" : "hidden")}>
+            <PortfolioTab />
           </div>
           <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
             <SettingsTab />
