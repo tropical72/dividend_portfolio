@@ -352,12 +352,14 @@ export function WatchlistTab() {
                   <div className="flex flex-col items-center gap-1">
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                      item.dividend_frequency.includes("Monthly") ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400"
+                      !item.dividend_frequency.includes("(New)") && item.dividend_frequency !== "None" 
+                        ? "bg-emerald-500/10 text-emerald-400" 
+                        : "bg-slate-800 text-slate-400"
                     )}>
                       {item.dividend_frequency.replace(" (New)", "")}
                     </span>
                     {item.dividend_frequency.includes("(New)") && (
-                      <span className="text-[9px] text-amber-500/80 font-medium leading-none animate-pulse">
+                      <span className="text-[9px] text-slate-500 font-medium leading-none">
                         (NEW)
                       </span>
                     )}
