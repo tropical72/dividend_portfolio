@@ -32,8 +32,9 @@
 
 | 요구사항 ID | 요구사항 명세 (Requirement) | 구현 태스크 (Task ID) | 테스트 케이스 (Test ID) | 상태 | 검증 | Git Commit |
 |:---|:---|:---|:---|:---|:---|:---|
-| REQ-PRT-01.1 | 포트폴리오 생성 및 기본 정보 설정 | T-02-1.1 | test_portfolio_api.py | Done | Pass | (Pending) |
-| REQ-PRT-03.1 | USD/KRW 통합 자산 평가 | T-02-1.2 | - | Pending | - | - |
+| REQ-PRT-01.1 | 포트폴리오 생성 및 기본 정보 설정 | T-02-1.1 | test_portfolio_api.py | Done | Pass | d58373a |
+| REQ-PRT-03.1 | USD/KRW 통합 자산 평가 | T-02-1.2 | test_portfolio_calc.py | Done | Pass | (Pending) |
+| REQ-PRT-03.3 | 자산 비중 자동 계산 (0~100%) | T-02-1.2 | - | Pending | - | - |
 
 ---
 
