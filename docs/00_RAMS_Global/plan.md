@@ -1,0 +1,39 @@
+# Plan: System Core (00)
+
+## 🔄 진행 현황 (Progress)
+
+- **[Task 0.1] 아키텍처 재설계 및 문서화**
+  - 상태: ✅ 완료 (2026-02-16)
+  - 내용: FastAPI + React 기반 SDD 문서 업데이트 및 테스트 표준 수립.
+- **[Task 0.2] 환경 정리 및 레거시 아카이브**
+  - 상태: ✅ 완료 (2026-02-16)
+  - 내용: 기존 Kivy 코드를 `src/frontend_legacy`로 이동 및 구조 정의 완료.
+- **[Task 0.4] 통합 실행 스크립트 구축**
+  - 상태: 🔄 진행 중
+  - 내용: 백엔드와 프론트엔드를 동시에 구동하고 브라우저를 자동 실행하는 `run_dev.py` 작성.
+
+### [Phase 1] Backend API 전환 (FastAPI)
+- **Task 1.1: FastAPI 기초 인프라**
+    - [x] **1.1.1** 서버 스캐폴딩 및 기동 테스트 (`/health`)
+    - [ ] **1.1.2** FastAPI와 기존 `DividendBackend` 로직 연결 기초
+- **Task 1.2: Mocking 및 데이터 API**
+    - [x] **1.2.1** Pytest 기반 외부 API Mocking 환경 구축 (yfinance 등)
+    - [x] **1.2.2** 주식 정보 조회 API 엔드포인트 구현
+- **Task 1.3: 영속성 및 설정 API**
+    - [x] **1.3.1** Watchlist 데이터 CRUD API 연동
+    - [x] **1.3.2** 설정(Settings) 데이터 읽기/쓰기 API 연동
+
+### [Phase 2] Frontend & Test 인프라 (React/Playwright)
+- **Task 2.1: React 프로젝트 초기화**
+    - [x] **2.1.1** Vite + TS + Tailwind 스캐폴딩
+    - [x] **2.1.2** 전역 상태 관리 및 라우팅 구조(Tab 전환) 구축
+- **Task 2.2: 자동화 테스트 환경**
+    - [x] **2.2.1** Playwright 연동 및 기초 E2E 시나리오 작성
+    - [x] **2.2.2** Playwright용 API Interceptor (Mocking) 유틸리티 구현
+
+- **Task 2.3: 설정 및 API 키 관리 UI**
+    - [ ] **2.3.1** API 키(OpenDart, Gemini) 입력 및 저장 UI 구현 (Settings Tab)
+    - [ ] **2.3.2** API 키 유효성 검사 및 저장 후 실시간 반영 로직 구현
+
+## 📅 향후 작업 일정 (Backlog)
+- [ ] [SYS-04] pywebview를 이용한 데스크톱 패키징 (Phase 3)

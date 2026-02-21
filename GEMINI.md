@@ -41,36 +41,27 @@
 ```text
 /
 ├── docs/                        # SDD 문서 (도메인별 분할 관리)
-│   ├── trace_matrix.md          # 전체 요구사항/태스크 추적 매트릭스
-│   ├── 00_System_Core/          # 시스템 기초, 설정, 아키텍처
-│   │   ├── GLOBAL_STANDARD.md   # 공통 표준 (UI/UX, 테스트)
+│   ├── trace_matrix.md          # 전체 요구사항/태스크 추적 통합 마스터
+│   ├── 00_RAMS_Global/          # 시스템 전체 사양, 아키텍처, 공통 표준
+│   │   ├── requirement.md
+│   │   ├── architecture.md
+│   │   └── GLOBAL_STANDARD.md
+│   ├── 01_Retirement_Engine/    # [핵심] 은퇴 자산 인출 및 세무 시뮬레이션
 │   │   ├── requirement.md
 │   │   ├── plan.md
 │   │   └── test.md
-│   ├── 01_Watchlist/            # 관심종목 관리 도메인
-│   │   ├── requirement.md
-│   │   ├── plan.md
-│   │   └── test.md
-│   ├── 02_Portfolio/            # 포트폴리오 관리 도메인
-│   │   ├── requirement.md
-│   │   ├── plan.md
-│   │   └── test.md
-│   ├── 03_Analysis_Graph/       # 시뮬레이션 및 그래프 도메인
-│   │   ├── requirement.md
-│   │   ├── plan.md
-│   │   └── test.md
-│   └── 04_AI_Advisor/           # AI 어드바이저 도메인
-│       ├── requirement.md
-│       ├── plan.md
-│       └── test.md
+│   └── 02_Portfolio_Manager/    # [지원] 포트폴리오 관리 도구군
+│       ├── 01_Watchlist/        # 관심종목 관리
+│       ├── 02_Portfolio_Designer/ # 포트폴리오 설계 및 시뮬레이션
+│       ├── 03_AI_Advisor/       # AI 분석 보조
+│       └── 04_Analysis_Graph/   # 시각화 컴포넌트
 ├── src/
-│   ├── backend/                 # FastAPI 서버 및 비즈니스 로직
-│   ├── frontend/                # (신규) React 프로젝트 (Phase 2 예정)
-│   └── frontend_legacy/         # (구) Kivy 프로젝트 (UI/로직 참고용)
-├── tests/                       # Pytest (Backend) 및 Playwright (E2E) 테스트
+│   ├── core/                    # [Domain] 순수 함수 기반 계산 엔진 (Tax, Cascade 등)
+│   ├── backend/                 # [Application] 서버 로직, API, 데이터 영속성
+│   └── frontend/                # [UI] React 프로젝트
+├── tests/                       # Pytest (Backend/Core) 및 Playwright (E2E) 테스트
 ├── data/                        # 사용자 데이터 저장소 (.json)
-├── assets/                      # 이미지, 폰트 등 정적 리소스
-└── old_docs/                    # 아카이브된 이전 문서
+└── assets/                      # 정적 리소스 (이미지, 폰트 등)
 ```
 
 ---
