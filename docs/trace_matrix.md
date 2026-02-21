@@ -18,12 +18,13 @@
 | **[REQ-WCH-03]** | **데이터 표시 및 정합성** | | | | | |
 | REQ-WCH-03.5 | 통화 단위 명시 (USD/KRW) | T-01-2.4 | - | Done | Pass | fb3841d |
 | REQ-WCH-03.6 | 컬럼 정합성 (Last Amt 추가) | T-01-2.4 | - | Done | Pass | fb3841d |
-| REQ-WCH-03.7 | 수익률 방식 명시 (TTM) | T-01-2.4 | - | Done | Pass | (Pending) |
+| REQ-WCH-03.7 | 수익률 방식 명시 (TTM) | T-01-2.4 | - | Done | Pass | fd7c5d4 |
+| REQ-WCH-03.8 | 종목명 가독성 보장 (줄바꿈 및 너비) | T-01-2.4 | - | Done | Pass | (Pending) |
 | **[REQ-WCH-04]** | **배당 데이터 보정 및 판별** | | | | | |
 | REQ-WCH-04.1 | DART API Source of Truth 적용 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |
 | REQ-WCH-04.2 | 한국식 배당 주기 (분기/반기) 보정 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |
 | REQ-WCH-04.4 | 배당 주기 판별 고도화 (공시 키워드) | T-01-1.5 | - | Done | Pass | af62402 |
-| REQ-WCH-04.5 | 신규 종목 데이터 불충분 표기 (New) | T-01-1.5 | - | Done | Pass | (Pending) |
+| REQ-WCH-04.5 | 신규 종목 데이터 불충분 표기 (New) | T-01-1.5 | - | Done | Pass | ab7bf11 |
 
 ---
 

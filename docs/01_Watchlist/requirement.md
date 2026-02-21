@@ -22,7 +22,8 @@
 - **[REQ-WCH-02.5] 데이터 무결성 보호:** 포트폴리오(저장된 것 및 현재 탭 구성 중인 것 포함)에 포함된 종목은 삭제를 방지하고 경고 표시.
 
 ## [REQ-WCH-03] 데이터 표시 및 기능
-- **[REQ-WCH-03.1] 필수 컬럼:** Ticker, Name(항상 동시 표시), Price, Annual Yield(%), 1-Yr Total Return(%), Last Ex-Div Date, Last Dividend Amount, Last Div Yield(%), Past Avg. Monthly Div.
+- **[REQ-WCH-03.1] 필수 컬럼:** Ticker, Name(긴 이름은 두 줄 이상으로 표시), Price, Annual Yield(%), 1-Yr Total Return(%), Last Ex-Div Date, Last Dividend Amount, Last Div Yield(%), Past Avg. Monthly Div.
+- **[REQ-WCH-03.8] 종목명 가독성 보장:** 이름이 긴 종목(예: 일부 ETF)이 테이블에서 잘리지 않도록 Name 컬럼의 최소 너비를 충분히 확보하고, 필요한 경우 자동 줄바꿈(Multi-line)을 적용함.
 - **[REQ-WCH-03.2] 배당 주기 표시:** 종목별 배당 주기(월/분기/반기/연) 및 지급 월 표시 컬럼 추가.
 - **[REQ-WCH-03.3] 테이블 기능:** 모든 데이터는 읽기 전용(Read-only)이며, 헤더 클릭 시 정렬 기능 제공.
 - **[REQ-WCH-03.4] 금액 포맷팅:** 모든 주가 및 배당금은 [GS-UI-01] 표준 포맷을 따름.

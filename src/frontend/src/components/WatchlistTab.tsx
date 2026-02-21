@@ -291,7 +291,7 @@ export function WatchlistTab() {
               <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("symbol")}>
                 <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Ticker <SortIcon columnKey="symbol" /></div>
               </th>
-              <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("name")}>
+              <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors min-w-[180px]" onClick={() => handleSort("name")}>
                 <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Name <SortIcon columnKey="name" /></div>
               </th>
               <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("price")}>
@@ -345,7 +345,9 @@ export function WatchlistTab() {
                   </div>
                 </td>
                 <td className="px-4 py-4 font-bold text-emerald-400 tracking-tight">{item.symbol}</td>
-                <td className="px-4 py-4 text-slate-300 truncate max-w-[120px]" title={item.name}>{item.name}</td>
+                <td className="px-4 py-4 text-slate-300 whitespace-normal break-words line-clamp-2 min-w-[180px] text-xs leading-relaxed" title={item.name}>
+                  {item.name}
+                </td>
                 <td className="px-4 py-4 text-slate-100 whitespace-nowrap font-medium">
                   {(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   <span className="text-[10px] text-slate-500 ml-1">{item.currency || "USD"}</span>
