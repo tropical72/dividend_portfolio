@@ -6,7 +6,7 @@
 - **T-05-1.1: Versioned Assumption System**
     - [ ] T-05-1.1.1 멀티 프로필 지원 `retirement_config.json` 설계 및 CRUD.
 - **T-05-1.2: Tax Engine (Pure Functions)**
-    - [ ] T-05-1.2.1 지역건보료 및 법인세 산출 모듈 (`src/core/tax_engine.py`).
+    - [x] **T-05-1.2.1** 지역건보료 및 법인세 산출 모듈 완료. (`src/core/tax_engine.py`)
 
 ### [Phase 2] 구조 2 & 3: 인출 및 수익성 엔진 (T-05-2)
 - **T-05-2.1: Tier Cascade Engine**
