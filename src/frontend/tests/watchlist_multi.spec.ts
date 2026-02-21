@@ -20,17 +20,17 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     // AAPL 추가 및 확인
     await input.fill("AAPL");
     await addButton.click();
-    await expect(page.locator('tbody')).toContainText("AAPL", { timeout: 15000 });
+    await expect(page.locator('section:visible tbody')).toContainText("AAPL", { timeout: 15000 });
     
     // MSFT 추가 및 확인
     await input.fill("MSFT");
     await addButton.click();
-    await expect(page.locator('tbody')).toContainText("MSFT", { timeout: 15000 });
+    await expect(page.locator('section:visible tbody')).toContainText("MSFT", { timeout: 15000 });
   });
 
   test("should select all and delete both stocks", async ({ page }) => {
     // 1. 전체 선택 클릭 전, 행이 2개 나타날 때까지 확실히 대기
-    const rows = page.locator('tbody tr');
+    const rows = page.locator('section:visible tbody tr');
     await expect(rows).toHaveCount(2, { timeout: 15000 });
 
     // 2. 헤더 체크박스(전체 선택) 클릭
@@ -38,7 +38,7 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await selectAllHeader.click({ force: true });
 
     // 3. 모든 행이 체크되었는지 확인
-    const rowCheckboxes = page.locator('tbody [role="checkbox"]');
+    const rowCheckboxes = page.locator('section:visible tbody [role="checkbox"]');
     await expect(rowCheckboxes.first()).toHaveAttribute("aria-checked", "true", { timeout: 10000 });
     const count = await rowCheckboxes.count();
     expect(count).toBeGreaterThan(0);
@@ -46,8 +46,8 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
       await expect(rowCheckboxes.nth(i)).toHaveAttribute("aria-checked", "true");
     }
 
-    // 3. 'Delete (2)' 버튼 노출 확인 및 클릭
-    const deleteBtn = page.getByRole("button", { name: /Delete \(2\)/i });
+    // 3. 'Delete' 버튼 노출 확인 및 클릭
+    const deleteBtn = page.getByRole("button", { name: /^Delete$/i });
     await expect(deleteBtn).toBeVisible({ timeout: 10000 });
     await deleteBtn.click({ force: true });
 
@@ -57,20 +57,20 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await confirmBtn.click({ force: true });
 
     // 5. 테이블이 비어있는지 확인
-    await expect(page.locator('tbody')).not.toContainText("AAPL");
-    await expect(page.locator('tbody')).not.toContainText("MSFT");
+    await expect(page.locator('section:visible tbody')).not.toContainText("AAPL");
+    await expect(page.locator('section:visible tbody')).not.toContainText("MSFT");
   });
 
   test("should select all, deselect one, and delete only the selected one", async ({ page }) => {
     // 0. 행이 2개 나타날 때까지 대기
-    const rows = page.locator('tbody tr');
+    const rows = page.locator('section:visible tbody tr');
     await expect(rows).toHaveCount(2, { timeout: 15000 });
 
     // 1. 전체 선택
     await page.getByRole("checkbox", { name: "Select all stocks" }).click({ force: true });
     
     // 2. 모든 행이 체크되었는지 먼저 확인
-    const rowCheckboxes = page.locator('tbody [role="checkbox"]');
+    const rowCheckboxes = page.locator('section:visible tbody [role="checkbox"]');
     await expect(rowCheckboxes.first()).toHaveAttribute("aria-checked", "true", { timeout: 10000 });
     
     // 3. MSFT만 해제 (행 내부의 체크박스 영역을 직접 클릭)
@@ -79,8 +79,8 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await msftCheckbox.scrollIntoViewIfNeeded();
     await msftCheckbox.click({ force: true });
     
-    // 4. 'Delete (1)' 버튼 확인 (AAPL만 선택됨)
-    const deleteBtn = page.getByRole("button", { name: /Delete \(1\)/i });
+    // 4. 'Delete' 버튼 확인
+    const deleteBtn = page.getByRole("button", { name: /^Delete$/i });
     await deleteBtn.scrollIntoViewIfNeeded();
     await expect(deleteBtn).toBeVisible({ timeout: 10000 });
     await deleteBtn.click({ force: true });
@@ -91,7 +91,24 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await confirmBtn.click({ force: true });
 
     // 6. AAPL은 사라지고 MSFT는 남아있어야 함
-    await expect(page.locator('tbody')).not.toContainText("AAPL");
-    await expect(page.locator('tbody')).toContainText("MSFT");
+    await expect(page.locator('section:visible tbody')).not.toContainText("AAPL");
+    await expect(page.locator('section:visible tbody')).toContainText("MSFT");
+  });
+
+  test("should show category selection dialog when clicking Add to Portfolio", async ({ page }) => {
+    // [REQ-PRT-02.1]
+    // 1. AAPL 선택
+    await page.getByRole("row", { name: /AAPL/i }).locator('[role="checkbox"]').click({ force: true });
+    
+    // 2. 'Add to Portfolio' 버튼 클릭 (멀티 선택 시 노출되어야 함)
+    const addBtn = page.getByRole("button", { name: /Add to Portfolio/i });
+    await expect(addBtn).toBeVisible();
+    await addBtn.click({ force: true });
+    
+    // 3. 카테고리 선택 팝업 노출 확인
+    await expect(page.getByText("Select Category")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Fixed Income" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Bond/Cash Buffer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Growth/Dividend Growth" })).toBeVisible();
   });
 });

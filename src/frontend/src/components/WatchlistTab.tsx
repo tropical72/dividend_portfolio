@@ -49,6 +49,7 @@ export function WatchlistTab() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: "asc" });
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, symbol: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ symbol: string, x: number, y: number } | null>(null);
+  const [addConfirm, setAddConfirm] = useState<{ symbols: string[], x: number, y: number } | null>(null);
   const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
   
   // 자동 스크롤용 Ref
@@ -225,6 +226,46 @@ export function WatchlistTab() {
         </div>
       )}
 
+      {/* 카테고리 선택 모달 [REQ-PRT-02.1] */}
+      {addConfirm && (
+        <div 
+          className="fixed inset-0 z-[100] bg-slate-950/10 backdrop-blur-[1px] animate-in fade-in duration-200"
+          onClick={() => setAddConfirm(null)}
+        >
+          <div 
+            className="fixed bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-[260px] w-full shadow-[0_25px_50px_rgba(0,0,0,0.6)] animate-in zoom-in-95 slide-in-from-top-1 duration-150"
+            style={{ 
+              top: Math.min(window.innerHeight - 280, addConfirm.y), 
+              left: Math.min(window.innerWidth - 270, addConfirm.x - 130),
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 bg-emerald-500/10 rounded-xl">
+                <PlusCircle className="text-emerald-500 w-4 h-4" />
+              </div>
+              <button onClick={() => setAddConfirm(null)} className="p-1 text-slate-500 hover:text-slate-300">
+                <X size={16} />
+              </button>
+            </div>
+            <h3 className="text-base font-bold text-slate-50 mb-1">Select Category</h3>
+            <p className="text-slate-400 text-[10px] mb-4">어느 카테고리에 추가하시겠습니까?</p>
+            
+            <div className="space-y-2">
+              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-blue-500/20 hover:text-blue-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+                <div className="w-1.5 h-3 bg-blue-400 rounded-full" /> Fixed Income
+              </button>
+              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+                <div className="w-1.5 h-3 bg-amber-400 rounded-full" /> Bond/Cash Buffer
+              </button>
+              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+                <div className="w-1.5 h-3 bg-emerald-400 rounded-full" /> Growth/Dividend Growth
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 컨텍스트 메뉴 */}
       {contextMenu && (
         <div 
@@ -250,15 +291,30 @@ export function WatchlistTab() {
             <ListTodo className="text-emerald-400" /> Watchlist
           </h2>
           {selectedSymbols.size > 0 && (
-            <button 
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setDeleteConfirm({ symbol: "BULK", x: rect.left + rect.width / 2, y: rect.bottom + 10 });
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all animate-in fade-in slide-in-from-left-2"
-            >
-              <Trash2 size={14} /> Delete ({selectedSymbols.size})
-            </button>
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+              <button 
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setAddConfirm({ 
+                    symbols: Array.from(selectedSymbols), 
+                    x: rect.left + rect.width / 2, 
+                    y: rect.bottom + 10 
+                  });
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all"
+              >
+                <PlusCircle size={14} /> Add to Portfolio ({selectedSymbols.size})
+              </button>
+              <button 
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setDeleteConfirm({ symbol: "BULK", x: rect.left + rect.width / 2, y: rect.bottom + 10 });
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
           )}
         </div>
         <div className="flex gap-3 p-2 bg-slate-800/50 border border-slate-700 rounded-xl">
