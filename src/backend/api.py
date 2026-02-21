@@ -65,6 +65,53 @@ class DividendBackend:
                 self.storage.save_json(self.portfolios_file, self.portfolios)
                 return {"success": True, "message": f"{removed['name']} 삭제됨"}
         return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
+
+    def analyze_portfolio(self, p_id: str) -> Dict[str, Any]:
+        """포트폴리오의 실시간 분석 결과를 반환합니다. [REQ-PRT-03.4]"""
+        portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
+        if not portfolio:
+            return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
+
+        total_capital = portfolio.get("total_capital", 0.0)
+        items = portfolio.get("items", [])
+        usd_krw_rate = self.data_provider.get_usd_krw_rate()
+
+        total_weight = sum(item.get("weight", 0.0) for item in items)
+        weighted_yield = 0.0
+        
+        # 각 종목의 최신 배당 수익률 반영
+        for item in items:
+            # 팁: 실제 앱에서는 성능을 위해 캐싱된 데이터를 사용하거나 별도 업데이트 로직 필요
+            # 여기서는 로직 구현에 집중함
+            w = item.get("weight", 0.0)
+            y = item.get("dividend_yield", 0.0)
+            weighted_yield += (w / 100.0) * y if total_weight > 0 else 0.0
+
+        expected_annual_usd = total_capital * (weighted_yield / 100.0)
+        if portfolio.get("currency") == "KRW":
+            # KRW 포트폴리오인 경우 원화 기준으로 먼저 계산
+            annual_income_krw = expected_annual_usd
+            annual_income_usd = annual_income_krw / usd_krw_rate
+        else:
+            # USD 포트폴리오인 경우
+            annual_income_usd = expected_annual_usd
+            annual_income_krw = annual_income_usd * usd_krw_rate
+
+        return {
+            "success": True,
+            "data": {
+                "total_weight": total_weight,
+                "weighted_yield": weighted_yield,
+                "expected_annual_income": {
+                    "usd": annual_income_usd,
+                    "krw": annual_income_krw
+                },
+                "expected_monthly_income": {
+                    "usd": annual_income_usd / 12.0,
+                    "krw": annual_income_krw / 12.0
+                }
+            }
+        }
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
         # 기존 데이터 호환성을 위해 필수 필드 기본값 보정
         for item in self.watchlist:

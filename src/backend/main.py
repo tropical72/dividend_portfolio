@@ -122,3 +122,9 @@ async def create_portfolio(req: PortfolioRequest):
 async def delete_portfolio(p_id: str):
     """특정 포트폴리오를 제거합니다."""
     return backend.remove_portfolio(p_id)
+
+
+@app.get("/api/portfolios/{p_id}/analysis")
+async def analyze_portfolio(p_id: str):
+    """포트폴리오 실시간 분석 결과를 반환합니다."""
+    return backend.analyze_portfolio(p_id)
