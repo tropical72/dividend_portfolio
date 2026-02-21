@@ -48,7 +48,7 @@ export function SettingsTab() {
       } else {
         setStatus({ type: "error", message: data.message || "저장에 실패했습니다." });
       }
-    } catch (error) {
+    } catch {
       setStatus({ type: "error", message: "서버와 통신 중 오류가 발생했습니다." });
     } finally {
       setLoading(false);

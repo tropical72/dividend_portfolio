@@ -68,7 +68,7 @@ class StockDataProvider:
 
         try:
             clean_ticker = ticker_symbol.split(".")[0]
-            
+
             # [Fix for Preferred Stocks] 우선주 티커(숫자+문자)인 경우 보통주 티커(숫자)로 변환 시도
             # 보통 끝자리가 0이 아니면 우선주일 확률이 높음 (예: 005935 -> 005930)
             base_ticker = clean_ticker
@@ -84,36 +84,53 @@ class StockDataProvider:
             if df is not None and not df.empty:
                 # 연결 재무제표 기준 필터링
                 row = df[df["separate_combined"].str.contains("연결", na=False)]
-                if row.empty: row = df
+                if row.empty:
+                    row = df
                 latest_row = row.iloc[0]
-                
+
                 annual_div = float(str(latest_row.get("thstrm", 0)).replace(",", ""))
-                yield_val = float(str(latest_row.get("yield", 0)).replace(",", "")) if latest_row.get("yield") else 0.0
-                
+                yield_val = (
+                    float(str(latest_row.get("yield", 0)).replace(",", ""))
+                    if latest_row.get("yield")
+                    else 0.0
+                )
+
                 # 키워드 및 데이터 기반 주기 판별 고도화 [REQ-WCH-04.4]
                 kind_text = str(latest_row.get("stock_kind", ""))
                 frequency = "Annually"
-                
+
                 if "분기" in kind_text or "3개월" in kind_text or len(df) >= 4:
                     frequency = "Quarterly"
                 elif "중간" in kind_text or "6개월" in kind_text or len(df) == 2:
                     frequency = "Semi-Annually"
 
                 return {
-                    "annual_dividend": annual_div, 
+                    "annual_dividend": annual_div,
                     "yield": yield_val,
                     "frequency": frequency,
                     "ex_div_date": f"{datetime.datetime.now().year - 1}-12-31",
-                    "monthly_avg": annual_div / 12.0
+                    "monthly_avg": annual_div / 12.0,
                 }
-            
+
             # 2. [Fallback] 배당 정보가 비어있을 경우 (삼성전자 등 분기배당주 대응)
             # 주요 한국 대형주는 수동 매핑이나 재무제표 조회가 필요함
             # 여기서는 우선 마스터님의 요구대로 최소한의 값을 보장함
-            if clean_ticker == "005930": # 삼성전자
-                return {"annual_dividend": 1444, "yield": 2.5, "frequency": "Quarterly", "ex_div_date": "2024-12-31", "monthly_avg": 120.3}
-            if clean_ticker == "088980": # 맥쿼리인프라
-                return {"annual_dividend": 770, "yield": 6.5, "frequency": "Semi-Annually", "ex_div_date": "2024-12-31", "monthly_avg": 64.1}
+            if clean_ticker == "005930":  # 삼성전자
+                return {
+                    "annual_dividend": 1444,
+                    "yield": 2.5,
+                    "frequency": "Quarterly",
+                    "ex_div_date": "2024-12-31",
+                    "monthly_avg": 120.3,
+                }
+            if clean_ticker == "088980":  # 맥쿼리인프라
+                return {
+                    "annual_dividend": 770,
+                    "yield": 6.5,
+                    "frequency": "Semi-Annually",
+                    "ex_div_date": "2024-12-31",
+                    "monthly_avg": 64.1,
+                }
 
         except Exception as e:
             print(f"DART Query Error for {ticker_symbol}: {e}")
@@ -157,12 +174,15 @@ class StockDataProvider:
         if current_price is None:
             try:
                 current_price = ticker.fast_info.get("last_price")
-            except Exception: pass
+            except Exception:
+                pass
         if current_price is None:
             try:
                 hist = ticker.history(period="1mo")
-                if not hist.empty: current_price = float(hist["Close"].iloc[-1])
-            except Exception: pass
+                if not hist.empty:
+                    current_price = float(hist["Close"].iloc[-1])
+            except Exception:
+                pass
 
         if current_price is None:
             return {"error": f"Invalid ticker: {ticker_symbol}", "symbol": ticker_symbol}
@@ -183,7 +203,9 @@ class StockDataProvider:
         # 3. 최근 배당금 (Last Amt) 결정
         last_div_amount = info.get("lastDividendValue") or 0.0
         if is_kr and dart_info.get("annual_dividend", 0) > 0:
-            div_count = {"Monthly": 12, "Quarterly": 4, "Semi-Annually": 2, "Annually": 1}.get(cycle_info["frequency"], 1)
+            div_count = {"Monthly": 12, "Quarterly": 4, "Semi-Annually": 2, "Annually": 1}.get(
+                cycle_info["frequency"], 1
+            )
             last_div_amount = dart_info["annual_dividend"] / div_count
         elif not div_hist.empty:
             last_div_amount = float(div_hist.iloc[-1])
@@ -193,15 +215,16 @@ class StockDataProvider:
         annual_div_sum = self.calculate_historical_annual_dividend(ticker_symbol)
         if is_kr and dart_info.get("annual_dividend", 0) > 0:
             annual_div_sum = dart_info["annual_dividend"]
-        
+
         # 수익률 산출 (나눗셈 보호 및 NaN 방지)
         dividend_yield = 0.0
         if current_price and current_price > 0 and annual_div_sum > 0:
             dividend_yield = (annual_div_sum / current_price) * 100
         else:
             dividend_yield = info.get("dividendYield", 0) or 0.0
-            if 0 < dividend_yield < 0.2: dividend_yield *= 100
-        
+            if 0 < dividend_yield < 0.2:
+                dividend_yield *= 100
+
         # DART 수익률 정보가 있으면 최우선 (수동 보정용)
         if is_kr and dart_info.get("yield", 0) > 0:
             dividend_yield = dart_info["yield"]
@@ -215,8 +238,12 @@ class StockDataProvider:
         else:
             ex_div_timestamp = info.get("exDividendDate")
             if ex_div_timestamp:
-                try: ex_div_date_str = datetime.datetime.fromtimestamp(ex_div_timestamp).strftime("%Y-%m-%d")
-                except Exception: pass
+                try:
+                    ex_div_date_str = datetime.datetime.fromtimestamp(ex_div_timestamp).strftime(
+                        "%Y-%m-%d"
+                    )
+                except Exception:
+                    pass
 
         # 5. 월평균 배당금 (과거 1년 평균)
         past_avg_monthly_div = float(annual_div_sum / 12.0) if annual_div_sum > 0 else 0.0
@@ -237,7 +264,11 @@ class StockDataProvider:
             "one_yr_return": safe_float(self._calculate_1y_return(ticker, current_price)),
             "ex_div_date": str(ex_div_date_str),
             "last_div_amount": safe_float(last_div_amount),
-            "last_div_yield": safe_float((last_div_amount / current_price * 100) if current_price and current_price > 0 else 0),
+            "last_div_yield": safe_float(
+                (last_div_amount / current_price * 100)
+                if current_price and current_price > 0
+                else 0
+            ),
             "past_avg_monthly_div": safe_float(past_avg_monthly_div),
             "dividend_frequency": str(cycle_info["frequency"]),
             "payment_months": list(cycle_info["months"]),
@@ -249,14 +280,15 @@ class StockDataProvider:
             if not hist.empty:
                 p1y = hist.iloc[0]["Close"]
                 return ((current_price - p1y) / p1y) * 100
-        except Exception: pass
+        except Exception:
+            pass
         return 0.0
 
     def analyze_dividend_cycle(self, ticker_symbol: str) -> Dict[str, Any]:
         """최근 1년 배당 이력을 분석하여 주기와 지급 월을 반환합니다."""
         is_kr = ".KS" in ticker_symbol or ".KQ" in ticker_symbol
         dividends = self.get_dividend_history(ticker_symbol)
-        
+
         # [Strategy for KR] DART 데이터를 통한 배당 이력 보강
         if is_kr and (dividends.empty or len(dividends) < 2):
             print(f"[Debug] KR stock {ticker_symbol} history empty in YF. Trying DART...")
@@ -335,7 +367,7 @@ class StockDataProvider:
                         hist_data[date] = amount
                 except Exception:
                     continue
-            
+
             if hist_data:
                 series = pd.Series(hist_data).sort_index()
                 return series

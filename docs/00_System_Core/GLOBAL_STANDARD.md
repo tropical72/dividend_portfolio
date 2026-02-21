@@ -77,11 +77,12 @@
 1. **언어별 도구 구성:**
    - **Backend (Python):** `Ruff`를 사용하여 PEP8 스타일 체크, 임포트 정렬, 미사용 변수 제거를 수행한다. (`ruff check --fix .`, `ruff format .`)
    - **Frontend (Web):** `ESLint`와 `Prettier`를 사용하여 React Hook 규칙 및 일관된 스타일을 유지한다. (`npm run lint`, `npm run format`)
-2. **작업 프로세스:**
-   - **Step 1:** 코드 구현 및 수정.
-   - **Step 2 (Linting):** 언어별 도구 실행 및 에러 자율 수정.
-   - **Step 3 (Testing):** 린팅 통과 후 `pytest` 및 `Playwright` 테스트 수행.
-   - **Step 4 (Commit):** 1~3단계 완료 후 명세서 업데이트 및 마스터 승인 후 커밋.
+2. **작업 프로세스 (Strict Workflow):**
+   - **Step 1 (구현):** 코드 구현 및 수정.
+   - **Step 2 (Linting):** 언어별 도구(Ruff, ESLint) 실행 및 에러 자율 수정. (필수)
+   - **Step 3 (Testing):** 린팅 통과 후 `pytest` 및 `Playwright` 테스트 수행. (필수)
+   - **Step 4 (Verification):** 모든 테스트가 Green(Pass)임을 확인한 후에만 사용자에게 완료 보고.
+   - **Step 5 (Commit):** 사용자 승인 후 커밋. (테스트 실패 시 커밋 금지)
 3. **에이전트 메시지 규칙:** 완료 보고 시 린팅 및 테스트 결과를 요약 제공한다.
    - 예: "✅ Linting 완료 (Ruff, ESLint 통과) / ✅ 모든 테스트 통과 / 📝 Trace Matrix 업데이트 완료"
 

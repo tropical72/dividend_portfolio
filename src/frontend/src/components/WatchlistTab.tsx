@@ -119,7 +119,7 @@ export function WatchlistTab() {
       } else {
         showStatus(result.message || "추가 실패", "error");
       }
-    } catch (err) {
+    } catch {
       showStatus("서버 통신 오류", "error");
     } finally {
       setIsAdding(false);
@@ -140,7 +140,7 @@ export function WatchlistTab() {
       setWatchlist((prev) => prev.filter(item => !targets.includes(item.symbol)));
       setSelectedSymbols(new Set());
       showStatus(`${targets.length}개 종목 삭제 완료`, "success");
-    } catch (err) {
+    } catch {
       showStatus("삭제 중 오류가 발생했습니다.", "error");
     } finally {
       setDeleteConfirm(null);
