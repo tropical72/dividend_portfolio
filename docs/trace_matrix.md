@@ -13,6 +13,7 @@
 | REQ-WCH-01.2 | 추가 전 데이터 유효성 검증 | T-01-1.1 | test_watchlist_api.py | Done | Pass | 127ab60 |
 | REQ-WCH-01.3 | 중복 종목 추가 방지 | T-01-1.1 | test_watchlist_api.py | Done | Pass | 127ab60 |
 | REQ-WCH-01.6 | 다중 선택 및 일괄 삭제 | T-01-2.6 | watchlist_multi.spec.ts | Done | Pass | fb3841d |
+| REQ-WCH-01.7 | 스마트 티커 자동 감지 (6자리 숫자) | T-01-1.1 | - | Done | Pass | (Pending) |
 | **[REQ-WCH-02]** | **사용자 경험 (UX) 강화** | | | | | |
 | REQ-WCH-02.1 | 로딩 상태 표시 (Add...) | T-01-2.2 | watchlist.spec.ts | Done | Pass | 784a83c |
 | REQ-WCH-02.3 | 상태 알림 토스트 (Toast) | T-01-2.2 | watchlist.spec.ts | Done | Pass | 784a83c |
@@ -58,6 +59,8 @@
 | **[D-01]** | UI 렌더링 시 테이블 행 정렬 어긋남 | T-01-2.4 | REQ-WCH-03.3 | Fixed | Pass | 188d02f |
 | **[D-02]** | 삭제 팝업 위치 좌표 불일치 | T-01-2.5 | REQ-WCH-02.4 | Fixed | Pass | fb3841d |
 | **[D-03]** | 한국 월배당 ETF 데이터 누락 (수익률 0%) | T-01-1.5 | REQ-WCH-04.2 | Fixed | Pass | 2056f83 |
+| **[D-04]** | 테이블 컬럼 누락 및 통화 단위 미표시 | T-01-2.4 | REQ-WCH-03.5 | Fixed | Pass | fb3841d |
+| **[D-05]** | 한국 종목 배당 주기 판별 오류 (Annually 오판) | T-01-1.5 | REQ-WCH-04.4 | Fixed | Pass | (Pending) |
 
 ---
 

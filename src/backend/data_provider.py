@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import Any, Dict, Optional
 
 import OpenDartReader
@@ -67,13 +68,21 @@ class StockDataProvider:
 
         try:
             clean_ticker = ticker_symbol.split(".")[0]
-            # 1. 사업보고서 배당 정보 조회 시도
+            
+            # [Fix for Preferred Stocks] 우선주 티커(숫자+문자)인 경우 보통주 티커(숫자)로 변환 시도
+            # 보통 끝자리가 0이 아니면 우선주일 확률이 높음 (예: 005935 -> 005930)
+            base_ticker = clean_ticker
+            if not clean_ticker.endswith("0"):
+                base_ticker = clean_ticker[:-1] + "0"
+
+            # 1. 사업보고서 배당 정보 조회 시도 (보통주 기준 공시가 더 정확함)
             try:
-                df = self.dart.dividend(clean_ticker)
+                df = self.dart.dividend(base_ticker)
             except Exception:
                 df = None
 
             if df is not None and not df.empty:
+                # 연결 재무제표 기준 필터링
                 row = df[df["separate_combined"].str.contains("연결", na=False)]
                 if row.empty: row = df
                 latest_row = row.iloc[0]
@@ -81,10 +90,13 @@ class StockDataProvider:
                 annual_div = float(str(latest_row.get("thstrm", 0)).replace(",", ""))
                 yield_val = float(str(latest_row.get("yield", 0)).replace(",", "")) if latest_row.get("yield") else 0.0
                 
+                # 키워드 및 데이터 기반 주기 판별 고도화 [REQ-WCH-04.4]
+                kind_text = str(latest_row.get("stock_kind", ""))
                 frequency = "Annually"
-                if "분기" in str(latest_row.get("stock_kind", "")) or len(df) >= 4:
+                
+                if "분기" in kind_text or "3개월" in kind_text or len(df) >= 4:
                     frequency = "Quarterly"
-                elif "중간" in str(latest_row.get("stock_kind", "")) or len(df) == 2:
+                elif "중간" in kind_text or "6개월" in kind_text or len(df) == 2:
                     frequency = "Semi-Annually"
 
                 return {
@@ -177,8 +189,9 @@ class StockDataProvider:
         if is_kr and dart_info.get("annual_dividend", 0) > 0:
             annual_div_sum = dart_info["annual_dividend"]
         
-        # 수익률 산출
-        if annual_div_sum > 0 and current_price > 0:
+        # 수익률 산출 (나눗셈 보호 및 NaN 방지)
+        dividend_yield = 0.0
+        if current_price and current_price > 0 and annual_div_sum > 0:
             dividend_yield = (annual_div_sum / current_price) * 100
         else:
             dividend_yield = info.get("dividendYield", 0) or 0.0
@@ -201,21 +214,28 @@ class StockDataProvider:
                 except Exception: pass
 
         # 5. 월평균 배당금 (과거 1년 평균)
-        past_avg_monthly_div = annual_div_sum / 12.0 if annual_div_sum > 0 else 0.0
+        past_avg_monthly_div = float(annual_div_sum / 12.0) if annual_div_sum > 0 else 0.0
+
+        def safe_float(val: Any) -> float:
+            try:
+                f_val = float(val)
+                return f_val if math.isfinite(f_val) else 0.0
+            except (ValueError, TypeError):
+                return 0.0
 
         return {
             "symbol": ticker_symbol,
-            "name": info.get("longName") or info.get("shortName") or ticker_symbol,
-            "price": current_price,
-            "currency": info.get("currency", "USD"),
-            "dividend_yield": dividend_yield,
-            "one_yr_return": self._calculate_1y_return(ticker, current_price),
-            "ex_div_date": ex_div_date_str,
-            "last_div_amount": last_div_amount,
-            "last_div_yield": (last_div_amount / current_price * 100) if current_price > 0 else 0,
-            "past_avg_monthly_div": past_avg_monthly_div,
-            "dividend_frequency": cycle_info["frequency"],
-            "payment_months": cycle_info["months"],
+            "name": str(info.get("longName") or info.get("shortName") or ticker_symbol),
+            "price": safe_float(current_price),
+            "currency": str(info.get("currency", "USD")),
+            "dividend_yield": safe_float(dividend_yield),
+            "one_yr_return": safe_float(self._calculate_1y_return(ticker, current_price)),
+            "ex_div_date": str(ex_div_date_str),
+            "last_div_amount": safe_float(last_div_amount),
+            "last_div_yield": safe_float((last_div_amount / current_price * 100) if current_price and current_price > 0 else 0),
+            "past_avg_monthly_div": safe_float(past_avg_monthly_div),
+            "dividend_frequency": str(cycle_info["frequency"]),
+            "payment_months": list(cycle_info["months"]),
         }
 
     def _calculate_1y_return(self, ticker: yf.Ticker, current_price: float) -> float:
