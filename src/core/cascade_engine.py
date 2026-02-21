@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+from typing import Dict
+
 
 class CascadeEngine:
     """
@@ -22,11 +23,7 @@ class CascadeEngine:
 
         # 1. 버퍼가 충분한 경우: 추가 매도 불필요 (배당금만으로 충당 가정)
         if sgov_balance >= self.target_buffer:
-            return {
-                "state": "STATE_IDLE",
-                "target_asset": None,
-                "reason": "BUFFER_OK"
-            }
+            return {"state": "STATE_IDLE", "target_asset": None, "reason": "BUFFER_OK"}
 
         # 2. 버퍼 부족 시 계층 순서에 따라 매도 대상 탐색
         for tier in self.tier_order:
@@ -35,12 +32,8 @@ class CascadeEngine:
                 return {
                     "state": f"SELL_TIER_{tier}",
                     "target_asset": tier,
-                    "reason": "RECHARGE_BUFFER"
+                    "reason": "RECHARGE_BUFFER",
                 }
 
         # 3. 모든 상위 자산이 소진된 경우: 최후의 보루인 SGOV 원금 사용
-        return {
-            "state": "EMERGENCY",
-            "target_asset": "SGOV",
-            "reason": "ALL_TIERS_EXHAUSTED"
-        }
+        return {"state": "EMERGENCY", "target_asset": "SGOV", "reason": "ALL_TIERS_EXHAUSTED"}
