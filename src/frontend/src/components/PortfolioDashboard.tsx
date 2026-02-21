@@ -7,23 +7,14 @@ import {
   DollarSign, 
   PieChart, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Edit3
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { PortfolioItem } from "../types";
-
-/** 저장된 포트폴리오 데이터 구조 */
-interface Portfolio {
-  id: string;
-  name: string;
-  total_capital: number;
-  currency: string;
-  items: PortfolioItem[];
-  created_at: string;
-}
+import type { PortfolioItem, Portfolio } from "../types";
 
 /** [REQ-PRT-06] 포트폴리오 대시보드 및 비교 탭 */
-export function PortfolioDashboard() {
+export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void }) {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +32,12 @@ export function PortfolioDashboard() {
         setIsLoading(false);
       });
   }, []);
+
+  /** 로드 핸들러 [REQ-PRT-04.3] */
+  const handleLoad = (e: React.MouseEvent, p: Portfolio) => {
+    e.stopPropagation();
+    onLoad(p);
+  };
 
   /** 삭제 핸들러 */
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -110,13 +107,13 @@ export function PortfolioDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="hidden md:flex flex-col items-end">
-                      <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Total Weight</span>
-                      <span className={cn("text-lg font-black", Math.abs(totalWeight - 100) < 0.1 ? "text-emerald-400" : "text-red-400")}>
-                        {totalWeight.toFixed(1)}%
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={(e) => handleLoad(e, p)}
+                      className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-xs font-black rounded-2xl transition-all border border-emerald-500/20"
+                    >
+                      <Edit3 size={16} /> Load into Designer
+                    </button>
                     <button 
                       onClick={(e) => handleDelete(e, p.id)}
                       className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"

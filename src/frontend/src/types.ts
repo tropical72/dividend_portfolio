@@ -32,3 +32,13 @@ export interface PortfolioItem {
   last_div_amount: number;
   payment_months: number[];
 }
+
+/** 저장된 포트폴리오 전체 데이터 구조 [REQ-PRT-04, 06] */
+export interface Portfolio {
+  id: string;
+  name: string;
+  total_capital: number;
+  currency: string;
+  items: PortfolioItem[];
+  created_at: string;
+}

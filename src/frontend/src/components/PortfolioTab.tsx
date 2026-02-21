@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { PortfolioItem } from "../types";
+import type { PortfolioItem, Portfolio } from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
 
 /**
@@ -34,6 +34,16 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
       })
       .catch(console.error);
   }, []);
+
+  /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
+  const handleLoadPortfolio = (p: Portfolio) => {
+    setPortfolioId(p.id);
+    setPortfolioName(p.name);
+    setCapitalUsd(p.total_capital);
+    setItems(p.items);
+    setActiveSubTab("design");
+    showStatus(`"${p.name}" 로드 완료`, "success");
+  };
 
   /** 전체 비중 및 분석 데이터 실시간 계산 [REQ-PRT-01.3, 03.4] */
   const analysis = useMemo(() => {
@@ -180,7 +190,7 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
       </div>
 
       {activeSubTab === "manage" ? (
-        <PortfolioDashboard />
+        <PortfolioDashboard onLoad={handleLoadPortfolio} />
       ) : (
         <>
           {/* 상단 헤더 및 액션 버튼 */}
