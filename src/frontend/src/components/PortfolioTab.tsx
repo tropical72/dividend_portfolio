@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { PortfolioItem, Portfolio } from "../types";
+import type { PortfolioItem, Portfolio, AppSettings } from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
 
 /**
@@ -10,11 +10,13 @@ import { PortfolioDashboard } from "./PortfolioDashboard";
 export function PortfolioTab({ 
   items, 
   setItems, 
-  activeTab 
+  activeTab,
+  globalSettings
 }: { 
   items: PortfolioItem[], 
   setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>,
-  activeTab: string
+  activeTab: string,
+  globalSettings: AppSettings | null
 }) {
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">("design");
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
@@ -22,51 +24,35 @@ export function PortfolioTab({
   const [accountType, setAccountType] = useState<"Personal" | "Pension">("Personal");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // 수동 추가 모달 상태
-  const [manualAdd, setManualAdd] = useState<{ category: PortfolioItem["category"] | null }>({ category: null });
-  const [manualForm, setManualForm] = useState({ symbol: "", name: "", weight: 0 });
-
-  // 시뮬레이션 상태 [REQ-PRT-03]
-  const [capitalUsd, setCapitalUsd] = useState<number>(10000);
-  const [exchangeRate, setExchangeRate] = useState<number>(1420); // 기본값
-  const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
-
   const categories = [
     { id: "Fixed", name: "Fixed Income", color: "bg-blue-400", textColor: "text-blue-400" },
     { id: "Cash", name: "Bond/Cash Buffer", color: "bg-amber-400", textColor: "text-amber-400" },
     { id: "Growth", name: "Growth/Dividend Growth", color: "bg-emerald-400", textColor: "text-emerald-400" },
   ] as const;
 
-  /** 환율 로드 및 사용자 설정 동기화 [REQ-PRT-03] */
+  // 수동 추가 모달 상태
+  const [manualAdd, setManualAdd] = useState<{ category: PortfolioItem["category"] | null }>({ category: null });
+  const [manualForm, setManualForm] = useState({ symbol: "", name: "", weight: 0 });
+
+  // 시뮬레이션 상태 [REQ-PRT-03]
+  const [capitalUsd, setCapitalUsd] = useState<number>(10000);
+  const [exchangeRate, setExchangeRate] = useState<number>(1425.5); // 고정값 또는 설정에서 수신
+  const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
+
+  /** 전역 설정 동기화 [REQ-PRT-03] */
   useEffect(() => {
-    // 탭이 포트폴리오가 아닐 때는 실행하지 않음
-    if (activeTab !== "portfolio") return;
-
-    const fetchSettings = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/api/settings");
-        const data = await res.json();
-        if (res.success && data.data) {
-          const rate = 1425.50; // 기본 환율
-          setExchangeRate(rate);
-
-          // 사용자가 설정한 기본 투자금 반영 (포트폴리오 ID가 없을 때만 - 새 포트폴리오 설계 시)
-          if (!portfolioId && data.data.default_capital) {
-            const capital = data.data.default_capital;
-            if (data.data.default_currency === "KRW") {
-              setCapitalUsd(capital / rate);
-            } else {
-              setCapitalUsd(capital);
-            }
-          }
+    // 포트폴리오 탭이 활성화되고, 기존 포트폴리오 로드가 아닌 "새 설계" 상태일 때만 기본값 적용
+    if (activeTab === "portfolio" && !portfolioId && globalSettings) {
+      if (globalSettings.default_capital) {
+        const capital = globalSettings.default_capital;
+        if (globalSettings.default_currency === "KRW") {
+          setCapitalUsd(capital / exchangeRate);
+        } else {
+          setCapitalUsd(capital);
         }
-      } catch (error) {
-        console.error("Failed to load settings:", error);
       }
-    };
-
-    fetchSettings();
-  }, [activeTab, portfolioId]); // activeTab이 바뀔 때(탭 이동 시)마다 설정 다시 로드
+    }
+  }, [activeTab, portfolioId, globalSettings, exchangeRate]);
 
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {

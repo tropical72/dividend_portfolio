@@ -5,7 +5,7 @@ import { cn } from "../lib/utils";
 /**
  * [REQ-SYS-04] API 키 및 사용자 설정 관리 UI
  */
-export function SettingsTab() {
+export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => void }) {
   const [settings, setSettings] = useState({
     dart_api_key: "",
     gemini_api_key: "",
@@ -49,6 +49,7 @@ export function SettingsTab() {
       const data = await response.json();
       if (data.success) {
         setStatus({ type: "success", message: "설정이 성공적으로 저장되었습니다." });
+        if (onSettingsUpdate) onSettingsUpdate(); // 전역 상태 갱신 트리거
       } else {
         setStatus({ type: "error", message: data.message || "저장에 실패했습니다." });
       }

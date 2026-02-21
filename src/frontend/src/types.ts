@@ -4,6 +4,14 @@
 
 export const TYPES_VERSION = "1.0.0";
 
+/** 앱 설정 인터페이스 */
+export interface AppSettings {
+  dart_api_key: string;
+  gemini_api_key: string;
+  default_capital: number;
+  default_currency: "USD" | "KRW";
+}
+
 /** 주식 종목 정보 인터페이스 (Watchlist 용) [REQ-WCH-03] */
 export interface Stock {
   symbol: string;

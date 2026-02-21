@@ -11,7 +11,7 @@ import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
-import type { PortfolioItem, Stock } from "./types";
+import type { PortfolioItem, Stock, AppSettings } from "./types";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -19,9 +19,32 @@ import type { PortfolioItem, Stock } from "./types";
 function App() {
   const [activeTab, setActiveTab] = useState("watchlist");
   const [health, setHealth] = useState<string>("checking...");
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   
   // [NEW] 포트폴리오 설계 중인 항목들
   const [designItems, setDesignItems] = useState<PortfolioItem[]>([]);
+
+  const fetchSettings = () => {
+    fetch("http://localhost:8000/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.data) {
+          setSettings(data.data);
+        } else {
+          throw new Error("Invalid settings data");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load settings:", err);
+        // 기본값 강제 설정하여 렌더링 재개
+        setSettings({
+          dart_api_key: "",
+          gemini_api_key: "",
+          default_capital: 10000,
+          default_currency: "USD"
+        });
+      });
+  };
 
   useEffect(() => {
     // 백엔드 연결 상태 확인
@@ -29,6 +52,8 @@ function App() {
       .then((res) => res.json())
       .then((data) => setHealth(data.status))
       .catch(() => setHealth("offline"));
+
+    fetchSettings();
   }, []);
 
   /** Watchlist에서 종목들을 포트폴리오로 이관하는 핸들러 [REQ-PRT-02.1] */
@@ -111,10 +136,15 @@ function App() {
             <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
           <div className={cn(activeTab === "portfolio" ? "block" : "hidden")}>
-            <PortfolioTab items={designItems} setItems={setDesignItems} activeTab={activeTab} />
+            <PortfolioTab 
+              items={designItems} 
+              setItems={setDesignItems} 
+              activeTab={activeTab} 
+              globalSettings={settings}
+            />
           </div>
           <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
-            <SettingsTab />
+            <SettingsTab onSettingsUpdate={fetchSettings} />
           </div>
           <div className={cn(!["watchlist", "portfolio", "settings"].includes(activeTab) ? "block" : "hidden")}>
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

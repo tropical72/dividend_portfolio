@@ -94,10 +94,11 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       const dataPoint: any = { name: `${m}월` };
       selectedPortfolios.forEach(p => {
         const capital = globalCapitalUsd ?? p.total_capital;
-        const monthlySum = p.items.reduce((sum, item) => {
-          if (item.payment_months.includes(m)) {
+        const items = p.items || [];
+        const monthlySum = items.reduce((sum, item) => {
+          if (item.payment_months && item.payment_months.includes(m)) {
             const allocated = capital * (item.weight / 100);
-            const shares = allocated / item.price;
+            const shares = allocated / (item.price || 1);
             let amt = (shares * item.last_div_amount);
             if (globalCurrency === "KRW") amt *= exchangeRate;
             return sum + amt;
@@ -229,6 +230,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
           const isSelected = selectedIds.has(p.id);
           const capitalUsd = globalCapitalUsd ?? p.total_capital;
           const capitalKrw = capitalUsd * exchangeRate;
+          const items = p.items || [];
           
           return (
             <div key={p.id} className={cn("portfolio-card group border transition-all duration-300 rounded-[2rem] overflow-hidden", isExpanded ? "bg-slate-900/60 border-emerald-500/30 shadow-2xl shadow-emerald-500/5" : "bg-slate-900/20 border-slate-800 hover:border-slate-700 hover:bg-slate-900/30 cursor-pointer", isSelected && !isExpanded && "border-emerald-500/40 bg-emerald-500/[0.02]")} onClick={() => setExpandedId(isExpanded ? null : p.id)}>
@@ -237,19 +239,20 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   <button onClick={(e) => toggleSelect(e, p.id)} role="checkbox" aria-checked={isSelected} className={cn("p-2 rounded-xl transition-all", isSelected ? "text-emerald-400 bg-emerald-500/10" : "text-slate-700 hover:text-slate-500")}>
                     {isSelected ? <CheckSquare size={24} /> : <Square size={24} />}
                   </button>
-                                      <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                          <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
-                                          <span className={cn(
-                                            "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all duration-500",
-                                            (p.account_type?.toLowerCase() === "pension") 
-                                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]" 
-                                              : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                                          )}>
-                                            {p.account_type || "Personal"} Account
-                                          </span>
-                                        </div>                    <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                      <span>{p.items.length} Assets</span>
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all duration-500",
+                        (p.account_type?.toLowerCase() === "pension") 
+                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]" 
+                          : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                      )}>
+                        {p.account_type || "Personal"} Account
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                      <span>{items.length} Assets</span>
                       <div className="w-1 h-1 rounded-full bg-slate-700" />
                       <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
@@ -264,7 +267,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 </div>
               </div>
 
-              {/* 4. Detailed View [REQ-PRT-06.2, 요구사항 4번 반영] */}
+              {/* 4. Detailed View [REQ-PRT-06.2] */}
               <div className={cn("portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40", isExpanded ? "max-h-[2000px] opacity-100 p-8" : "max-h-0 opacity-0")}>
                 <div className="space-y-6">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><PieChart size={14} /> Individual Asset Performance (Based on Simulation Capital)</h4>
@@ -281,10 +284,10 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/30">
-                        {p.items.map((item, idx) => {
+                        {items.map((item, idx) => {
                           const itemAlloc = capitalUsd * (item.weight / 100);
                           const shares = itemAlloc / (item.price || 1);
-                          const annualUsd = shares * (item.last_div_amount * item.payment_months.length);
+                          const annualUsd = shares * (item.last_div_amount * (item.payment_months?.length || 0));
                           const annualKrw = annualUsd * exchangeRate;
                           
                           return (
