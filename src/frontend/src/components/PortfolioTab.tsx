@@ -353,18 +353,18 @@ export function PortfolioTab({
                 <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
                   <button 
                     onClick={() => setCalcMode("TTM")}
-                    className={cn("px-4 py-1.5 text-[10px] font-black rounded-lg transition-all", calcMode === "TTM" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
+                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "TTM" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
                   >TTM (Past)</button>
                   <button 
                     onClick={() => setCalcMode("Forward")}
-                    className={cn("px-4 py-1.5 text-[10px] font-black rounded-lg transition-all", calcMode === "Forward" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
+                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "Forward" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
                   >Forward (Future)</button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (USD)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (USD)</label>
                                 <div className="relative group">
                                   <input 
                                     type="text"
@@ -376,7 +376,7 @@ export function PortfolioTab({
                                   <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
                                 </div>                </div>
                             <div className="space-y-3">
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
+                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
                               <div className="relative group">
                                 <input 
                                   type="text"
@@ -388,7 +388,7 @@ export function PortfolioTab({
                                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">₩</span>
                               </div>
                             </div>              </div>
-              <p className="mt-4 text-[10px] text-slate-600 font-medium italic">
+              <p className="mt-4 text-xs text-slate-600 font-medium italic">
                 * 적용 환율: 1 USD = {exchangeRate.toLocaleString()} KRW (실시간 데이터 기준)
               </p>
             </div>
@@ -397,10 +397,10 @@ export function PortfolioTab({
             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden">
               <DollarSign className="absolute -right-4 -top-4 w-32 h-32 text-emerald-500/5 rotate-12" />
               <div className="relative z-10">
-                <h3 className="text-xs font-black text-emerald-500/60 uppercase tracking-widest mb-6">Expected Income (Tax-Excl.)</h3>
+                <h3 className="text-sm font-black text-emerald-500/60 uppercase tracking-widest mb-6">Expected Income (Tax-Excl.)</h3>
                 <div className="space-y-6">
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Annual Dividend</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Annual Dividend</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-50 tracking-tighter">
                         ₩{(analysis.annualDividendUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -409,7 +409,7 @@ export function PortfolioTab({
                     </div>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Monthly Income</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Monthly Income</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-black text-emerald-400 tracking-tighter">
                         ₩{(analysis.monthlyDividendUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -419,7 +419,7 @@ export function PortfolioTab({
                   </div>
                 </div>
               </div>
-              <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 flex items-center justify-between text-sm">
+              <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 flex items-center justify-between text-base">
                 <span className="text-slate-500 font-bold">Expected Yield</span>
                 <span className="text-xl font-black text-slate-50">{analysis.weightedYield.toFixed(2)}%</span>
               </div>
@@ -439,7 +439,7 @@ export function PortfolioTab({
                       <div className={cn("w-2.5 h-10 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]", cat.color)} />
                       <div>
                         <h3 className="text-xl font-black text-slate-100 tracking-tight">{cat.name}</h3>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Asset Segment</p>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Asset Segment</p>
                       </div>
                       <div className={cn(
                         "ml-4 px-4 py-1.5 rounded-full font-black text-sm transition-all",
@@ -450,7 +450,7 @@ export function PortfolioTab({
                     </div>
                     <button 
                       onClick={() => setManualAdd({ category: cat.id })}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-[10px] uppercase tracking-wider"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
                     >
                       <PlusCircle size={16} /> Add Manually
                     </button>
@@ -458,7 +458,7 @@ export function PortfolioTab({
 
                   <div className="overflow-hidden rounded-3xl border border-slate-800/40 shadow-inner">
                     <table className="w-full text-left text-sm border-collapse">
-                      <thead className="bg-slate-800/20 text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
+                      <thead className="bg-slate-800/20 text-xs text-slate-500 font-black uppercase tracking-[0.15em]">
                         <tr>
                           <th className="py-5 px-8 w-24">Ticker</th>
                           <th className="py-5 px-4">Stock Name</th>
@@ -470,7 +470,7 @@ export function PortfolioTab({
                         {catItems.map((item) => (
                           <tr key={item.symbol} className="group hover:bg-slate-800/10 transition-colors">
                             <td className="py-6 px-8 font-black text-emerald-400 tracking-tighter text-base">{item.symbol}</td>
-                            <td className="py-6 px-4 text-slate-300 font-medium text-xs leading-relaxed">{item.name}</td>
+                            <td className="py-6 px-4 text-slate-300 font-medium text-sm leading-relaxed">{item.name}</td>
                             <td className="py-6 px-4 text-right">
                               <div className="flex items-center justify-end gap-3">
                                 <input 
@@ -497,7 +497,7 @@ export function PortfolioTab({
                             <td colSpan={4} className="py-20 text-center">
                               <div className="flex flex-col items-center gap-3 opacity-20">
                                 <PlusCircle size={40} className="text-slate-500" />
-                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">No assets in this category</p>
+                                <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">No assets in this category</p>
                               </div>
                             </td>
                           </tr>
@@ -517,12 +517,12 @@ export function PortfolioTab({
           )}>
             <div className="flex items-center gap-16">
               <div className="text-center md:text-left">
-                <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Asset Count</span>
+                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Asset Count</span>
                 <span className="text-4xl font-black text-slate-100">{items.length}</span>
               </div>
               <div className="h-16 w-px bg-slate-800 hidden md:block" />
               <div className="text-center md:text-left">
-                <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Allocation</span>
+                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Allocation</span>
                 <div className="flex items-baseline gap-1">
                   <span className={cn(
                     "text-6xl font-black tracking-tighter transition-all duration-700",
@@ -540,16 +540,16 @@ export function PortfolioTab({
                 <>
                   <div className="flex items-center gap-2 px-6 py-3 bg-red-500/10 rounded-2xl border border-red-500/20">
                     <AlertCircle className="text-red-500" size={20} />
-                    <p className="text-lg text-red-400 font-black tracking-tight">비중 합계가 100%여야 합니다</p>
+                    <p className="text-xl text-red-400 font-black tracking-tight">비중 합계가 100%여야 합니다</p>
                   </div>
-                  <p className="text-[11px] text-slate-600 font-bold uppercase tracking-widest">
+                  <p className="text-sm text-slate-600 font-bold uppercase tracking-widest">
                     Need Adjustment: {(100 - analysis.totalWeight).toFixed(1)}%
                   </p>
                 </>
               ) : (
                 <div className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 animate-bounce">
                   <CheckCircle2 className="text-emerald-400" size={24} />
-                  <p className="text-xl text-emerald-400 font-black tracking-tight uppercase">Ready to Save & Simulate</p>
+                  <p className="text-2xl text-emerald-400 font-black tracking-tight uppercase">Ready to Save & Simulate</p>
                 </div>
               )}
             </div>

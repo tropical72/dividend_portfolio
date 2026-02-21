@@ -239,76 +239,75 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   <button onClick={(e) => toggleSelect(e, p.id)} role="checkbox" aria-checked={isSelected} className={cn("p-2 rounded-xl transition-all", isSelected ? "text-emerald-400 bg-emerald-500/10" : "text-slate-700 hover:text-slate-500")}>
                     {isSelected ? <CheckSquare size={24} /> : <Square size={24} />}
                   </button>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
-                      <span className={cn(
-                        "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all duration-500",
-                        (p.account_type?.toLowerCase() === "pension") 
-                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]" 
-                          : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                      )}>
-                        {p.account_type || "Personal"} Account
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                      <span>{items.length} Assets</span>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
-                      <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
-                        USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button onClick={(e) => handleLoad(e, p)} className="hidden md:flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-xs font-black rounded-2xl transition-all border border-emerald-500/20"><Edit3 size={16} /> Load into Designer</button>
-                  <button onClick={(e) => handleDelete(e, p.id)} className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"><Trash2 size={20} /></button>
-                  <div className="p-2 text-slate-600">{isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}</div>
-                </div>
-              </div>
-
-              {/* 4. Detailed View [REQ-PRT-06.2] */}
-              <div className={cn("portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40", isExpanded ? "max-h-[2000px] opacity-100 p-8" : "max-h-0 opacity-0")}>
-                <div className="space-y-6">
-                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><PieChart size={14} /> Individual Asset Performance (Based on Simulation Capital)</h4>
-                  <div className="rounded-[2rem] border border-slate-800 overflow-hidden shadow-inner bg-slate-900/20">
-                    <table className="w-full text-left text-[11px] border-collapse">
-                      <thead className="bg-slate-800/40 text-slate-500 font-black uppercase tracking-widest">
-                        <tr>
-                          <th className="py-4 px-6">Ticker</th>
-                          <th className="py-4 px-4 text-right">Weight</th>
-                          <th className="py-4 px-4 text-right border-l border-slate-800/50 text-emerald-500/70">Annual (USD)</th>
-                          <th className="py-4 px-4 text-right text-emerald-500/70">Annual (KRW)</th>
-                          <th className="py-4 px-4 text-right border-l border-slate-800/50 text-blue-400/70">Monthly (USD)</th>
-                          <th className="py-4 px-6 text-right text-blue-400/70">Monthly (KRW)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/30">
-                        {items.map((item, idx) => {
-                          const itemAlloc = capitalUsd * (item.weight / 100);
-                          const shares = itemAlloc / (item.price || 1);
-                          const annualUsd = shares * (item.last_div_amount * (item.payment_months?.length || 0));
-                          const annualKrw = annualUsd * exchangeRate;
-                          
-                          return (
-                            <tr key={idx} className="hover:bg-slate-800/30 transition-colors group">
-                              <td className="py-4 px-6 font-bold text-slate-200">
-                                <div className="flex flex-col">
-                                  <span className="text-emerald-400 font-black text-sm">{item.symbol}</span>
-                                  <span className="text-[9px] text-slate-500 truncate max-w-[120px]">{item.name}</span>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4 text-right font-black text-slate-400 group-hover:text-slate-200">{item.weight.toFixed(1)}%</td>
-                              <td className="py-4 px-4 text-right border-l border-slate-800/50 font-black text-slate-100">${annualUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                              <td className="py-4 px-4 text-right font-bold text-slate-300">₩{Math.round(annualKrw).toLocaleString()}</td>
-                              <td className="py-4 px-4 text-right border-l border-slate-800/50 font-black text-emerald-400">${(annualUsd/12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                              <td className="py-4 px-6 text-right font-bold text-emerald-500">₩{Math.round(annualKrw/12).toLocaleString()}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                      <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                          <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
+                                          <span className={cn(
+                                            "px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border transition-all duration-500",
+                                            (p.account_type?.toLowerCase() === "pension") 
+                                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]" 
+                                              : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                                          )}>
+                                            {p.account_type || "Personal"} Account
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest">
+                                          <span>{items.length} Assets</span>
+                                          <div className="w-1 h-1 rounded-full bg-slate-700" />
+                                          <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
+                                            USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                      <button onClick={(e) => handleLoad(e, p)} className="hidden md:flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-sm font-black rounded-2xl transition-all border border-emerald-500/20"><Edit3 size={16} /> Load into Designer</button>
+                                      <button onClick={(e) => handleDelete(e, p.id)} className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"><Trash2 size={20} /></button>
+                                      <div className="p-2 text-slate-600">{isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}</div>
+                                    </div>
+                                  </div>
+                  
+                                  {/* 4. Detailed View [REQ-PRT-06.2] */}
+                                  <div className={cn("portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40", isExpanded ? "max-h-[2000px] opacity-100 p-8" : "max-h-0 opacity-0")}>
+                                    <div className="space-y-6">
+                                      <h4 className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2"><PieChart size={16} /> Individual Asset Performance (Based on Simulation Capital)</h4>
+                                      <div className="rounded-[2rem] border border-slate-800 overflow-hidden shadow-inner bg-slate-900/20">
+                                        <table className="w-full text-left text-sm border-collapse">
+                                          <thead className="bg-slate-800/40 text-slate-500 font-black uppercase tracking-widest">
+                                            <tr>
+                                              <th className="py-5 px-6">Ticker</th>
+                                              <th className="py-5 px-4 text-right">Weight</th>
+                                              <th className="py-5 px-4 text-right border-l border-slate-800/50 text-emerald-500/70">Annual (USD)</th>
+                                              <th className="py-5 px-4 text-right text-emerald-500/70">Annual (KRW)</th>
+                                              <th className="py-5 px-4 text-right border-l border-slate-800/50 text-blue-400/70">Monthly (USD)</th>
+                                              <th className="py-5 px-6 text-right text-blue-400/70">Monthly (KRW)</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-800/30">
+                                            {items.map((item, idx) => {
+                                              const itemAlloc = capitalUsd * (item.weight / 100);
+                                              const shares = itemAlloc / (item.price || 1);
+                                              const annualUsd = shares * (item.last_div_amount * (item.payment_months?.length || 0));
+                                              const annualKrw = annualUsd * exchangeRate;
+                                              
+                                              return (
+                                                <tr key={idx} className="hover:bg-slate-800/30 transition-colors group">
+                                                  <td className="py-5 px-6 font-bold text-slate-200">
+                                                    <div className="flex flex-col">
+                                                      <span className="text-emerald-400 font-black text-base">{item.symbol}</span>
+                                                      <span className="text-xs text-slate-500 truncate max-w-[150px]">{item.name}</span>
+                                                    </div>
+                                                  </td>
+                                                  <td className="py-5 px-4 text-right font-black text-slate-400 group-hover:text-slate-200">{item.weight.toFixed(1)}%</td>
+                                                  <td className="py-5 px-4 text-right border-l border-slate-800/50 font-black text-slate-100">${annualUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                  <td className="py-5 px-4 text-right font-bold text-slate-300">₩{Math.round(annualKrw).toLocaleString()}</td>
+                                                  <td className="py-5 px-4 text-right border-l border-slate-800/50 font-black text-emerald-400">${(annualUsd/12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                  <td className="py-5 px-6 text-right font-bold text-emerald-500">₩{Math.round(annualKrw/12).toLocaleString()}</td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>                  </div>
                 </div>
               </div>
             </div>
