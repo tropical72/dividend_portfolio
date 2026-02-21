@@ -36,6 +36,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
 
   // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
+  const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
 
   // 데이터 로드
@@ -56,6 +57,13 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   const handleGlobalUsdChange = (val: string) => {
     const num = parseFloat(val.replace(/[^0-9.]/g, "")) || 0;
     setGlobalCapitalUsd(num);
+    setGlobalCurrency("USD");
+  };
+
+  const handleGlobalKrwChange = (val: string) => {
+    const num = parseFloat(val.replace(/[^0-9.]/g, "")) || 0;
+    setGlobalCapitalUsd(num / exchangeRate);
+    setGlobalCurrency("KRW");
   };
 
   /** 차트 데이터 계산 [REQ-PRT-06.4] */
@@ -73,15 +81,21 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
           if (item.payment_months.includes(m)) {
             const allocated = capital * (item.weight / 100);
             const shares = allocated / item.price;
-            return sum + (shares * item.last_div_amount);
+            let amt = (shares * item.last_div_amount);
+            
+            // 통화 환산 적용
+            if (globalCurrency === "KRW") {
+              amt = amt * exchangeRate;
+            }
+            return sum + amt;
           }
           return sum;
         }, 0);
-        dataPoint[p.name] = parseFloat(monthlySum.toFixed(2));
+        dataPoint[p.name] = parseFloat(monthlySum.toFixed(globalCurrency === "KRW" ? 0 : 2));
       });
       return dataPoint;
     });
-  }, [portfolios, selectedIds, globalCapitalUsd]);
+  }, [portfolios, selectedIds, globalCapitalUsd, globalCurrency, exchangeRate]);
 
   /** 선택 핸들러 */
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -137,7 +151,10 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 placeholder="Global USD Capital"
                 value={globalCapitalUsd?.toLocaleString() || ""}
                 onChange={(e) => handleGlobalUsdChange(e.target.value)}
-                className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all"
+                className={cn(
+                  "w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all",
+                  globalCurrency === "USD" && globalCapitalUsd !== null && "ring-2 ring-emerald-500/20 border-emerald-500/40"
+                )}
               />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
             </div>
@@ -146,14 +163,17 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 type="text"
                 placeholder="Global KRW Capital"
                 value={globalCapitalUsd ? (globalCapitalUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 }) : ""}
-                readOnly
-                className="w-full bg-slate-950/20 border border-slate-800/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-500 outline-none cursor-not-allowed"
+                onChange={(e) => handleGlobalKrwChange(e.target.value)}
+                className={cn(
+                  "w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all",
+                  globalCurrency === "KRW" && globalCapitalUsd !== null && "ring-2 ring-emerald-500/20 border-emerald-500/40"
+                )}
               />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">₩</span>
             </div>
             {globalCapitalUsd !== null && (
               <button 
-                onClick={() => setGlobalCapitalUsd(null)}
+                onClick={() => { setGlobalCapitalUsd(null); setGlobalCurrency("USD"); }}
                 className="p-3 text-slate-500 hover:text-emerald-400 transition-colors"
                 title="Reset to Original"
               >
@@ -170,9 +190,11 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
           <div className="flex items-center justify-between mb-10">
             <div>
               <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
-                <BarChart3 className="text-emerald-400" size={24} /> Monthly Dividend Comparison
+                <BarChart3 className="text-emerald-400" size={24} /> Monthly Dividend Comparison ({globalCurrency})
               </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">Aggregated income across selected portfolios (USD)</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">
+                Aggregated income in {globalCurrency === "USD" ? "Dollars ($)" : "Won (₩)"}
+              </p>
             </div>
             <button 
               onClick={() => setSelectedIds(new Set())}
@@ -195,7 +217,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                  tickFormatter={(val) => `$${val}`}
+                  tickFormatter={(val) => globalCurrency === "USD" ? `$${val}` : `₩${(val/10000).toFixed(0)}만`}
                 />
                 <Tooltip 
                   cursor={{ fill: '#1e293b', opacity: 0.4 }}
@@ -207,6 +229,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   }}
                   itemStyle={{ fontWeight: 800, fontSize: '12px' }}
                   labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 900, fontSize: '10px', textTransform: 'uppercase' }}
+                  formatter={(val) => [globalCurrency === "USD" ? `$${val.toLocaleString()}` : `₩${val.toLocaleString()}`, "Expected Income"]}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '30px' }}
@@ -280,19 +303,21 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       <TrendingUp size={24} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-3 mb-1">
                         <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
                         <span className={cn(
-                          "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter",
-                          p.account_type === "Pension" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                          "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border",
+                          p.account_type === "Pension" 
+                            ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]" 
+                            : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
                         )}>
-                          {p.account_type || "Personal"}
+                          {p.account_type || "Personal"} Account
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                         <span>{p.items.length} Assets</span>
                         <div className="w-1 h-1 rounded-full bg-slate-700" />
-                        <span className={cn(globalCapitalUsd !== null && "text-emerald-400")}>
+                        <span className={cn(globalCapitalUsd !== null && "text-emerald-400 font-black underline underline-offset-4 decoration-emerald-500/30")}>
                           {p.currency} {(globalCapitalUsd ?? p.total_capital).toLocaleString()}
                         </span>
                       </div>

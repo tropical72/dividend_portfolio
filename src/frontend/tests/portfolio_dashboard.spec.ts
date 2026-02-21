@@ -91,12 +91,31 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
   test("should update all portfolio figures when global capital is changed", async ({ page }) => {
     // 1. 전역 투자금 입력란 확인
     const globalUsdInput = page.getByPlaceholder(/Global USD Capital/i);
+    const globalKrwInput = page.getByPlaceholder(/Global KRW Capital/i);
     await expect(globalUsdInput).toBeVisible();
+    await expect(globalKrwInput).toBeVisible();
     
-    // 2. 투자금 변경
+    // 2. USD 투자금 변경 및 KRW 동기화 확인
     await globalUsdInput.fill("100000");
-    
-    // 3. 포트폴리오 카드 내의 수치가 반영되었는지 확인
     await expect(page.getByText(/USD 100,000/i).first()).toBeVisible();
+    
+    // 3. KRW 투자금 변경 및 USD 동기화 확인 (구현 예정)
+    await globalKrwInput.fill("142550000"); // 142,550,000 KRW
+    // 100,000 USD 근처인지 확인 (환율 1425.5 기준)
+    await expect(globalUsdInput).toHaveValue("100,000");
+  });
+
+  test("should match chart currency with simulator input", async ({ page }) => {
+    // 1. 체크박스 선택하여 차트 활성화
+    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName }).first();
+    await testCard.locator("button[role='checkbox']").click();
+
+    // 2. 기본 USD 차트 확인
+    await expect(page.locator(".comparison-chart-container")).toContainText("$");
+
+    // 3. KRW 입력 시 차트 단위가 ₩로 변경되는지 확인 (구현 예정)
+    const globalKrwInput = page.getByPlaceholder(/Global KRW Capital/i);
+    await globalKrwInput.fill("1000000");
+    await expect(page.locator(".comparison-chart-container")).toContainText("₩");
   });
 });

@@ -14,6 +14,10 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
   const [accountType, setAccountType] = useState<"Personal" | "Pension">("Personal");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // 수동 추가 모달 상태
+  const [manualAdd, setManualAdd] = useState<{ category: PortfolioItem["category"] | null }>({ category: null });
+  const [manualForm, setManualForm] = useState({ symbol: "", name: "", weight: 0 });
+
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
   const [exchangeRate, setExchangeRate] = useState<number>(1420); // 기본값
@@ -45,6 +49,30 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
     setItems(p.items);
     setActiveSubTab("design");
     showStatus(`"${p.name}" 로드 완료`, "success");
+  };
+
+  /** 수동 종목 추가 실행 */
+  const handleAddManualItem = () => {
+    if (!manualForm.symbol || !manualForm.name || !manualAdd.category) {
+      showStatus("티커와 종목명을 입력해주세요.", "error");
+      return;
+    }
+
+    const newItem: PortfolioItem = {
+      symbol: manualForm.symbol.toUpperCase(),
+      name: manualForm.name,
+      category: manualAdd.category,
+      weight: manualForm.weight,
+      price: 100, // 기본값
+      dividend_yield: 0,
+      last_div_amount: 0,
+      payment_months: []
+    };
+
+    setItems(prev => [...prev, newItem]);
+    setManualAdd({ category: null });
+    setManualForm({ symbol: "", name: "", weight: 0 });
+    showStatus("종목이 추가되었습니다.", "success");
   };
 
   /** 전체 비중 및 분석 데이터 실시간 계산 [REQ-PRT-01.3, 03.4] */
@@ -168,6 +196,60 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
         )}>
           {status.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           {status.message}
+        </div>
+      )}
+
+      {/* 수동 추가 모달 [GS-UI-03] */}
+      {manualAdd.category && (
+        <div className="fixed inset-0 z-[300] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-slate-50 mb-2">Add Asset Manually</h3>
+            <p className="text-xs text-slate-500 mb-8 uppercase tracking-widest font-bold">Category: {manualAdd.category}</p>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Ticker Symbol</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. AAPL"
+                  value={manualForm.symbol}
+                  onChange={e => setManualForm({...manualForm, symbol: e.target.value})}
+                  className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Stock Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Apple Inc."
+                  value={manualForm.name}
+                  onChange={e => setManualForm({...manualForm, name: e.target.value})}
+                  className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Allocation Weight (%)</label>
+                <input 
+                  type="number" 
+                  placeholder="0"
+                  value={manualForm.weight || ""}
+                  onChange={e => setManualForm({...manualForm, weight: parseFloat(e.target.value) || 0})}
+                  className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-10">
+              <button 
+                onClick={() => setManualAdd({ category: null })}
+                className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+              >Cancel</button>
+              <button 
+                onClick={handleAddManualItem}
+                className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+              >Add Asset</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -354,7 +436,10 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
                         {catWeight.toFixed(1)}%
                       </div>
                     </div>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-[10px] uppercase tracking-wider">
+                    <button 
+                      onClick={() => setManualAdd({ category: cat.id })}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-[10px] uppercase tracking-wider"
+                    >
                       <PlusCircle size={16} /> Add Manually
                     </button>
                   </div>
