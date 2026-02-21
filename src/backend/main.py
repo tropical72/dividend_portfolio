@@ -31,6 +31,8 @@ class SettingsRequest(BaseModel):
     openai_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
     default_investment_goal: Optional[str] = None
+    default_capital: Optional[float] = 10000.0
+    default_currency: Optional[str] = "USD"
 
 
 class PortfolioRequest(BaseModel):

@@ -105,35 +105,13 @@ function App() {
 
       {/* 메인 컨텐츠 영역 */}
       <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
-        {/* 상단 Stat Cards: 요약 정보 표시 */}
-        <header className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <StatCard
-            label="Total Assets"
-            value="$124,500.00"
-            subValue="+2.4% vs last month"
-            icon={<DollarSign className="text-emerald-400" />}
-          />
-          <StatCard
-            label="Annual Dividend"
-            value="$5,240.00"
-            subValue="Yield: 4.21%"
-            icon={<TrendingUp className="text-emerald-400" />}
-          />
-          <StatCard
-            label="Monthly Income"
-            value="$436.67"
-            subValue="Next pay: Oct 15"
-            icon={<Wallet className="text-emerald-400" />}
-          />
-        </header>
-
         {/* 메인 섹션 */}
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
           <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
             <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
           <div className={cn(activeTab === "portfolio" ? "block" : "hidden")}>
-            <PortfolioTab items={designItems} setItems={setDesignItems} />
+            <PortfolioTab items={designItems} setItems={setDesignItems} activeTab={activeTab} />
           </div>
           <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
             <SettingsTab />
@@ -188,30 +166,6 @@ function NavButton({
       </span>
       <span className="font-medium">{label}</span>
     </button>
-  );
-}
-
-/** 통계 카드 컴포넌트 */
-function StatCard({
-  label,
-  value,
-  subValue,
-  icon,
-}: {
-  label: string;
-  value: string;
-  subValue: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl shadow-sm hover:border-slate-700 transition-colors">
-      <div className="flex justify-between items-start mb-4">
-        <span className="text-slate-400 font-medium">{label}</span>
-        <div className="p-2 bg-slate-800 rounded-lg">{icon}</div>
-      </div>
-      <div className="text-3xl font-bold text-slate-50 mb-1">{value}</div>
-      <div className="text-xs text-emerald-400 font-medium">{subValue}</div>
-    </div>
   );
 }
 

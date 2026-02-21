@@ -7,7 +7,15 @@ import { PortfolioDashboard } from "./PortfolioDashboard";
 /**
  * [REQ-PRT-01, 03, 06] 포트폴리오 설계 및 시뮬레이션 탭
  */
-export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>> }) {
+export function PortfolioTab({ 
+  items, 
+  setItems, 
+  activeTab 
+}: { 
+  items: PortfolioItem[], 
+  setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>,
+  activeTab: string
+}) {
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">("design");
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("My New Portfolio");
@@ -29,16 +37,36 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
     { id: "Growth", name: "Growth/Dividend Growth", color: "bg-emerald-400", textColor: "text-emerald-400" },
   ] as const;
 
-  /** 환율 로드 및 백엔드 동기화 */
+  /** 환율 로드 및 사용자 설정 동기화 [REQ-PRT-03] */
   useEffect(() => {
-    fetch("http://localhost:8000/api/settings")
-      .then(res => res.json())
-      .then(() => {
-        // 실제 환율 API 호출 로직 (추후 보강 가능)
-        setExchangeRate(1425.50);
-      })
-      .catch(console.error);
-  }, []);
+    // 탭이 포트폴리오가 아닐 때는 실행하지 않음
+    if (activeTab !== "portfolio") return;
+
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/settings");
+        const data = await res.json();
+        if (res.success && data.data) {
+          const rate = 1425.50; // 기본 환율
+          setExchangeRate(rate);
+
+          // 사용자가 설정한 기본 투자금 반영 (포트폴리오 ID가 없을 때만 - 새 포트폴리오 설계 시)
+          if (!portfolioId && data.data.default_capital) {
+            const capital = data.data.default_capital;
+            if (data.data.default_currency === "KRW") {
+              setCapitalUsd(capital / rate);
+            } else {
+              setCapitalUsd(capital);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, [activeTab, portfolioId]); // activeTab이 바뀔 때(탭 이동 시)마다 설정 다시 로드
 
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {
@@ -101,13 +129,13 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
 
   /** 통화별 입력 핸들러 [REQ-PRT-03.1, 03.2] */
   const handleUsdChange = (val: string) => {
-    const cleanVal = val.replace(/[^0-9.]/g, "");
+    const cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
     const num = parseFloat(cleanVal) || 0;
     setCapitalUsd(num);
   };
 
   const handleKrwChange = (val: string) => {
-    const cleanVal = val.replace(/[^0-9.]/g, "");
+    const cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
     const num = parseFloat(cleanVal) || 0;
     setCapitalUsd(num / exchangeRate);
   };
@@ -351,31 +379,29 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (USD)</label>
-                  <div className="relative group">
-                    <input 
-                      type="text"
-                      placeholder="USD Amount"
-                      value={capitalUsd.toLocaleString()}
-                      onChange={(e) => handleUsdChange(e.target.value)}
-                      className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
-                  <div className="relative group">
-                    <input 
-                      type="text"
-                      placeholder="KRW Amount"
-                      value={(capitalUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      onChange={(e) => handleKrwChange(e.target.value)}
-                      className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">₩</span>
-                  </div>
-                </div>
-              </div>
+                                <div className="relative group">
+                                  <input 
+                                    type="text"
+                                    placeholder="USD Amount"
+                                    value={Math.round(capitalUsd).toLocaleString()}
+                                    onChange={(e) => handleUsdChange(e.target.value)}
+                                    className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
+                                  />
+                                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+                                </div>                </div>
+                            <div className="space-y-3">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
+                              <div className="relative group">
+                                <input 
+                                  type="text"
+                                  placeholder="KRW Amount"
+                                  value={Math.round(capitalUsd * exchangeRate).toLocaleString()}
+                                  onChange={(e) => handleKrwChange(e.target.value)}
+                                  className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
+                                />
+                                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">₩</span>
+                              </div>
+                            </div>              </div>
               <p className="mt-4 text-[10px] text-slate-600 font-medium italic">
                 * 적용 환율: 1 USD = {exchangeRate.toLocaleString()} KRW (실시간 데이터 기준)
               </p>
