@@ -56,6 +56,12 @@ test.describe("Portfolio Editor UX - Basic Structure", () => {
     await expect(page.getByText(/포트폴리오 이름을 입력해주세요/i)).toBeVisible();
   });
 
+  test("should have account type selection (Personal/Pension)", async ({ page }) => {
+    // 계좌 유형 선택 버튼 또는 텍스트 확인
+    await expect(page.getByRole("button", { name: /Personal/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Pension/i })).toBeVisible();
+  });
+
   test("should show analysis results card", async ({ page }) => {
     await expect(page.getByText(/Expected Income/i)).toBeVisible();
     await expect(page.getByText(/Annual Dividend/i).first()).toBeVisible();

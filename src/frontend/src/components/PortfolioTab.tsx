@@ -11,6 +11,7 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">("design");
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("My New Portfolio");
+  const [accountType, setAccountType] = useState<"Personal" | "Pension">("Personal");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // 시뮬레이션 상태 [REQ-PRT-03]
@@ -39,6 +40,7 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
   const handleLoadPortfolio = (p: Portfolio) => {
     setPortfolioId(p.id);
     setPortfolioName(p.name);
+    setAccountType(p.account_type || "Personal");
     setCapitalUsd(p.total_capital);
     setItems(p.items);
     setActiveSubTab("design");
@@ -94,6 +96,7 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
       setItems([]);
       setPortfolioId(null);
       setPortfolioName("My New Portfolio");
+      setAccountType("Personal");
       setCapitalUsd(10000);
       showStatus("초기화되었습니다.", "success");
     }
@@ -123,6 +126,7 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: portfolioName,
+          account_type: accountType,
           items: items,
           total_capital: capitalUsd,
           currency: "USD"
@@ -196,13 +200,31 @@ export function PortfolioTab({ items, setItems }: { items: PortfolioItem[], setI
           {/* 상단 헤더 및 액션 버튼 */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex-1">
-              <input 
-                type="text"
-                value={portfolioName}
-                onChange={(e) => setPortfolioName(e.target.value)}
-                className="bg-transparent border-none outline-none text-3xl font-black text-slate-50 w-full focus:ring-2 focus:ring-emerald-500/20 rounded-lg px-2 -ml-2 transition-all tracking-tight"
-                placeholder="포트폴리오 이름을 입력하세요"
-              />
+              <div className="flex items-center gap-4 mb-2">
+                <input 
+                  type="text"
+                  value={portfolioName}
+                  onChange={(e) => setPortfolioName(e.target.value)}
+                  className="bg-transparent border-none outline-none text-3xl font-black text-slate-50 flex-1 focus:ring-2 focus:ring-emerald-500/20 rounded-lg px-2 -ml-2 transition-all tracking-tight"
+                  placeholder="포트폴리오 이름을 입력하세요"
+                />
+                <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
+                  <button 
+                    onClick={() => setAccountType("Personal")}
+                    className={cn(
+                      "px-4 py-1.5 text-[10px] font-black rounded-lg transition-all",
+                      accountType === "Personal" ? "bg-slate-800 text-blue-400 shadow-sm" : "text-slate-500 hover:text-slate-400"
+                    )}
+                  >Personal</button>
+                  <button 
+                    onClick={() => setAccountType("Pension")}
+                    className={cn(
+                      "px-4 py-1.5 text-[10px] font-black rounded-lg transition-all",
+                      accountType === "Pension" ? "bg-slate-800 text-amber-400 shadow-sm" : "text-slate-500 hover:text-slate-400"
+                    )}
+                  >Pension</button>
+                </div>
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">Design Mode</span>
                 <div className="h-1 w-1 rounded-full bg-slate-700" />

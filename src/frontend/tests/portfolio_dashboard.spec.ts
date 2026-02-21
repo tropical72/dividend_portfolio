@@ -5,7 +5,7 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
 
   test.beforeEach(async ({ page }) => {
     test.setTimeout(60000);
-    uniqueName = `Test Portfolio ${Date.now()}`;
+    uniqueName = `Test Portfolio ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     // 브라우저 로그 캡처
     page.on("console", msg => console.log(`BROWSER LOG: ${msg.text()}`));
@@ -15,6 +15,7 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await page.request.post("http://127.0.0.1:8000/api/portfolios", {
       data: {
         name: uniqueName,
+        account_type: "Personal",
         total_capital: 50000,
         currency: "USD",
         items: [
@@ -42,13 +43,16 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     // 대시보드 섹션이 존재하는지 확인
     await expect(page.getByText(/Saved Portfolios/i)).toBeVisible();
     
-    const portfolioCards = page.locator(".portfolio-card").filter({ hasText: uniqueName });
+    const portfolioCards = page.locator(".portfolio-card").filter({ hasText: uniqueName }).first();
     await expect(portfolioCards).toBeVisible();
+
+    // 계좌 유형 배지 확인 (기본값 Personal)
+    await expect(portfolioCards.getByText(/Personal/i)).toBeVisible();
   });
 
   test("should expand accordion to show details when clicked", async ({ page }) => {
     // 특정 이름을 가진 카드 찾기
-    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName });
+    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName }).first();
     await testCard.click();
     
     // 세부 정보(자산 구성 등)가 나타나는지 확인
@@ -58,7 +62,7 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
 
   test("should load portfolio into designer when Load button is clicked", async ({ page }) => {
     // 1. 특정 이름을 가진 카드 찾기 및 확장
-    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName });
+    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName }).first();
     await testCard.click();
     
     // 2. Load 버튼 클릭
@@ -74,18 +78,18 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
   });
 
   test("should display comparison chart when multiple portfolios are selected", async ({ page }) => {
-    // 1. 체크박스 선택 (구현 예정)
-    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName });
+    // 1. 체크박스 선택
+    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName }).first();
     const checkbox = testCard.locator("button[role='checkbox']");
     await checkbox.click();
     
-    // 2. 상단에 차트 영역이 나타나는지 확인 (구현 예정)
+    // 2. 상단에 차트 영역이 나타나는지 확인
     await expect(page.locator(".comparison-chart-container")).toBeVisible();
     await expect(page.getByText(/Monthly Dividend Comparison/i)).toBeVisible();
   });
 
   test("should update all portfolio figures when global capital is changed", async ({ page }) => {
-    // 1. 전역 투자금 입력란 확인 (구현 예정)
+    // 1. 전역 투자금 입력란 확인
     const globalUsdInput = page.getByPlaceholder(/Global USD Capital/i);
     await expect(globalUsdInput).toBeVisible();
     
@@ -93,7 +97,6 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await globalUsdInput.fill("100000");
     
     // 3. 포트폴리오 카드 내의 수치가 반영되었는지 확인
-    // globalCapitalUsd가 적용되면 카드에 해당 금액이 표시되어야 함
     await expect(page.getByText(/USD 100,000/i).first()).toBeVisible();
   });
 });

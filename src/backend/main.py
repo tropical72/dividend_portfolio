@@ -37,6 +37,7 @@ class PortfolioRequest(BaseModel):
     """포트폴리오 생성/수정 요청을 위한 데이터 모델"""
 
     name: str
+    account_type: Optional[str] = "Personal"
     total_capital: Optional[float] = 0.0
     currency: Optional[str] = "USD"
     items: Optional[list] = []

@@ -280,7 +280,15 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       <TrendingUp size={24} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-slate-50 tracking-tight mb-1">{p.name}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter",
+                          p.account_type === "Pension" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+                        )}>
+                          {p.account_type || "Personal"}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                         <span>{p.items.length} Assets</span>
                         <div className="w-1 h-1 rounded-full bg-slate-700" />
