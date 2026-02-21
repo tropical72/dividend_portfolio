@@ -18,6 +18,7 @@
 | **[REQ-WCH-03]** | **데이터 표시 및 정합성** | | | | | |
 | REQ-WCH-03.5 | 통화 단위 명시 (USD/KRW) | T-01-2.4 | - | Done | Pass | fb3841d |
 | REQ-WCH-03.6 | 컬럼 정합성 (Last Amt 추가) | T-01-2.4 | - | Done | Pass | fb3841d |
+| REQ-WCH-03.7 | 수익률 방식 명시 (TTM) | T-01-2.4 | - | Done | Pass | (Pending) |
 | **[REQ-WCH-04]** | **배당 데이터 보정 및 판별** | | | | | |
 | REQ-WCH-04.1 | DART API Source of Truth 적용 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |
 | REQ-WCH-04.2 | 한국식 배당 주기 (분기/반기) 보정 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |

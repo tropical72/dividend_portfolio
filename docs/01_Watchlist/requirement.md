@@ -28,6 +28,7 @@
 - **[REQ-WCH-03.4] 금액 포맷팅:** 모든 주가 및 배당금은 [GS-UI-01] 표준 포맷을 따름.
 - **[REQ-WCH-03.5] 통화 단위 명시:** Price, Last Amt, Monthly 컬럼 등 금액 데이터에는 해당 종목의 통화 단위(USD/KRW)를 반드시 병기함.
 - **[REQ-WCH-03.6] 컬럼 정합성:** 모든 데이터 필드(Ticker, Name, Price, Yield, Cycle, 1-Yr Rtn, Ex-Div, Last Amt, Monthly)는 대응하는 헤더를 가져야 함.
+- **[REQ-WCH-03.7] 수익률 방식 명시:** Yield 컬럼 헤더에 TTM(Trailing Twelve Months) 방식을 명시하여, 주식 페이지(Forward 방식)와의 수치 차이에 대한 사용자의 혼동을 방지함.
 
 ## [REQ-WCH-04] 한국 종목 및 ETF 데이터 특화 [D-03 대응]
 - **[REQ-WCH-04.1] Source of Truth:** 한국 일반 종목(.KS, .KQ)은 DART(OpenDart)를 최우선으로 하며, yfinance는 보조 수단으로 활용함.

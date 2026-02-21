@@ -298,7 +298,10 @@ export function WatchlistTab() {
                 <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Price <SortIcon columnKey="price" /></div>
               </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_yield")}>
-                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Yield <SortIcon columnKey="dividend_yield" /></div>
+                <div className="flex flex-col items-end leading-tight">
+                  <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Yield <SortIcon columnKey="dividend_yield" /></div>
+                  <span className="text-[8px] opacity-60 font-normal mr-4">TTM</span>
+                </div>
               </th>
               <th className="px-4 py-5 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_frequency")}>
                 <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[10px]">Cycle <SortIcon columnKey="dividend_frequency" /></div>
