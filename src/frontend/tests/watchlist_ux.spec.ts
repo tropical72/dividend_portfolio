@@ -77,4 +77,21 @@ test.describe("Watchlist UX - Sorting and Context Menu", () => {
     await cancelBtn.click({ force: true });
     await expect(confirmBtn).not.toBeVisible();
   });
+
+  test("should persist watchlist data when switching tabs", async ({ page }) => {
+    // [D-07] 탭 전환 시 데이터 유실 방지 검증
+    // 1. AAPL이 이미 추가된 상태임을 확인 (beforeEach에서 추가됨)
+    await expect(page.locator("tbody")).toContainText("AAPL");
+
+    // 2. Portfolio 탭으로 전환
+    await page.getByRole("button", { name: /Portfolio/i }).click();
+    await expect(page.getByText("Portfolio 컨텐츠가 여기에 구현될 예정입니다.")).toBeVisible();
+
+    // 3. 다시 Watchlist 탭으로 복귀
+    await page.getByRole("button", { name: /Watchlist/i }).click();
+
+    // 4. 데이터가 여전히 남아있는지 확인
+    await expect(page.locator("tbody")).toContainText("AAPL");
+    await expect(page.locator("tbody")).toContainText("MSFT");
+  });
 });

@@ -11,13 +11,10 @@ class DividendBackend:
     """
 
     def __init__(self, data_dir: str = ".") -> None:
-        self.storage = StorageManager()
-        self.data_dir = data_dir
-        self.watchlist_file = os.path.join(data_dir, "watchlist.json")
-        self.settings_file = os.path.join(data_dir, "settings.json")
-
-        if data_dir != "." and not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+        self.storage = StorageManager(data_dir=data_dir)
+        self.data_dir = os.path.abspath(data_dir)
+        self.watchlist_file = "watchlist.json"
+        self.settings_file = "settings.json"
 
         self.settings = self.storage.load_json(self.settings_file, {})
         dart_key = self.settings.get("dart_api_key")

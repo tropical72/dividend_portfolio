@@ -103,20 +103,20 @@ function App() {
 
         {/* 메인 섹션 */}
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
-          {activeTab === "watchlist" ? (
+          <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
             <WatchlistTab />
-          ) : activeTab === "settings" ? (
+          </div>
+          <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
             <SettingsTab />
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-              </h2>
-              <div className="h-96 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
-                {activeTab} 컨텐츠가 여기에 구현될 예정입니다.
-              </div>
-            </>
-          )}
+          </div>
+          <div className={cn(!["watchlist", "settings"].includes(activeTab) ? "block" : "hidden")}>
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </h2>
+            <div className="h-96 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
+              {activeTab} 컨텐츠가 여기에 구현될 예정입니다.
+            </div>
+          </div>
         </div>
       </main>
     </div>
