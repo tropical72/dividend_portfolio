@@ -66,8 +66,17 @@ class DividendBackend:
                 return {"success": True, "message": f"{removed['name']} 삭제됨"}
         return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
 
-    def analyze_portfolio(self, p_id: str) -> Dict[str, Any]:
-        """포트폴리오의 실시간 분석 결과를 반환합니다. [REQ-PRT-03.4]"""
+    def update_portfolio(self, p_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """특정 포트폴리오의 정보를 업데이트합니다. [REQ-PRT-04.2]"""
+        for p in self.portfolios:
+            if p["id"] == p_id:
+                p.update(updates)
+                self.storage.save_json(self.portfolios_file, self.portfolios)
+                return {"success": True, "data": p}
+        return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
+
+    def analyze_portfolio(self, p_id: str, mode: str = "TTM") -> Dict[str, Any]:
+        """포트폴리오의 실시간 분석 결과를 반환합니다. [REQ-PRT-03.4, 05.1]"""
         portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
         if not portfolio:
             return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
@@ -79,37 +88,80 @@ class DividendBackend:
         total_weight = sum(item.get("weight", 0.0) for item in items)
         weighted_yield = 0.0
         
-        # 각 종목의 최신 배당 수익률 반영
+        # 월별 배당금 합계 저장 (1~12월)
+        monthly_distribution = {m: 0.0 for m in range(1, 13)}
+        
         for item in items:
-            # 팁: 실제 앱에서는 성능을 위해 캐싱된 데이터를 사용하거나 별도 업데이트 로직 필요
-            # 여기서는 로직 구현에 집중함
-            w = item.get("weight", 0.0)
-            y = item.get("dividend_yield", 0.0)
-            weighted_yield += (w / 100.0) * y if total_weight > 0 else 0.0
+            symbol = item.get("symbol")
+            weight = item.get("weight", 0.0)
+            if weight <= 0:
+                continue
+            
+            # 종목의 할당 금액 (포트폴리오 통화 기준)
+            allocated_amount = total_capital * (weight / 100.0)
+            
+            # 종목의 기본 정보 및 수익률 (저장된 값 사용 - 필요시 refresh 로직 추가)
+            ticker_yield = item.get("dividend_yield", 0.0)
+            weighted_yield += (weight / 100.0) * ticker_yield if total_weight > 0 else 0.0
 
-        expected_annual_usd = total_capital * (weighted_yield / 100.0)
-        if portfolio.get("currency") == "KRW":
-            # KRW 포트폴리오인 경우 원화 기준으로 먼저 계산
-            annual_income_krw = expected_annual_usd
-            annual_income_usd = annual_income_krw / usd_krw_rate
+            # 월별 분포 계산
+            if mode == "Forward":
+                # Forward: Last Amt * Months
+                months = item.get("payment_months", [])
+                last_amt = item.get("last_div_amount", 0.0)
+                price = item.get("price", 1.0)
+                if price > 0:
+                    # (할당금 / 주가) = 보유 주식 수
+                    shares = allocated_amount / price
+                    for m in months:
+                        monthly_distribution[m] += shares * last_amt
+            else:
+                # TTM: 실제 과거 1년 합산
+                monthly_map = self.data_provider.get_monthly_dividend_map(symbol)
+                price = item.get("price", 1.0)
+                if price > 0:
+                    shares = allocated_amount / price
+                    for m, amt in monthly_map.items():
+                        monthly_distribution[m] += shares * amt
+
+        # 통화 환산 (KRW 기준)
+        p_currency = portfolio.get("currency", "USD")
+        
+        def to_krw(amt):
+            return amt * usd_krw_rate if p_currency == "USD" else amt
+
+        # 최종 요약 계산
+        annual_income_val = total_capital * (weighted_yield / 100.0)
+        
+        # 통화별 연간 수입 계산
+        if p_currency == "USD":
+            annual_usd = annual_income_val
+            annual_krw = annual_income_val * usd_krw_rate
         else:
-            # USD 포트폴리오인 경우
-            annual_income_usd = expected_annual_usd
-            annual_income_krw = annual_income_usd * usd_krw_rate
+            annual_krw = annual_income_val
+            annual_usd = annual_income_val / usd_krw_rate
 
         return {
             "success": True,
             "data": {
                 "total_weight": total_weight,
                 "weighted_yield": weighted_yield,
-                "expected_annual_income": {
-                    "usd": annual_income_usd,
-                    "krw": annual_income_krw
+                "mode": mode,
+                "currency": p_currency,
+                "exchange_rate": usd_krw_rate,
+                "summary": {
+                    "annual": {
+                        "usd": annual_usd,
+                        "krw": annual_krw
+                    }
                 },
-                "expected_monthly_income": {
-                    "usd": annual_income_usd / 12.0,
-                    "krw": annual_income_krw / 12.0
-                }
+                "monthly_chart": [
+                    {
+                        "month": m,
+                        "amount_krw": to_krw(amt),
+                        "amount_origin": amt
+                    } for m, amt in monthly_distribution.items()
+                ]
             }
         }
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""

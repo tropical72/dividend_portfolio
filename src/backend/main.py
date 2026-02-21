@@ -124,7 +124,14 @@ async def delete_portfolio(p_id: str):
     return backend.remove_portfolio(p_id)
 
 
+@app.patch("/api/portfolios/{p_id}")
+async def update_portfolio(p_id: str, req: PortfolioRequest):
+    """특정 포트폴리오의 정보를 업데이트합니다."""
+    updates = req.model_dump(exclude_none=True)
+    return backend.update_portfolio(p_id, updates)
+
+
 @app.get("/api/portfolios/{p_id}/analysis")
-async def analyze_portfolio(p_id: str):
+async def analyze_portfolio(p_id: str, mode: str = "TTM"):
     """포트폴리오 실시간 분석 결과를 반환합니다."""
-    return backend.analyze_portfolio(p_id)
+    return backend.analyze_portfolio(p_id, mode=mode)

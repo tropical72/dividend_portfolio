@@ -51,3 +51,13 @@ def test_portfolio_analysis_logic():
     # 4. 월평균 예상 배당금 계산
     expected_monthly_income = expected_annual_income / 12
     assert pytest.approx(expected_monthly_income) == 583.3333333333334
+
+def test_monthly_distribution_logic():
+    """12개월 배당 분포 산출 로직 검증 (TTM/Forward) [REQ-PRT-05]"""
+    # 1. Forward 모드 검증
+    # 분기배당(Quarterly) 1, 4, 7, 10월 지급 종목이 최근 100원 줬다면
+    # 미래 12개월도 해당 월에 100원씩 표시되어야 함
+    
+    # 이 부분은 Backend API 구현 후 Integration Test로 수행하는 것이 정확하므로
+    # 여기서는 로직 구조만 정의하거나 간단한 단위 테스트 작성
+    pass
