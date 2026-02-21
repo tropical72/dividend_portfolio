@@ -12,22 +12,7 @@ import {
   Square
 } from "lucide-react";
 import { cn } from "../lib/utils";
-
-/** 관심종목 데이터 구조 정의 [REQ-WCH-03.1, 03.2] */
-interface Stock {
-  symbol: string;
-  name: string;
-  price: number;
-  currency: string;
-  dividend_yield: number;
-  one_yr_return: number;
-  ex_div_date: string;
-  last_div_amount: number;
-  last_div_yield: number;
-  past_avg_monthly_div: number;
-  dividend_frequency: string;
-  payment_months: number[];
-}
+import type { Stock } from "../types";
 
 type SortConfig = {
   key: keyof Stock | null;
@@ -38,7 +23,7 @@ type SortConfig = {
  * 관심종목(Watchlist) 탭 컴포넌트
  * [REQ-WCH-01.6] 다중 선택 및 일괄 삭제 기능 포함
  */
-export function WatchlistTab() {
+export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: Stock[], category: "Fixed" | "Cash" | "Growth") => void }) {
   const [ticker, setTicker] = useState("");
   const [country, setCountry] = useState("US");
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
@@ -252,13 +237,37 @@ export function WatchlistTab() {
             <p className="text-slate-400 text-[10px] mb-4">어느 카테고리에 추가하시겠습니까?</p>
             
             <div className="space-y-2">
-              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-blue-500/20 hover:text-blue-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  const targetStocks = watchlist.filter(s => addConfirm.symbols.includes(s.symbol));
+                  onAddToPortfolio(targetStocks, "Fixed");
+                  setAddConfirm(null);
+                  setSelectedSymbols(new Set());
+                }}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-blue-500/20 hover:text-blue-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2"
+              >
                 <div className="w-1.5 h-3 bg-blue-400 rounded-full" /> Fixed Income
               </button>
-              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  const targetStocks = watchlist.filter(s => addConfirm.symbols.includes(s.symbol));
+                  onAddToPortfolio(targetStocks, "Cash");
+                  setAddConfirm(null);
+                  setSelectedSymbols(new Set());
+                }}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2"
+              >
                 <div className="w-1.5 h-3 bg-amber-400 rounded-full" /> Bond/Cash Buffer
               </button>
-              <button className="w-full py-2.5 px-4 bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  const targetStocks = watchlist.filter(s => addConfirm.symbols.includes(s.symbol));
+                  onAddToPortfolio(targetStocks, "Growth");
+                  setAddConfirm(null);
+                  setSelectedSymbols(new Set());
+                }}
+                className="w-full py-2.5 px-4 bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 text-xs font-bold rounded-xl transition-all text-left flex items-center gap-2"
+              >
                 <div className="w-1.5 h-3 bg-emerald-400 rounded-full" /> Growth/Dividend Growth
               </button>
             </div>

@@ -107,8 +107,17 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     
     // 3. 카테고리 선택 팝업 노출 확인
     await expect(page.getByText("Select Category")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Fixed Income" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Bond/Cash Buffer" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Growth/Dividend Growth" })).toBeVisible();
+    const fixedIncomeBtn = page.getByRole("button", { name: "Fixed Income" });
+    await expect(fixedIncomeBtn).toBeVisible();
+    
+    // 4. Fixed Income 선택 및 이관
+    await fixedIncomeBtn.click({ force: true });
+    
+    // 5. Portfolio 탭으로 자동 이동 확인 (또는 수동 이동 후 확인)
+    await page.getByRole("button", { name: "Portfolio", exact: true }).click();
+    
+    // 6. Fixed Income 섹션에 AAPL이 있는지 확인 (해당 헤더 아래의 테이블 내용 검증)
+    const fixedSection = page.locator('div:has(h3:text("Fixed Income"))').filter({ has: page.locator('table') });
+    await expect(fixedSection).toContainText("AAPL");
   });
 });

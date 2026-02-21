@@ -11,6 +11,7 @@ import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
+import type { PortfolioItem, Stock } from "./types";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -18,6 +19,9 @@ import { PortfolioTab } from "./components/PortfolioTab";
 function App() {
   const [activeTab, setActiveTab] = useState("watchlist");
   const [health, setHealth] = useState<string>("checking...");
+  
+  // [NEW] 포트폴리오 설계 중인 항목들
+  const [designItems, setDesignItems] = useState<PortfolioItem[]>([]);
 
   useEffect(() => {
     // 백엔드 연결 상태 확인
@@ -26,6 +30,27 @@ function App() {
       .then((data) => setHealth(data.status))
       .catch(() => setHealth("offline"));
   }, []);
+
+  /** Watchlist에서 종목들을 포트폴리오로 이관하는 핸들러 [REQ-PRT-02.1] */
+  const handleAddToPortfolio = (newStocks: Stock[], category: PortfolioItem["category"]) => {
+    setDesignItems(prev => {
+      const existingSymbols = new Set(prev.map(i => i.symbol));
+      const itemsToAdd = newStocks
+        .filter(s => !existingSymbols.has(s.symbol))
+        .map(s => ({
+          symbol: s.symbol,
+          name: s.name,
+          category: category,
+          weight: 0, // 초기 비중 0
+          price: s.price,
+          dividend_yield: s.dividend_yield,
+          last_div_amount: s.last_div_amount,
+          payment_months: s.payment_months
+        }));
+      return [...prev, ...itemsToAdd];
+    });
+    setActiveTab("portfolio"); // 자동 탭 전환
+  };
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -105,10 +130,10 @@ function App() {
         {/* 메인 섹션 */}
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
           <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
-            <WatchlistTab />
+            <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
           <div className={cn(activeTab === "portfolio" ? "block" : "hidden")}>
-            <PortfolioTab />
+            <PortfolioTab items={designItems} setItems={setDesignItems} />
           </div>
           <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
             <SettingsTab />
@@ -142,6 +167,8 @@ function NavButton({
   return (
     <button
       onClick={onClick}
+      aria-label={`${label} Tab`}
+      data-testid={`nav-${label.toLowerCase()}`}
       className={cn(
         "flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group",
         active
