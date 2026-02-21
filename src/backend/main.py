@@ -45,6 +45,18 @@ class PortfolioRequest(BaseModel):
     items: Optional[list] = []
 
 
+class RetirementConfigRequest(BaseModel):
+    """은퇴 운용 설정 업데이트를 위한 데이터 모델"""
+
+    active_assumption_id: Optional[str] = None
+    user_profile: Optional[dict] = None
+    simulation_params: Optional[dict] = None
+    corp_params: Optional[dict] = None
+    pension_params: Optional[dict] = None
+    personal_params: Optional[dict] = None
+    assumptions: Optional[dict] = None
+
+
 # [CORS 설정] React 프론트엔드와의 통신 허용
 app.add_middleware(
     CORSMiddleware,
@@ -138,3 +150,16 @@ async def update_portfolio(p_id: str, req: PortfolioRequest):
 async def analyze_portfolio(p_id: str, mode: str = "TTM"):
     """포트폴리오 실시간 분석 결과를 반환합니다."""
     return backend.analyze_portfolio(p_id, mode=mode)
+
+
+@app.get("/api/retirement/config")
+async def get_retirement_config():
+    """은퇴 운용 설정 정보를 반환합니다."""
+    return {"success": True, "data": backend.get_retirement_config()}
+
+
+@app.post("/api/retirement/config")
+async def update_retirement_config(req: RetirementConfigRequest):
+    """은퇴 운용 설정을 업데이트합니다."""
+    config_dict = req.model_dump(exclude_none=True)
+    return backend.update_retirement_config(config_dict)

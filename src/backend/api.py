@@ -17,12 +17,24 @@ class DividendBackend:
         self.watchlist_file = "watchlist.json"
         self.settings_file = "settings.json"
         self.portfolios_file = "portfolios.json"
+        self.retirement_config_file = "retirement_config.json"
 
         self.settings = self.storage.load_json(self.settings_file, {})
         dart_key = self.settings.get("dart_api_key")
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
         self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
+        self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
+
+    def get_retirement_config(self) -> Dict[str, Any]:
+        """저장된 은퇴 운용 설정 정보를 반환합니다."""
+        return self.retirement_config
+
+    def update_retirement_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
+        """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
+        self.retirement_config.update(new_config)
+        self.storage.save_json(self.retirement_config_file, self.retirement_config)
+        return {"success": True, "message": "은퇴 설정이 저장되었습니다.", "data": self.retirement_config}
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""

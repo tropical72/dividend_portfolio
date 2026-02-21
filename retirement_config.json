@@ -1,0 +1,37 @@
+{
+    "active_assumption_id": "conservative",
+    "user_profile": {
+        "birth_year": 1980
+    },
+    "corp_params": {
+        "initial_investment": 1600000000,
+        "capital_stock": 50000000,
+        "initial_shareholder_loan": 1550000000,
+        "monthly_salary": 2500000,
+        "monthly_fixed_cost": 500000,
+        "employee_count": 1
+    },
+    "pension_params": {
+        "severance_reserve": 350000000,
+        "other_reserve": 250000000,
+        "monthly_withdrawal_target": 2500000
+    },
+    "personal_params": {
+        "real_estate_price": 0,
+        "other_assets": 0
+    },
+    "assumptions": {
+        "v1": {
+            "name": "Standard (V1)",
+            "expected_return": 0.0485,
+            "expected_growth": 0.02,
+            "inflation_rate": 0.025
+        },
+        "conservative": {
+            "name": "Conservative",
+            "expected_return": 0.035,
+            "expected_growth": 0.01,
+            "inflation_rate": 0.035
+        }
+    }
+}

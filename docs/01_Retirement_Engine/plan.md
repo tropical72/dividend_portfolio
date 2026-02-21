@@ -4,7 +4,8 @@
 
 ### [Phase 1] Core Engine 및 기초 인프라 (T-05-1)
 - **T-05-1.1: Versioned Assumption System**
-    - [ ] T-05-1.1.1 멀티 프로필 지원 `retirement_config.json` 설계 및 CRUD.
+    - [x] **T-05-1.1.1** 멀티 프로필 지원 `retirement_config.json` 설계 및 CRUD API 구축 완료.
+    - [ ] T-05-1.1.2 UI에서 가정 버전(v1, conservative 등) 스위칭 기능.
 - **T-05-1.2: Tax Engine (Pure Functions)**
     - [x] **T-05-1.2.1** 지역건보료 및 법인세 산출 모듈 완료. (`src/core/tax_engine.py`)
 
