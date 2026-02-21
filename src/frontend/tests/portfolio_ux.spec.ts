@@ -18,4 +18,14 @@ test.describe("Portfolio Editor UX - Basic Structure", () => {
     // 2. 새로만들기 버튼 확인
     await expect(page.getByRole("button", { name: /새로만들기/i })).toBeVisible();
   });
+
+  test("should block saving when total weight is not 100%", async ({ page }) => {
+    // [REQ-PRT-01.5]
+    // 1. 초기 상태(0%)에서 저장 클릭
+    const saveBtn = page.getByRole("button", { name: /저장/i });
+    await saveBtn.click({ force: true });
+
+    // 2. 에러 알림 확인 (Toast 또는 Alert)
+    await expect(page.getByText(/비중 합계가 100%여야 합니다/i)).toBeVisible();
+  });
 });
