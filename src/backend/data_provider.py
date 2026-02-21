@@ -155,44 +155,53 @@ class StockDataProvider:
         if is_kr:
             dart_info = self.get_kr_dividend_from_dart(ticker_symbol)
 
-        # 배당 수익률 계산
-        dividend_yield = info.get("dividendYield", 0) or 0.0
-        if dividend_yield > 0 and dividend_yield < 0.2: dividend_yield *= 100
-        
-        if is_kr and dart_info.get("yield", 0) > 0:
-            dividend_yield = dart_info["yield"]
-        elif is_kr and dart_info.get("annual_dividend", 0) > 0:
-            dividend_yield = (dart_info["annual_dividend"] / current_price) * 100
-
-        # 배당 주기 및 지급 월 분석
+        # 1. 배당 주기 및 지급 월 분석
         cycle_info = self.analyze_dividend_cycle(ticker_symbol)
         if is_kr and dart_info.get("frequency"):
             cycle_info["frequency"] = dart_info["frequency"]
 
-        # 배당락일
+        # 2. 최근 배당 이력 실측 데이터 확보 (yfinance dividends)
+        div_hist = self.get_dividend_history(ticker_symbol)
+
+        # 3. 최근 배당금 (Last Amt) 결정
+        last_div_amount = info.get("lastDividendValue") or 0.0
+        if is_kr and dart_info.get("annual_dividend", 0) > 0:
+            div_count = {"Monthly": 12, "Quarterly": 4, "Semi-Annually": 2, "Annually": 1}.get(cycle_info["frequency"], 1)
+            last_div_amount = dart_info["annual_dividend"] / div_count
+        elif not div_hist.empty:
+            last_div_amount = float(div_hist.iloc[-1])
+
+        # 4. 배당 수익률 (Dividend Yield) 및 배당락일 (Ex-Div Date) 최종 결정
+        # 실측 이력 TTM 기반 합계 계산
+        annual_div_sum = self.calculate_historical_annual_dividend(ticker_symbol)
+        if is_kr and dart_info.get("annual_dividend", 0) > 0:
+            annual_div_sum = dart_info["annual_dividend"]
+        
+        # 수익률 산출
+        if annual_div_sum > 0 and current_price > 0:
+            dividend_yield = (annual_div_sum / current_price) * 100
+        else:
+            dividend_yield = info.get("dividendYield", 0) or 0.0
+            if 0 < dividend_yield < 0.2: dividend_yield *= 100
+        
+        # DART 수익률 정보가 있으면 최우선 (수동 보정용)
+        if is_kr and dart_info.get("yield", 0) > 0:
+            dividend_yield = dart_info["yield"]
+
+        # 배당락일 결정
         ex_div_date_str = "-"
         if is_kr and dart_info.get("ex_div_date"):
             ex_div_date_str = dart_info["ex_div_date"]
+        elif not div_hist.empty:
+            ex_div_date_str = div_hist.index[-1].strftime("%Y-%m-%d")
         else:
             ex_div_timestamp = info.get("exDividendDate")
             if ex_div_timestamp:
                 try: ex_div_date_str = datetime.datetime.fromtimestamp(ex_div_timestamp).strftime("%Y-%m-%d")
                 except Exception: pass
 
-        # 최근 배당금 (Last Amt)
-        last_div_amount = info.get("lastDividendValue") or 0.0
-        if is_kr and dart_info.get("annual_dividend", 0) > 0:
-            # DART에서 가져온 값을 주기별로 나누어 1회 지급액 추정
-            div_count = {"Monthly": 12, "Quarterly": 4, "Semi-Annually": 2, "Annually": 1}.get(cycle_info["frequency"], 1)
-            last_div_amount = dart_info["annual_dividend"] / div_count
-        elif last_div_amount == 0.0:
-            div_hist = ticker.dividends
-            if not div_hist.empty: last_div_amount = float(div_hist.iloc[-1])
-
-        # Monthly (과거 1년 평균)
-        past_avg_monthly_div = self.calculate_historical_annual_dividend(ticker_symbol) / 12.0
-        if is_kr and dart_info.get("annual_dividend", 0) > 0:
-            past_avg_monthly_div = dart_info["annual_dividend"] / 12.0
+        # 5. 월평균 배당금 (과거 1년 평균)
+        past_avg_monthly_div = annual_div_sum / 12.0 if annual_div_sum > 0 else 0.0
 
         return {
             "symbol": ticker_symbol,
