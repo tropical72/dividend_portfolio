@@ -11,7 +11,7 @@
 
 ### [Phase 2] 구조 2 & 3: 인출 및 수익성 엔진 (T-05-2)
 - **T-05-2.1: Tier Cascade Engine**
-    - [ ] T-05-2.1.1 상태 머신 기반 인출 로직 구현 (`src/core/cascade_engine.py`).
+    - [x] **T-05-2.1.1** 상태 머신 기반 인출 로직 구현 완료. (`src/core/cascade_engine.py`)
 - **T-05-2.2: 법인 수익성 엔진**
     - [ ] T-05-2.2.1 세후 CAGR 및 가용 현금흐름 산출 로직.
 
