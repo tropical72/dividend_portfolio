@@ -5,7 +5,6 @@ import {
   Settings,
   ShieldCheck,
   TrendingUp,
-  DollarSign,
 } from "lucide-react";
 import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
@@ -18,7 +17,7 @@ import type { PortfolioItem, Stock, AppSettings } from "./types";
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
  */
 function App() {
-  const [activeTab, setActiveTab] = useState("watchlist");
+  const [activeTab, setActiveTab] = useState("retirement");
   const [health, setHealth] = useState<string>("checking...");
   const [settings, setSettings] = useState<AppSettings | null>(null);
   
@@ -75,25 +74,34 @@ function App() {
         }));
       return [...prev, ...itemsToAdd];
     });
-    setActiveTab("portfolio"); // 자동 탭 전환
+    setActiveTab("assets"); // 자산 관리 탭으로 전환
   };
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* 사이드바: Glassmorphism 스타일 적용 */}
+      {/* 사이드바: RAMS 계층 구조 반영 */}
       <nav className="w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-800 p-6 flex flex-col gap-2">
         <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="p-2 bg-emerald-500 rounded-lg">
+          <div className="p-2 bg-emerald-500 rounded-lg shadow-[0_0_20px_rgba(16,185,129,0.3)]">
             <TrendingUp className="text-slate-950 w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">DiviFlow</h1>
+          <h1 className="text-xl font-black tracking-tighter">RAMS v1</h1>
         </div>
 
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-3">Main Dashboard</div>
         <NavButton
           active={activeTab === "retirement"}
           icon={<ShieldCheck />}
           label="Retirement"
           onClick={() => setActiveTab("retirement")}
+        />
+
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">Asset Manager</div>
+        <NavButton
+          active={activeTab === "assets"}
+          icon={<Wallet />}
+          label="Asset Setup"
+          onClick={() => setActiveTab("assets")}
         />
         <NavButton
           active={activeTab === "watchlist"}
@@ -101,28 +109,24 @@ function App() {
           label="Watchlist"
           onClick={() => setActiveTab("watchlist")}
         />
+
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">System</div>
         <NavButton
-          active={activeTab === "portfolio"}
-          icon={<Wallet />}
-          label="Portfolio"
-          onClick={() => setActiveTab("portfolio")}
-        />
-        <NavButton
-          active={activeTab === "settings"}
+          active={activeTab === "strategy"}
           icon={<Settings />}
-          label="Settings"
-          onClick={() => setActiveTab("settings")}
+          label="Strategy Settings"
+          onClick={() => setActiveTab("strategy")}
         />
 
         <div className="mt-auto p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Server Status</span>
+            <span className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Engine Status</span>
             <span
               className={cn(
                 "w-2 h-2 rounded-full",
                 health === "ok"
                   ? "bg-emerald-500 shadow-[0_0_8px_#10b981]"
-                  : "bg-red-500",
+                  : "bg-red-500 shadow-[0_0_8px_#ef4444]",
               )}
             />
           </div>
@@ -131,15 +135,11 @@ function App() {
 
       {/* 메인 컨텐츠 영역 */}
       <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
-        {/* 메인 섹션 */}
-        <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
+        <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-800 p-10 shadow-sm min-h-full">
           <div className={cn(activeTab === "retirement" ? "block" : "hidden")}>
             <RetirementTab />
           </div>
-          <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
-            <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
-          </div>
-          <div className={cn(activeTab === "portfolio" ? "block" : "hidden")}>
+          <div className={cn(activeTab === "assets" ? "block" : "hidden")}>
             <PortfolioTab 
               items={designItems} 
               setItems={setDesignItems} 
@@ -147,16 +147,11 @@ function App() {
               globalSettings={settings}
             />
           </div>
-          <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
-            <SettingsTab onSettingsUpdate={fetchSettings} />
+          <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
+            <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
-          <div className={cn(!["watchlist", "portfolio", "settings", "retirement"].includes(activeTab) ? "block" : "hidden")}>
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h2>
-            <div className="h-96 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
-              {activeTab} 서비스 준비 중입니다.
-            </div>
+          <div className={cn(activeTab === "strategy" ? "block" : "hidden")}>
+            <SettingsTab onSettingsUpdate={fetchSettings} />
           </div>
         </div>
       </main>
@@ -180,7 +175,7 @@ function NavButton({
     <button
       onClick={onClick}
       aria-label={`${label} Tab`}
-      data-testid={`nav-${label.toLowerCase()}`}
+      data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
       className={cn(
         "flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group",
         active

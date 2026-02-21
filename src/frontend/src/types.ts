@@ -51,3 +51,53 @@ export interface Portfolio {
   items: PortfolioItem[];
   created_at: string;
 }
+
+/** 은퇴 시뮬레이션 전역 설정 인터페이스 [REQ-RAMS-01] */
+export interface RetirementConfig {
+  active_assumption_id: string;
+  user_profile: {
+    birth_year: number;
+    pension_start_age: number;
+    national_pension_start_age: number;
+  };
+  corp_params: {
+    initial_investment: number;
+    capital_stock: number;
+    initial_shareholder_loan: number;
+    monthly_salary: number;
+    monthly_fixed_cost: number;
+    employee_count: number;
+  };
+  pension_params: {
+    severance_reserve: number;
+    other_reserve: number;
+    monthly_withdrawal_target: number;
+  };
+  personal_params: {
+    real_estate_price: number;
+    other_assets: number;
+  };
+  tax_and_insurance: {
+    point_unit_price: number;
+    ltc_rate: number;
+    corp_tax_threshold: number;
+    corp_tax_low_rate: number;
+    corp_tax_high_rate: number;
+    pension_rate: number;
+    health_rate: number;
+  };
+  trigger_thresholds: {
+    tax_threshold: number;
+    target_buffer_months: number;
+    high_income_cap_rate: number;
+    market_panic_threshold: number;
+  };
+  assumptions: {
+    [key: string]: {
+      name: string;
+      expected_return: number;
+      expected_growth: number;
+      inflation_rate: number;
+    };
+  };
+}

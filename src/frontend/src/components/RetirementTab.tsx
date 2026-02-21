@@ -2,18 +2,16 @@ import React, { useState, useEffect } from "react";
 import { 
   ShieldCheck, 
   TrendingUp, 
-  Settings2, 
   RefreshCcw, 
-  AlertCircle,
   BarChart3,
-  Calendar,
   PieChart
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import type { RetirementConfig } from "../types";
 
 /** 은퇴 시뮬레이션 탭 컴포넌트 [REQ-RAMS-07] */
 export function RetirementTab() {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [activeId, setActiveId] = useState<string>("v1");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,7 +64,7 @@ export function RetirementTab() {
         </div>
 
         <div className="flex bg-slate-900/50 p-1.5 rounded-[1.5rem] border border-slate-800 shadow-inner">
-          {Object.entries(config.assumptions).map(([id, item]: [string, any]) => (
+          {Object.entries(config.assumptions).map(([id, item]) => (
             <button 
               key={id}
               onClick={() => handleSwitchVersion(id)}

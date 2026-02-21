@@ -4,10 +4,7 @@ import {
   ChevronUp, 
   Trash2, 
   TrendingUp, 
-  DollarSign, 
   PieChart, 
-  Calendar,
-  AlertCircle,
   Edit3,
   CheckSquare,
   Square,
@@ -25,7 +22,7 @@ import {
   Legend
 } from "recharts";
 import { cn } from "../lib/utils";
-import type { PortfolioItem, Portfolio } from "../types";
+import type { Portfolio } from "../types";
 
 /** [REQ-PRT-06] 포트폴리오 대시보드 및 비교 탭 */
 export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void }) {
@@ -37,7 +34,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
-  const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
+  const [exchangeRate] = useState<number>(1425.5);
 
   // 데이터 로드
   useEffect(() => {
@@ -91,7 +88,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
     
     return months.map(m => {
-      const dataPoint: any = { name: `${m}월` };
+      const dataPoint: Record<string, string | number> = { name: `${m}월` };
       selectedPortfolios.forEach(p => {
         const capital = globalCapitalUsd ?? p.total_capital;
         const items = p.items || [];

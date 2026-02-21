@@ -36,7 +36,7 @@ export function PortfolioTab({
 
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
-  const [exchangeRate, setExchangeRate] = useState<number>(1425.5); // 고정값 또는 설정에서 수신
+  const [exchangeRate] = useState<number>(1425.5); // 고정값 또는 설정에서 수신
   const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
 
   /** 전역 설정 동기화 [REQ-PRT-03] */
