@@ -44,7 +44,12 @@ class DividendBackend:
     def add_to_watchlist(self, ticker: str, country: str = "US") -> Dict[str, Any]:
         """새로운 종목을 추가하고 저장합니다."""
         formatted_ticker = ticker.upper().strip()
-        if country == "KR" and not (
+        
+        # [REQ-WCH-01.7] 스마트 티커 감지: 6자리(숫자+영문 가능)면 자동으로 한국 종목 처리
+        # 한국 티커는 보통 6자리이며, ETF나 우선주의 경우 영문자가 포함될 수 있음 (예: 0104H0)
+        is_kr_ticker_format = len(formatted_ticker) == 6
+        
+        if (country == "KR" or is_kr_ticker_format) and not (
             formatted_ticker.endswith(".KS") or formatted_ticker.endswith(".KQ")
         ):
             formatted_ticker += ".KS"

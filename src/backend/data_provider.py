@@ -262,15 +262,19 @@ class StockDataProvider:
         if dividends.empty:
             return {"frequency": "None", "months": []}
 
-        # Timezone 처리
+        # Timezone 처리 및 복사본 생성
         if dividends.index.tz is not None:
             dividends.index = dividends.index.tz_localize(None)
+
+        # [REQ-WCH-04.5] 신규 종목 판별 (데이터가 1년치 미만인지 확인)
+        first_div_date = dividends.index[0]
+        is_new_stock = (datetime.datetime.now() - first_div_date).days < 365
 
         one_year_ago = datetime.datetime.now() - datetime.timedelta(days=365)
         recent = dividends[dividends.index >= one_year_ago]
 
         if recent.empty:
-            # 최근 1년 이력이 없으면 전체 이력 중 마지막 4개를 참고하거나 None 반환
+            # 최근 1년 이력이 없으면 전체 이력 중 마지막 항목 참고
             return {"frequency": "None", "months": []}
 
         # 지급 월 추출 (중복 제거 및 정렬)
@@ -288,6 +292,10 @@ class StockDataProvider:
             frequency = "Annually"
         else:
             frequency = "Irregular"
+
+        # 신규 종목 표기 추가
+        if is_new_stock and frequency != "None":
+            frequency = f"{frequency} (New)"
 
         return {"frequency": frequency, "months": months}
 

@@ -309,6 +309,9 @@ export function WatchlistTab() {
               <th className="px-4 py-5 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("ex_div_date")}>
                 <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[10px]">Ex-Div <SortIcon columnKey="ex_div_date" /></div>
               </th>
+              <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("last_div_amount")}>
+                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Last Amt <SortIcon columnKey="last_div_amount" /></div>
+              </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors font-bold" onClick={() => handleSort("past_avg_monthly_div")}>
                 <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px] text-emerald-400">Monthly <SortIcon columnKey="past_avg_monthly_div" /></div>
               </th>
@@ -341,18 +344,23 @@ export function WatchlistTab() {
                 <td className="px-4 py-4 font-bold text-emerald-400 tracking-tight">{item.symbol}</td>
                 <td className="px-4 py-4 text-slate-300 truncate max-w-[120px]" title={item.name}>{item.name}</td>
                 <td className="px-4 py-4 text-slate-100 whitespace-nowrap font-medium">
-                  <span className="text-[10px] text-slate-500 mr-1">{item.currency || "USD"}</span>
                   {(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <span className="text-[10px] text-slate-500 ml-1">{item.currency || "USD"}</span>
                 </td>
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold">{(item.dividend_yield || 0).toFixed(2)}%</td>
                 <td className="px-4 py-4 text-center">
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center gap-1">
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                      item.dividend_frequency === "Monthly" ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400"
+                      item.dividend_frequency.includes("Monthly") ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400"
                     )}>
-                      {item.dividend_frequency || "-"}
+                      {item.dividend_frequency.replace(" (New)", "")}
                     </span>
+                    {item.dividend_frequency.includes("(New)") && (
+                      <span className="text-[9px] text-amber-500/80 font-medium leading-none animate-pulse">
+                        (NEW)
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className={cn("px-4 py-4 text-right font-medium", (item.one_yr_return || 0) >= 0 ? "text-emerald-400" : "text-red-400")}>
@@ -361,9 +369,13 @@ export function WatchlistTab() {
                 <td className="px-4 py-4 text-center text-slate-400 text-xs">
                   <div className="flex items-center justify-center gap-1.5"><Calendar size={12} className="text-slate-600" />{item.ex_div_date || "-"}</div>
                 </td>
-                <td className="px-4 py-4 text-right text-slate-100 font-medium">{(item.last_div_amount || 0).toFixed(2)}</td>
+                <td className="px-4 py-4 text-right text-slate-100 font-medium">
+                  {(item.last_div_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <span className="text-[9px] text-slate-500 ml-1">{item.currency || "USD"}</span>
+                </td>
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold text-base bg-emerald-500/5">
                   {(item.past_avg_monthly_div || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <span className="text-[10px] text-slate-500/70 ml-1 font-normal">{item.currency || "USD"}</span>
                 </td>
               </tr>
             ))}
