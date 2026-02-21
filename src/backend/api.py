@@ -156,10 +156,13 @@ class DividendBackend:
 
     def is_stock_in_portfolio(self, ticker: str) -> bool:
         """
-        특정 종목이 현재 구성된 포트폴리오에 포함되어 있는지 확인합니다.
-        (현재는 포트폴리오 기능 미구현으로 항상 False 반환 - 추후 구현 예정)
+        특정 종목이 현재 저장된 어떤 포트폴리오에라도 포함되어 있는지 확인합니다.
         """
-        # TODO: docs/02_Portfolio 개발 시 실제 저장소(portfolios.json)와 연동 필요
+        search_ticker = ticker.upper().strip()
+        for p in self.portfolios:
+            items = p.get("items", [])
+            if any(item.get("symbol", "").upper() == search_ticker for item in items):
+                return True
         return False
 
     def remove_from_watchlist(self, ticker: str) -> Dict[str, Any]:
