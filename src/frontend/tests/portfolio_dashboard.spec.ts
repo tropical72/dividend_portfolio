@@ -83,4 +83,17 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await expect(page.locator(".comparison-chart-container")).toBeVisible();
     await expect(page.getByText(/Monthly Dividend Comparison/i)).toBeVisible();
   });
+
+  test("should update all portfolio figures when global capital is changed", async ({ page }) => {
+    // 1. 전역 투자금 입력란 확인 (구현 예정)
+    const globalUsdInput = page.getByPlaceholder(/Global USD Capital/i);
+    await expect(globalUsdInput).toBeVisible();
+    
+    // 2. 투자금 변경
+    await globalUsdInput.fill("100000");
+    
+    // 3. 포트폴리오 카드 내의 수치가 반영되었는지 확인
+    // globalCapitalUsd가 적용되면 카드에 해당 금액이 표시되어야 함
+    await expect(page.getByText(/USD 100,000/i).first()).toBeVisible();
+  });
 });

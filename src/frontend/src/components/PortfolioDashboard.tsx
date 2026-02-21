@@ -11,7 +11,8 @@ import {
   Edit3,
   CheckSquare,
   Square,
-  BarChart3
+  BarChart3,
+  RotateCcw
 } from "lucide-react";
 import { 
   BarChart, 
@@ -33,6 +34,10 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
+  // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
+  const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
+
   // 데이터 로드
   useEffect(() => {
     fetch("http://localhost:8000/api/portfolios")
@@ -47,13 +52,10 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       });
   }, []);
 
-  /** 선택 핸들러 */
-  const toggleSelect = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedIds(next);
+  /** 투자금 입력 핸들러 */
+  const handleGlobalUsdChange = (val: string) => {
+    const num = parseFloat(val.replace(/[^0-9.]/g, "")) || 0;
+    setGlobalCapitalUsd(num);
   };
 
   /** 차트 데이터 계산 [REQ-PRT-06.4] */
@@ -66,9 +68,10 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
     return months.map(m => {
       const dataPoint: any = { name: `${m}월` };
       selectedPortfolios.forEach(p => {
+        const capital = globalCapitalUsd ?? p.total_capital;
         const monthlySum = p.items.reduce((sum, item) => {
           if (item.payment_months.includes(m)) {
-            const allocated = p.total_capital * (item.weight / 100);
+            const allocated = capital * (item.weight / 100);
             const shares = allocated / item.price;
             return sum + (shares * item.last_div_amount);
           }
@@ -78,7 +81,16 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       });
       return dataPoint;
     });
-  }, [portfolios, selectedIds]);
+  }, [portfolios, selectedIds, globalCapitalUsd]);
+
+  /** 선택 핸들러 */
+  const toggleSelect = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
 
   /** 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoad = (e: React.MouseEvent, p: Portfolio) => {
@@ -109,6 +121,49 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* 전역 시뮬레이터 [REQ-PRT-06.3] */}
+      <div className="bg-slate-900/20 border border-slate-800 rounded-[2.5rem] p-8 mb-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex-1">
+            <h3 className="text-lg font-black text-slate-200 flex items-center gap-2 mb-1">
+              <TrendingUp className="text-emerald-400" size={20} /> Global Simulator
+            </h3>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Override individual capital for all portfolios below</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="relative group min-w-[200px]">
+              <input 
+                type="text"
+                placeholder="Global USD Capital"
+                value={globalCapitalUsd?.toLocaleString() || ""}
+                onChange={(e) => handleGlobalUsdChange(e.target.value)}
+                className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all"
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+            </div>
+            <div className="relative group min-w-[200px]">
+              <input 
+                type="text"
+                placeholder="Global KRW Capital"
+                value={globalCapitalUsd ? (globalCapitalUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 }) : ""}
+                readOnly
+                className="w-full bg-slate-950/20 border border-slate-800/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-500 outline-none cursor-not-allowed"
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">₩</span>
+            </div>
+            {globalCapitalUsd !== null && (
+              <button 
+                onClick={() => setGlobalCapitalUsd(null)}
+                className="p-3 text-slate-500 hover:text-emerald-400 transition-colors"
+                title="Reset to Original"
+              >
+                <RotateCcw size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* 차트 영역 [REQ-PRT-06.4] */}
       {selectedIds.size > 0 && (
         <div className="comparison-chart-container bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl animate-in slide-in-from-top-4 duration-500">
@@ -229,7 +284,9 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       <div className="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                         <span>{p.items.length} Assets</span>
                         <div className="w-1 h-1 rounded-full bg-slate-700" />
-                        <span>{p.currency} {p.total_capital.toLocaleString()}</span>
+                        <span className={cn(globalCapitalUsd !== null && "text-emerald-400")}>
+                          {p.currency} {(globalCapitalUsd ?? p.total_capital).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
