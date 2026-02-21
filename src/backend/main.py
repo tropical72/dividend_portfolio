@@ -33,6 +33,15 @@ class SettingsRequest(BaseModel):
     default_investment_goal: Optional[str] = None
 
 
+class PortfolioRequest(BaseModel):
+    """포트폴리오 생성/수정 요청을 위한 데이터 모델"""
+
+    name: str
+    total_capital: Optional[float] = 0.0
+    currency: Optional[str] = "USD"
+    items: Optional[list] = []
+
+
 # [CORS 설정] React 프론트엔드와의 통신 허용
 app.add_middleware(
     CORSMiddleware,
@@ -90,3 +99,26 @@ async def update_settings(req: SettingsRequest):
     """설정 정보를 업데이트합니다."""
     settings_dict = req.model_dump(exclude_none=True)
     return backend.update_settings(settings_dict)
+
+
+@app.get("/api/portfolios")
+async def get_portfolios():
+    """저장된 모든 포트폴리오 목록을 반환합니다."""
+    return {"success": True, "data": backend.get_portfolios()}
+
+
+@app.post("/api/portfolios")
+async def create_portfolio(req: PortfolioRequest):
+    """새로운 포트폴리오를 생성합니다."""
+    return backend.add_portfolio(
+        name=req.name,
+        total_capital=req.total_capital,
+        currency=req.currency,
+        items=req.items,
+    )
+
+
+@app.delete("/api/portfolios/{p_id}")
+async def delete_portfolio(p_id: str):
+    """특정 포트폴리오를 제거합니다."""
+    return backend.remove_portfolio(p_id)

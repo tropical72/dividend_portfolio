@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import Any, Dict, List
 
 from src.backend.data_provider import StockDataProvider
@@ -15,13 +16,55 @@ class DividendBackend:
         self.data_dir = os.path.abspath(data_dir)
         self.watchlist_file = "watchlist.json"
         self.settings_file = "settings.json"
+        self.portfolios_file = "portfolios.json"
 
         self.settings = self.storage.load_json(self.settings_file, {})
         dart_key = self.settings.get("dart_api_key")
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
+        self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
+        """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
+        # 기존 데이터 호환성을 위해 필수 필드 기본값 보정
+        for item in self.watchlist:
+            item.setdefault("one_yr_return", 0.0)
+            item.setdefault("ex_div_date", "-")
+            item.setdefault("last_div_amount", 0.0)
+            item.setdefault("last_div_yield", 0.0)
+            item.setdefault("past_avg_monthly_div", 0.0)
+            item.setdefault("dividend_frequency", "None")
+            item.setdefault("payment_months", [])
+        return self.watchlist
+
+    def get_portfolios(self) -> List[Dict[str, Any]]:
+        """저장된 모든 포트폴리오 목록을 반환합니다."""
+        return self.portfolios
+
+    def add_portfolio(
+        self, name: str, total_capital: float = 0.0, currency: str = "USD", items: list = None
+    ) -> Dict[str, Any]:
+        """새로운 포트폴리오를 생성합니다."""
+        new_p = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "total_capital": total_capital,
+            "currency": currency,
+            "items": items or [],
+            "created_at": str(os.path.getmtime(self.data_dir)) # 실제 생성 시간 대신 더미 활용 가능
+        }
+        self.portfolios.append(new_p)
+        self.storage.save_json(self.portfolios_file, self.portfolios)
+        return {"success": True, "data": new_p}
+
+    def remove_portfolio(self, p_id: str) -> Dict[str, Any]:
+        """특정 포트폴리오를 삭제합니다."""
+        for i, p in enumerate(self.portfolios):
+            if p["id"] == p_id:
+                removed = self.portfolios.pop(i)
+                self.storage.save_json(self.portfolios_file, self.portfolios)
+                return {"success": True, "message": f"{removed['name']} 삭제됨"}
+        return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
         # 기존 데이터 호환성을 위해 필수 필드 기본값 보정
         for item in self.watchlist:
@@ -41,11 +84,11 @@ class DividendBackend:
     def add_to_watchlist(self, ticker: str, country: str = "US") -> Dict[str, Any]:
         """새로운 종목을 추가하고 저장합니다."""
         formatted_ticker = ticker.upper().strip()
-        
+
         # [REQ-WCH-01.7] 스마트 티커 감지: 6자리(숫자+영문 가능)면 자동으로 한국 종목 처리
         # 한국 티커는 보통 6자리이며, ETF나 우선주의 경우 영문자가 포함될 수 있음 (예: 0104H0)
         is_kr_ticker_format = len(formatted_ticker) == 6
-        
+
         if (country == "KR" or is_kr_ticker_format) and not (
             formatted_ticker.endswith(".KS") or formatted_ticker.endswith(".KQ")
         ):

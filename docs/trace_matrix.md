@@ -19,7 +19,7 @@
 | REQ-WCH-03.5 | 통화 단위 명시 (USD/KRW) | T-01-2.4 | - | Done | Pass | fb3841d |
 | REQ-WCH-03.6 | 컬럼 정합성 (Last Amt 추가) | T-01-2.4 | - | Done | Pass | fb3841d |
 | REQ-WCH-03.7 | 수익률 방식 명시 (TTM) | T-01-2.4 | - | Done | Pass | fd7c5d4 |
-| REQ-WCH-03.8 | 종목명 가독성 보장 (줄바꿈 및 너비) | T-01-2.4 | - | Done | Pass | (Pending) |
+| REQ-WCH-03.8 | 종목명 가독성 보장 (줄바꿈 및 너비) | T-01-2.4 | - | Done | Pass | b7fce8a |
 | **[REQ-WCH-04]** | **배당 데이터 보정 및 판별** | | | | | |
 | REQ-WCH-04.1 | DART API Source of Truth 적용 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |
 | REQ-WCH-04.2 | 한국식 배당 주기 (분기/반기) 보정 | T-01-1.5 | test_stock_api.py | Done | Pass | 2c4a169 |
@@ -32,7 +32,7 @@
 
 | 요구사항 ID | 요구사항 명세 (Requirement) | 구현 태스크 (Task ID) | 테스트 케이스 (Test ID) | 상태 | 검증 | Git Commit |
 |:---|:---|:---|:---|:---|:---|:---|
-| REQ-PRT-01.1 | 포트폴리오 생성 및 기본 정보 설정 | T-02-1.1 | test_persistence_api.py | Pending | - | - |
+| REQ-PRT-01.1 | 포트폴리오 생성 및 기본 정보 설정 | T-02-1.1 | test_portfolio_api.py | Done | Pass | (Pending) |
 | REQ-PRT-03.1 | USD/KRW 통합 자산 평가 | T-02-1.2 | - | Pending | - | - |
 
 ---
@@ -52,7 +52,8 @@
 | **[D-03]** | 한국 월배당 ETF 데이터 누락 (수익률 0%) | T-01-1.5 | REQ-WCH-04.2 | Fixed | Pass | 2056f83 |
 | **[D-04]** | 테이블 컬럼 누락 및 통화 단위 미표시 | T-01-2.4 | REQ-WCH-03.5 | Fixed | Pass | fb3841d |
 | **[D-05]** | 한국 종목 배당 주기 판별 오류 (Annually 오판) | T-01-1.5 | REQ-WCH-04.4 | Fixed | Pass | af62402 |
-| **[D-06]** | 한국 종목 이름이 영문으로 표시되는 현상 | T-01-1.5 | REQ-WCH-04.6 | Fixed | Pass | (Pending) |
+| **[D-06]** | 한국 종목 이름이 영문으로 표시되는 현상 | T-01-1.5 | REQ-WCH-04.6 | Fixed | Pass | 1f46773 |
+| **[D-07]** | 탭 전환 시 관심종목 데이터가 유실되는 현상 | T-01-2.5 | - | Fixed | Pass | 9c96fe3 |
 
 ---
 
