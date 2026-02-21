@@ -129,6 +129,7 @@ class StockDataProvider:
         is_kr = ".KS" in ticker_symbol or ".KQ" in ticker_symbol
 
         # [Strategy for KR] 한국 종목은 네이버 금융 최우선
+        naver_name = None
         if is_kr:
             naver_data = self.get_kr_stock_price_from_naver(ticker_symbol)
             if naver_data:
@@ -136,6 +137,7 @@ class StockDataProvider:
                 info["currency"] = naver_data["currency"]
                 info["longName"] = naver_data["name"]
                 info["symbol"] = ticker_symbol
+                naver_name = naver_data["name"]  # 한글 이름 별도 보관
 
         ticker = yf.Ticker(ticker_symbol)
 
@@ -143,6 +145,9 @@ class StockDataProvider:
         try:
             yf_info = ticker.info
             info.update(yf_info)
+            # 한국 종목이면 한글 이름으로 다시 덮어씀 (영문명 방지)
+            if is_kr and naver_name:
+                info["longName"] = naver_name
         except Exception:
             pass
 
