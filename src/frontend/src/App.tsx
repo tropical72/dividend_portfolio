@@ -11,6 +11,7 @@ import { cn } from "./lib/utils";
 import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
+import { RetirementTab } from "./components/RetirementTab";
 import type { PortfolioItem, Stock, AppSettings } from "./types";
 
 /**
@@ -89,6 +90,12 @@ function App() {
         </div>
 
         <NavButton
+          active={activeTab === "retirement"}
+          icon={<ShieldCheck />}
+          label="Retirement"
+          onClick={() => setActiveTab("retirement")}
+        />
+        <NavButton
           active={activeTab === "watchlist"}
           icon={<ListTodo />}
           label="Watchlist"
@@ -99,12 +106,6 @@ function App() {
           icon={<Wallet />}
           label="Portfolio"
           onClick={() => setActiveTab("portfolio")}
-        />
-        <NavButton
-          active={activeTab === "advisor"}
-          icon={<ShieldCheck />}
-          label="AI Advisor"
-          onClick={() => setActiveTab("advisor")}
         />
         <NavButton
           active={activeTab === "settings"}
@@ -132,6 +133,9 @@ function App() {
       <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
         {/* 메인 섹션 */}
         <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-sm">
+          <div className={cn(activeTab === "retirement" ? "block" : "hidden")}>
+            <RetirementTab />
+          </div>
           <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
             <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
@@ -146,7 +150,7 @@ function App() {
           <div className={cn(activeTab === "settings" ? "block" : "hidden")}>
             <SettingsTab onSettingsUpdate={fetchSettings} />
           </div>
-          <div className={cn(!["watchlist", "portfolio", "settings"].includes(activeTab) ? "block" : "hidden")}>
+          <div className={cn(!["watchlist", "portfolio", "settings", "retirement"].includes(activeTab) ? "block" : "hidden")}>
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h2>
