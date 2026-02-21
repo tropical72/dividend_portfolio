@@ -72,4 +72,15 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     const nameInput = page.getByPlaceholder(/포트폴리오 이름을 입력하세요/i);
     await expect(nameInput).toHaveValue(uniqueName);
   });
+
+  test("should display comparison chart when multiple portfolios are selected", async ({ page }) => {
+    // 1. 체크박스 선택 (구현 예정)
+    const testCard = page.locator(".portfolio-card").filter({ hasText: uniqueName });
+    const checkbox = testCard.locator("button[role='checkbox']");
+    await checkbox.click();
+    
+    // 2. 상단에 차트 영역이 나타나는지 확인 (구현 예정)
+    await expect(page.locator(".comparison-chart-container")).toBeVisible();
+    await expect(page.getByText(/Monthly Dividend Comparison/i)).toBeVisible();
+  });
 });
