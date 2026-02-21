@@ -6,10 +6,11 @@
 
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit |
 |:---|:---|:---|:---|:---|:---|
-| REQ-RAMS-1.2 | Versioned Assumption System | T-01-1.1 | TEST-CFG-01 | Pending | - |
-| REQ-RAMS-2.1 | 법인 세후 현금흐름 순수 함수 엔진 | T-01-1.2 | TEST-TAX-01 | Pending | - |
-| REQ-RAMS-2.2 | 지역건보료 점수제(재산/소득) 모듈 | T-01-1.2.2 | TEST-TAX-02 | Pending | - |
-| REQ-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Pending | - |
+| REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | bc24140 |
+| REQ-RAMS-2.1 | 법인 세후 현금흐름 순수 함수 엔진 | T-01-1.2 | TEST-TAX-01 | Done | 98348ee |
+| REQ-RAMS-2.2 | 지역건보료 점수제(재산/소득) 모듈 | T-01-1.2.2 | TEST-TAX-02 | Done | 98348ee |
+| REQ-RAMS-2.3 | 법인 vs 개인 타당성 분석 로직 | T-01-2.1.2 | TEST-TAX-03 | Done | [current] |
+| REQ-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Done | 46b0de0 |
 | REQ-RAMS-5.2 | 표준 스트레스 테스트 시나리오 | T-01-3.1 | TEST-STR-01 | Pending | - |
 | REQ-RAMS-7.1 | 심리적 안도감(Assurance) 산출 로직 | T-01-3.2 | TEST-PSY-01 | Pending | - |
 | REQ-RAMS-7.4 | Scenario Snapshot (은퇴일 스냅샷) | T-01-3.3 | TEST-SNP-01 | Pending | - |
