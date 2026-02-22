@@ -73,6 +73,16 @@
             "year": 2026,
             "month": 11,
             "description": "자산 유입/지출 상세"
+        },
+        {
+            "id": "c78b482f-9625-4df0-af7c-5884717a83bf",
+            "type": "INFLOW",
+            "entity": "CORP",
+            "amount": 1000000000,
+            "currency": "KRW",
+            "year": 2035,
+            "month": 1,
+            "description": "자산 유입/지출 상세"
         }
     ]
 }
