@@ -98,6 +98,14 @@ export function RetirementTab() {
 
   const level = getAssuranceLevel();
 
+  // 상세 분석 텍스트 생성
+  const getDetailedInsight = () => {
+    if (summary.is_permanent) {
+      return "30년 시뮬레이션 기간 동안 원금 훼손 없이 안전 버퍼(SGOV)만으로 현금흐름 유지가 가능합니다.";
+    }
+    return `SGOV 고갈 시점은 ${summary.sgov_exhaustion_date}이며, 이후 ${summary.growth_asset_sell_start_date}부터 성장 자산 매도가 시작될 것으로 예측됩니다.`;
+  };
+
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20" data-testid="retirement-tab-content">
       {/* 1. Psychological Header */}
@@ -113,7 +121,7 @@ export function RetirementTab() {
             <span className="text-emerald-400 font-black">은퇴할 수 있습니다.</span>"
           </h2>
           <p className="text-slate-400 font-medium max-w-lg">
-            현재 설계된 자산 구조와 인출 전략으로 향후 <span className="text-slate-100 font-black">{summary.total_survival_years}년</span> 이상의 평온한 생활이 보장됩니다.
+            {getDetailedInsight()}
           </p>
         </div>
 
@@ -160,25 +168,25 @@ export function RetirementTab() {
 
         <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <ShieldCheck size={14} className="text-blue-500" /> Sustainability
+            <ShieldCheck size={14} className="text-blue-500" /> Exhaustion Target
           </p>
           <div className="space-y-2">
-            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
-              {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
+            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
+              {summary.growth_asset_sell_start_date}
             </h3>
-            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Permanent at 10% cost cut</p>
+            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
           </div>
         </div>
 
         <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <PieChart size={14} className="text-amber-500" /> Liquidity Buffer
+            <PieChart size={14} className="text-amber-500" /> Buffer Status
           </p>
           <div className="space-y-2">
-            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
-              30<span className="text-xl text-slate-500 font-black ml-1 uppercase">Months</span>
+            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
+              {summary.sgov_exhaustion_date}
             </h3>
-            <p className="text-[10px] text-amber-400/60 font-black uppercase tracking-widest">SGOV Safety Threshold: 24M</p>
+            <p className="text-[10px] text-amber-400/60 font-black uppercase tracking-widest">SGOV Depletion Point</p>
           </div>
         </div>
       </div>
