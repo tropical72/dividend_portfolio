@@ -82,17 +82,6 @@ function App() {
     setActiveTab("assets"); // 자산 관리 탭으로 전환
   };
 
-  if (!settings || !retireConfig) {
-    return (
-      <div className="h-screen bg-slate-950 flex flex-col items-center justify-center gap-6">
-        <div className="p-4 bg-emerald-500 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-bounce">
-          <TrendingUp className="text-slate-950 w-8 h-8" />
-        </div>
-        <p className="text-slate-500 font-black tracking-widest uppercase text-xs animate-pulse">Initializing RAMS Engine...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* 사이드바: RAMS 계층 구조 반영 */}

@@ -138,8 +138,16 @@ export function RetirementTab() {
     }
   };
 
-  if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse">Running Monte Carlo Simulation...</div>;
-  if (!config || !simulationData) return <div className="p-20 text-center text-red-400">Failed to load data.</div>;
+  if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse" data-testid="retirement-tab-content">Running Monte Carlo Simulation...</div>;
+  if (!config || !simulationData || !simulationData.monthly_data) {
+    return (
+      <div className="p-20 text-center text-red-400" data-testid="retirement-tab-content">
+        <AlertTriangle className="mx-auto mb-4" size={48} />
+        <h3 className="text-xl font-black">Simulation Data Error</h3>
+        <p className="text-sm opacity-80 mt-2">서버로부터 시뮬레이션 데이터를 가져오지 못했습니다.</p>
+      </div>
+    );
+  }
 
   const summary = simulationData.summary;
   const chartData = simulationData.monthly_data.filter((_, i) => i % 12 === 0);

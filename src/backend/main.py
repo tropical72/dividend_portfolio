@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from src.backend.api import DividendBackend
-
 from src.core.projection_engine import ProjectionEngine
 from src.core.tax_engine import TaxEngine
 from src.core.stress_engine import StressTestEngine
@@ -23,50 +22,7 @@ tax_engine = TaxEngine()
 projection_engine = ProjectionEngine(tax_engine=tax_engine)
 stress_engine = StressTestEngine()
 
-# --- [데이터 모델 정의] ---
-
-
-class StockRequest(BaseModel):
-    """관심종목 추가 요청을 위한 데이터 모델"""
-
-    ticker: str
-    country: Optional[str] = "US"
-
-
-class SettingsRequest(BaseModel):
-    """애플리케이션 설정 업데이트를 위한 데이터 모델"""
-
-    dart_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    gemini_api_key: Optional[str] = None
-    default_investment_goal: Optional[str] = None
-    default_capital: Optional[float] = 10000.0
-    default_currency: Optional[str] = "USD"
-
-
-class PortfolioRequest(BaseModel):
-    """포트폴리오 생성/수정 요청을 위한 데이터 모델"""
-
-    name: str
-    account_type: Optional[str] = "Personal"
-    total_capital: Optional[float] = 0.0
-    currency: Optional[str] = "USD"
-    items: Optional[list] = []
-
-
-class RetirementConfigRequest(BaseModel):
-    """은퇴 운용 설정 업데이트를 위한 데이터 모델"""
-
-    active_assumption_id: Optional[str] = None
-    user_profile: Optional[dict] = None
-    simulation_params: Optional[dict] = None
-    corp_params: Optional[dict] = None
-    pension_params: Optional[dict] = None
-    personal_params: Optional[dict] = None
-    assumptions: Optional[dict] = None
-
-
-# [CORS 설정] React 프론트엔드와의 통신 허용
+# [CORS 설정] 명시적으로 모든 허용
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -75,119 +31,153 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- [데이터 모델 정의] ---
+
+class StockRequest(BaseModel):
+    ticker: str
+    country: Optional[str] = "US"
+
+class SettingsRequest(BaseModel):
+    dart_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    default_investment_goal: Optional[str] = None
+    default_capital: Optional[float] = 10000.0
+    default_currency: Optional[str] = "USD"
+
+class PortfolioRequest(BaseModel):
+    name: str
+    account_type: Optional[str] = "Personal"
+    total_capital: Optional[float] = 0.0
+    currency: Optional[str] = "USD"
+    items: Optional[list] = []
+
+class RetirementConfigRequest(BaseModel):
+    active_assumption_id: Optional[str] = None
+    user_profile: Optional[dict] = None
+    simulation_params: Optional[dict] = None
+    corp_params: Optional[dict] = None
+    pension_params: Optional[dict] = None
+    personal_params: Optional[dict] = None
+    assumptions: Optional[dict] = None
 
 @app.get("/health")
 async def health_check():
-    """서버 가동 상태를 확인하는 헬스체크 엔드포인트"""
     return {"status": "ok"}
-
 
 @app.get("/api/stock/{ticker}")
 async def get_stock_info(ticker: str):
-    """특정 티커의 상세 주식 정보를 조회합니다."""
     try:
         info = backend.data_provider.get_stock_info(ticker)
-        if "error" in info:
-            return {"success": False, "message": info["error"]}
         return {"success": True, "data": info}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/watchlist")
 async def get_watchlist():
-    """저장된 관심종목 전체 목록을 반환합니다."""
     return {"success": True, "data": backend.get_watchlist()}
-
 
 @app.post("/api/watchlist")
 async def add_to_watchlist(req: StockRequest):
-    """새로운 종목을 관심종목에 추가합니다."""
     return backend.add_to_watchlist(req.ticker, req.country)
-
 
 @app.delete("/api/watchlist/{ticker}")
 async def remove_from_watchlist(ticker: str):
-    """관심종목에서 특정 종목을 제거합니다."""
     return backend.remove_from_watchlist(ticker)
-
 
 @app.get("/api/settings")
 async def get_settings():
-    """저장된 설정 정보를 반환합니다."""
     return {"success": True, "data": backend.get_settings()}
-
 
 @app.post("/api/settings")
 async def update_settings(req: SettingsRequest):
-    """설정 정보를 업데이트합니다."""
     settings_dict = req.model_dump(exclude_none=True)
     return backend.update_settings(settings_dict)
 
-
 @app.get("/api/portfolios")
 async def get_portfolios():
-    """저장된 모든 포트폴리오 목록을 반환합니다."""
     return {"success": True, "data": backend.get_portfolios()}
-
 
 @app.post("/api/portfolios")
 async def create_portfolio(req: PortfolioRequest):
-    """새로운 포트폴리오를 생성합니다."""
-    return backend.add_portfolio(
-        name=req.name,
-        total_capital=req.total_capital,
-        currency=req.currency,
-        items=req.items,
-    )
-
+    return backend.add_portfolio(name=req.name, total_capital=req.total_capital, currency=req.currency, items=req.items)
 
 @app.delete("/api/portfolios/{p_id}")
 async def delete_portfolio(p_id: str):
-    """특정 포트폴리오를 제거합니다."""
     return backend.remove_portfolio(p_id)
-
 
 @app.patch("/api/portfolios/{p_id}")
 async def update_portfolio(p_id: str, req: PortfolioRequest):
-    """특정 포트폴리오의 정보를 업데이트합니다."""
     updates = req.model_dump(exclude_none=True)
     return backend.update_portfolio(p_id, updates)
 
-
 @app.get("/api/portfolios/{p_id}/analysis")
 async def analyze_portfolio(p_id: str, mode: str = "TTM"):
-    """포트폴리오 실시간 분석 결과를 반환합니다."""
     return backend.analyze_portfolio(p_id, mode=mode)
-
 
 @app.get("/api/retirement/config")
 async def get_retirement_config():
-    """은퇴 운용 설정 정보를 반환합니다."""
     return {"success": True, "data": backend.get_retirement_config()}
-
 
 @app.post("/api/retirement/config")
 async def update_retirement_config(req: RetirementConfigRequest):
-    """은퇴 운용 설정을 업데이트합니다."""
     config_dict = req.model_dump(exclude_none=True)
     return backend.update_retirement_config(config_dict)
 
-
 @app.get("/api/retirement/simulate")
 async def run_retirement_simulation(scenario: Optional[str] = None):
-    # ... (생략된 기존 코드) ...
-    result = projection_engine.run_30yr_simulation(initial_assets, final_params)
-    return {"success": True, "data": result}
+    config = backend.get_retirement_config()
+    if not config:
+        return {"success": False, "message": "설정 데이터가 없습니다."}
 
+    # 1. 기초 자산 구성 (안전한 get 접근)
+    corp_params = config.get("corp_params", {})
+    pension_params = config.get("pension_params", {})
+    
+    initial_assets = {
+        "corp": corp_params.get("initial_investment", 1600000000),
+        "pension": pension_params.get("severance_reserve", 350000000) 
+                   + pension_params.get("other_reserve", 250000000),
+    }
+
+    # 2. 활성 가정(Assumption) 추출
+    active_id = config.get("active_assumption_id", "v1")
+    assumptions = config.get("assumptions", {})
+    assumption = assumptions.get(active_id, assumptions.get("v1", {
+        "expected_return": 0.0485,
+        "inflation_rate": 0.025
+    }))
+
+    # 3. 시뮬레이션 파라미터 결합
+    sim_params = config.get("simulation_params", {})
+    base_params = {
+        "target_monthly_cashflow": sim_params.get("target_monthly_cashflow", 9000000),
+        "inflation_rate": assumption.get("inflation_rate", 0.025),
+        "market_return_rate": assumption.get("expected_return", 0.0485),
+        "corp_salary": corp_params.get("monthly_salary", 2500000),
+        "corp_fixed_cost": corp_params.get("monthly_fixed_cost", 500000),
+        "loan_repayment": sim_params.get("target_monthly_cashflow", 9000000) 
+                          - corp_params.get("monthly_salary", 2500000),
+    }
+
+    final_params = base_params
+    if scenario:
+        final_params = stress_engine.apply_scenario(base_params, scenario.upper())
+
+    result = projection_engine.run_30yr_simulation(initial_assets, final_params)
+    
+    # [Debug] 결과 데이터 정합성 확인
+    if result and "monthly_data" in result:
+        print(f"[Success] Simulation generated {len(result['monthly_data'])} months of data")
+    else:
+        print("[Error] Simulation failed to generate data")
+
+    return {"success": True, "data": result}
 
 @app.get("/api/retirement/snapshot")
 async def get_retirement_snapshot():
-    """저장된 은퇴일 스냅샷 정보를 반환합니다."""
     return {"success": True, "data": backend.get_retirement_snapshot()}
-
 
 @app.post("/api/retirement/snapshot")
 async def create_retirement_snapshot(req: dict):
-    """현재 상태를 은퇴일 스냅샷으로 저장합니다."""
     return backend.save_retirement_snapshot(req)
