@@ -167,7 +167,11 @@ function App() {
             <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
           </div>
           <div className={cn(activeTab === "strategy" ? "block" : "hidden")}>
-            <SettingsTab onSettingsUpdate={fetchSettings} />
+            <SettingsTab 
+              onSettingsUpdate={fetchSettings} 
+              globalSettings={safeSettings}
+              globalRetireConfig={retireConfig}
+            />
           </div>
         </div>
       </main>

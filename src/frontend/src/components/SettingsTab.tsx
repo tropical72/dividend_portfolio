@@ -8,15 +8,22 @@ import {
   AlertCircle, 
   TrendingUp, 
   Calculator,
-  BellRing
+  BellRing,
+  RefreshCcw
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import type { RetirementConfig } from "../types";
+import type { RetirementConfig, AppSettings } from "../types";
+
+interface SettingsTabProps {
+  onSettingsUpdate: () => void;
+  globalSettings: AppSettings | null;
+  globalRetireConfig: RetirementConfig | null;
+}
 
 /**
  * [REQ-SYS-04] API 키 및 은퇴 전략 변수 관리 UI
  */
-export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => void }) {
+export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConfig }: SettingsTabProps) {
   const [settings, setSettings] = useState({
     dart_api_key: "",
     gemini_api_key: "",
@@ -24,7 +31,7 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
     default_currency: "USD",
   });
   
-  // 은퇴 엔진용 설정 상태
+  // 로컬 편집용 은퇴 엔진 설정 상태
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(null);
 
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({
@@ -34,29 +41,20 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // 설정 로드
+  // Props 변경 시 로컬 상태 동기화
   useEffect(() => {
-    // 1. 앱 기본 설정 로드
-    fetch("http://localhost:8000/api/settings")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success) {
-          setSettings({
-            dart_api_key: res.data.dart_api_key || "",
-            gemini_api_key: res.data.gemini_api_key || "",
-            default_capital: res.data.default_capital ?? 10000,
-            default_currency: res.data.default_currency || "USD",
-          });
-        }
+    if (globalSettings) {
+      setSettings({
+        dart_api_key: globalSettings.dart_api_key || "",
+        gemini_api_key: globalSettings.gemini_api_key || "",
+        default_capital: globalSettings.default_capital ?? 10000,
+        default_currency: globalSettings.default_currency || "USD",
       });
-
-    // 2. 은퇴 엔진 전략 설정 로드
-    fetch("http://localhost:8000/api/retirement/config")
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) setRetireConfig(res.data);
-      });
-  }, []);
+    }
+    if (globalRetireConfig) {
+      setRetireConfig(globalRetireConfig);
+    }
+  }, [globalSettings, globalRetireConfig]);
 
   // 통합 저장 핸들러
   const handleSave = async () => {
@@ -79,7 +77,7 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
 
       if (res1.ok && res2.ok) {
         setStatus({ type: "success", message: "모든 전략 설정이 성공적으로 저장되었습니다." });
-        if (onSettingsUpdate) onSettingsUpdate();
+        onSettingsUpdate();
       } else {
         throw new Error("저장 실패");
       }
@@ -94,7 +92,15 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
     setShowKeys((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (!retireConfig) return <div className="p-20 text-center animate-pulse text-slate-500 font-black">Initialing Strategy Engine...</div>;
+  // 데이터 로딩 중이거나 데이터 구조가 불완전할 때의 방어 로직
+  if (!retireConfig || !retireConfig.personal_params) {
+    return (
+      <div className="p-20 text-center flex flex-col items-center gap-4">
+        <RefreshCcw className="animate-spin text-slate-700" size={32} />
+        <p className="text-slate-500 font-black tracking-widest uppercase text-xs">Initializing Strategy Engine...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-4 space-y-16 pb-32">
@@ -122,7 +128,7 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
                 <div className="relative">
                   <input
                     type="text"
-                    value={retireConfig.personal_params.real_estate_price.toLocaleString()}
+                    value={(retireConfig.personal_params?.real_estate_price || 0).toLocaleString()}
                     onChange={(e) => {
                       const val = parseInt(e.target.value.replace(/,/g, "")) || 0;
                       setRetireConfig({
@@ -142,7 +148,7 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
                   <input
                     type="number"
                     step="0.1"
-                    value={retireConfig.tax_and_insurance.point_unit_price}
+                    value={retireConfig.tax_and_insurance?.point_unit_price || 208.4}
                     onChange={(e) => setRetireConfig({
                       ...retireConfig,
                       tax_and_insurance: { ...retireConfig.tax_and_insurance, point_unit_price: parseFloat(e.target.value) }
@@ -155,7 +161,7 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
                   <input
                     type="number"
                     step="0.01"
-                    value={retireConfig.tax_and_insurance.corp_tax_low_rate * 100}
+                    value={(retireConfig.tax_and_insurance?.corp_tax_low_rate || 0.09) * 100}
                     onChange={(e) => setRetireConfig({
                       ...retireConfig,
                       tax_and_insurance: { ...retireConfig.tax_and_insurance, corp_tax_low_rate: parseFloat(e.target.value) / 100 }
@@ -175,13 +181,13 @@ export function SettingsTab({ onSettingsUpdate }: { onSettingsUpdate?: () => voi
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
                   <label className="text-xs font-bold text-slate-400">안전 버퍼 목표 (SGOV)</label>
-                  <span className="text-amber-400 font-black text-sm">{retireConfig.trigger_thresholds.target_buffer_months}개월</span>
+                  <span className="text-amber-400 font-black text-sm">{retireConfig.trigger_thresholds?.target_buffer_months || 24}개월</span>
                 </div>
                 <input
                   type="range"
                   min="6"
                   max="60"
-                  value={retireConfig.trigger_thresholds.target_buffer_months}
+                  value={retireConfig.trigger_thresholds?.target_buffer_months || 24}
                   onChange={(e) => setRetireConfig({
                     ...retireConfig,
                     trigger_thresholds: { ...retireConfig.trigger_thresholds, target_buffer_months: parseInt(e.target.value) }
