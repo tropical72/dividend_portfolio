@@ -11,8 +11,8 @@ import {
   Camera,
   Activity,
   AlertCircle,
-  PieChart,
-  TrendingUp
+  Info,
+  ArrowRight
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -26,7 +26,10 @@ import {
 import { cn } from "../lib/utils";
 import type { RetirementConfig } from "../types";
 
-/** 은퇴 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
+/** 
+ * 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07]
+ * 스토리텔링 레이아웃: 가정 -> 결론 -> 증명 -> 검증 -> 감시
+ */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<{
@@ -57,13 +60,12 @@ export function RetirementTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSnapshotting, setIsSnapshotting] = useState(false);
 
-  // 설정 및 시뮬레이션 로드
+  // 데이터 로드 로직
   const fetchData = async (scenarioId: string | null = null) => {
     setIsLoading(true);
     try {
       const configRes = await fetch("http://localhost:8000/api/retirement/config");
       const configData = await configRes.json();
-      
       if (configData.success) {
         setConfig(configData.data);
         setActiveId(configData.data.active_assumption_id || "v1");
@@ -74,26 +76,20 @@ export function RetirementTab() {
           
         const simRes = await fetch(simUrl);
         const simData = await simRes.json();
-        if (simData.success) {
-          setSimulationData(simData.data);
-        }
+        if (simData.success) setSimulationData(simData.data);
       }
 
       const snapRes = await fetch("http://localhost:8000/api/retirement/snapshot");
       const snapData = await snapRes.json();
-      if (snapData.success && snapData.data.snapshot_date) {
-        setSnapshot(snapData.data);
-      }
+      if (snapData.success && snapData.data.snapshot_date) setSnapshot(snapData.data);
     } catch (err) {
-      console.error(err);
+      console.error("Simulation load error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSwitchVersion = async (id: string) => {
     setActiveId(id);
@@ -105,9 +101,7 @@ export function RetirementTab() {
         body: JSON.stringify({ active_assumption_id: id })
       });
       fetchData();
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleStressTest = (scenarioId: string) => {
@@ -131,12 +125,8 @@ export function RetirementTab() {
         body: JSON.stringify(snapshotData)
       });
       setSnapshot(snapshotData);
-      alert("은퇴일 스냅샷이 성공적으로 박제되었습니다.");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSnapshotting(false);
-    }
+      alert("은퇴일 스냅샷이 저장되었습니다.");
+    } catch (err) { console.error(err); } finally { setIsSnapshotting(false); }
   };
 
   if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse" data-testid="retirement-tab-content">Running Monte Carlo Simulation...</div>;
@@ -145,7 +135,7 @@ export function RetirementTab() {
       <div className="p-20 text-center text-red-400" data-testid="retirement-tab-content">
         <AlertTriangle className="mx-auto mb-4" size={48} />
         <h3 className="text-xl font-black">Simulation Data Error</h3>
-        <p className="text-sm opacity-80 mt-2">서버로부터 시뮬레이션 데이터를 가져오지 못했습니다.</p>
+        <p className="text-sm opacity-80 mt-2">서버로부터 데이터를 가져오지 못했습니다.</p>
       </div>
     );
   }
@@ -163,188 +153,133 @@ export function RetirementTab() {
   const level = getAssuranceLevel();
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 pb-20" data-testid="retirement-tab-content">
-      {/* 1. Psychological Header */}
-      <div className={cn(
-        "flex flex-col lg:flex-row lg:items-center justify-between gap-8 p-10 rounded-[3rem] border shadow-2xl relative overflow-hidden transition-all duration-1000",
-        activeScenario ? "bg-red-950/20 border-red-900/50" : "bg-slate-900/60 border-slate-800"
-      )}>
-        <div className="absolute right-0 top-0 w-1/3 h-full bg-gradient-to-l from-emerald-500/5 to-transparent pointer-events-none" />
-        
-        <div className="space-y-4 relative z-10">
-          <div className={cn("inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>
-            {level.icon} {level.label} Status
+    <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto" data-testid="retirement-tab-content">
+      
+      {/* Step 1. Set the Basis */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><Info size={18} className="text-slate-400" /></div>
+          <div>
+            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
+            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하세요.</p>
           </div>
-          <h2 className="text-4xl font-black text-slate-50 tracking-tighter leading-tight">
-            {activeScenario ? (
-              <>가장 혹독한 시나리오에서의 <br /><span className="text-red-400">생존 가능성입니다.</span></>
-            ) : (
-              <>"마스터는 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span>"</>
-            )}
-          </h2>
-          <p className="text-slate-400 font-medium max-w-lg">
-            {summary.is_permanent 
-              ? "30년 시뮬레이션 기간 동안 원금 훼손 없이 안전 버퍼(SGOV)만으로 현금흐름 유지가 가능합니다."
-              : `SGOV 고갈 시점은 ${summary.sgov_exhaustion_date}이며, 이후 ${summary.growth_asset_sell_start_date}부터 성장 자산 매도가 시작될 것으로 예측됩니다.`
-            }
-          </p>
         </div>
 
-        <div className="flex flex-col gap-4 relative z-10">
-          <div className="flex bg-slate-950 p-1.5 rounded-[1.5rem] border border-slate-800">
-            {Object.entries(config.assumptions).map(([id, item]) => (
-              <button 
-                key={id}
-                onClick={() => handleSwitchVersion(id)}
-                className={cn(
-                  "px-6 py-2.5 text-[10px] font-black rounded-2xl transition-all duration-300 flex items-center gap-2 uppercase tracking-widest",
-                  activeId === id && !activeScenario
-                    ? "bg-emerald-500 text-slate-950 shadow-lg" 
-                    : "text-slate-500 hover:text-slate-300"
-                )}
-              >
-                <RefreshCcw size={12} className={cn(activeId === id && !activeScenario && "animate-spin-slow")} />
-                {item.name}
-              </button>
-            ))}
-          </div>
-          <button 
-            onClick={handleTakeSnapshot}
-            disabled={isSnapshotting}
-            className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-black rounded-2xl border border-slate-700 transition-all uppercase tracking-widest"
-          >
-            {isSnapshotting ? <RefreshCcw className="animate-spin" size={16} /> : <Camera size={16} />}
-            {snapshot ? `Snapshot: ${snapshot.snapshot_date}` : "Take Retirement Snapshot"}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Health Monitor & Alerts [Structure 6] */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4 bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <Activity className="text-emerald-400" size={20} />
-            </div>
-            <h3 className="text-sm font-black text-slate-200 uppercase tracking-widest">Health Monitor</h3>
-          </div>
-          
-          <div className="space-y-4 flex-1">
-            {signals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-10 text-center gap-3">
-                <CheckCircle2 className="text-emerald-500/20" size={48} />
-                <p className="text-xs font-bold text-slate-500 uppercase">System Status: Optimal</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Object.entries(config.assumptions).map(([id, item]) => (
+            <button key={id} onClick={() => handleSwitchVersion(id)} className={cn("p-6 rounded-[2rem] border transition-all duration-500 text-left group", activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" : "bg-slate-900/40 border-slate-800 hover:border-slate-700")}>
+              <div className="flex justify-between items-start mb-4">
+                <h4 className={cn("text-lg font-black tracking-tight", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
+                {activeId === id && <CheckCircle2 size={20} className="text-emerald-400" />}
               </div>
-            ) : (
+              <div className="flex gap-6 text-sm font-black text-slate-200">
+                <span>{(item.expected_return * 100).toFixed(2)}% Return</span>
+                <span className="text-slate-700">|</span>
+                <span>{(item.inflation_rate * 100).toFixed(1)}% Inflation</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Step 2. Verdict & Proof */}
+      <section className="space-y-8">
+        <div className={cn("p-10 rounded-[3.5rem] border shadow-2xl transition-all duration-1000", activeScenario ? "bg-red-950/10 border-red-900/30" : "bg-slate-900/60 border-slate-800")}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-5 space-y-8">
+              <div className="space-y-4">
+                <div className={cn("inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]", level.bg, level.color)}>
+                  {level.icon} {level.label} Status
+                </div>
+                <h2 className="text-4xl font-black text-slate-50 tracking-tighter leading-tight">
+                  {activeScenario ? <>위기 상황 분석 결과</> : <>혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></>}
+                </h2>
+                <p className="text-slate-400 text-sm font-medium">자산은 향후 {summary.total_survival_years}년 동안 지속 가능합니다.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs font-black">
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1">Growth Sell</p>{summary.growth_asset_sell_start_date}</div>
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1">SGOV Zero</p>{summary.sgov_exhaustion_date}</div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <XAxis dataKey="month" tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem' }} formatter={(v: any) => [`${(Number(v)/100000000).toFixed(1)}억`]} />
+                  <Legend verticalAlign="top" align="right" height={36} iconType="circle" formatter={(val) => <span className="text-[10px] font-black text-slate-500 uppercase ml-1">{val === 'corp_balance' ? 'Corp' : 'Pension'}</span>} />
+                  <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
+                  <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Step 3. Stress Test */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><Zap size={18} className="text-slate-400" /></div>
+          <div>
+            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 3. Stress Test</h3>
+            <p className="text-[11px] text-slate-500 font-bold">최악의 상황을 검증하세요.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StressButton active={activeScenario === "BEAR"} onClick={() => handleStressTest("BEAR")} icon={<TrendingDown size={18} />} label="Bear Market" desc="지수 -30% 폭락 주입" />
+          <StressButton active={activeScenario === "STAGFLATION"} onClick={() => handleStressTest("STAGFLATION")} icon={<CloudRain size={18} />} label="Stagflation" desc="수익 0% + 물가 4%" />
+          <StressButton active={activeScenario === "DIVIDEND_CUT"} onClick={() => handleStressTest("DIVIDEND_CUT")} icon={<Coins size={18} />} label="Dividend Cut" desc="배당금 -25% 삭감" />
+        </div>
+      </section>
+
+      {/* Step 4. Health Monitor */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><Activity size={18} className="text-slate-400" /></div>
+          <div>
+            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 4. Health Monitor</h3>
+            <p className="text-[11px] text-slate-500 font-bold">운영 조언 및 경고입니다.</p>
+          </div>
+        </div>
+        <div className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {signals.length === 0 ? <p className="col-span-full py-10 text-center text-xs font-black uppercase text-slate-600">All Systems Normal</p> : 
               signals.map((s, i) => (
-                <div key={i} className="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl space-y-2">
+                <div key={i} className="bg-slate-950/50 border border-slate-800 p-5 rounded-3xl space-y-3">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className={cn("shrink-0", s.level === "RED" ? "text-red-400" : "text-amber-400")} size={14} />
-                    <span className="text-[10px] font-black text-slate-300 uppercase"> 은퇴 후 {Math.floor(s.month/12)}년차 경고 </span>
+                    <AlertCircle className={cn(s.level === "RED" ? "text-red-400" : "text-amber-400")} size={14} />
+                    <span className="text-[10px] font-black text-slate-400 uppercase">{Math.floor(s.month/12)}년차 경고</span>
                   </div>
                   <p className="text-xs font-bold text-slate-100 leading-relaxed">{s.message}</p>
-                  <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">Suggestion: {s.suggestion}</p>
+                  <p className="text-[10px] text-slate-500 italic flex items-center gap-1"><ArrowRight size={10} /> {s.suggestion}</p>
                 </div>
               ))
-            )}
+            }
           </div>
         </div>
+      </section>
 
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
-            {summary.infinite_with_10pct_cut && (
-              <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
-            )}
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <ShieldCheck size={14} className="text-blue-500" /> Sustainability
-            </p>
-            <div className="space-y-2">
-              <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
-                {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
-              </h3>
-              {summary.infinite_with_10pct_cut ? (
-                <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1">
-                  <CheckCircle2 size={12} /> Permanent at 10% cost cut
-                </p>
-              ) : (
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Standard retirement profile</p>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <TrendingUp size={14} className="text-blue-500" /> Exhaustion Date
-            </p>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
-                {summary.growth_asset_sell_start_date}
-              </h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <PieChart size={14} className="text-amber-500" /> Buffer Point
-            </p>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
-                {summary.sgov_exhaustion_date}
-              </h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">SGOV Depletion</p>
-            </div>
-          </div>
+      {/* Snapshot */}
+      <footer className="pt-10 border-t border-slate-800 flex justify-between items-center px-4">
+        <div className="text-xs font-bold text-slate-500 flex items-center gap-3">
+          <Camera size={18} /> {snapshot ? `은퇴일 원본 계획(${snapshot.snapshot_date}) 보존 중` : "원본 계획을 박제하세요."}
         </div>
-      </div>
-
-      <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 px-4 py-2 border-r border-slate-800 mr-2">
-          <Zap size={16} className="text-amber-400" />
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Stress Scenarios</span>
-        </div>
-        <button onClick={() => handleStressTest("BEAR")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "BEAR" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><TrendingDown size={14} /> Bear Market (-30%)</button>
-        <button onClick={() => handleStressTest("STAGFLATION")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "STAGFLATION" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><CloudRain size={14} /> Stagflation</button>
-        <button onClick={() => handleStressTest("DIVIDEND_CUT")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "DIVIDEND_CUT" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><Coins size={14} /> Dividend Cut (-25%)</button>
-        {activeScenario && <button onClick={() => { setActiveScenario(null); fetchData(); }} className="ml-auto text-[10px] font-black text-emerald-400 flex items-center gap-1 hover:underline"><RefreshCcw size={12} /> Reset to Normal</button>}
-      </div>
-
-      <div className={cn("bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000", activeScenario ? "border-red-900/30" : "border-slate-800")}>
-        <div className="mb-8 flex items-center justify-between px-4">
-          <div>
-            <h4 className="text-xl font-black text-slate-50 tracking-tight flex items-center gap-3">
-              Long-term Asset Trajectory 
-              <span className="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 uppercase tracking-widest">30 Year Scale</span>
-            </h4>
-            <p className="text-slate-500 text-xs mt-1 font-bold">초록색은 법인 자산, 파란색은 연금 자산의 누적 잔액을 나타냅니다.</p>
-          </div>
-        </div>
-
-        <div className="h-[400px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <XAxis dataKey="month" tickFormatter={(v) => `Y${Math.floor(v/12)}`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(1)}억`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }} 
-                formatter={(v: any) => {
-                  const numVal = Number(v) || 0;
-                  return [`${(numVal / 100000000).toFixed(2)}억 KRW`];
-                }}
-              />
-              <Legend 
-                verticalAlign="top" 
-                align="right" 
-                height={36} 
-                iconType="circle"
-                formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value === 'corp_balance' ? 'Corporate Asset' : 'Pension Asset'}</span>}
-              />
-              <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="#10b981" fillOpacity={0.1} />
-              <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        <button onClick={handleTakeSnapshot} disabled={isSnapshotting} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-2xl border border-slate-700 transition-all uppercase tracking-widest flex items-center gap-2">
+          {isSnapshotting ? <RefreshCcw className="animate-spin" size={16} /> : <Camera size={16} />}
+          {snapshot ? "Update Snapshot" : "Set Retirement Date"}
+        </button>
+      </footer>
     </div>
+  );
+}
+
+function StressButton({ active, onClick, icon, label, desc }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, desc: string }) {
+  return (
+    <button onClick={onClick} className={cn("p-6 rounded-[2rem] border transition-all duration-500 text-left group", active ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:border-red-900/50")}>
+      <div className="flex items-center gap-3 mb-2"><div className={cn("p-2 rounded-lg", active ? "bg-slate-950/20" : "bg-slate-900 group-hover:bg-red-950/30")}>{icon}</div><span className="text-sm font-black uppercase tracking-tight">{label}</span></div>
+      <p className={cn("text-[10px] font-bold", active ? "text-slate-900/70" : "text-slate-600 group-hover:text-red-400/60")}>{desc}</p>
+    </button>
   );
 }
