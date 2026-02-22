@@ -179,11 +179,11 @@ export function RetirementTab() {
               </div>
               
               <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Return Rate</p>
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Return Rate</p>
                   <EditableInput 
                     initialValue={item.expected_return * 100}
-                    masterValue={(item.master_return ?? item.expected_return) * 100}
+                    masterValue={(item.master_return ?? 0.0485) * 100}
                     onCommit={async (newVal) => {
                       const val = newVal / 100;
                       const newConfig = {
@@ -201,11 +201,11 @@ export function RetirementTab() {
                   />
                 </div>
                 
-                <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Inflation</p>
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Inflation</p>
                   <EditableInput 
                     initialValue={item.inflation_rate * 100}
-                    masterValue={(item.master_inflation ?? item.inflation_rate) * 100}
+                    masterValue={(item.master_inflation ?? 0.025) * 100}
                     onCommit={async (newVal) => {
                       const val = newVal / 100;
                       const newConfig = {
@@ -331,7 +331,7 @@ export function RetirementTab() {
   );
 }
 
-/** [REQ-UI-03] 엔터 키 지원, 자동 포맷팅, 기본값 되돌리기 버튼 포함 입력 컴포넌트 */
+/** [REQ-UI-03] 명확한 리셋 버튼과 포맷팅을 지원하는 입력 컴포넌트 */
 function EditableInput({ initialValue, masterValue, onCommit }: { initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
   const [value, setValue] = useState(initialValue.toFixed(1));
 
@@ -353,29 +353,32 @@ function EditableInput({ initialValue, masterValue, onCommit }: { initialValue: 
     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
   };
 
-  const isChanged = Math.abs(initialValue - masterValue) > 0.01;
+  // 마스터 값과 0.05% 이상 차이날 때만 리셋 버튼 노출
+  const isChanged = Math.abs(initialValue - masterValue) > 0.05;
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative group/input flex items-center">
+    <div className="flex items-center gap-3 mt-1">
+      <div className="relative flex items-center">
         <input 
           type="text"
-          className="bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-1.5 w-20 text-sm font-black text-slate-200 outline-none focus:border-emerald-500/50 transition-all pr-8"
+          className="bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2 w-24 text-base font-black text-emerald-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-8"
           value={value}
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => setValue(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         />
-        <span className="absolute right-3 text-[10px] font-bold text-slate-600">%</span>
+        <span className="absolute right-3 text-[10px] font-black text-slate-500">%</span>
       </div>
+      
       {isChanged && (
         <button 
           onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }}
-          className="p-2 bg-emerald-500/20 hover:bg-emerald-500/40 rounded-xl text-emerald-400 transition-all shadow-lg animate-in zoom-in duration-300 flex items-center justify-center shrink-0"
-          title={`마스터 설정값(${masterValue.toFixed(1)}%)으로 되돌리기`}
+          className="group/reset p-2 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg animate-in zoom-in duration-300 flex items-center gap-2"
+          title={`Settings 마스터 값(${masterValue.toFixed(1)}%)으로 되돌리기`}
         >
-          <RotateCcw size={14} strokeWidth={3} />
+          <RotateCcw size={14} strokeWidth={3} className="group-hover/reset:rotate-[-120deg] transition-transform duration-500" />
+          <span className="text-[10px] font-black uppercase tracking-tighter pr-1">Reset</span>
         </button>
       )}
     </div>
