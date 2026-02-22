@@ -57,7 +57,12 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     
     // 세부 정보(자산 구성 등)가 나타나는지 확인
     await expect(testCard.locator(".portfolio-details")).toBeVisible();
-    await expect(testCard.getByText(/Asset Allocation/i)).toBeVisible();
+    
+    // 요구사항 4번: 종목별 연/월 수익 표시 확인
+    await expect(testCard.getByText("Annual (USD)").first()).toBeVisible();
+    await expect(testCard.getByText("Annual (KRW)").first()).toBeVisible();
+    await expect(testCard.getByText("Monthly (USD)").first()).toBeVisible();
+    await expect(testCard.getByText("Monthly (KRW)").first()).toBeVisible();
   });
 
   test("should load portfolio into designer when Load button is clicked", async ({ page }) => {

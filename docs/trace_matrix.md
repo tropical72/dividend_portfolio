@@ -7,10 +7,11 @@
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit |
 |:---|:---|:---|:---|:---|:---|
 | REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | bc24140 |
+| REQ-RAMS-1.3 | 미래 확정 자금 이벤트 반영 엔진 | T-05-5.1.2 | TEST-API-EV | Done | [Current] |
 | REQ-RAMS-2.1 | 법인 세후 현금흐름 순수 함수 엔진 | T-01-1.2 | TEST-TAX-01 | Done | 98348ee |
 | REQ-RAMS-2.2 | 지역건보료 점수제(재산/소득) 모듈 | T-01-1.2.2 | TEST-TAX-02 | Done | 98348ee |
 | REQ-RAMS-2.3 | 법인 vs 개인 타당성 분석 로직 | T-01-2.1.2 | TEST-TAX-03 | Done | 986d124 |
-| REQ-RAMS-3.1 | 연령 기반 Phase 자동 스위칭 엔진 | T-01-3.1 | TEST-PHS-01 | In Progress | - |
+| REQ-RAMS-3.1 | 연령 기반 Phase 자동 스위칭 엔진 | T-01-3.1 | TEST-PHS-01 | Done | [Current] |
 | REQ-RAMS-3.2 | 인플레이션 및 자산 수익률 복리 엔진 | T-01-3.2 | TEST-SUR-01 | Done | 3a741f4 |
 | REQ-RAMS-3.3 | 30년 생애 주기 프로젝션 엔진 | T-01-3.2.1 | TEST-SUR-01 | Done | 3a741f4 |
 | REQ-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Done | 46b0de0 |

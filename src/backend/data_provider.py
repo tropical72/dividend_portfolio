@@ -395,7 +395,7 @@ class StockDataProvider:
                 return float(hist["Close"].iloc[-1])
         except Exception as e:
             print(f"Exchange Rate Fetch Error: {e}")
-        
+
         return 1400.0  # 오류 시 기본 환율 (보수적 접근)
 
     def calculate_historical_annual_dividend(self, ticker_symbol: str) -> float:

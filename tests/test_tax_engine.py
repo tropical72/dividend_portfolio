@@ -38,3 +38,23 @@ def test_corp_tax_calculation():
     tax_2 = engine.calculate_corp_tax(profit=300000000) # 3억
     # 2억 * 9% + 1억 * 19% = 1800만 + 1900만 = 3700만
     assert tax_2 == 37000000
+
+def test_tax_engine_boundary_cases():
+    """세무 엔진의 경계값 및 예외 상황 테스트 (Regression 보강)"""
+    engine = TaxEngine()
+
+    # 1. 소득이 0원일 때 소득 점수는 0점이어야 함
+    assert engine.get_income_points(annual_income=0) == 0
+    assert engine.get_income_points(annual_income=3360000) == 0 # 하한선 이하
+
+    # 2. 재산이 1억 원 이하(공제 범위)일 때 재산 점수는 0점이어야 함
+    assert engine.get_property_points(property_val=50000000) == 0
+    assert engine.get_property_points(property_val=100000000) == 0
+
+    # 3. 법인세 경계값 (딱 2억 원일 때)
+    assert engine.calculate_corp_tax(profit=200000000) == 18000000 # 딱 9% 상한
+
+    # 4. 매우 높은 급여에 대한 4대보험 계산 (에러 발생 여부 체크)
+    income_info = engine.calculate_income_tax(monthly_salary=20000000) # 월 2000만
+    assert income_info["net_salary"] < 20000000
+    assert income_info["health"] > 0

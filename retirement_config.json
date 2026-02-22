@@ -1,16 +1,25 @@
 {
-    "active_assumption_id": "v1",
+    "active_assumption_id": "conservative",
     "user_profile": {
         "birth_year": 1972,
-        "birth_month": 3,
-        "private_pension_start_age": 55,
-        "national_pension_start_age": 65
+        "birth_month": 3
     },
     "simulation_params": {
-        "target_monthly_cashflow": 9000000,
-        "inflation_rate": 0.025,
-        "expected_market_growth": 0.0485
+        "simulation_start_year": 2026,
+        "simulation_start_month": 3,
+        "target_monthly_cashflow": 9000000
     },
+    "planned_cashflows": [
+        {
+            "id": "test-event",
+            "name": "테스트 유입",
+            "year": 2035,
+            "month": 6,
+            "amount": 500000000,
+            "type": "INFLOW",
+            "entity": "CORP"
+        }
+    ],
     "corp_params": {
         "initial_investment": 1600000000,
         "capital_stock": 50000000,
@@ -20,22 +29,14 @@
         "employee_count": 1
     },
     "pension_params": {
-        "initial_investment": 600000000,
         "severance_reserve": 350000000,
         "other_reserve": 250000000,
         "monthly_withdrawal_target": 2500000
     },
-    "planned_cashflows": [
-        {
-            "id": "init-event-1",
-            "type": "INFLOW",
-            "entity": "CORP",
-            "amount": 0,
-            "year": 2030,
-            "month": 1,
-            "description": "예시: 자산 매각 대금"
-        }
-    ],
+    "personal_params": {
+        "real_estate_price": 620000000,
+        "other_assets": 0
+    },
     "tax_and_insurance": {
         "point_unit_price": 208.4,
         "ltc_rate": 0.1295,
@@ -54,7 +55,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.0485,
+            "expected_return": 0.04850000000000001,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.0485,

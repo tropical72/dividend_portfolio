@@ -177,21 +177,47 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         active_id, assumptions.get("v1", {"expected_return": 0.0485, "inflation_rate": 0.025})
     )
 
-    # 3. 시뮬레이션 파라미터 결합
+    # 3. 시뮬레이션 파라미터 결합 (모든 하드코딩 상수 제거 및 설정 연동)
     sim_params = config.get("simulation_params", {})
+    user_profile = config.get("user_profile", {})
+    pension_params = config.get("pension_params", {})
+    trigger_params = config.get("trigger_thresholds", {})
+    
     base_params = {
+        # 기본 인출 및 수익률 설정
         "target_monthly_cashflow": sim_params.get("target_monthly_cashflow", 9000000),
         "inflation_rate": assumption.get("inflation_rate", 0.025),
         "market_return_rate": assumption.get("expected_return", 0.0485),
+        
+        # 사용자 프로필 (연령 기반 Phase 전환용)
+        "birth_year": user_profile.get("birth_year", 1972),
+        "birth_month": user_profile.get("birth_month", 3),
+        "private_pension_start_age": user_profile.get("pension_start_age", 55),
+        "national_pension_start_age": user_profile.get("national_pension_start_age", 65),
+        
+        # 시뮬레이션 제어 파라미터
+        "simulation_start_year": sim_params.get("simulation_start_year", 2026),
+        "simulation_start_month": sim_params.get("simulation_start_month", 3),
+        "target_buffer_months": trigger_params.get("target_buffer_months", 30),
+        
+        # 자산별 세부 인출 전략
+        "pension_withdrawal_target": pension_params.get("monthly_withdrawal_target", 2500000),
+        "national_pension_amount": sim_params.get("national_pension_amount", 1500000),
+        
+        # 미래 확정 자금 이벤트 리스트 [REQ-RAMS-1.3]
+        "planned_cashflows": config.get("planned_cashflows", []),
+        
+        # 법인 운영 비용 (세무 엔진 연동용)
         "corp_salary": corp_params.get("monthly_salary", 2500000),
         "corp_fixed_cost": corp_params.get("monthly_fixed_cost", 500000),
-        "birth_year": config.get("user_profile", {}).get("birth_year", 1972)
     }
 
     final_params = base_params
     if scenario:
+        # 스트레스 테스트 시나리오 적용 (예: 폭락장, 고물가 등)
         final_params = stress_engine.apply_scenario(base_params, scenario.upper())
 
+    # 엔진 실행: 30년(360개월) 장기 시뮬레이션 수행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
 
     # [Debug] 결과 데이터 정합성 확인
