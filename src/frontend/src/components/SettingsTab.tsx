@@ -9,7 +9,8 @@ import {
   TrendingUp, 
   Calculator,
   BellRing,
-  RefreshCcw
+  RefreshCcw,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { RetirementConfig, AppSettings } from "../types";
@@ -195,6 +196,60 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* 시나리오 기본값 설정 섹션 추가 */}
+          <section className="space-y-8">
+            <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+              <ShieldCheck size={14} /> Assumption Profile Defaults
+            </h3>
+            <div className="grid grid-cols-1 gap-6">
+              {Object.entries(retireConfig.assumptions || {}).map(([id, item]: [string, any]) => (
+                <div key={id} className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 space-y-4">
+                  <h4 className="text-sm font-black text-slate-200 uppercase tracking-tight">{item.name} Defaults</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Return Rate (%)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={(item.expected_return * 100).toFixed(2)}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) / 100;
+                          setRetireConfig({
+                            ...retireConfig,
+                            assumptions: {
+                              ...retireConfig.assumptions,
+                              [id]: { ...item, expected_return: val }
+                            }
+                          });
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-bold text-sm outline-none focus:border-blue-500/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Inflation (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={(item.inflation_rate * 100).toFixed(1)}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) / 100;
+                          setRetireConfig({
+                            ...retireConfig,
+                            assumptions: {
+                              ...retireConfig.assumptions,
+                              [id]: { ...item, inflation_rate: val }
+                            }
+                          });
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-bold text-sm outline-none focus:border-blue-500/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         </div>

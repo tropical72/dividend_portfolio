@@ -167,17 +167,85 @@ export function RetirementTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(config.assumptions).map(([id, item]) => (
-            <button key={id} onClick={() => handleSwitchVersion(id)} className={cn("p-6 rounded-[2rem] border transition-all duration-500 text-left group", activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" : "bg-slate-900/40 border-slate-800 hover:border-slate-700")}>
+            <div 
+              key={id} 
+              onClick={() => activeId !== id && handleSwitchVersion(id)}
+              className={cn(
+                "p-6 rounded-[2rem] border transition-all duration-500 text-left group relative",
+                activeId === id && !activeScenario
+                  ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" 
+                  : "bg-slate-900/40 border-slate-800 hover:border-slate-700 cursor-pointer"
+              )}
+            >
               <div className="flex justify-between items-start mb-4">
                 <h4 className={cn("text-lg font-black tracking-tight", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
                 {activeId === id && <CheckCircle2 size={20} className="text-emerald-400" />}
               </div>
-              <div className="flex gap-6 text-sm font-black text-slate-200">
-                <span>{(item.expected_return * 100).toFixed(2)}% Return</span>
-                <span className="text-slate-700">|</span>
-                <span>{(item.inflation_rate * 100).toFixed(1)}% Inflation</span>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Return Rate</p>
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="number"
+                      step="0.01"
+                      className="bg-transparent border-none p-0 w-16 text-sm font-black text-slate-200 outline-none focus:ring-0"
+                      value={(item.expected_return * 100).toFixed(2)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={async (e) => {
+                        const val = parseFloat(e.target.value) / 100;
+                        const newConfig = {
+                          ...config,
+                          assumptions: {
+                            ...config.assumptions,
+                            [id]: { ...item, expected_return: val }
+                          }
+                        };
+                        setConfig(newConfig);
+                        await fetch("http://localhost:8000/api/retirement/config", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(newConfig)
+                        });
+                        if (activeId === id) fetchData(); // 현재 보고 있는 버전이면 즉시 재시뮬레이션
+                      }}
+                    />
+                    <span className="text-[10px] font-bold text-slate-600">%</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Inflation</p>
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="number"
+                      step="0.1"
+                      className="bg-transparent border-none p-0 w-12 text-sm font-black text-slate-200 outline-none focus:ring-0"
+                      value={(item.inflation_rate * 100).toFixed(1)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={async (e) => {
+                        const val = parseFloat(e.target.value) / 100;
+                        const newConfig = {
+                          ...config,
+                          assumptions: {
+                            ...config.assumptions,
+                            [id]: { ...item, inflation_rate: val }
+                          }
+                        };
+                        setConfig(newConfig);
+                        await fetch("http://localhost:8000/api/retirement/config", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(newConfig)
+                        });
+                        if (activeId === id) fetchData();
+                      }}
+                    />
+                    <span className="text-[10px] font-bold text-slate-600">%</span>
+                  </div>
+                </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </section>
