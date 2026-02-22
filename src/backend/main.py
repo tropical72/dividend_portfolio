@@ -9,6 +9,7 @@ from src.backend.api import DividendBackend
 
 from src.core.projection_engine import ProjectionEngine
 from src.core.tax_engine import TaxEngine
+from src.core.stress_engine import StressTestEngine
 
 # [환경 설정] 데이터 저장 경로를 결정합니다.
 DATA_DIR = os.getenv("APP_DATA_DIR", ".")
@@ -20,6 +21,7 @@ backend = DividendBackend(data_dir=DATA_DIR)
 # Core Engines 초기화
 tax_engine = TaxEngine()
 projection_engine = ProjectionEngine(tax_engine=tax_engine)
+stress_engine = StressTestEngine()
 
 # --- [데이터 모델 정의] ---
 
@@ -173,7 +175,7 @@ async def update_retirement_config(req: RetirementConfigRequest):
 
 
 @app.get("/api/retirement/simulate")
-async def run_retirement_simulation():
+async def run_retirement_simulation(scenario: Optional[str] = None):
     """저장된 설정을 기반으로 30년 은퇴 시뮬레이션을 실행합니다. [REQ-RAMS-3.3]"""
     config = backend.get_retirement_config()
     if not config:
@@ -191,8 +193,10 @@ async def run_retirement_simulation():
     assumption = config["assumptions"].get(active_id, config["assumptions"]["v1"])
 
     # 3. 시뮬레이션 파라미터 결합
-    params = {
-        "target_monthly_cashflow": config["simulation_params"].get("target_monthly_cashflow", 9000000),
+    base_params = {
+        "target_monthly_cashflow": config["simulation_params"].get(
+            "target_monthly_cashflow", 9000000
+        ),
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": assumption["expected_return"],
         "corp_salary": config["corp_params"]["monthly_salary"],
@@ -201,7 +205,12 @@ async def run_retirement_simulation():
         - config["corp_params"]["monthly_salary"],
     }
 
-    # 4. 시뮬레이션 실행
-    result = projection_engine.run_30yr_simulation(initial_assets, params)
+    # 4. 스트레스 시나리오 적용 (요청 시)
+    final_params = base_params
+    if scenario:
+        final_params = stress_engine.apply_scenario(base_params, scenario.upper())
+
+    # 5. 시뮬레이션 실행
+    result = projection_engine.run_30yr_simulation(initial_assets, final_params)
 
     return {"success": True, "data": result}
