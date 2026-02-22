@@ -13,10 +13,11 @@
 | REQ-RAMS-3.2 | 인플레이션 및 자산 수익률 복리 엔진 | T-01-3.2 | TEST-SUR-01 | Done | 3a741f4 |
 | REQ-RAMS-3.3 | 30년 생애 주기 프로젝션 엔진 | T-01-3.2.1 | TEST-SUR-01 | Done | 3a741f4 |
 | REQ-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Done | 46b0de0 |
-| REQ-RAMS-6.1 | 실시간 이벤트 트리거 및 시그널 엔진 | T-01-2.1.1 | TEST-TRG-01 | Done | d7b86d2 |
+| REQ-RAMS-6.1 | 실시간 이벤트 트리거 및 Health Monitor | T-01-2.1.1 | TEST-TRG-01 | Done | a5fad29 |
 | REQ-RAMS-5.2 | 표준 스트레스 테스트 시나리오 엔진 | T-01-3.1 | TEST-STR-01 | Done | fe258b7 |
 | REQ-RAMS-7.1 | 심리적 안도감(Assurance) 산출 로직 | T-01-3.2 | TEST-PSY-01 | Done | 5e0b224 |
 | REQ-RAMS-7.4 | Scenario Snapshot (은퇴일 스냅샷) | T-01-3.3 | TEST-SNP-01 | Done | 0bd7273 |
+| REQ-RAMS-4.1 | 리밸런싱 트리거 및 세무 마찰 비용 엔진 | T-01-4.1 | TEST-REB-01 | Pending | - |
 
 ---
 
@@ -34,4 +35,4 @@
 | REQ-PRT-06.4 | 월별 배당 분포 시각화 (Bar Chart) | T-02-4.2.1 | TEST-DSB-02 | Done | c4b130a |
 
 ---
-*마지막 업데이트: 2026-02-22 19:45:00*
+*마지막 업데이트: 2026-02-22 20:15:00*
