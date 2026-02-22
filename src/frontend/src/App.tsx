@@ -152,27 +152,27 @@ function App() {
       {/* 메인 컨텐츠 영역 */}
       <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
         <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-800 p-10 shadow-sm min-h-full">
-          <div className={cn(activeTab === "retirement" ? "block" : "hidden")}>
+          {activeTab === "retirement" && (
             <RetirementTab />
-          </div>
-          <div className={cn(activeTab === "assets" ? "block" : "hidden")}>
+          )}
+          {activeTab === "assets" && (
             <PortfolioTab 
               items={designItems} 
               setItems={setDesignItems} 
               activeTab={activeTab} 
               globalSettings={safeSettings}
             />
-          </div>
-          <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>
+          )}
+          {activeTab === "watchlist" && (
             <WatchlistTab onAddToPortfolio={handleAddToPortfolio} />
-          </div>
-          <div className={cn(activeTab === "strategy" ? "block" : "hidden")}>
+          )}
+          {activeTab === "strategy" && (
             <SettingsTab 
               onSettingsUpdate={fetchSettings} 
               globalSettings={safeSettings}
               globalRetireConfig={retireConfig}
             />
-          </div>
+          )}
         </div>
       </main>
     </div>

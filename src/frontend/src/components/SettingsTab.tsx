@@ -93,7 +93,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
   };
 
   // 데이터 로딩 중이거나 데이터 구조가 불완전할 때의 방어 로직
-  if (!retireConfig || !retireConfig.personal_params) {
+  if (!retireConfig) {
     return (
       <div className="p-20 text-center flex flex-col items-center gap-4">
         <RefreshCcw className="animate-spin text-slate-700" size={32} />
@@ -128,7 +128,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                 <div className="relative">
                   <input
                     type="text"
-                    value={(retireConfig.personal_params?.real_estate_price || 0).toLocaleString()}
+                    value={(retireConfig.personal_params?.real_estate_price ?? 0).toLocaleString()}
                     onChange={(e) => {
                       const val = parseInt(e.target.value.replace(/,/g, "")) || 0;
                       setRetireConfig({
@@ -148,7 +148,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                   <input
                     type="number"
                     step="0.1"
-                    value={retireConfig.tax_and_insurance?.point_unit_price || 208.4}
+                    value={retireConfig.tax_and_insurance?.point_unit_price ?? 208.4}
                     onChange={(e) => setRetireConfig({
                       ...retireConfig,
                       tax_and_insurance: { ...retireConfig.tax_and_insurance, point_unit_price: parseFloat(e.target.value) }
@@ -161,7 +161,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                   <input
                     type="number"
                     step="0.01"
-                    value={(retireConfig.tax_and_insurance?.corp_tax_low_rate || 0.09) * 100}
+                    value={(retireConfig.tax_and_insurance?.corp_tax_low_rate ?? 0.09) * 100}
                     onChange={(e) => setRetireConfig({
                       ...retireConfig,
                       tax_and_insurance: { ...retireConfig.tax_and_insurance, corp_tax_low_rate: parseFloat(e.target.value) / 100 }
@@ -181,13 +181,13 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
                   <label className="text-xs font-bold text-slate-400">안전 버퍼 목표 (SGOV)</label>
-                  <span className="text-amber-400 font-black text-sm">{retireConfig.trigger_thresholds?.target_buffer_months || 24}개월</span>
+                  <span className="text-amber-400 font-black text-sm">{retireConfig.trigger_thresholds?.target_buffer_months ?? 24}개월</span>
                 </div>
                 <input
                   type="range"
                   min="6"
                   max="60"
-                  value={retireConfig.trigger_thresholds?.target_buffer_months || 24}
+                  value={retireConfig.trigger_thresholds?.target_buffer_months ?? 24}
                   onChange={(e) => setRetireConfig({
                     ...retireConfig,
                     trigger_thresholds: { ...retireConfig.trigger_thresholds, target_buffer_months: parseInt(e.target.value) }

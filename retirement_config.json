@@ -1,44 +1,59 @@
 {
-  "active_assumption_id": "v1",
-  "user_profile": {
-    "birth_year": 1972,
-    "pension_start_age": 55,
-    "national_pension_start_age": 65
-  },
-  "corp_params": {
-    "initial_investment": 1600000000,
-    "capital_stock": 50000000,
-    "initial_shareholder_loan": 1550000000,
-    "monthly_salary": 2500000,
-    "monthly_fixed_cost": 500000,
-    "employee_count": 1
-  },
-  "pension_params": {
-    "severance_reserve": 350000000,
-    "other_reserve": 250000000,
-    "monthly_withdrawal_target": 2500000
-  },
-  "tax_and_insurance": {
-    "point_unit_price": 208.4,
-    "ltc_rate": 0.1295,
-    "corp_tax_threshold": 200000000,
-    "corp_tax_low_rate": 0.09,
-    "corp_tax_high_rate": 0.19,
-    "pension_rate": 0.045,
-    "health_rate": 0.03545
-  },
-  "trigger_thresholds": {
-    "tax_threshold": 200000000,
-    "target_buffer_months": 24,
-    "high_income_cap_rate": 0.40,
-    "market_panic_threshold": -0.20
-  },
-  "assumptions": {
-    "v1": {
-      "name": "Standard (V1)",
-      "expected_return": 0.0485,
-      "expected_growth": 0.02,
-      "inflation_rate": 0.025
+    "active_assumption_id": "v1",
+    "user_profile": {
+        "birth_year": 1972,
+        "pension_start_age": 55,
+        "national_pension_start_age": 65
+    },
+    "simulation_params": {
+        "target_monthly_cashflow": 9000000,
+        "inflation_rate": 0.025,
+        "expected_market_growth": 0.0485
+    },
+    "corp_params": {
+        "initial_investment": 1600000000,
+        "capital_stock": 50000000,
+        "initial_shareholder_loan": 1550000000,
+        "monthly_salary": 2500000,
+        "monthly_fixed_cost": 500000,
+        "employee_count": 1
+    },
+    "pension_params": {
+        "severance_reserve": 350000000,
+        "other_reserve": 250000000,
+        "monthly_withdrawal_target": 2500000
+    },
+    "personal_params": {
+        "real_estate_price": 1000000000,
+        "other_assets": 0
+    },
+    "tax_and_insurance": {
+        "point_unit_price": 208.4,
+        "ltc_rate": 0.1295,
+        "corp_tax_threshold": 200000000,
+        "corp_tax_low_rate": 0.09,
+        "corp_tax_high_rate": 0.19,
+        "pension_rate": 0.045,
+        "health_rate": 0.03545
+    },
+    "trigger_thresholds": {
+        "tax_threshold": 200000000,
+        "target_buffer_months": 24,
+        "high_income_cap_rate": 0.4,
+        "market_panic_threshold": -0.2
+    },
+    "assumptions": {
+        "v1": {
+            "name": "Standard (V1)",
+            "expected_return": 0.0485,
+            "expected_growth": 0.02,
+            "inflation_rate": 0.025
+        },
+        "conservative": {
+            "name": "Conservative",
+            "expected_return": 0.035,
+            "expected_growth": 0.01,
+            "inflation_rate": 0.035
+        }
     }
-  }
 }
