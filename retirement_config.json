@@ -3,7 +3,6 @@
     "user_profile": {
         "birth_year": 1972,
         "birth_month": 8,
-        "pension_start_age": 55,
         "private_pension_start_age": 55,
         "national_pension_start_age": 65
     },
@@ -12,7 +11,7 @@
         "inflation_rate": 0.025,
         "expected_market_growth": 0.0485,
         "simulation_start_year": 2026,
-        "simulation_start_month": 3,
+        "simulation_start_month": 5,
         "national_pension_amount": 2000000
     },
     "corp_params": {
@@ -40,7 +39,9 @@
         "corp_tax_low_rate": 0.09,
         "corp_tax_high_rate": 0.19,
         "pension_rate": 0.045,
-        "health_rate": 0.03545
+        "health_rate": 0.03545,
+        "employment_rate": 0.009,
+        "income_tax_estimate_rate": 0.05
     },
     "trigger_thresholds": {
         "tax_threshold": 200000000,
