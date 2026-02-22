@@ -1,10 +1,14 @@
 import pytest
 from src.core.projection_engine import ProjectionEngine
 from src.core.tax_engine import TaxEngine
+from src.core.trigger_engine import TriggerEngine
+from src.core.rebalance_engine import RebalanceEngine
 
 def test_longterm_survival_simulation():
     """30년 장기 생존 시뮬레이션 테스트 (REQ-RAMS-3.2)"""
     tax_engine = TaxEngine()
+    trigger_engine = TriggerEngine()
+    rebalance_engine = RebalanceEngine()
     
     # 기초 데이터 설정
     initial_assets = {
@@ -22,7 +26,11 @@ def test_longterm_survival_simulation():
         "loan_repayment": 6500000
     }
     
-    engine = ProjectionEngine(tax_engine=tax_engine)
+    engine = ProjectionEngine(
+        tax_engine=tax_engine,
+        trigger_engine=trigger_engine,
+        rebalance_engine=rebalance_engine
+    )
     result = engine.run_30yr_simulation(initial_assets, params)
     
     # 검증 포인트
@@ -31,20 +39,8 @@ def test_longterm_survival_simulation():
     assert len(result["monthly_data"]) > 0
     
     summary = result["summary"]
-    # 로그 출력을 변수화하여 안전하게 처리
     years = summary['total_survival_years']
-    sgov_date = summary['sgov_exhaustion_date']
-    growth_date = summary['growth_asset_sell_start_date']
     
     print(f"\n[Survival Test] Survival Years: {years}")
-    print(f"[Survival Test] SGOV Exhaustion: {sgov_date}")
-    print(f"[Survival Test] Growth Sell Start: {growth_date}")
-    
-    # 16억/6억 자본이면 30년은 충분히 버텨야 함
     assert summary["total_survival_years"] >= 30
-    
-    # [NEW] 10% 절감 시 영구 생존 여부 확인
-    print(f"[Survival Test] Infinite with 10% Cut: {summary['infinite_with_10pct_cut']}")
-    # 22억 자본에 810만 인출이면 영구 생존할 가능성이 큼
-    if summary["total_survival_years"] >= 30:
-        assert "infinite_with_10pct_cut" in summary
+    assert "infinite_with_10pct_cut" in summary
