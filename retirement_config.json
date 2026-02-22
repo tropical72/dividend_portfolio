@@ -1,5 +1,5 @@
 {
-    "active_assumption_id": "v1",
+    "active_assumption_id": "conservative",
     "user_profile": {
         "birth_year": 1972,
         "pension_start_age": 55,
@@ -24,7 +24,7 @@
         "monthly_withdrawal_target": 2500000
     },
     "personal_params": {
-        "real_estate_price": 1000000000,
+        "real_estate_price": 620000000,
         "other_assets": 0
     },
     "tax_and_insurance": {
@@ -44,16 +44,20 @@
     },
     "assumptions": {
         "v1": {
-            "name": "Standard (V1)",
-            "expected_return": 0.0485,
+            "name": "Standard Profile",
+            "expected_return": 0.04850000000000001,
             "expected_growth": 0.02,
-            "inflation_rate": 0.025
+            "inflation_rate": 0.025,
+            "master_return": 0.0485,
+            "master_inflation": 0.025
         },
         "conservative": {
-            "name": "Conservative",
+            "name": "Conservative Profile",
             "expected_return": 0.035,
             "expected_growth": 0.01,
-            "inflation_rate": 0.035
+            "inflation_rate": 0.035,
+            "master_return": 0.035,
+            "master_inflation": 0.035
         }
     }
 }

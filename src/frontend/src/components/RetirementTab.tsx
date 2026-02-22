@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Info,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  TrendingUp
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -66,7 +67,8 @@ export function RetirementTab() {
       const configData = await configRes.json();
       if (configData.success) {
         setConfig(configData.data);
-        setActiveId(configData.data.active_assumption_id || "v1");
+        const currentActiveId = configData.data.active_assumption_id || "v1";
+        setActiveId(currentActiveId);
         
         const simUrl = scenarioId 
           ? `http://localhost:8000/api/retirement/simulate?scenario=${scenarioId}`
@@ -159,7 +161,7 @@ export function RetirementTab() {
           <div className="p-2 bg-slate-800 rounded-lg"><Info size={18} className="text-slate-400" /></div>
           <div>
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
-            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요. (Enter로 확정)</p>
+            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요.</p>
           </div>
         </div>
 
@@ -170,18 +172,19 @@ export function RetirementTab() {
               onClick={() => activeId !== id && handleSwitchVersion(id)} 
               className={cn(
                 "p-6 rounded-[2rem] border transition-all duration-500 text-left group relative", 
-                activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" : "bg-slate-900/40 border-slate-800 hover:border-slate-700 cursor-pointer"
+                activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20 shadow-xl shadow-emerald-500/5" : "bg-slate-900/40 border-slate-800 hover:border-slate-700 cursor-pointer"
               )}
             >
               <div className="flex justify-between items-start mb-4">
                 <h4 className={cn("text-lg font-black tracking-tight", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
-                {activeId === id && <CheckCircle2 size={20} className="text-emerald-400" />}
+                {activeId === id && <CheckCircle2 size={20} className="text-emerald-400 shadow-glow" />}
               </div>
               
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Return Rate</p>
                   <EditableInput 
+                    id={`return-${id}`}
                     initialValue={item.expected_return * 100}
                     masterValue={(item.master_return ?? 0.0485) * 100}
                     onCommit={async (newVal) => {
@@ -204,6 +207,7 @@ export function RetirementTab() {
                 <div className="space-y-2">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Inflation</p>
                   <EditableInput 
+                    id={`inflation-${id}`}
                     initialValue={item.inflation_rate * 100}
                     masterValue={(item.master_inflation ?? 0.025) * 100}
                     onCommit={async (newVal) => {
@@ -230,7 +234,15 @@ export function RetirementTab() {
 
       {/* Step 2. Verdict & Proof */}
       <section className="space-y-8">
-        <div className={cn("p-10 rounded-[3.5rem] border shadow-2xl transition-all duration-1000", activeScenario ? "bg-red-950/10 border-red-900/30" : "bg-slate-900/60 border-slate-800")}>
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><TrendingUp size={18} className="text-slate-400" /></div>
+          <div>
+            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 2. The Verdict & Proof</h3>
+            <p className="text-[11px] text-slate-500 font-bold">시뮬레이션 결과에 따른 최종 결론 및 증명입니다.</p>
+          </div>
+        </div>
+
+        <div className={cn("p-10 rounded-[3.5rem] border shadow-2xl transition-all duration-1000", activeScenario ? "bg-red-950/10 border-red-900/30" : "bg-slate-900/60 border-slate-800 shadow-emerald-500/5")}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 space-y-8">
               <div className="space-y-4">
@@ -240,15 +252,27 @@ export function RetirementTab() {
                 <h2 className="text-4xl font-black text-slate-50 tracking-tighter leading-tight">
                   {activeScenario ? <>위기 상황 분석 결과</> : <>혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></>}
                 </h2>
-                <p className="text-slate-400 text-sm font-medium">자산은 향후 {summary.total_survival_years}년 동안 지속 가능합니다.</p>
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                  자산은 향후 <span className="text-slate-100 font-black" data-testid="survival-years">{summary.total_survival_years}년</span> 동안 지속 가능합니다.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4 text-xs font-black">
-                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1">Growth Sell</p>{summary.growth_asset_sell_start_date}</div>
-                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1">SGOV Zero</p>{summary.sgov_exhaustion_date}</div>
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1 uppercase tracking-widest text-[9px]">Growth Sell</p>{summary.growth_asset_sell_start_date}</div>
+                <div className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800"><p className="text-slate-500 mb-1 uppercase tracking-widest text-[9px]">SGOV Zero</p>{summary.sgov_exhaustion_date}</div>
               </div>
             </div>
 
-            <div className="lg:col-span-7 h-[350px]">
+            <div className="lg:col-span-7 h-[350px] relative">
+              <div className="absolute top-0 right-0 z-20 flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[9px] font-black text-slate-500 uppercase">Corp Asset</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="text-[9px] font-black text-slate-500 uppercase">Pension Asset</span>
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
@@ -264,9 +288,8 @@ export function RetirementTab() {
                   <XAxis dataKey="month" tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem' }} formatter={(v: any) => [`${(Number(v)/100000000).toFixed(1)}억`]} />
-                  <Legend verticalAlign="top" align="right" height={36} iconType="circle" formatter={(val) => <span className="text-[10px] font-black text-slate-500 uppercase ml-1">{val === 'corp_balance' ? 'Corp' : 'Pension'}</span>} />
-                  <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" fill="url(#colorC)" />
-                  <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" fill="url(#colorP)" />
+                  <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorC)" />
+                  <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="url(#colorP)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -331,53 +354,37 @@ export function RetirementTab() {
   );
 }
 
-/** [REQ-UI-03] 명확한 리셋 버튼과 포맷팅을 지원하는 입력 컴포넌트 */
-function EditableInput({ initialValue, masterValue, onCommit }: { initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
+/** [REQ-UI-03] 엔터 키 지원, 자동 포맷팅, 리셋 버튼 포함 입력 컴포넌트 */
+function EditableInput({ id, initialValue, masterValue, onCommit }: { id: string, initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
   const [value, setValue] = useState(initialValue.toFixed(1));
-
-  useEffect(() => {
-    setValue(initialValue.toFixed(1));
-  }, [initialValue]);
-
+  useEffect(() => { setValue(initialValue.toFixed(1)); }, [initialValue]);
   const handleBlur = () => {
     const num = parseFloat(value);
-    if (!isNaN(num)) {
-      onCommit(num);
-      setValue(num.toFixed(1));
-    } else {
-      setValue(initialValue.toFixed(1));
-    }
+    if (!isNaN(num)) { onCommit(num); setValue(num.toFixed(1)); }
+    else { setValue(initialValue.toFixed(1)); }
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-  };
-
-  // 마스터 값과 0.05% 이상 차이날 때만 리셋 버튼 노출
+  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); };
   const isChanged = Math.abs(initialValue - masterValue) > 0.05;
 
   return (
     <div className="flex items-center gap-3 mt-1">
       <div className="relative flex items-center">
         <input 
-          type="text"
-          className="bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2 w-24 text-base font-black text-emerald-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-8"
-          value={value}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
+          id={id}
+          data-testid={id}
+          type="text" 
+          className="bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2 w-24 text-base font-black text-emerald-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-8" 
+          value={value} 
+          onClick={(e) => e.stopPropagation()} 
+          onChange={(e) => setValue(e.target.value)} 
+          onBlur={handleBlur} 
+          onKeyDown={handleKeyDown} 
         />
         <span className="absolute right-3 text-[10px] font-black text-slate-500">%</span>
       </div>
-      
       {isChanged && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }}
-          className="group/reset p-2 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg animate-in zoom-in duration-300 flex items-center gap-2"
-          title={`Settings 마스터 값(${masterValue.toFixed(1)}%)으로 되돌리기`}
-        >
-          <RotateCcw size={14} strokeWidth={3} className="group-hover/reset:rotate-[-120deg] transition-transform duration-500" />
+        <button onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }} className="p-2 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg animate-in zoom-in duration-300 flex items-center gap-2">
+          <RotateCcw size={14} strokeWidth={3} />
           <span className="text-[10px] font-black uppercase tracking-tighter pr-1">Reset</span>
         </button>
       )}

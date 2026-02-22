@@ -182,8 +182,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         "market_return_rate": assumption.get("expected_return", 0.0485),
         "corp_salary": corp_params.get("monthly_salary", 2500000),
         "corp_fixed_cost": corp_params.get("monthly_fixed_cost", 500000),
-        "loan_repayment": sim_params.get("target_monthly_cashflow", 9000000)
-        - corp_params.get("monthly_salary", 2500000),
+        "birth_year": config.get("user_profile", {}).get("birth_year", 1972)
     }
 
     final_params = base_params
