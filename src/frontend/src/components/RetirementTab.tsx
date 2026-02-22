@@ -12,7 +12,8 @@ import {
   Activity,
   AlertCircle,
   Info,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -26,10 +27,7 @@ import {
 import { cn } from "../lib/utils";
 import type { RetirementConfig } from "../types";
 
-/** 
- * 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07]
- * 스토리텔링 레이아웃: 가정 -> 결론 -> 증명 -> 검증 -> 감시
- */
+/** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<{
@@ -60,7 +58,7 @@ export function RetirementTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSnapshotting, setIsSnapshotting] = useState(false);
 
-  // 데이터 로드 로직
+  // 데이터 로드
   const fetchData = async (scenarioId: string | null = null) => {
     setIsLoading(true);
     try {
@@ -161,7 +159,7 @@ export function RetirementTab() {
           <div className="p-2 bg-slate-800 rounded-lg"><Info size={18} className="text-slate-400" /></div>
           <div>
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
-            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요.</p>
+            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요. (Enter로 확정)</p>
           </div>
         </div>
 
@@ -183,60 +181,46 @@ export function RetirementTab() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Return Rate</p>
-                  <div className="flex items-center gap-1">
-                    <input 
-                      type="number"
-                      step="0.1"
-                      className="bg-transparent border-none p-0 w-16 text-sm font-black text-slate-200 outline-none focus:ring-0"
-                      defaultValue={(item.expected_return * 100).toFixed(1)}
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={async (e) => {
-                        const val = parseFloat(e.target.value) / 100;
-                        if (isNaN(val)) return;
-                        const newConfig = {
-                          ...config,
-                          assumptions: { ...config.assumptions, [id]: { ...item, expected_return: val } }
-                        };
-                        setConfig(newConfig);
-                        await fetch("http://localhost:8000/api/retirement/config", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(newConfig)
-                        });
-                        if (activeId === id) fetchData();
-                      }}
-                    />
-                    <span className="text-[10px] font-bold text-slate-600">%</span>
-                  </div>
+                  <EditableInput 
+                    initialValue={item.expected_return * 100}
+                    masterValue={(item.master_return ?? item.expected_return) * 100}
+                    onCommit={async (newVal) => {
+                      const val = newVal / 100;
+                      const newConfig = {
+                        ...config,
+                        assumptions: { ...config.assumptions, [id]: { ...item, expected_return: val } }
+                      };
+                      setConfig(newConfig);
+                      await fetch("http://localhost:8000/api/retirement/config", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(newConfig)
+                      });
+                      if (activeId === id) fetchData();
+                    }}
+                  />
                 </div>
                 
                 <div className="space-y-1">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Inflation</p>
-                  <div className="flex items-center gap-1">
-                    <input 
-                      type="number"
-                      step="0.1"
-                      className="bg-transparent border-none p-0 w-12 text-sm font-black text-slate-200 outline-none focus:ring-0"
-                      defaultValue={(item.inflation_rate * 100).toFixed(1)}
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={async (e) => {
-                        const val = parseFloat(e.target.value) / 100;
-                        if (isNaN(val)) return;
-                        const newConfig = {
-                          ...config,
-                          assumptions: { ...config.assumptions, [id]: { ...item, inflation_rate: val } }
-                        };
-                        setConfig(newConfig);
-                        await fetch("http://localhost:8000/api/retirement/config", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(newConfig)
-                        });
-                        if (activeId === id) fetchData();
-                      }}
-                    />
-                    <span className="text-[10px] font-bold text-slate-600">%</span>
-                  </div>
+                  <EditableInput 
+                    initialValue={item.inflation_rate * 100}
+                    masterValue={(item.master_inflation ?? item.inflation_rate) * 100}
+                    onCommit={async (newVal) => {
+                      const val = newVal / 100;
+                      const newConfig = {
+                        ...config,
+                        assumptions: { ...config.assumptions, [id]: { ...item, inflation_rate: val } }
+                      };
+                      setConfig(newConfig);
+                      await fetch("http://localhost:8000/api/retirement/config", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(newConfig)
+                      });
+                      if (activeId === id) fetchData();
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -343,6 +327,57 @@ export function RetirementTab() {
           {snapshot ? "Update Snapshot" : "Set Retirement Date"}
         </button>
       </footer>
+    </div>
+  );
+}
+
+/** [REQ-UI-03] 엔터 키 지원, 자동 포맷팅, 기본값 되돌리기 버튼 포함 입력 컴포넌트 */
+function EditableInput({ initialValue, masterValue, onCommit }: { initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
+  const [value, setValue] = useState(initialValue.toFixed(1));
+
+  useEffect(() => {
+    setValue(initialValue.toFixed(1));
+  }, [initialValue]);
+
+  const handleBlur = () => {
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      onCommit(num);
+      setValue(num.toFixed(1));
+    } else {
+      setValue(initialValue.toFixed(1));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+  };
+
+  const isChanged = Math.abs(initialValue - masterValue) > 0.01;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative group/input flex items-center">
+        <input 
+          type="text"
+          className="bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-1.5 w-20 text-sm font-black text-slate-200 outline-none focus:border-emerald-500/50 transition-all pr-8"
+          value={value}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+        <span className="absolute right-3 text-[10px] font-bold text-slate-600">%</span>
+      </div>
+      {isChanged && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }}
+          className="p-2 bg-emerald-500/20 hover:bg-emerald-500/40 rounded-xl text-emerald-400 transition-all shadow-lg animate-in zoom-in duration-300 flex items-center justify-center shrink-0"
+          title={`마스터 설정값(${masterValue.toFixed(1)}%)으로 되돌리기`}
+        >
+          <RotateCcw size={14} strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 }
