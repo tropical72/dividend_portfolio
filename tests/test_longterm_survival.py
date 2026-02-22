@@ -42,3 +42,9 @@ def test_longterm_survival_simulation():
     
     # 16억/6억 자본이면 30년은 충분히 버텨야 함
     assert summary["total_survival_years"] >= 30
+    
+    # [NEW] 10% 절감 시 영구 생존 여부 확인
+    print(f"[Survival Test] Infinite with 10% Cut: {summary['infinite_with_10pct_cut']}")
+    # 22억 자본에 810만 인출이면 영구 생존할 가능성이 큼
+    if summary["total_survival_years"] >= 30:
+        assert "infinite_with_10pct_cut" in summary

@@ -166,15 +166,24 @@ export function RetirementTab() {
           </div>
         </div>
 
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+          {summary.infinite_with_10pct_cut && (
+            <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+          )}
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <ShieldCheck size={14} className="text-blue-500" /> Exhaustion Target
+            <ShieldCheck size={14} className="text-blue-500" /> Sustainability
           </p>
           <div className="space-y-2">
-            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
-              {summary.growth_asset_sell_start_date}
+            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
+              {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
             </h3>
-            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
+            {summary.infinite_with_10pct_cut ? (
+              <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1">
+                <CheckCircle2 size={12} /> Permanent at 10% cost cut
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Standard retirement profile</p>
+            )}
           </div>
         </div>
 
