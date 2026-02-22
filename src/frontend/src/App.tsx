@@ -11,7 +11,7 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
 import { RetirementTab } from "./components/RetirementTab";
-import type { PortfolioItem, Stock, AppSettings } from "./types";
+import type { PortfolioItem, Stock, AppSettings, RetirementConfig } from "./types";
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -20,6 +20,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("retirement");
   const [health, setHealth] = useState<string>("checking...");
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(null);
   
   // [NEW] 포트폴리오 설계 중인 항목들
   const [designItems, setDesignItems] = useState<PortfolioItem[]>([]);
@@ -30,19 +31,15 @@ function App() {
       .then((data) => {
         if (data && data.success && data.data) {
           setSettings(data.data);
-        } else {
-          throw new Error("Invalid settings data");
         }
-      })
-      .catch((err) => {
-        console.error("Failed to load settings:", err);
-        // 기본값 강제 설정하여 렌더링 재개
-        setSettings({
-          dart_api_key: "",
-          gemini_api_key: "",
-          default_capital: 10000,
-          default_currency: "USD"
-        });
+      });
+      
+    fetch("http://localhost:8000/api/retirement/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.data) {
+          setRetireConfig(data.data);
+        }
       });
   };
 
@@ -55,6 +52,14 @@ function App() {
 
     fetchSettings();
   }, []);
+
+  // [UI 안정성] 설정이 로드되지 않았을 때의 기본값 보정
+  const safeSettings: AppSettings = settings || {
+    dart_api_key: "",
+    gemini_api_key: "",
+    default_capital: 10000,
+    default_currency: "USD"
+  };
 
   /** Watchlist에서 종목들을 포트폴리오로 이관하는 핸들러 [REQ-PRT-02.1] */
   const handleAddToPortfolio = (newStocks: Stock[], category: PortfolioItem["category"]) => {
@@ -76,6 +81,17 @@ function App() {
     });
     setActiveTab("assets"); // 자산 관리 탭으로 전환
   };
+
+  if (!settings || !retireConfig) {
+    return (
+      <div className="h-screen bg-slate-950 flex flex-col items-center justify-center gap-6">
+        <div className="p-4 bg-emerald-500 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.2)] animate-bounce">
+          <TrendingUp className="text-slate-950 w-8 h-8" />
+        </div>
+        <p className="text-slate-500 font-black tracking-widest uppercase text-xs animate-pulse">Initializing RAMS Engine...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -144,7 +160,7 @@ function App() {
               items={designItems} 
               setItems={setDesignItems} 
               activeTab={activeTab} 
-              globalSettings={settings}
+              globalSettings={safeSettings}
             />
           </div>
           <div className={cn(activeTab === "watchlist" ? "block" : "hidden")}>

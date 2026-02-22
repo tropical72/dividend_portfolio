@@ -7,12 +7,19 @@ from pydantic import BaseModel
 
 from src.backend.api import DividendBackend
 
+from src.core.projection_engine import ProjectionEngine
+from src.core.tax_engine import TaxEngine
+
 # [환경 설정] 데이터 저장 경로를 결정합니다.
 DATA_DIR = os.getenv("APP_DATA_DIR", ".")
 
 # [앱 초기화] FastAPI 서비스 및 백엔드 비즈니스 엔진 로드
 app = FastAPI(title="Dividend Portfolio Manager API")
 backend = DividendBackend(data_dir=DATA_DIR)
+
+# Core Engines 초기화
+tax_engine = TaxEngine()
+projection_engine = ProjectionEngine(tax_engine=tax_engine)
 
 # --- [데이터 모델 정의] ---
 
@@ -163,3 +170,38 @@ async def update_retirement_config(req: RetirementConfigRequest):
     """은퇴 운용 설정을 업데이트합니다."""
     config_dict = req.model_dump(exclude_none=True)
     return backend.update_retirement_config(config_dict)
+
+
+@app.get("/api/retirement/simulate")
+async def run_retirement_simulation():
+    """저장된 설정을 기반으로 30년 은퇴 시뮬레이션을 실행합니다. [REQ-RAMS-3.3]"""
+    config = backend.get_retirement_config()
+    if not config:
+        return {"success": False, "message": "설정 데이터가 없습니다."}
+
+    # 1. 기초 자산 구성
+    initial_assets = {
+        "corp": config["corp_params"]["initial_investment"],
+        "pension": config["pension_params"]["severance_reserve"]
+        + config["pension_params"]["other_reserve"],
+    }
+
+    # 2. 활성 가정(Assumption) 추출
+    active_id = config.get("active_assumption_id", "v1")
+    assumption = config["assumptions"].get(active_id, config["assumptions"]["v1"])
+
+    # 3. 시뮬레이션 파라미터 결합
+    params = {
+        "target_monthly_cashflow": config["simulation_params"].get("target_monthly_cashflow", 9000000),
+        "inflation_rate": assumption["inflation_rate"],
+        "market_return_rate": assumption["expected_return"],
+        "corp_salary": config["corp_params"]["monthly_salary"],
+        "corp_fixed_cost": config["corp_params"]["monthly_fixed_cost"],
+        "loan_repayment": config["simulation_params"].get("target_monthly_cashflow", 9000000)
+        - config["corp_params"]["monthly_salary"],
+    }
+
+    # 4. 시뮬레이션 실행
+    result = projection_engine.run_30yr_simulation(initial_assets, params)
+
+    return {"success": True, "data": result}

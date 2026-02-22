@@ -3,133 +3,265 @@ import {
   ShieldCheck, 
   TrendingUp, 
   RefreshCcw, 
-  BarChart3,
-  PieChart
+  PieChart,
+  CheckCircle2,
+  AlertTriangle,
+  History
 } from "lucide-react";
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  ReferenceLine
+} from "recharts";
 import { cn } from "../lib/utils";
 import type { RetirementConfig } from "../types";
 
-/** 은퇴 시뮬레이션 탭 컴포넌트 [REQ-RAMS-07] */
+/** 은퇴 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
+  const [simulationData, setSimulationData] = useState<{
+    summary: { total_survival_years: number };
+    monthly_data: Array<{
+      month: number;
+      corp_balance: number;
+      pension_balance: number;
+      total_net_worth: number;
+      target_cashflow: number;
+    }>;
+  } | null>(null);
   const [activeId, setActiveId] = useState<string>("v1");
   const [isLoading, setIsLoading] = useState(true);
 
-  // 설정 로드
-  useEffect(() => {
-    fetch("http://localhost:8000/api/retirement/config")
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          setConfig(res.data);
-          setActiveId(res.data.active_assumption_id || "v1");
+  // 설정 및 시뮬레이션 로드
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const configRes = await fetch("http://localhost:8000/api/retirement/config");
+      const configData = await configRes.json();
+      
+      if (configData.success) {
+        setConfig(configData.data);
+        setActiveId(configData.data.active_assumption_id || "v1");
+        
+        // 시뮬레이션 즉시 실행
+        const simRes = await fetch("http://localhost:8000/api/retirement/simulate");
+        const simData = await simRes.json();
+        if (simData.success) {
+          setSimulationData(simData.data);
         }
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoading(false);
-      });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  /** 시나리오 버전 스위칭 */
+  /** 시나리오 변경 시 재시뮬레이션 */
   const handleSwitchVersion = async (id: string) => {
     setActiveId(id);
-    // 백엔드에 현재 활성 버전 업데이트 (옵션)
     try {
       await fetch("http://localhost:8000/api/retirement/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active_assumption_id: id })
       });
+      // 버전 변경 후 다시 데이터 로드 (재시뮬레이션 포함)
+      fetchData();
     } catch (err) {
-      console.error("Failed to update active version:", err);
+      console.error(err);
     }
   };
 
-  if (isLoading) return <div className="p-20 text-center text-slate-500 font-black animate-pulse">Loading Simulation Engine...</div>;
-  if (!config) return <div className="p-20 text-center text-red-400">Failed to load retirement configuration.</div>;
+  if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse">Running Monte Carlo Simulation...</div>;
+  if (!config || !simulationData) return <div className="p-20 text-center text-red-400">Failed to load data.</div>;
 
   const currentAssumption = config.assumptions[activeId] || config.assumptions["v1"];
+  const summary = simulationData.summary;
+  const chartData = simulationData.monthly_data.filter((_, i) => i % 12 === 0); // 연단위로 축소해서 표시
+
+  // 심리적 안도감 등급 판정
+  const getAssuranceLevel = () => {
+    if (summary.total_survival_years > 40) return { label: "Unshakable", color: "text-emerald-400", bg: "bg-emerald-500/10", icon: <CheckCircle2 size={24} /> };
+    if (summary.total_survival_years > 25) return { label: "Solid", color: "text-blue-400", bg: "bg-blue-500/10", icon: <ShieldCheck size={24} /> };
+    return { label: "Fragile", color: "text-amber-400", bg: "bg-amber-500/10", icon: <AlertTriangle size={24} /> };
+  };
+
+  const level = getAssuranceLevel();
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
-      {/* 상단 헤더 및 시나리오 선택 */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        <div>
-          <h2 className="text-3xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
-            <ShieldCheck className="text-emerald-400" size={32} /> Retirement Strategic Planner
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20" data-testid="retirement-tab-content">
+      {/* 1. Psychological Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-slate-900/60 p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-1/3 h-full bg-gradient-to-l from-emerald-500/5 to-transparent pointer-events-none" />
+        
+        <div className="space-y-4 relative z-10">
+          <div className={cn("inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>
+            {level.icon} {level.label} Status
+          </div>
+          <h2 className="text-4xl font-black text-slate-50 tracking-tighter leading-tight">
+            "마스터는 원하는 모습으로 <br />
+            <span className="text-emerald-400 font-black">은퇴할 수 있습니다.</span>"
           </h2>
-          <p className="text-slate-400 text-sm mt-2 font-medium">마스터의 30년 은퇴 자산 운용 및 인출 전략 시뮬레이션</p>
+          <p className="text-slate-400 font-medium max-w-lg">
+            현재 설계된 자산 구조와 인출 전략으로 향후 <span className="text-slate-100 font-black">{summary.total_survival_years}년</span> 이상의 평온한 생활이 보장됩니다.
+          </p>
         </div>
 
-        <div className="flex bg-slate-900/50 p-1.5 rounded-[1.5rem] border border-slate-800 shadow-inner">
-          {Object.entries(config.assumptions).map(([id, item]) => (
-            <button 
-              key={id}
-              onClick={() => handleSwitchVersion(id)}
-              className={cn(
-                "px-6 py-2.5 text-xs font-black rounded-2xl transition-all duration-300 flex items-center gap-2",
-                activeId === id 
-                  ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20" 
-                  : "text-slate-500 hover:text-slate-300"
-              )}
-            >
-              <RefreshCcw size={14} className={cn(activeId === id && "animate-spin-slow")} />
-              {item.name}
-            </button>
-          ))}
+        <div className="flex flex-col gap-4 relative z-10">
+          <div className="flex bg-slate-950 p-1.5 rounded-[1.5rem] border border-slate-800">
+            {Object.entries(config.assumptions).map(([id, item]) => (
+              <button 
+                key={id}
+                onClick={() => handleSwitchVersion(id)}
+                className={cn(
+                  "px-6 py-2.5 text-[10px] font-black rounded-2xl transition-all duration-300 flex items-center gap-2 uppercase tracking-widest",
+                  activeId === id 
+                    ? "bg-emerald-500 text-slate-950 shadow-lg" 
+                    : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                <RefreshCcw size={12} className={cn(activeId === id && "animate-spin-slow")} />
+                {item.name}
+              </button>
+            ))}
+          </div>
+          <button className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-2xl border border-slate-700 transition-all uppercase tracking-widest">
+            <History size={16} /> Take Retirement Snapshot
+          </button>
         </div>
       </div>
 
-      {/* 요약 카드 섹션 (Psychological Dashboard 기초) */}
+      {/* 2. Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Current Assumption</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <TrendingUp size={14} className="text-emerald-500" /> Return & Inflation
+          </p>
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-400 font-bold">Return Rate</span>
-              <span className="text-lg font-black text-emerald-400">{(currentAssumption.expected_return * 100).toFixed(2)}%</span>
+            <div className="flex justify-between items-end">
+              <span className="text-sm text-slate-400 font-bold uppercase tracking-tighter text-[11px]">Return Rate</span>
+              <span className="text-2xl font-black text-slate-50">{(currentAssumption.expected_return * 100).toFixed(2)}%</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-400 font-bold">Inflation</span>
-              <span className="text-lg font-black text-amber-400">{(currentAssumption.inflation_rate * 100).toFixed(1)}%</span>
+            <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ width: `${currentAssumption.expected_return * 100 * 5}%` }} />
             </div>
           </div>
         </div>
 
-        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 relative overflow-hidden">
-          <TrendingUp className="absolute -right-4 -top-4 w-32 h-32 text-emerald-500/5 rotate-12" />
-          <div className="relative z-10">
-            <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-4">Sustainability</p>
-            <h3 className="text-4xl font-black text-slate-50 tracking-tighter">45+ <span className="text-xl text-slate-500 font-bold">Years</span></h3>
-            <p className="text-xs text-emerald-400/60 font-bold mt-2 uppercase tracking-tighter">Safe to retire as planned</p>
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-blue-500" /> Sustainability
+          </p>
+          <div className="space-y-2">
+            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
+              {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
+            </h3>
+            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Permanent at 10% cost cut</p>
           </div>
         </div>
 
-        <div className="bg-blue-500/5 border border-blue-500/10 rounded-[2.5rem] p-8 relative overflow-hidden">
-          <PieChart className="absolute -right-4 -top-4 w-32 h-32 text-blue-500/5 -rotate-12" />
-          <div className="relative z-10">
-            <p className="text-[10px] font-black text-blue-500/60 uppercase tracking-widest mb-4">Safe Buffer (SGOV)</p>
-            <h3 className="text-4xl font-black text-slate-50 tracking-tighter">32 <span className="text-xl text-slate-500 font-bold">Months</span></h3>
-            <p className="text-xs text-blue-400/60 font-bold mt-2 uppercase tracking-tighter">Target: 30 Months</p>
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <PieChart size={14} className="text-amber-500" /> Liquidity Buffer
+          </p>
+          <div className="space-y-2">
+            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
+              30<span className="text-xl text-slate-500 font-black ml-1 uppercase">Months</span>
+            </h3>
+            <p className="text-[10px] text-amber-400/60 font-black uppercase tracking-widest">SGOV Safety Threshold: 24M</p>
           </div>
         </div>
       </div>
 
-      {/* 시뮬레이션 메인 영역 (차트 등) */}
-      <div className="bg-slate-950/40 border border-slate-800 rounded-[3rem] p-10 h-[500px] flex flex-col items-center justify-center text-center gap-6 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/5 via-transparent to-transparent opacity-50" />
-        <BarChart3 size={64} className="text-slate-800 group-hover:text-emerald-500/20 transition-all duration-700" />
-        <div className="space-y-2 relative z-10">
-          <h4 className="text-xl font-black text-slate-200 tracking-tight">Long-term Asset Projection</h4>
-          <p className="text-sm text-slate-500 font-medium max-w-md">30년 시계열 자산 추이 및 인출 시뮬레이션 결과가 여기에 렌더링됩니다. (Phase 2.1 구현 예정)</p>
-        </div>
-        
-        <div className="mt-8 flex gap-4 relative z-10">
-          <div className="px-6 py-3 bg-slate-900/80 rounded-2xl border border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            Detailed Life-Cycle Analysis incoming
+      {/* 3. 30-Year Asset Projection Chart */}
+      <div className="bg-slate-950/60 border border-slate-800 rounded-[3.5rem] p-10 shadow-inner">
+        <div className="mb-10 flex items-center justify-between">
+          <div>
+            <h4 className="text-xl font-black text-slate-50 tracking-tight flex items-center gap-3">
+              Long-term Asset Trajectory <span className="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 uppercase tracking-widest">30 Year Scale</span>
+            </h4>
+            <p className="text-slate-500 text-xs mt-1 font-bold">인플레이션과 복리 수익률을 반영한 자산 잔액 추이 (단위: KRW)</p>
           </div>
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Corp Asset</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pension Asset</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-[400px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 40, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorCorp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorPension" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+              <XAxis 
+                dataKey="month" 
+                tickFormatter={(val) => `Y${Math.floor(val/12)}`}
+                stroke="#475569" 
+                fontSize={10} 
+                fontWeight="bold"
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis 
+                stroke="#475569" 
+                fontSize={10} 
+                fontWeight="bold"
+                tickFormatter={(val) => `${(val / 100000000).toFixed(1)}억`}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }}
+                itemStyle={{ fontWeight: 'black' }}
+                formatter={(val: number) => [`${(val / 100000000).toFixed(2)}억 KRW`]}
+                labelFormatter={(val) => `은퇴 후 ${Math.floor(Number(val)/12)}년차`}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="corp_balance" 
+                stackId="1"
+                stroke="#10b981" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorCorp)" 
+              />
+              <Area 
+                type="monotone" 
+                dataKey="pension_balance" 
+                stackId="1"
+                stroke="#3b82f6" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorPension)" 
+              />
+              <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
