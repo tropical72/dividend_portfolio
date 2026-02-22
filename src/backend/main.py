@@ -151,6 +151,9 @@ async def get_retirement_config():
 @app.post("/api/retirement/config")
 async def update_retirement_config(req: RetirementConfigRequest):
     config_dict = req.model_dump(exclude_none=True)
+    # [Debug] 수신된 데이터 로그 출력 (Planned Cashflows 확인용)
+    if "planned_cashflows" in config_dict:
+        print(f"[Storage] Received {len(config_dict['planned_cashflows'])} cashflow events for storage.")
     return backend.update_retirement_config(config_dict)
 
 

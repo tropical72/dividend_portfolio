@@ -33,7 +33,13 @@ class DividendBackend:
 
     def update_retirement_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
-        self.retirement_config.update(new_config)
+        # 개별 필드 업데이트 (딕셔너리 depth 고려)
+        for key, value in new_config.items():
+            if isinstance(value, dict) and key in self.retirement_config and isinstance(self.retirement_config[key], dict):
+                self.retirement_config[key].update(value)
+            else:
+                self.retirement_config[key] = value
+
         self.storage.save_json(self.retirement_config_file, self.retirement_config)
         return {
             "success": True,

@@ -177,7 +177,7 @@ export function RetirementTab() {
                 <div className={cn("inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em]", level.bg, level.color)}>
                   {level.icon} {level.label} Status
                 </div>
-                <h2 className="text-5xl font-black text-slate-50 tracking-tighter leading-tight">
+                <h2 className="text-3xl font-black text-slate-50 tracking-tighter leading-tight">
                   {activeScenario ? <>위기 상황 분석 결과</> : <>혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></>}
                 </h2>
                 <p className="text-base text-slate-400 font-medium leading-relaxed">

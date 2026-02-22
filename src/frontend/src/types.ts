@@ -58,6 +58,7 @@ export interface PlannedCashflow {
   type: "INFLOW" | "OUTFLOW";
   entity: "CORP" | "PENSION";
   amount: number;
+  currency?: "USD" | "KRW";
   year: number;
   month: number;
   description: string;

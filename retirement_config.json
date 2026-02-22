@@ -2,24 +2,16 @@
     "active_assumption_id": "conservative",
     "user_profile": {
         "birth_year": 1972,
-        "birth_month": 3
+        "pension_start_age": 55,
+        "national_pension_start_age": 65,
+        "birth_month": 8,
+        "private_pension_start_age": 55
     },
     "simulation_params": {
-        "simulation_start_year": 2026,
-        "simulation_start_month": 3,
-        "target_monthly_cashflow": 9000000
+        "target_monthly_cashflow": 9000000,
+        "inflation_rate": 0.025,
+        "expected_market_growth": 0.0485
     },
-    "planned_cashflows": [
-        {
-            "id": "test-event",
-            "name": "테스트 유입",
-            "year": 2035,
-            "month": 6,
-            "amount": 500000000,
-            "type": "INFLOW",
-            "entity": "CORP"
-        }
-    ],
     "corp_params": {
         "initial_investment": 1600000000,
         "capital_stock": 50000000,
@@ -30,8 +22,9 @@
     },
     "pension_params": {
         "severance_reserve": 350000000,
-        "other_reserve": 250000000,
-        "monthly_withdrawal_target": 2500000
+        "other_reserve": 0,
+        "monthly_withdrawal_target": 2500000,
+        "initial_investment": 300000000
     },
     "personal_params": {
         "real_estate_price": 620000000,
@@ -69,5 +62,17 @@
             "master_return": 0.035,
             "master_inflation": 0.035
         }
-    }
+    },
+    "planned_cashflows": [
+        {
+            "id": "2e2de2e6-de83-4881-9b3a-d6be53e0b055",
+            "type": "INFLOW",
+            "entity": "CORP",
+            "amount": 100000000,
+            "currency": "KRW",
+            "year": 2026,
+            "month": 11,
+            "description": "자산 유입/지출 상세"
+        }
+    ]
 }
