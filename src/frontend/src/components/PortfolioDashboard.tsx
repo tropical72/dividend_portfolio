@@ -204,7 +204,19 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} tickFormatter={(val) => globalCurrency === "USD" ? `$${val}` : `₩${(val/10000).toFixed(0)}만`} />
-                <Tooltip cursor={{ fill: '#1e293b', opacity: 0.4 }} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} formatter={(val) => [globalCurrency === "USD" ? `$${val.toLocaleString()}` : `₩${val.toLocaleString()}`, "Income"]} />
+                <Tooltip 
+                  cursor={{ fill: '#1e293b', opacity: 0.4 }} 
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} 
+                  formatter={(val: any) => {
+                    const numVal = Number(val) || 0;
+                    return [
+                      globalCurrency === "USD" 
+                        ? `$${numVal.toLocaleString()}` 
+                        : `₩${numVal.toLocaleString()}`, 
+                      "Income"
+                    ];
+                  }} 
+                />
                 <Legend wrapperStyle={{ paddingTop: '30px' }} iconType="circle" formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value}</span>} />
                 {portfolios.filter(p => selectedIds.has(p.id)).map((p, idx) => (
                   <Bar key={p.id} dataKey={p.name} fill={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} radius={[6, 6, 0, 0]} barSize={selectedIds.size > 2 ? 15 : 30} />

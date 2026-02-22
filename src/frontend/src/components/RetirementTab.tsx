@@ -1,3 +1,19 @@
+import { useState, useEffect } from "react";
+import { 
+  ShieldCheck, 
+  RefreshCcw, 
+  CheckCircle2,
+  AlertTriangle,
+  Zap,
+  CloudRain,
+  Coins,
+  TrendingDown,
+  Camera,
+  Activity,
+  AlertCircle,
+  PieChart,
+  TrendingUp
+} from "lucide-react";
 import { 
   AreaChart, 
   Area, 
@@ -234,7 +250,6 @@ export function RetirementTab() {
           </div>
         </div>
 
-        {/* 3. Metrics Summary */}
         <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
             {summary.infinite_with_10pct_cut && (
@@ -259,7 +274,7 @@ export function RetirementTab() {
 
           <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <History size={14} className="text-blue-500" /> Exhaustion Date
+              <TrendingUp size={14} className="text-blue-500" /> Exhaustion Date
             </p>
             <div className="space-y-2">
               <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
@@ -271,7 +286,7 @@ export function RetirementTab() {
 
           <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <TrendingDown size={14} className="text-amber-500" /> Buffer Point
+              <PieChart size={14} className="text-amber-500" /> Buffer Point
             </p>
             <div className="space-y-2">
               <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
@@ -283,7 +298,6 @@ export function RetirementTab() {
         </div>
       </div>
 
-      {/* 4. Stress Test Toolbar */}
       <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 px-4 py-2 border-r border-slate-800 mr-2">
           <Zap size={16} className="text-amber-400" />
@@ -295,11 +309,7 @@ export function RetirementTab() {
         {activeScenario && <button onClick={() => { setActiveScenario(null); fetchData(); }} className="ml-auto text-[10px] font-black text-emerald-400 flex items-center gap-1 hover:underline"><RefreshCcw size={12} /> Reset to Normal</button>}
       </div>
 
-      {/* 5. 30-Year Asset Projection Chart */}
-      <div className={cn(
-        "bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000",
-        activeScenario ? "border-red-900/30" : "border-slate-800"
-      )}>
+      <div className={cn("bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000", activeScenario ? "border-red-900/30" : "border-slate-800")}>
         <div className="mb-8 flex items-center justify-between px-4">
           <div>
             <h4 className="text-xl font-black text-slate-50 tracking-tight flex items-center gap-3">
@@ -315,7 +325,13 @@ export function RetirementTab() {
             <AreaChart data={chartData}>
               <XAxis dataKey="month" tickFormatter={(v) => `Y${Math.floor(v/12)}`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(1)}억`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }} formatter={(v: number) => [`${(v/100000000).toFixed(2)}억 KRW`]} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }} 
+                formatter={(v: any) => {
+                  const numVal = Number(v) || 0;
+                  return [`${(numVal / 100000000).toFixed(2)}억 KRW`];
+                }}
+              />
               <Legend 
                 verticalAlign="top" 
                 align="right" 

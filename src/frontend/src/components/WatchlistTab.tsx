@@ -75,8 +75,8 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
     if (!sortConfig.key) return watchlist;
     
     return [...watchlist].sort((a, b) => {
-      const aVal = a[sortConfig.key!];
-      const bVal = b[sortConfig.key!];
+      const aVal = a[sortConfig.key!] ?? 0;
+      const bVal = b[sortConfig.key!] ?? 0;
 
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
