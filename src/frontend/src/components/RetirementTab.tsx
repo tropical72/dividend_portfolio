@@ -161,7 +161,7 @@ export function RetirementTab() {
           <div className="p-2 bg-slate-800 rounded-lg"><Info size={18} className="text-slate-400" /></div>
           <div>
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
-            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하세요.</p>
+            <p className="text-[11px] text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요.</p>
           </div>
         </div>
 
@@ -169,12 +169,10 @@ export function RetirementTab() {
           {Object.entries(config.assumptions).map(([id, item]) => (
             <div 
               key={id} 
-              onClick={() => activeId !== id && handleSwitchVersion(id)}
+              onClick={() => activeId !== id && handleSwitchVersion(id)} 
               className={cn(
-                "p-6 rounded-[2rem] border transition-all duration-500 text-left group relative",
-                activeId === id && !activeScenario
-                  ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" 
-                  : "bg-slate-900/40 border-slate-800 hover:border-slate-700 cursor-pointer"
+                "p-6 rounded-[2rem] border transition-all duration-500 text-left group relative", 
+                activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" : "bg-slate-900/40 border-slate-800 hover:border-slate-700 cursor-pointer"
               )}
             >
               <div className="flex justify-between items-start mb-4">
@@ -188,18 +186,16 @@ export function RetirementTab() {
                   <div className="flex items-center gap-1">
                     <input 
                       type="number"
-                      step="0.01"
+                      step="0.1"
                       className="bg-transparent border-none p-0 w-16 text-sm font-black text-slate-200 outline-none focus:ring-0"
-                      value={(item.expected_return * 100).toFixed(2)}
+                      defaultValue={(item.expected_return * 100).toFixed(1)}
                       onClick={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
+                      onBlur={async (e) => {
                         const val = parseFloat(e.target.value) / 100;
+                        if (isNaN(val)) return;
                         const newConfig = {
                           ...config,
-                          assumptions: {
-                            ...config.assumptions,
-                            [id]: { ...item, expected_return: val }
-                          }
+                          assumptions: { ...config.assumptions, [id]: { ...item, expected_return: val } }
                         };
                         setConfig(newConfig);
                         await fetch("http://localhost:8000/api/retirement/config", {
@@ -207,7 +203,7 @@ export function RetirementTab() {
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(newConfig)
                         });
-                        if (activeId === id) fetchData(); // 현재 보고 있는 버전이면 즉시 재시뮬레이션
+                        if (activeId === id) fetchData();
                       }}
                     />
                     <span className="text-[10px] font-bold text-slate-600">%</span>
@@ -221,16 +217,14 @@ export function RetirementTab() {
                       type="number"
                       step="0.1"
                       className="bg-transparent border-none p-0 w-12 text-sm font-black text-slate-200 outline-none focus:ring-0"
-                      value={(item.inflation_rate * 100).toFixed(1)}
+                      defaultValue={(item.inflation_rate * 100).toFixed(1)}
                       onClick={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
+                      onBlur={async (e) => {
                         const val = parseFloat(e.target.value) / 100;
+                        if (isNaN(val)) return;
                         const newConfig = {
                           ...config,
-                          assumptions: {
-                            ...config.assumptions,
-                            [id]: { ...item, inflation_rate: val }
-                          }
+                          assumptions: { ...config.assumptions, [id]: { ...item, inflation_rate: val } }
                         };
                         setConfig(newConfig);
                         await fetch("http://localhost:8000/api/retirement/config", {
@@ -273,12 +267,22 @@ export function RetirementTab() {
             <div className="lg:col-span-7 h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorC" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <XAxis dataKey="month" tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#334155" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem' }} formatter={(v: any) => [`${(Number(v)/100000000).toFixed(1)}억`]} />
                   <Legend verticalAlign="top" align="right" height={36} iconType="circle" formatter={(val) => <span className="text-[10px] font-black text-slate-500 uppercase ml-1">{val === 'corp_balance' ? 'Corp' : 'Pension'}</span>} />
-                  <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
-                  <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+                  <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" fill="url(#colorC)" />
+                  <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" fill="url(#colorP)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

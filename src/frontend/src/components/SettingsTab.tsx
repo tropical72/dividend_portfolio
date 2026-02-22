@@ -213,10 +213,11 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                       <label className="text-[10px] font-bold text-slate-500 uppercase">Return Rate (%)</label>
                       <input
                         type="number"
-                        step="0.01"
-                        value={(item.expected_return * 100).toFixed(2)}
-                        onChange={(e) => {
+                        step="0.1"
+                        defaultValue={(item.expected_return * 100).toFixed(1)}
+                        onBlur={(e) => {
                           const val = parseFloat(e.target.value) / 100;
+                          if (isNaN(val)) return;
                           setRetireConfig({
                             ...retireConfig,
                             assumptions: {
@@ -233,9 +234,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                       <input
                         type="number"
                         step="0.1"
-                        value={(item.inflation_rate * 100).toFixed(1)}
-                        onChange={(e) => {
+                        defaultValue={(item.inflation_rate * 100).toFixed(1)}
+                        onBlur={(e) => {
                           const val = parseFloat(e.target.value) / 100;
+                          if (isNaN(val)) return;
                           setRetireConfig({
                             ...retireConfig,
                             assumptions: {
@@ -246,6 +248,9 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                         }}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-bold text-sm outline-none focus:border-blue-500/50"
                       />
+                      <p className="text-[9px] text-slate-600 italic leading-tight px-1">
+                        * 한국은행 목표(2.0%) 및 글로벌 보수적 기준(2.5%) 권장
+                      </p>
                     </div>
                   </div>
                 </div>
