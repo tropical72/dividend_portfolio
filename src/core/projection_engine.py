@@ -107,14 +107,16 @@ class ProjectionEngine:
             
             # 2. 미래 자금 이벤트 반영 [REQ-RAMS-1.3]
             # 해당 월에 예약된 유입/지출 이벤트를 자산 잔액에 가감합니다.
+            occurred_event = None
             for ev in planned_events:
                 if ev["year"] == sim_year and ev["month"] == sim_month:
-                    amount = ev["amount"] if ev["type"] == "INFLOW" else -ev["amount"]
+                    amount = ev["amount"] if ev.get("type") == "INFLOW" else -ev.get("amount", 0)
                     # 법인 또는 연금 계좌의 현금성 자산(SGOV/BND)에서 우선 처리
-                    if ev["entity"] == "CORP":
+                    if ev.get("entity") == "CORP":
                         curr_assets["SGOV"] += amount
                     else:
                         curr_assets["BND"] += amount
+                    occurred_event = {"name": ev.get("description", "자금 이벤트"), "amount": amount}
             
             # 3. 인플레이션 반영 목표 생활비 산출 및 자산 수익 적용
             current_target = base_cashflow * (1 + monthly_inflation)**m
@@ -184,7 +186,8 @@ class ProjectionEngine:
                         "corp_balance": curr_assets.get("VOO", 0) + curr_assets.get("SGOV", 0) * 0.5,
                         "pension_balance": curr_assets.get("SCHD", 0) + curr_assets.get("BND", 0) + curr_assets.get("SGOV", 0) * 0.5,
                         "target_cashflow": current_target, 
-                        "state": decision["state"]
+                        "state": decision["state"],
+                        "event": occurred_event
                     })
             else:
                 # 자산 고갈 시 루프 종료

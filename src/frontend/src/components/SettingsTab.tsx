@@ -14,7 +14,8 @@ import {
   Trash2,
   Info,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { RetirementConfig, AppSettings, PlannedCashflow } from "../types";
@@ -129,19 +130,67 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
             </section>
 
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-              <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-3"><Wallet2 size={18} /> Pension Assets</h3>
-              <InputGroup label="Initial Capital" unit="KRW" value={retireConfig.pension_params.initial_investment} isCurrency tooltip="현재 연금 계좌 기초 자산 총액" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, initial_investment: parseInt(v)}})} />
-              <InputGroup label="Severance" unit="KRW" value={retireConfig.pension_params.severance_reserve} isCurrency tooltip="예상 퇴직금 총액" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, severance_reserve: parseInt(v)}})} />
-              <InputGroup label="Other" unit="KRW" value={retireConfig.pension_params.other_reserve} isCurrency tooltip="기타 여유 자산" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, other_reserve: parseInt(v)}})} />
+              <h3 className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-3"><TrendingUp size={18} /> Simulation Cashflow</h3>
+              <InputGroup 
+                label="Monthly Living Expense" 
+                unit="KRW" 
+                value={retireConfig.simulation_params.target_monthly_cashflow} 
+                isCurrency 
+                tooltip="은퇴 후 매월 가계에서 필요로 하는 목표 생활비 (물가상승률 반영 전)"
+                onChange={(v) => setRetireConfig({...retireConfig, simulation_params: {...retireConfig.simulation_params, target_monthly_cashflow: parseInt(v)}})} 
+              />
+              <InputGroup 
+                label="Private Pension Withdrawal" 
+                unit="KRW" 
+                value={retireConfig.pension_params.monthly_withdrawal_target} 
+                isCurrency 
+                tooltip="개인연금 개시 시 매월 인출할 목표 금액"
+                onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, monthly_withdrawal_target: parseInt(v)}})} 
+              />
+              <InputGroup 
+                label="National Pension Amount" 
+                unit="KRW" 
+                value={retireConfig.simulation_params.national_pension_amount} 
+                isCurrency 
+                tooltip="국민연금 수령 시 예상되는 월 수령액"
+                onChange={(v) => setRetireConfig({...retireConfig, simulation_params: {...retireConfig.simulation_params, national_pension_amount: parseInt(v)}})} 
+              />
             </section>
           </div>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-3"><Building2 size={18} /> Corporate Setup</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputGroup label="Total Inv." unit="KRW" value={retireConfig.corp_params.initial_investment} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_investment: parseInt(v)}})} />
-              <InputGroup label="Capital" unit="KRW" value={retireConfig.corp_params.capital_stock} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, capital_stock: parseInt(v)}})} />
-              <InputGroup label="Loan" unit="KRW" value={retireConfig.corp_params.initial_shareholder_loan} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_shareholder_loan: parseInt(v)}})} />
+            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-3"><Building2 size={18} /> Corporate Setup & Operation</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <InputGroup label="Total Inv." unit="KRW" value={retireConfig.corp_params.initial_investment} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_investment: parseInt(v)}})} />
+                <InputGroup label="Capital" unit="KRW" value={retireConfig.corp_params.capital_stock} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, capital_stock: parseInt(v)}})} />
+                <InputGroup label="Loan" unit="KRW" value={retireConfig.corp_params.initial_shareholder_loan} isCurrency onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_shareholder_loan: parseInt(v)}})} />
+              </div>
+              <div className="space-y-6 border-l border-slate-800 pl-6">
+                <InputGroup 
+                  label="Employee Count" 
+                  unit="Person" 
+                  value={retireConfig.corp_params.employee_count} 
+                  tooltip="법인에서 급여를 수령하는 직원 수 (건보료 산출 기준)"
+                  onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, employee_count: parseInt(v)}})} 
+                />
+                <InputGroup 
+                  label="Monthly Salary" 
+                  unit="KRW" 
+                  value={retireConfig.corp_params.monthly_salary} 
+                  isCurrency 
+                  tooltip="직원 1인당 지급하는 월 급여"
+                  onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_salary: parseInt(v)}})} 
+                />
+                <InputGroup 
+                  label="Fixed Cost" 
+                  unit="KRW" 
+                  value={retireConfig.corp_params.monthly_fixed_cost} 
+                  isCurrency 
+                  tooltip="임대료, 통신비 등 법인 운영에 드는 기타 고정 비용"
+                  onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_fixed_cost: parseInt(v)}})} 
+                />
+              </div>
             </div>
           </section>
 

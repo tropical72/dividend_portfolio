@@ -1,16 +1,19 @@
 {
-    "active_assumption_id": "conservative",
+    "active_assumption_id": "v1",
     "user_profile": {
         "birth_year": 1972,
-        "pension_start_age": 55,
-        "national_pension_start_age": 65,
         "birth_month": 8,
-        "private_pension_start_age": 55
+        "pension_start_age": 55,
+        "private_pension_start_age": 55,
+        "national_pension_start_age": 65
     },
     "simulation_params": {
-        "target_monthly_cashflow": 9000000,
+        "target_monthly_cashflow": 10000000,
         "inflation_rate": 0.025,
-        "expected_market_growth": 0.0485
+        "expected_market_growth": 0.0485,
+        "simulation_start_year": 2026,
+        "simulation_start_month": 3,
+        "national_pension_amount": 2000000
     },
     "corp_params": {
         "initial_investment": 1600000000,
@@ -21,10 +24,10 @@
         "employee_count": 1
     },
     "pension_params": {
+        "initial_investment": 300000000,
         "severance_reserve": 350000000,
         "other_reserve": 0,
-        "monthly_withdrawal_target": 2500000,
-        "initial_investment": 300000000
+        "monthly_withdrawal_target": 2500000
     },
     "personal_params": {
         "real_estate_price": 620000000,
@@ -48,7 +51,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.04850000000000001,
+            "expected_return": 0.0485,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.0485,
@@ -72,16 +75,6 @@
             "currency": "KRW",
             "year": 2026,
             "month": 11,
-            "description": "자산 유입/지출 상세"
-        },
-        {
-            "id": "c78b482f-9625-4df0-af7c-5884717a83bf",
-            "type": "INFLOW",
-            "entity": "CORP",
-            "amount": 1000000000,
-            "currency": "KRW",
-            "year": 2035,
-            "month": 1,
             "description": "자산 유입/지출 상세"
         }
     ]

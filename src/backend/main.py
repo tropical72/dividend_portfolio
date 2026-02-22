@@ -213,6 +213,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         # 법인 운영 비용 (세무 엔진 연동용)
         "corp_salary": corp_params.get("monthly_salary", 2500000),
         "corp_fixed_cost": corp_params.get("monthly_fixed_cost", 500000),
+        "employee_count": corp_params.get("employee_count", 1),
     }
 
     final_params = base_params

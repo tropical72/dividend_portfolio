@@ -235,7 +235,7 @@ export function RetirementTab() {
         </div>
       </section>
 
-      {/* Step 4. Health Monitor - 폰트 상향 */}
+      {/* Step 4. Health Monitor */}
       <section className="space-y-6">
         <div className="flex items-center gap-3 px-4">
           <div className="p-2 bg-slate-800 rounded-lg"><Activity size={20} className="text-slate-400" /></div>
@@ -258,6 +258,72 @@ export function RetirementTab() {
                 </div>
               ))
             }
+          </div>
+        </div>
+      </section>
+
+      {/* Step 5. Detailed Simulation Log - 숫자 검증용 테이블 */}
+      <section className="space-y-6">
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><Coins size={20} className="text-slate-400" /></div>
+          <div>
+            <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 5. Detailed Simulation Log</h3>
+            <p className="text-sm text-slate-500 font-bold">월별 상세 자산 변화 및 이벤트 발생 내역을 숫자로 확인하세요.</p>
+          </div>
+        </div>
+        
+        <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
+          <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 bg-slate-900 z-10 shadow-xl">
+                <tr className="border-b border-slate-800">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Month</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Age</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Phase</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Total NW</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Target CF</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Occurred Event</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {simulationData.monthly_data.map((m, idx) => (
+                  <tr key={idx} className={cn(
+                    "hover:bg-slate-800/30 transition-colors group",
+                    m.event ? "bg-emerald-500/5" : ""
+                  )}>
+                    <td className="px-6 py-3 text-xs font-bold text-slate-400">
+                      {Math.floor((m.month - 1) / 12)}Y {(m.month - 1) % 12 + 1}M
+                    </td>
+                    <td className="px-6 py-3 text-xs font-black text-slate-300">{(config.user_profile.birth_year ? Math.floor((config.user_profile.birth_year * 12 + config.user_profile.birth_month + m.month) / 12) - config.user_profile.birth_year : "-")}</td>
+                    <td className="px-6 py-3">
+                      <span className={cn(
+                        "px-2 py-1 rounded text-[9px] font-black uppercase tracking-tighter",
+                        m.month < (config.user_profile.private_pension_start_age - (2026 - config.user_profile.birth_year)) * 12 ? "bg-blue-500/10 text-blue-400" : "bg-emerald-500/10 text-emerald-400"
+                      )}>Phase</span>
+                    </td>
+                    <td className="px-6 py-3 text-xs font-black text-slate-200">
+                      {(m.total_net_worth / 100000000).toFixed(2)}억
+                    </td>
+                    <td className="px-6 py-3 text-xs font-bold text-slate-500">
+                      {(m.target_cashflow / 10000).toFixed(0)}만
+                    </td>
+                    <td className="px-6 py-3">
+                      {m.event ? (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-[9px] font-black",
+                            m.event.amount > 0 ? "bg-emerald-500 text-slate-950" : "bg-rose-500 text-slate-950"
+                          )}>
+                            {m.event.amount > 0 ? "+" : "-"}{(Math.abs(m.event.amount) / 100000000).toFixed(1)}억
+                          </span>
+                          <span className="text-xs font-bold text-emerald-400 truncate max-w-[150px]">{m.event.name}</span>
+                        </div>
+                      ) : <span className="text-slate-700 text-[10px] font-black uppercase">-</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
