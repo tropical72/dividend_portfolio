@@ -1,25 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { 
-  ShieldCheck, 
-  RefreshCcw, 
-  CheckCircle2,
-  AlertTriangle,
-  History,
-  Zap,
-  CloudRain,
-  Coins,
-  TrendingDown,
-  Camera,
-  Activity,
-  AlertCircle
-} from "lucide-react";
 import { 
   AreaChart, 
   Area, 
   XAxis, 
   YAxis, 
   Tooltip, 
-  ResponsiveContainer
+  ResponsiveContainer,
+  Legend
 } from "recharts";
 import { cn } from "../lib/utils";
 import type { RetirementConfig } from "../types";
@@ -248,7 +234,7 @@ export function RetirementTab() {
           </div>
         </div>
 
-        {/* 3. Metrics Summary (기존 카드들 재배치) */}
+        {/* 3. Metrics Summary */}
         <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
             {summary.infinite_with_10pct_cut && (
@@ -297,7 +283,7 @@ export function RetirementTab() {
         </div>
       </div>
 
-      {/* 4. Stress Test Toolbar & 5. 30-Year Chart 생략 (기존과 유사) */}
+      {/* 4. Stress Test Toolbar */}
       <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 px-4 py-2 border-r border-slate-800 mr-2">
           <Zap size={16} className="text-amber-400" />
@@ -309,15 +295,36 @@ export function RetirementTab() {
         {activeScenario && <button onClick={() => { setActiveScenario(null); fetchData(); }} className="ml-auto text-[10px] font-black text-emerald-400 flex items-center gap-1 hover:underline"><RefreshCcw size={12} /> Reset to Normal</button>}
       </div>
 
-      <div className={cn("bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000", activeScenario ? "border-red-900/30" : "border-slate-800")}>
+      {/* 5. 30-Year Asset Projection Chart */}
+      <div className={cn(
+        "bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000",
+        activeScenario ? "border-red-900/30" : "border-slate-800"
+      )}>
+        <div className="mb-8 flex items-center justify-between px-4">
+          <div>
+            <h4 className="text-xl font-black text-slate-50 tracking-tight flex items-center gap-3">
+              Long-term Asset Trajectory 
+              <span className="text-[10px] bg-slate-800 px-3 py-1 rounded-full text-slate-400 uppercase tracking-widest">30 Year Scale</span>
+            </h4>
+            <p className="text-slate-500 text-xs mt-1 font-bold">초록색은 법인 자산, 파란색은 연금 자산의 누적 잔액을 나타냅니다.</p>
+          </div>
+        </div>
+
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <XAxis dataKey="month" tickFormatter={(v) => `Y${Math.floor(v/12)}`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(1)}억`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }} formatter={(v: number) => [`${(v/100000000).toFixed(2)}억 KRW`]} />
-              <Area type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="#10b981" fillOpacity={0.1} />
-              <Area type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1} />
+              <Legend 
+                verticalAlign="top" 
+                align="right" 
+                height={36} 
+                iconType="circle"
+                formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value === 'corp_balance' ? 'Corporate Asset' : 'Pension Asset'}</span>}
+              />
+              <Area name="corp_balance" type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="#10b981" fillOpacity={0.1} />
+              <Area name="pension_balance" type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
