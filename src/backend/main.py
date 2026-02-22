@@ -19,7 +19,8 @@ backend = DividendBackend(data_dir=DATA_DIR)
 
 # Core Engines 초기화
 tax_engine = TaxEngine()
-projection_engine = ProjectionEngine(tax_engine=tax_engine)
+trigger_engine = TriggerEngine()
+projection_engine = ProjectionEngine(tax_engine=tax_engine, trigger_engine=trigger_engine)
 stress_engine = StressTestEngine()
 
 # [CORS 설정] 명시적으로 모든 허용

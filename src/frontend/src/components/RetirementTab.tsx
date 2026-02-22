@@ -9,7 +9,9 @@ import {
   CloudRain,
   Coins,
   TrendingDown,
-  Camera
+  Camera,
+  Activity,
+  AlertCircle
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -32,6 +34,7 @@ export function RetirementTab() {
       growth_asset_sell_start_date: string;
       is_permanent: boolean;
       infinite_with_10pct_cut?: boolean;
+      signals?: Array<{ type: string; level: string; message: string; suggestion: string; month: number }>;
     };
     monthly_data: Array<{
       month: number;
@@ -74,7 +77,6 @@ export function RetirementTab() {
         }
       }
 
-      // 스냅샷 로드
       const snapRes = await fetch("http://localhost:8000/api/retirement/snapshot");
       const snapData = await snapRes.json();
       if (snapData.success && snapData.data.snapshot_date) {
@@ -91,7 +93,6 @@ export function RetirementTab() {
     fetchData();
   }, []);
 
-  /** 시나리오 버전 스위칭 */
   const handleSwitchVersion = async (id: string) => {
     setActiveId(id);
     setActiveScenario(null);
@@ -107,14 +108,12 @@ export function RetirementTab() {
     }
   };
 
-  /** 스트레스 테스트 실행 */
   const handleStressTest = (scenarioId: string) => {
     const newScenario = activeScenario === scenarioId ? null : scenarioId;
     setActiveScenario(newScenario);
     fetchData(newScenario);
   };
 
-  /** 스냅샷 생성 [REQ-RAMS-7.4] */
   const handleTakeSnapshot = async () => {
     if (!config || !simulationData) return;
     setIsSnapshotting(true);
@@ -151,6 +150,7 @@ export function RetirementTab() {
 
   const summary = simulationData.summary;
   const chartData = simulationData.monthly_data.filter((_, i) => i % 12 === 0);
+  const signals = summary.signals || [];
 
   const getAssuranceLevel = () => {
     if (summary.total_survival_years > 40) return { label: "Unshakable", color: "text-emerald-400", bg: "bg-emerald-500/10", icon: <CheckCircle2 size={24} /> };
@@ -217,146 +217,105 @@ export function RetirementTab() {
         </div>
       </div>
 
-      {/* 2. Snapshot Comparison Info [New] */}
-      {snapshot && !activeScenario && (
-        <div className="bg-blue-500/5 border border-blue-500/10 p-6 rounded-3xl flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 rounded-2xl">
-              <History size={20} className="text-blue-400" />
+      {/* 2. Health Monitor & Alerts [Structure 6] */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4 bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <Activity className="text-emerald-400" size={20} />
             </div>
-            <div>
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Original Plan Comparison</p>
-              <p className="text-slate-300 text-sm font-bold">은퇴 당시({snapshot.snapshot_date}) 계획 대비 현재 설계의 오차를 분석 중입니다.</p>
+            <h3 className="text-sm font-black text-slate-200 uppercase tracking-widest">Health Monitor</h3>
+          </div>
+          
+          <div className="space-y-4 flex-1">
+            {signals.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full py-10 text-center gap-3">
+                <CheckCircle2 className="text-emerald-500/20" size={48} />
+                <p className="text-xs font-bold text-slate-500 uppercase">System Status: Optimal</p>
+              </div>
+            ) : (
+              signals.map((s, i) => (
+                <div key={i} className="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className={cn("shrink-0", s.level === "RED" ? "text-red-400" : "text-amber-400")} size={14} />
+                    <span className="text-[10px] font-black text-slate-300 uppercase"> 은퇴 후 {Math.floor(s.month/12)}년차 경고 </span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-100 leading-relaxed">{s.message}</p>
+                  <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">Suggestion: {s.suggestion}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 3. Metrics Summary (기존 카드들 재배치) */}
+        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+            {summary.infinite_with_10pct_cut && (
+              <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+            )}
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-blue-500" /> Sustainability
+            </p>
+            <div className="space-y-2">
+              <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
+                {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
+              </h3>
+              {summary.infinite_with_10pct_cut ? (
+                <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Permanent at 10% cost cut
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Standard retirement profile</p>
+              )}
             </div>
           </div>
-          <div className="flex gap-8 px-6">
-            <div className="text-center">
-              <p className="text-[9px] font-bold text-slate-500 uppercase">Original Years</p>
-              <p className="text-lg font-black text-slate-300">{snapshot.summary.total_survival_years}</p>
+
+          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <History size={14} className="text-blue-500" /> Exhaustion Date
+            </p>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
+                {summary.growth_asset_sell_start_date}
+              </h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
             </div>
-            <div className="text-center">
-              <p className="text-[9px] font-bold text-slate-500 uppercase">Current Diff</p>
-              <p className={cn(
-                "text-lg font-black",
-                summary.total_survival_years >= snapshot.summary.total_survival_years ? "text-emerald-400" : "text-red-400"
-              )}>
-                {summary.total_survival_years - snapshot.summary.total_survival_years >= 0 ? "+" : ""}
-                {summary.total_survival_years - snapshot.summary.total_survival_years} Yrs
-              </p>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <TrendingDown size={14} className="text-amber-500" /> Buffer Point
+            </p>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-100 tracking-tighter uppercase">
+                {summary.sgov_exhaustion_date}
+              </h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">SGOV Depletion</p>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* 3. Stress Test Toolbar */}
+      {/* 4. Stress Test Toolbar & 5. 30-Year Chart 생략 (기존과 유사) */}
       <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 px-4 py-2 border-r border-slate-800 mr-2">
           <Zap size={16} className="text-amber-400" />
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Stress Scenarios</span>
         </div>
-        
-        <button 
-          onClick={() => handleStressTest("BEAR")}
-          className={cn(
-            "px-6 py-3 rounded-2xl text-[10px] font-black transition-all flex items-center gap-2 border uppercase tracking-widest",
-            activeScenario === "BEAR" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400"
-          )}
-        >
-          <TrendingDown size={14} /> Bear Market (-30%)
-        </button>
-
-        <button 
-          onClick={() => handleStressTest("STAGFLATION")}
-          className={cn(
-            "px-6 py-3 rounded-2xl text-[10px] font-black transition-all flex items-center gap-2 border uppercase tracking-widest",
-            activeScenario === "STAGFLATION" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400"
-          )}
-        >
-          <CloudRain size={14} /> Stagflation
-        </button>
-
-        <button 
-          onClick={() => handleStressTest("DIVIDEND_CUT")}
-          className={cn(
-            "px-6 py-3 rounded-2xl text-[10px] font-black transition-all flex items-center gap-2 border uppercase tracking-widest",
-            activeScenario === "DIVIDEND_CUT" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400"
-          )}
-        >
-          <Coins size={14} /> Dividend Cut (-25%)
-        </button>
-
-        {activeScenario && (
-          <button 
-            onClick={() => { setActiveScenario(null); fetchData(); }}
-            className="ml-auto text-[10px] font-black text-emerald-400 flex items-center gap-1 hover:underline"
-          >
-            <RefreshCcw size={12} /> Reset to Normal
-          </button>
-        )}
+        <button onClick={() => handleStressTest("BEAR")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "BEAR" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><TrendingDown size={14} /> Bear Market (-30%)</button>
+        <button onClick={() => handleStressTest("STAGFLATION")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "STAGFLATION" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><CloudRain size={14} /> Stagflation</button>
+        <button onClick={() => handleStressTest("DIVIDEND_CUT")} className={cn("px-6 py-3 rounded-2xl text-[10px] font-black transition-all border uppercase tracking-widest", activeScenario === "DIVIDEND_CUT" ? "bg-red-500 text-slate-950 border-red-400" : "bg-slate-950 text-slate-400 border-slate-800 hover:text-red-400")}><Coins size={14} /> Dividend Cut (-25%)</button>
+        {activeScenario && <button onClick={() => { setActiveScenario(null); fetchData(); }} className="ml-auto text-[10px] font-black text-emerald-400 flex items-center gap-1 hover:underline"><RefreshCcw size={12} /> Reset to Normal</button>}
       </div>
 
-      {/* 4. Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
-          {summary.infinite_with_10pct_cut && (
-            <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
-          )}
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <ShieldCheck size={14} className="text-blue-500" /> Sustainability
-          </p>
-          <div className="space-y-2">
-            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
-              {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
-            </h3>
-            {summary.infinite_with_10pct_cut ? (
-              <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1">
-                <CheckCircle2 size={12} /> Permanent at 10% cost cut
-              </p>
-            ) : (
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Standard retirement profile</p>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <ShieldCheck size={14} className="text-blue-500" /> Exhaustion Target
-          </p>
-          <div className="space-y-2">
-            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
-              {summary.growth_asset_sell_start_date}
-            </h3>
-            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <PieChart size={14} className="text-amber-500" /> Buffer Status
-          </p>
-          <div className="space-y-2">
-            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
-              {summary.sgov_exhaustion_date}
-            </h3>
-            <p className="text-[10px] text-amber-400/60 font-black uppercase tracking-widest">SGOV Depletion Point</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. 30-Year Asset Projection Chart */}
-      <div className={cn(
-        "bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000",
-        activeScenario ? "border-red-900/30" : "border-slate-800"
-      )}>
+      <div className={cn("bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000", activeScenario ? "border-red-900/30" : "border-slate-800")}>
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <XAxis dataKey="month" tickFormatter={(v) => `Y${Math.floor(v/12)}`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
               <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(1)}억`} stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }}
-                formatter={(v: number) => [`${(v/100000000).toFixed(2)}억 KRW`]}
-              />
+              <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1.5rem', fontSize: '12px', fontWeight: 'bold' }} formatter={(v: number) => [`${(v/100000000).toFixed(2)}억 KRW`]} />
               <Area type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="#10b981" fillOpacity={0.1} />
               <Area type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="#3b82f6" fillOpacity={0.1} />
             </AreaChart>
