@@ -25,6 +25,7 @@ class DividendBackend:
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
         self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
+        self.snapshot_file = "retirement_snapshot.json"
 
     def get_retirement_config(self) -> Dict[str, Any]:
         """저장된 은퇴 운용 설정 정보를 반환합니다."""
@@ -34,7 +35,20 @@ class DividendBackend:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
         self.retirement_config.update(new_config)
         self.storage.save_json(self.retirement_config_file, self.retirement_config)
-        return {"success": True, "message": "은퇴 설정이 저장되었습니다.", "data": self.retirement_config}
+        return {
+            "success": True,
+            "message": "은퇴 설정이 저장되었습니다.",
+            "data": self.retirement_config,
+        }
+
+    def save_retirement_snapshot(self, snapshot_data: Dict[str, Any]) -> Dict[str, Any]:
+        """현재 상태를 '은퇴일 스냅샷'으로 영구 저장합니다. [REQ-RAMS-7.4]"""
+        self.storage.save_json(self.snapshot_file, snapshot_data)
+        return {"success": True, "message": "은퇴일 스냅샷이 저장되었습니다."}
+
+    def get_retirement_snapshot(self) -> Dict[str, Any]:
+        """저장된 은퇴일 스냅샷을 반환합니다."""
+        return self.storage.load_json(self.snapshot_file, {})
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
@@ -63,7 +77,9 @@ class DividendBackend:
             "total_capital": total_capital,
             "currency": currency,
             "items": items or [],
-            "created_at": str(os.path.getmtime(self.data_dir)) # 실제 생성 시간 대신 더미 활용 가능
+            "created_at": str(
+                os.path.getmtime(self.data_dir)
+            ),  # 실제 생성 시간 대신 더미 활용 가능
         }
         self.portfolios.append(new_p)
         self.storage.save_json(self.portfolios_file, self.portfolios)
@@ -99,19 +115,19 @@ class DividendBackend:
 
         total_weight = sum(item.get("weight", 0.0) for item in items)
         weighted_yield = 0.0
-        
+
         # 월별 배당금 합계 저장 (1~12월)
         monthly_distribution = {m: 0.0 for m in range(1, 13)}
-        
+
         for item in items:
             symbol = item.get("symbol")
             weight = item.get("weight", 0.0)
             if weight <= 0:
                 continue
-            
+
             # 종목의 할당 금액 (포트폴리오 통화 기준)
             allocated_amount = total_capital * (weight / 100.0)
-            
+
             # 종목의 기본 정보 및 수익률 (저장된 값 사용 - 필요시 refresh 로직 추가)
             ticker_yield = item.get("dividend_yield", 0.0)
             weighted_yield += (weight / 100.0) * ticker_yield if total_weight > 0 else 0.0
@@ -138,13 +154,13 @@ class DividendBackend:
 
         # 통화 환산 (KRW 기준)
         p_currency = portfolio.get("currency", "USD")
-        
+
         def to_krw(amt):
             return amt * usd_krw_rate if p_currency == "USD" else amt
 
         # 최종 요약 계산
         annual_income_val = total_capital * (weighted_yield / 100.0)
-        
+
         # 통화별 연간 수입 계산
         if p_currency == "USD":
             annual_usd = annual_income_val
@@ -161,20 +177,12 @@ class DividendBackend:
                 "mode": mode,
                 "currency": p_currency,
                 "exchange_rate": usd_krw_rate,
-                "summary": {
-                    "annual": {
-                        "usd": annual_usd,
-                        "krw": annual_krw
-                    }
-                },
+                "summary": {"annual": {"usd": annual_usd, "krw": annual_krw}},
                 "monthly_chart": [
-                    {
-                        "month": m,
-                        "amount_krw": to_krw(amt),
-                        "amount_origin": amt
-                    } for m, amt in monthly_distribution.items()
-                ]
-            }
+                    {"month": m, "amount_krw": to_krw(amt), "amount_origin": amt}
+                    for m, amt in monthly_distribution.items()
+                ],
+            },
         }
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
         # 기존 데이터 호환성을 위해 필수 필드 기본값 보정

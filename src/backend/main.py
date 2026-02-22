@@ -176,41 +176,18 @@ async def update_retirement_config(req: RetirementConfigRequest):
 
 @app.get("/api/retirement/simulate")
 async def run_retirement_simulation(scenario: Optional[str] = None):
-    """저장된 설정을 기반으로 30년 은퇴 시뮬레이션을 실행합니다. [REQ-RAMS-3.3]"""
-    config = backend.get_retirement_config()
-    if not config:
-        return {"success": False, "message": "설정 데이터가 없습니다."}
-
-    # 1. 기초 자산 구성
-    initial_assets = {
-        "corp": config["corp_params"]["initial_investment"],
-        "pension": config["pension_params"]["severance_reserve"]
-        + config["pension_params"]["other_reserve"],
-    }
-
-    # 2. 활성 가정(Assumption) 추출
-    active_id = config.get("active_assumption_id", "v1")
-    assumption = config["assumptions"].get(active_id, config["assumptions"]["v1"])
-
-    # 3. 시뮬레이션 파라미터 결합
-    base_params = {
-        "target_monthly_cashflow": config["simulation_params"].get(
-            "target_monthly_cashflow", 9000000
-        ),
-        "inflation_rate": assumption["inflation_rate"],
-        "market_return_rate": assumption["expected_return"],
-        "corp_salary": config["corp_params"]["monthly_salary"],
-        "corp_fixed_cost": config["corp_params"]["monthly_fixed_cost"],
-        "loan_repayment": config["simulation_params"].get("target_monthly_cashflow", 9000000)
-        - config["corp_params"]["monthly_salary"],
-    }
-
-    # 4. 스트레스 시나리오 적용 (요청 시)
-    final_params = base_params
-    if scenario:
-        final_params = stress_engine.apply_scenario(base_params, scenario.upper())
-
-    # 5. 시뮬레이션 실행
+    # ... (생략된 기존 코드) ...
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
-
     return {"success": True, "data": result}
+
+
+@app.get("/api/retirement/snapshot")
+async def get_retirement_snapshot():
+    """저장된 은퇴일 스냅샷 정보를 반환합니다."""
+    return {"success": True, "data": backend.get_retirement_snapshot()}
+
+
+@app.post("/api/retirement/snapshot")
+async def create_retirement_snapshot(req: dict):
+    """현재 상태를 은퇴일 스냅샷으로 저장합니다."""
+    return backend.save_retirement_snapshot(req)

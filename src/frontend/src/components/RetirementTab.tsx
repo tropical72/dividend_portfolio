@@ -8,7 +8,8 @@ import {
   Zap,
   CloudRain,
   Coins,
-  TrendingDown
+  TrendingDown,
+  Camera
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -41,9 +42,15 @@ export function RetirementTab() {
       state?: string;
     }>;
   } | null>(null);
+  const [snapshot, setSnapshot] = useState<{
+    snapshot_date: string;
+    config: RetirementConfig;
+    summary: { total_survival_years: number };
+  } | null>(null);
   const [activeId, setActiveId] = useState<string>("v1");
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSnapshotting, setIsSnapshotting] = useState(false);
 
   // 설정 및 시뮬레이션 로드
   const fetchData = async (scenarioId: string | null = null) => {
@@ -65,6 +72,13 @@ export function RetirementTab() {
         if (simData.success) {
           setSimulationData(simData.data);
         }
+      }
+
+      // 스냅샷 로드
+      const snapRes = await fetch("http://localhost:8000/api/retirement/snapshot");
+      const snapData = await snapRes.json();
+      if (snapData.success && snapData.data.snapshot_date) {
+        setSnapshot(snapData.data);
       }
     } catch (err) {
       console.error(err);
@@ -98,6 +112,30 @@ export function RetirementTab() {
     const newScenario = activeScenario === scenarioId ? null : scenarioId;
     setActiveScenario(newScenario);
     fetchData(newScenario);
+  };
+
+  /** 스냅샷 생성 [REQ-RAMS-7.4] */
+  const handleTakeSnapshot = async () => {
+    if (!config || !simulationData) return;
+    setIsSnapshotting(true);
+    const snapshotData = {
+      snapshot_date: new Date().toISOString().split('T')[0],
+      config: config,
+      summary: simulationData.summary
+    };
+    try {
+      await fetch("http://localhost:8000/api/retirement/snapshot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(snapshotData)
+      });
+      setSnapshot(snapshotData);
+      alert("은퇴일 스냅샷이 성공적으로 박제되었습니다.");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSnapshotting(false);
+    }
   };
 
   if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse">Running Monte Carlo Simulation...</div>;
@@ -160,13 +198,49 @@ export function RetirementTab() {
               </button>
             ))}
           </div>
-          <button className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-2xl border border-slate-700 transition-all uppercase tracking-widest">
-            <History size={16} /> Take Retirement Snapshot
+          <button 
+            onClick={handleTakeSnapshot}
+            disabled={isSnapshotting}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-black rounded-2xl border border-slate-700 transition-all uppercase tracking-widest"
+          >
+            {isSnapshotting ? <RefreshCcw className="animate-spin" size={16} /> : <Camera size={16} />}
+            {snapshot ? `Snapshot: ${snapshot.snapshot_date}` : "Take Retirement Snapshot"}
           </button>
         </div>
       </div>
 
-      {/* 2. Stress Test Toolbar */}
+      {/* 2. Snapshot Comparison Info [New] */}
+      {snapshot && !activeScenario && (
+        <div className="bg-blue-500/5 border border-blue-500/10 p-6 rounded-3xl flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-500/10 rounded-2xl">
+              <History size={20} className="text-blue-400" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Original Plan Comparison</p>
+              <p className="text-slate-300 text-sm font-bold">은퇴 당시({snapshot.snapshot_date}) 계획 대비 현재 설계의 오차를 분석 중입니다.</p>
+            </div>
+          </div>
+          <div className="flex gap-8 px-6">
+            <div className="text-center">
+              <p className="text-[9px] font-bold text-slate-500 uppercase">Original Years</p>
+              <p className="text-lg font-black text-slate-300">{snapshot.summary.total_survival_years}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[9px] font-bold text-slate-500 uppercase">Current Diff</p>
+              <p className={cn(
+                "text-lg font-black",
+                summary.total_survival_years >= snapshot.summary.total_survival_years ? "text-emerald-400" : "text-red-400"
+              )}>
+                {summary.total_survival_years - snapshot.summary.total_survival_years >= 0 ? "+" : ""}
+                {summary.total_survival_years - snapshot.summary.total_survival_years} Yrs
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Stress Test Toolbar */}
       <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2 px-4 py-2 border-r border-slate-800 mr-2">
           <Zap size={16} className="text-amber-400" />
@@ -213,7 +287,55 @@ export function RetirementTab() {
         )}
       </div>
 
-      {/* 3. 30-Year Asset Projection Chart */}
+      {/* 4. Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+          {summary.infinite_with_10pct_cut && (
+            <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+          )}
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-blue-500" /> Sustainability
+          </p>
+          <div className="space-y-2">
+            <h3 className="text-5xl font-black text-slate-50 tracking-tighter">
+              {summary.total_survival_years}<span className="text-xl text-slate-500 font-black ml-1 uppercase">Years</span>
+            </h3>
+            {summary.infinite_with_10pct_cut ? (
+              <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest flex items-center gap-1">
+                <CheckCircle2 size={12} /> Permanent at 10% cost cut
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Standard retirement profile</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-blue-500" /> Exhaustion Target
+          </p>
+          <div className="space-y-2">
+            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
+              {summary.growth_asset_sell_start_date}
+            </h3>
+            <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Growth Asset Sell Start</p>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <PieChart size={14} className="text-amber-500" /> Buffer Status
+          </p>
+          <div className="space-y-2">
+            <h3 className="text-3xl font-black text-slate-50 tracking-tighter">
+              {summary.sgov_exhaustion_date}
+            </h3>
+            <p className="text-[10px] text-amber-400/60 font-black uppercase tracking-widest">SGOV Depletion Point</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. 30-Year Asset Projection Chart */}
       <div className={cn(
         "bg-slate-950/60 border rounded-[3.5rem] p-10 shadow-inner transition-all duration-1000",
         activeScenario ? "border-red-900/30" : "border-slate-800"
