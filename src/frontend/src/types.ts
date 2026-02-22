@@ -53,11 +53,22 @@ export interface Portfolio {
 }
 
 /** 은퇴 시뮬레이션 전역 설정 인터페이스 [REQ-RAMS-01] */
+export interface PlannedCashflow {
+  id: string;
+  type: "INFLOW" | "OUTFLOW";
+  entity: "CORP" | "PENSION";
+  amount: number;
+  year: number;
+  month: number;
+  description: string;
+}
+
 export interface RetirementConfig {
   active_assumption_id: string;
   user_profile: {
     birth_year: number;
-    pension_start_age: number;
+    birth_month: number;
+    private_pension_start_age: number;
     national_pension_start_age: number;
   };
   corp_params: {
@@ -69,14 +80,12 @@ export interface RetirementConfig {
     employee_count: number;
   };
   pension_params: {
+    initial_investment: number;
     severance_reserve: number;
     other_reserve: number;
     monthly_withdrawal_target: number;
   };
-  personal_params: {
-    real_estate_price: number;
-    other_assets: number;
-  };
+  planned_cashflows: PlannedCashflow[];
   tax_and_insurance: {
     point_unit_price: number;
     ltc_rate: number;
@@ -98,6 +107,8 @@ export interface RetirementConfig {
       expected_return: number;
       expected_growth: number;
       inflation_rate: number;
+      master_return?: number;
+      master_inflation?: number;
     };
   };
 }

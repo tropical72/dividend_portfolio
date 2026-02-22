@@ -1,18 +1,40 @@
-from src.backend.api import DividendBackend
+from src.core.projection_engine import ProjectionEngine
+from src.core.tax_engine import TaxEngine
+from src.core.trigger_engine import TriggerEngine
+from src.core.rebalance_engine import RebalanceEngine
 
-
-def test_invalid_tickers():
-    backend = DividendBackend()
-
-    print("--- Test 1: Invalid US Ticker ---")
-    result_us = backend.add_to_watchlist("INVALID_TICKER_123", "US")
-    print(f"Result: {result_us}")
-
-    print("\n--- Test 2: Invalid KR Ticker ---")
-    # 999999는 존재하지 않는 한국 종목 코드
-    result_kr = backend.add_to_watchlist("999999", "KR")
-    print(f"Result: {result_kr}")
-
+def debug_inflation_impact():
+    tax = TaxEngine()
+    trigger = TriggerEngine()
+    rebalance = RebalanceEngine()
+    engine = ProjectionEngine(tax, trigger, rebalance)
+    
+    initial_assets = {"corp": 1600000000, "pension": 600000000}
+    
+    # 1. 정상 인플레이션 (2.5%)
+    params_normal = {
+        "target_monthly_cashflow": 9000000,
+        "inflation_rate": 0.025,
+        "market_return_rate": 0.0485,
+        "corp_salary": 2500000,
+        "corp_fixed_cost": 500000,
+        "birth_year": 1972
+    }
+    res_normal = engine.run_30yr_simulation(initial_assets, params_normal)
+    
+    # 2. 극단적 인플레이션 (50%)
+    params_extreme = params_normal.copy()
+    params_extreme["inflation_rate"] = 0.50
+    res_extreme = engine.run_30yr_simulation(initial_assets, params_extreme)
+    
+    print(f"Normal Inflation Survival: {res_normal['summary']['total_survival_years']} years")
+    print(f"Extreme Inflation Survival: {res_extreme['summary']['total_survival_years']} years")
+    
+    # 극단적 인플레 상황에서는 반드시 생존 연수가 짧아져야 함
+    if res_extreme['summary']['total_survival_years'] < res_normal['summary']['total_survival_years']:
+        print("SUCCESS: Inflation impact detected.")
+    else:
+        print("FAILURE: Inflation has no impact on asset depletion.")
 
 if __name__ == "__main__":
-    test_invalid_tickers()
+    debug_inflation_impact()

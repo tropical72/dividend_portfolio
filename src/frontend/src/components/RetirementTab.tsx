@@ -22,8 +22,7 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from "recharts";
 import { cn } from "../lib/utils";
 import type { RetirementConfig } from "../types";

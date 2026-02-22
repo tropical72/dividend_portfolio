@@ -1,8 +1,9 @@
 {
-    "active_assumption_id": "conservative",
+    "active_assumption_id": "v1",
     "user_profile": {
         "birth_year": 1972,
-        "pension_start_age": 55,
+        "birth_month": 3,
+        "private_pension_start_age": 55,
         "national_pension_start_age": 65
     },
     "simulation_params": {
@@ -19,14 +20,22 @@
         "employee_count": 1
     },
     "pension_params": {
+        "initial_investment": 600000000,
         "severance_reserve": 350000000,
         "other_reserve": 250000000,
         "monthly_withdrawal_target": 2500000
     },
-    "personal_params": {
-        "real_estate_price": 620000000,
-        "other_assets": 0
-    },
+    "planned_cashflows": [
+        {
+            "id": "init-event-1",
+            "type": "INFLOW",
+            "entity": "CORP",
+            "amount": 0,
+            "year": 2030,
+            "month": 1,
+            "description": "예시: 자산 매각 대금"
+        }
+    ],
     "tax_and_insurance": {
         "point_unit_price": 208.4,
         "ltc_rate": 0.1295,
@@ -45,7 +54,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.04850000000000001,
+            "expected_return": 0.0485,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.0485,

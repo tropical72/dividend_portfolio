@@ -69,7 +69,10 @@ class RetirementConfigRequest(BaseModel):
     corp_params: Optional[dict] = None
     pension_params: Optional[dict] = None
     personal_params: Optional[dict] = None
+    planned_cashflows: Optional[list] = None
     assumptions: Optional[dict] = None
+    tax_and_insurance: Optional[dict] = None
+    trigger_thresholds: Optional[dict] = None
 
 
 @app.get("/health")
