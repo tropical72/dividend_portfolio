@@ -179,8 +179,19 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                       <div className="md:col-span-5 flex flex-col gap-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Amount</label>
                         <div className="flex items-center gap-2">
-                          <select value={ev.currency || "USD"} onChange={(e) => updateCashflow(ev.id, {currency: e.target.value as any})} className="w-28 bg-slate-800 border border-slate-700 rounded-xl h-11 px-2 text-[10px] font-black text-slate-400 outline-none"><option value="USD">USD ($)</option><option value="KRW">KRW (₩)</option></select>
-                          <input type="text" value={Math.floor(ev.amount || 0).toLocaleString()} onChange={(e) => { const val = parseInt(e.target.value.replace(/,/g, "")) || 0; updateCashflow(ev.id, {amount: val}); }} className="flex-1 bg-slate-900 border border-slate-800 rounded-xl h-11 px-4 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50" />
+                          <select value={ev.currency || "USD"} onChange={(e) => updateCashflow(ev.id, {currency: e.target.value as any})} className="w-20 bg-slate-800 border border-slate-700 rounded-xl h-11 px-2 text-[10px] font-black text-slate-400 outline-none flex-shrink-0">
+                            <option value="USD">USD ($)</option>
+                            <option value="KRW">KRW (₩)</option>
+                          </select>
+                          <input 
+                            type="text" 
+                            value={Math.floor(ev.amount || 0).toLocaleString()} 
+                            onChange={(e) => { 
+                              const val = Math.floor(parseInt(e.target.value.replace(/,/g, "")) || 0); 
+                              updateCashflow(ev.id, {amount: val}); 
+                            }} 
+                            className="flex-1 bg-slate-900 border border-slate-800 rounded-xl h-11 px-3 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50 min-w-0" 
+                          />
                         </div>
                       </div>
                       <div className="md:col-span-2 flex flex-col gap-2">
