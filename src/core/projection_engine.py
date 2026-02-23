@@ -174,6 +174,7 @@ class ProjectionEngine:
             survival_months = m
             if m <= 360:
                 monthly_data.append({
+                    "index": m,  # [FIX] X축 차트용 누적 인덱스 추가
                     "month": sim_month,
                     "year": sim_year,
                     "age": age_years,
