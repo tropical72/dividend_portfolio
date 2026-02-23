@@ -56,14 +56,9 @@ def test_run_retirement_simulation_with_events():
     monthly_data = data["data"]["monthly_data"]
     
     # 3. 이벤트 발생 시점 전후의 자산 변화 확인
-    # 2026년 3월 시작이므로 2035년 6월은 약 111개월 후 ( (2035-2026)*12 + (6-3) = 111 )
-    target_month_idx = (event_year - 2026) * 12 + (6 - 3)
-    
-    # 해당 월의 데이터가 존재하는지 확인
     found_event = False
     for i, m_data in enumerate(monthly_data):
-        # API는 1부터 시작하는 month 번호를 반환하므로 인덱스 보정 필요 (m_data["month"] == target_month_idx + 1)
-        if m_data["month"] == target_month_idx + 1:
+        if m_data["year"] == event_year and m_data["month"] == 6:
             # 이전 달 대비 자산이 이벤트 금액만큼(수익률 제외하고도) 크게 늘었는지 확인
             prev_nw = monthly_data[i-1]["total_net_worth"]
             curr_nw = m_data["total_net_worth"]

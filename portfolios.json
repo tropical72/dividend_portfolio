@@ -1,7 +1,7 @@
 [
     {
         "id": "6932a601-91e8-4fc0-b6aa-18b27a815542",
-        "name": "1",
+        "name": "존6.0-STD-법인",
         "total_capital": 10000.0,
         "currency": "USD",
         "items": [
@@ -9,7 +9,7 @@
                 "symbol": "JEPI",
                 "name": "JPMorgan Equity Premium Income ETF",
                 "category": "Fixed",
-                "weight": 20,
+                "weight": 15,
                 "price": 59.49,
                 "dividend_yield": 7.966044713397211,
                 "last_div_amount": 0.344,
@@ -31,7 +31,7 @@
                 "symbol": "JEPQ",
                 "name": "JPMorgan Nasdaq Equity Premium Income ETF",
                 "category": "Fixed",
-                "weight": 20,
+                "weight": 10,
                 "price": 58.15,
                 "dividend_yield": 10.55717970765262,
                 "last_div_amount": 0.466,
@@ -53,7 +53,7 @@
                 "symbol": "DIVO",
                 "name": "Amplify CWP Enhanced Dividend Income ETF",
                 "category": "Fixed",
-                "weight": 10,
+                "weight": 12,
                 "price": 46.92,
                 "dividend_yield": 6.135976129582266,
                 "last_div_amount": 0.183,
@@ -91,7 +91,7 @@
                 "symbol": "VOO",
                 "name": "Vanguard S&P 500 ETF",
                 "category": "Growth",
-                "weight": 12,
+                "weight": 25,
                 "price": 634.02,
                 "dividend_yield": 1.1147913315037383,
                 "last_div_amount": 1.771,
@@ -106,7 +106,7 @@
                 "symbol": "QQQM",
                 "name": "Invesco NASDAQ 100 ETF",
                 "category": "Growth",
-                "weight": 12,
+                "weight": 12.5,
                 "price": 250.67,
                 "dividend_yield": 0.5022539593888379,
                 "last_div_amount": 0.323,
@@ -121,7 +121,7 @@
                 "symbol": "SGOV",
                 "name": "iShares 0-3 Month Treasury Bond ETF",
                 "category": "Cash",
-                "weight": 14,
+                "weight": 13.5,
                 "price": 100.57,
                 "dividend_yield": 4.037983494083723,
                 "last_div_amount": 0.309,
@@ -140,7 +140,8 @@
                 ]
             }
         ],
-        "created_at": "1771675484.616768"
+        "created_at": "1771675484.616768",
+        "account_type": "Personal"
     },
     {
         "id": "0fbbbf84-b9ce-4f6f-a81d-7dc527672307",
@@ -264,46 +265,72 @@
         "created_at": "1771675484.616768"
     },
     {
-        "id": "36dbe158-b533-4e10-a610-97fdca7ee78b",
-        "name": "3",
-        "total_capital": 10000.0,
+        "id": "808e0f45-d657-48c3-9794-902cecdfc738",
+        "name": "존6.0-STD-연금",
+        "total_capital": 455980.3577692038,
         "currency": "USD",
         "items": [
             {
-                "symbol": "SCHD",
-                "name": "Schwab U.S. Dividend Equity ETF",
+                "symbol": "BND",
+                "name": "Vanguard Total Bond Market Index Fund",
+                "category": "Cash",
+                "weight": 40,
+                "price": 74.81,
+                "dividend_yield": 3.8323753508889182,
+                "last_div_amount": 0.245,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
                 "category": "Growth",
-                "weight": 100,
-                "price": 31.61,
-                "dividend_yield": 3.312242961088264,
-                "last_div_amount": 0.278,
+                "weight": 40,
+                "price": 634.02,
+                "dividend_yield": 1.1147913315037383,
+                "last_div_amount": 1.771,
                 "payment_months": [
                     3,
                     6,
                     9,
                     12
                 ]
-            }
-        ],
-        "created_at": "1771675484.616768"
-    },
-    {
-        "id": "17af2454-4e35-49fa-8e89-8c195f309f50",
-        "name": "Color Check 1771689621729",
-        "total_capital": 77777.0,
-        "currency": "USD",
-        "items": [
+            },
             {
-                "symbol": "SYNC",
-                "name": "Sync Test",
-                "category": "Fixed",
-                "weight": 100,
-                "price": 100,
-                "dividend_yield": 0,
-                "last_div_amount": 0,
-                "payment_months": []
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "category": "Cash",
+                "weight": 20,
+                "price": 100.57,
+                "dividend_yield": 4.037983494083723,
+                "last_div_amount": 0.309,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
             }
         ],
-        "created_at": "1771689477.2754529"
+        "created_at": "1771746647.2801664",
+        "account_type": "Pension"
     }
 ]

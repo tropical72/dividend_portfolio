@@ -52,7 +52,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.0485,
+            "expected_return": 0.05,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.0485,

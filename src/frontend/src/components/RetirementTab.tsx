@@ -86,11 +86,12 @@ export function RetirementTab() {
     </div>
   );
 
-  if (!config || !simulationData) return <div className="p-20 text-center text-red-400 font-black text-xl tracking-tighter">데이터가 비어있습니다. (설정을 확인하세요)</div>;
+  if (!config || !simulationData) return <div className="p-20 text-center text-red-400 font-black text-xl tracking-tighter">데이터가 비어있습니다.</div>;
 
   const summary = simulationData.summary || {};
   const monthlyData = simulationData.monthly_data || [];
   const chartData = monthlyData.filter((_: any, i: number) => i % 12 === 0);
+  const signals = summary.signals || [];
 
   const level = (() => {
     const years = summary.total_survival_years || 0;
@@ -100,26 +101,44 @@ export function RetirementTab() {
   })();
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto">
+    <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content">
       {/* Step 1. Assumptions */}
       <section className="space-y-6">
         <div className="flex items-center gap-3 px-4">
           <div className="p-2 bg-slate-800 rounded-lg"><Info size={20} className="text-slate-400" /></div>
           <div>
             <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
-            <p className="text-sm text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요.</p>
+            <p className="text-sm text-slate-500 font-bold">미래 가정을 선택하거나 수치를 직접 수정하세요. (Enter로 확정)</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.entries(config.assumptions || {}).map(([id, item]: [string, any]) => (
-            <div key={id} onClick={() => activeId !== id && handleSwitchVersion(id)} className={cn("p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer", activeId === id ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-900/40 border-slate-800")}>
+            <div key={id} onClick={() => activeId !== id && handleSwitchVersion(id)} className={cn("p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer", activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/20" : "bg-slate-900/40 border-slate-800 hover:border-slate-700")}>
               <div className="flex justify-between items-start mb-6">
                 <h4 className={cn("text-xl font-black", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
-                {activeId === id && <CheckCircle2 size={24} className="text-emerald-400" />}
+                {activeId === id && <CheckCircle2 size={24} className="text-emerald-400 shadow-glow" />}
               </div>
               <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase ml-1">Return</p><p className="text-lg font-black text-slate-200">{(item.expected_return * 100).toFixed(1)}%</p></div>
-                <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase ml-1">Inflation</p><p className="text-lg font-black text-slate-200">{(item.inflation_rate * 100).toFixed(1)}%</p></div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase ml-1">Return Rate</p>
+                  <EditableInput id={`return-${id}`} initialValue={item.expected_return * 100} masterValue={(item.master_return ?? 0.0485) * 100} onCommit={async (newVal) => {
+                    const val = newVal / 100;
+                    const newConfig = { ...config, assumptions: { ...config.assumptions, [id]: { ...item, expected_return: val } } };
+                    setConfig(newConfig);
+                    await fetch("http://localhost:8000/api/retirement/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newConfig) });
+                    if (activeId === id) fetchData();
+                  }} />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase ml-1">Inflation</p>
+                  <EditableInput id={`inflation-${id}`} initialValue={item.inflation_rate * 100} masterValue={(item.master_inflation ?? 0.025) * 100} onCommit={async (newVal) => {
+                    const val = newVal / 100;
+                    const newConfig = { ...config, assumptions: { ...config.assumptions, [id]: { ...item, inflation_rate: val } } };
+                    setConfig(newConfig);
+                    await fetch("http://localhost:8000/api/retirement/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newConfig) });
+                    if (activeId === id) fetchData();
+                  }} />
+                </div>
               </div>
             </div>
           ))}
@@ -130,29 +149,35 @@ export function RetirementTab() {
       <section className="space-y-8">
         <div className="flex items-center gap-3 px-4">
           <div className="p-2 bg-slate-800 rounded-lg"><TrendingUp size={20} className="text-slate-400" /></div>
-          <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 2. The Verdict</h3></div>
+          <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 2. The Verdict & Proof</h3></div>
         </div>
-        <div className="p-12 rounded-[3.5rem] border shadow-2xl bg-slate-900/60 border-slate-800">
+        <div className={cn("p-12 rounded-[3.5rem] border shadow-2xl transition-all duration-1000", activeScenario ? "bg-red-950/10 border-red-900/30" : "bg-slate-900/60 border-slate-800")}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 space-y-10">
               <div className="space-y-6">
-                <div className={cn("inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>{level.icon} {level.label}</div>
-                <h2 className="text-3xl font-black text-slate-50 leading-tight">혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></h2>
+                <div className={cn("inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>{level.icon} {level.label} Status</div>
+                <h2 className="text-3xl font-black text-slate-50 leading-tight">
+                  {activeScenario ? <>위기 상황 분석 결과</> : <>혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></>}
+                </h2>
                 <p className="text-base text-slate-400 font-medium">자산은 향후 <span className="text-slate-100 font-black">{summary.total_survival_years || 0}년</span> 동안 지속 가능합니다.</p>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800"><p className="text-[10px] text-slate-500 mb-2 uppercase">SGOV Exhaust</p><span className="text-base font-black text-slate-200">{summary.sgov_exhaustion_date || "-"}</span></div>
                 <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800"><p className="text-[10px] text-slate-500 mb-2 uppercase">Growth Sell</p><span className="text-base font-black text-slate-200">{summary.growth_asset_sell_start_date || "-"}</span></div>
+                <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800"><p className="text-[10px] text-slate-500 mb-2 uppercase">SGOV Zero</p><span className="text-base font-black text-slate-200">{summary.sgov_exhaustion_date || "-"}</span></div>
               </div>
             </div>
             <div className="lg:col-span-7 h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
-                  <XAxis dataKey="year" tickFormatter={(v) => `${v}Y`} stroke="#334155" fontSize={11} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <defs>
+                    <linearGradient id="colorC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                    <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#334155" fontSize={11} fontWeight="bold" axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#334155" fontSize={11} fontWeight="bold" axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v: any) => [`${(Number(v)/100000000).toFixed(1)}억`]} />
-                  <Area type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.1} />
-                  <Area type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem' }} formatter={(v: any) => [`${(Number(v)/100000000).toFixed(1)}억`]} />
+                  <Area type="monotone" dataKey="corp_balance" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorC)" />
+                  <Area type="monotone" dataKey="pension_balance" stackId="1" stroke="#3b82f6" strokeWidth={3} fill="url(#colorP)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -173,29 +198,51 @@ export function RetirementTab() {
         </div>
       </section>
 
-      {/* Step 5. Detailed Log */}
+      {/* Step 4. Health Monitor */}
       <section className="space-y-6">
+        <div className="flex items-center gap-3 px-4">
+          <div className="p-2 bg-slate-800 rounded-lg"><Activity size={20} className="text-slate-400" /></div>
+          <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 4. Health Monitor</h3></div>
+        </div>
+        <div className="bg-slate-900/40 p-10 rounded-[2.5rem] border border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {signals.length === 0 ? <p className="col-span-full py-10 text-center text-sm font-black uppercase text-slate-600 tracking-widest">All Systems Normal</p> : 
+              signals.map((s: any, i: number) => (
+                <div key={i} className="bg-slate-950/50 border border-slate-800 p-6 rounded-3xl space-y-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className={cn(s.level === "RED" ? "text-red-400" : "text-amber-400")} size={16} />
+                    <span className="text-xs font-black text-slate-400 uppercase">{Math.floor(s.month/12)}년차 경고</span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-100 leading-relaxed">{s.message}</p>
+                  <p className="text-xs text-slate-500 italic flex items-center gap-1"><ArrowRight size={12} /> {s.suggestion}</p>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      {/* Step 5. Detailed Log */}
+      <section className="space-y-6 pb-20">
         <div className="flex items-center gap-3 px-4"><div className="p-2 bg-slate-800 rounded-lg"><Coins size={20} className="text-slate-400" /></div><div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 5. Detailed Log</h3></div></div>
         <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
           <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-slate-900 z-10 shadow-xl">
                 <tr className="border-b border-slate-800">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-center"><HeaderWithTooltip label="Date" tooltip="시뮬레이션상의 연도와 월" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-center"><HeaderWithTooltip label="Age" tooltip="사용자의 실제 만 나이" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Phase" tooltip="1:법인운영, 2:개인연금개시, 3:국민연금개시 단계" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Total NW" tooltip="법인 및 개인 연금 자산의 총 합계 (Net Worth)" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Loan Bal" tooltip="비과세 인출 가능한 주주대여금(가수금) 잔액" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Corp Cost" tooltip="법인 운영 총 비용 (급여+보험료+고정비)" /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Health Prem" tooltip="개인 부담 건강보험료 (직장가입자 본인부담분)" alignRight /></th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase"><HeaderWithTooltip label="Event" tooltip="해당 월에 발생한 특별한 자금 유입/지출" alignRight /></th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-center">Date</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-center">Age</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Phase</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-right">Total NW</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-right">Loan Bal</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-right">Event</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
+              <tbody className="divide-y divide-slate-800/50 font-bold">
                 {monthlyData.map((m: any, idx: number) => (
-                  <tr key={idx} className={cn("hover:bg-slate-800/30 transition-colors group text-center", m.event ? "bg-emerald-500/5" : "")}>
-                    <td className="px-6 py-3 text-xs font-bold text-slate-400">{m.year}-{String(m.month).padStart(2, '0')}</td>
-                    <td className="px-6 py-3 text-xs font-black text-slate-300">{m.age}세</td>
+                  <tr key={idx} className={cn("hover:bg-slate-800/30 transition-colors group", m.event ? "bg-emerald-500/5" : "")}>
+                    <td className="px-6 py-3 text-xs text-slate-400 text-center">{m.year}-{String(m.month).padStart(2, '0')}</td>
+                    <td className="px-6 py-3 text-xs text-slate-300 text-center">{m.age}세</td>
                     <td className="px-6 py-3 text-left">
                       <span className={cn(
                         "px-2 py-1 rounded text-[9px] font-black uppercase",
@@ -203,11 +250,9 @@ export function RetirementTab() {
                         m.phase === "Phase 2" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
                       )}>{m.phase}</span>
                     </td>
-                    <td className="px-6 py-3 text-xs font-black text-slate-200 text-left">{((m.total_net_worth || 0) / 100000000).toFixed(2)}억</td>
-                    <td className="px-6 py-3 text-xs font-bold text-emerald-400/80 text-left">{((m.loan_balance || 0) / 100000000).toFixed(2)}억</td>
-                    <td className="px-6 py-3 text-xs font-bold text-rose-400/70 text-left">{((m.corp_cost || 0) / 10000).toFixed(0)}만</td>
-                    <td className="px-6 py-3 text-xs font-bold text-amber-400/70 text-left">{((m.health_premium || 0) / 10000).toFixed(1)}만</td>
-                    <td className="px-6 py-3 text-left">{m.event ? <span className="text-[9px] font-black bg-emerald-500 text-slate-950 px-2 py-0.5 rounded">{m.event.name}</span> : "-"}</td>
+                    <td className="px-6 py-3 text-xs text-slate-200 text-right">{((m.total_net_worth || 0) / 100000000).toFixed(2)}억</td>
+                    <td className="px-6 py-3 text-xs text-emerald-400/80 text-right">{((m.loan_balance || 0) / 100000000).toFixed(2)}억</td>
+                    <td className="px-6 py-3 text-right">{m.event ? <span className="text-[9px] font-black bg-emerald-500 text-slate-950 px-2 py-0.5 rounded">{m.event.name}</span> : "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -224,17 +269,22 @@ export function RetirementTab() {
   );
 }
 
-function HeaderWithTooltip({ label, tooltip, alignRight }: { label: string, tooltip: string, alignRight?: boolean }) {
+function EditableInput({ id, initialValue, masterValue, onCommit }: { id: string, initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
+  const [value, setValue] = useState(initialValue.toFixed(1));
+  useEffect(() => { setValue(initialValue.toFixed(1)); }, [initialValue]);
+  const handleBlur = () => {
+    const num = parseFloat(value);
+    if (!isNaN(num)) { onCommit(num); setValue(num.toFixed(1)); }
+    else { setValue(initialValue.toFixed(1)); }
+  };
+  const isChanged = Math.abs(initialValue - masterValue) > 0.05;
   return (
-    <div className="flex items-center gap-1 justify-center md:justify-start group relative cursor-help">
-      <span>{label}</span>
-      <Info size={10} className="text-slate-600 group-hover:text-emerald-400 transition-colors" />
-      <div className={cn(
-        "absolute top-full mt-2 hidden group-hover:block z-50 w-48 bg-slate-800 p-3 rounded-xl text-[10px] font-bold text-slate-300 shadow-2xl border border-slate-700 leading-relaxed text-left normal-case tracking-normal",
-        alignRight ? "right-0" : "left-0"
-      )}>
-        {tooltip}
+    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+      <div className="relative flex items-center">
+        <input id={id} data-testid={id} type="text" className="bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 w-28 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all pr-10" value={value} onChange={(e) => setValue(e.target.value)} onBlur={handleBlur} onKeyDown={(e) => e.key === "Enter" && (e.target as any).blur()} />
+        <span className="absolute right-4 text-xs font-black text-slate-500">%</span>
       </div>
+      {isChanged && <button onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }} className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"><RotateCcw size={16} strokeWidth={3} /><span className="text-[10px] font-black uppercase">Reset</span></button>}
     </div>
   );
 }

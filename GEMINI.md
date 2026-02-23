@@ -5,8 +5,8 @@
 *   **안정성 최우선:** 회귀 오류 방지를 위해 코드 수정 전 반드시 해결 계획을 제안하고 승인을 받는다.
 *   **SDD(Spec-Driven Development):** 구현 전 도메인별 `docs/` 폴더 내의 `requirement.md`와 `plan.md`를 확정한다.
 *   **Context Synchronization (MUST):** 세션 시작 시 반드시 `docs/trace_matrix.md`를 확인하여 전체 진척도를 파악하고, 작업할 도메인 폴더의 문서를 읽어야 한다.
-*   **Automated Testing (MUST):** 모든 기능 구현 후에는 반드시 Playwright 또는 Pytest를 통해 자동 검증을 수행한다. 검증 시 '외부 API Mocking'과 '테스트 DB 격리' 원칙을 반드시 준수한다.
-*   **Test-First Approach (TDD):** 코드를 수정하기 전, 해당 기능을 검증할 테스트 코드를 먼저 작성하여 실패(Red)를 확인한 후 구현(Green)에 착수한다.
+*   **Automated Testing (MUST):** 모든 기능 구현 및 수정 후에는 반드시 Playwright 또는 Pytest를 통해 자동 검증을 수행한다. 특히 **모든 신규 기능 추가 시 해당 기능을 검증하는 TC(Test Case) 작성을 의무화**하며, 검증 시 '외부 API Mocking'과 '테스트 DB 격리' 원칙을 반드시 준수한다.
+*   **Test-First Approach (TDD):** 코드를 수정하기 전, 해당 기능을 검증할 테스트 코드를 먼저 작성하여 실패(Red)를 확인한 후 구현(Green)에 착수한다. 모든 Micro-Task는 테스트 코드의 성공을 통해 완료를 증명한다.
 *   **Atomic Work Unit:** 모든 작업은 테스트-구현-커밋이 한 세트로 이루어지는 Micro-Task 단위로 쪼개어 진행한다. 테스트가 100% 통과되면 그 결과를 상세히 보고하고, **반드시 마스터의 명시적인 커밋 승인을 받은 후** `[feat] ID 구현 완료` 형식의 메시지로 Git Commit 및 **Push**를 동시에 수행한다.
 *   **Multi-PC Sync (MUST):** 여러 환경(Windows/Ubuntu)에서의 동기화를 위해 세션 시작 시 반드시 `git pull`을 수행하고, 작업 종료 또는 태스크 완료 시 반드시 `git push`를 완료해야 한다.
 *   **Static Analysis (MUST):** 모든 코드 수정 후에는 반드시 언어별 Linting 도구(Ruff, ESLint)를 실행하여 정적 분석을 수행하고 에러를 수정해야 한다. 특히 프론트엔드 수정 시 JSX 내 사용 중인 컴포넌트가 린트 도구에 의해 '미사용'으로 잘못 판단되어 삭제되지 않도록 육안 검증을 병행한다.
