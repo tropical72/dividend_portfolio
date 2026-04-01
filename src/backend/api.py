@@ -35,7 +35,11 @@ class DividendBackend:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
         # 개별 필드 업데이트 (딕셔너리 depth 고려)
         for key, value in new_config.items():
-            if isinstance(value, dict) and key in self.retirement_config and isinstance(self.retirement_config[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in self.retirement_config
+                and isinstance(self.retirement_config[key], dict)
+            ):
                 self.retirement_config[key].update(value)
             else:
                 self.retirement_config[key] = value

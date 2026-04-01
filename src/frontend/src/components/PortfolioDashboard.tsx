@@ -207,7 +207,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 <Tooltip 
                   cursor={{ fill: '#1e293b', opacity: 0.4 }} 
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} 
-                  formatter={(val: any) => {
+                  formatter={(val: number | string) => {
                     const numVal = Number(val) || 0;
                     return [
                       globalCurrency === "USD" 

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -102,7 +102,12 @@ async def get_portfolios():
 
 @app.post("/api/portfolios")
 async def create_portfolio(req: PortfolioRequest):
-    return backend.add_portfolio(name=req.name, total_capital=req.total_capital, currency=req.currency, items=req.items)
+    return backend.add_portfolio(
+        name=req.name,
+        total_capital=req.total_capital,
+        currency=req.currency,
+        items=req.items,
+    )
 
 @app.delete("/api/portfolios/{p_id}")
 async def delete_portfolio(p_id: str):
@@ -134,11 +139,37 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # 1. 필수 설정값 존재 여부 엄격 검증 (하드코딩 방지)
     required_keys = {
-        "simulation_params": ["target_monthly_cashflow", "simulation_start_year", "simulation_start_month", "national_pension_amount"],
-        "user_profile": ["birth_year", "birth_month", "private_pension_start_age", "national_pension_start_age"],
-        "corp_params": ["initial_investment", "monthly_salary", "monthly_fixed_cost", "employee_count", "initial_shareholder_loan"],
+        "simulation_params": [
+            "target_monthly_cashflow",
+            "simulation_start_year",
+            "simulation_start_month",
+            "national_pension_amount",
+        ],
+        "user_profile": [
+            "birth_year",
+            "birth_month",
+            "private_pension_start_age",
+            "national_pension_start_age",
+        ],
+        "corp_params": [
+            "initial_investment",
+            "monthly_salary",
+            "monthly_fixed_cost",
+            "employee_count",
+            "initial_shareholder_loan",
+        ],
         "pension_params": ["monthly_withdrawal_target", "initial_investment"],
-        "tax_and_insurance": ["point_unit_price", "ltc_rate", "corp_tax_threshold", "corp_tax_low_rate", "corp_tax_high_rate", "pension_rate", "health_rate", "employment_rate", "income_tax_estimate_rate"]
+        "tax_and_insurance": [
+            "point_unit_price",
+            "ltc_rate",
+            "corp_tax_threshold",
+            "corp_tax_low_rate",
+            "corp_tax_high_rate",
+            "pension_rate",
+            "health_rate",
+            "employment_rate",
+            "income_tax_estimate_rate",
+        ],
     }
 
     missing_fields = []
@@ -152,8 +183,11 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     if missing_fields:
         return {
-            "success": False, 
-            "message": f"필수 설정이 누락되었습니다: {', '.join(missing_fields)}. Settings 탭에서 설정을 완료해주세요."
+            "success": False,
+            "message": (
+                f"필수 설정이 누락되었습니다: {', '.join(missing_fields)}. "
+                "Settings 탭에서 설정을 완료해주세요."
+            ),
         }
 
     # 2. 기초 자산 구성
@@ -161,7 +195,11 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     pension_params = config["pension_params"]
     initial_assets = {
         "corp": corp_params["initial_investment"],
-        "pension": (pension_params.get("severance_reserve") or 0) + (pension_params.get("other_reserve") or 0) + (pension_params["initial_investment"]),
+        "pension": (
+            (pension_params.get("severance_reserve") or 0)
+            + (pension_params.get("other_reserve") or 0)
+            + (pension_params["initial_investment"])
+        ),
     }
 
     # 3. 활성 가정(Assumption) 추출
@@ -186,7 +224,10 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         "national_pension_start_age": user_profile["national_pension_start_age"],
         "simulation_start_year": sim_params["simulation_start_year"],
         "simulation_start_month": sim_params["simulation_start_month"],
+        "simulation_years": sim_params.get("simulation_years", 30),
         "target_buffer_months": trigger_params["target_buffer_months"],
+        "equity_yield_multiplier": trigger_params.get("equity_yield_multiplier", 1.2),
+        "debt_yield_multiplier": trigger_params.get("debt_yield_multiplier", 0.6),
         "pension_withdrawal_target": pension_params["monthly_withdrawal_target"],
         "national_pension_amount": sim_params["national_pension_amount"],
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],

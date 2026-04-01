@@ -1,5 +1,5 @@
-import pytest
 from src.core.cascade_engine import CascadeEngine
+
 
 def test_cascade_liquidation_order():
     """자산 매도 순서 테스트: VOO -> SCHD -> BND -> SGOV"""

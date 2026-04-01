@@ -33,7 +33,7 @@ export interface Stock {
 export interface PortfolioItem {
   symbol: string;
   name: string;
-  category: "Fixed" | "Cash" | "Growth";
+  category: "Fixed" | "Cash" | "Growth" | "Dividend" | "HighIncome";
   weight: number;
   price: number;
   dividend_yield: number;
@@ -72,6 +72,15 @@ export interface RetirementConfig {
     private_pension_start_age: number;
     national_pension_start_age: number;
   };
+  simulation_params: {
+    target_monthly_cashflow: number;
+    inflation_rate: number;
+    expected_market_growth: number;
+    simulation_start_year: number;
+    simulation_start_month: number;
+    national_pension_amount: number;
+    simulation_years: number;
+  };
   corp_params: {
     initial_investment: number;
     capital_stock: number;
@@ -95,12 +104,16 @@ export interface RetirementConfig {
     corp_tax_high_rate: number;
     pension_rate: number;
     health_rate: number;
+    employment_rate: number;
+    income_tax_estimate_rate: number;
   };
   trigger_thresholds: {
     tax_threshold: number;
     target_buffer_months: number;
     high_income_cap_rate: number;
     market_panic_threshold: number;
+    equity_yield_multiplier: number;
+    debt_yield_multiplier: number;
   };
   assumptions: {
     [key: string]: {
@@ -113,3 +126,34 @@ export interface RetirementConfig {
     };
   };
 }
+
+/** 월별 시뮬레이션 데이터 인터페이스 */
+export interface MonthlySimulationData {
+  index: number;
+  year: number;
+  month: number;
+  age: number;
+  phase: string;
+  total_net_worth: number;
+  corp_balance: number;
+  pension_balance: number;
+  loan_balance: number;
+  target_cashflow: number;
+  net_salary: number;
+  pension_draw?: number;
+  event?: boolean;
+}
+
+/** 시뮬레이션 결과 전체 구조 인터페이스 */
+export interface SimulationResult {
+  summary: {
+    total_survival_years: number;
+    is_permanent: boolean;
+    sgov_exhaustion_date: string;
+    growth_asset_sell_start_date: string;
+    signals?: unknown[];
+  };
+  survival_months: number;
+  monthly_data: MonthlySimulationData[];
+}
+

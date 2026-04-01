@@ -1,6 +1,8 @@
 import pytest
-from src.backend.data_provider import StockDataProvider
+
 from src.backend.api import DividendBackend
+from src.backend.data_provider import StockDataProvider
+
 
 @pytest.fixture
 def provider():
@@ -57,7 +59,8 @@ def test_nan_to_zero_protection(provider):
         try:
             f_val = float(val)
             return f_val if math.isfinite(f_val) else 0.0
-        except: return 0.0
+        except Exception:
+            return 0.0
         
     assert safe_float(float('nan')) == 0.0
     assert safe_float(float('inf')) == 0.0

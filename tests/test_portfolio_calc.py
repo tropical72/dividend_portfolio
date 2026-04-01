@@ -1,5 +1,7 @@
 import pytest
+
 from src.backend.data_provider import StockDataProvider
+
 
 @pytest.fixture
 def provider():

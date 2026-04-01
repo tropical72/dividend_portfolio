@@ -1,5 +1,5 @@
-import pytest
 from src.core.trigger_engine import TriggerEngine
+
 
 def test_trigger_logic_signals():
     """트리거 발생 조건 검증 테스트 (REQ-RAMS-6.1~6.4)"""

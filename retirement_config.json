@@ -1,5 +1,5 @@
 {
-    "active_assumption_id": "v1",
+    "active_assumption_id": "conservative",
     "user_profile": {
         "birth_year": 1972,
         "birth_month": 8,
@@ -12,7 +12,8 @@
         "expected_market_growth": 0.0485,
         "simulation_start_year": 2026,
         "simulation_start_month": 5,
-        "national_pension_amount": 2000000
+        "national_pension_amount": 2000000,
+        "simulation_years": 30
     },
     "corp_params": {
         "initial_investment": 1600000000,
@@ -47,12 +48,14 @@
         "tax_threshold": 200000000,
         "target_buffer_months": 24,
         "high_income_cap_rate": 0.4,
-        "market_panic_threshold": -0.2
+        "market_panic_threshold": -0.2,
+        "equity_yield_multiplier": 1.2,
+        "debt_yield_multiplier": 0.6
     },
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.04850000000000001,
+            "expected_return": 0.0485,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.0485,

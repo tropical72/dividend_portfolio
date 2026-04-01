@@ -1,5 +1,5 @@
-import pytest
 from src.core.tax_engine import TaxEngine
+
 
 def test_entity_comparison_proof():
     """법인 vs 개인 운용 실익 비교 검증 (REQ-RAMS-2.3)"""

@@ -1,5 +1,5 @@
-import pytest
 from src.core.stress_engine import StressTestEngine
+
 
 def test_stress_scenario_overrides():
     """스트레스 테스트 시나리오별 파라미터 오버라이드 검증 (REQ-RAMS-5.2)"""

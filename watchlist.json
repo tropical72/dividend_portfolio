@@ -270,5 +270,25 @@
             12
         ],
         "country": "US"
+    },
+    {
+        "symbol": "GOOG",
+        "name": "Alphabet Inc.",
+        "price": 286.86,
+        "currency": "USD",
+        "dividend_yield": 0.2928257686676427,
+        "one_yr_return": 81.17552836759413,
+        "ex_div_date": "2026-03-09",
+        "last_div_amount": 0.21,
+        "last_div_yield": 0.07320644216691068,
+        "past_avg_monthly_div": 0.06999999999999999,
+        "dividend_frequency": "Quarterly",
+        "payment_months": [
+            3,
+            6,
+            9,
+            12
+        ],
+        "country": "US"
     }
 ]

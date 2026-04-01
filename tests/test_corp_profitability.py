@@ -1,5 +1,5 @@
-import pytest
 from src.core.tax_engine import TaxEngine
+
 
 def test_corporate_profitability_calculation():
     """법인 수익성 계산 테스트: 과표, 세금, 가계수입, 세후성장률"""
