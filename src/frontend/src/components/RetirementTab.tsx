@@ -4,22 +4,16 @@ import {
   AlertCircle, Info, RotateCcw, TrendingUp
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
-import { cn } from "../lib/utils";
-import type { RetirementConfig, SimulationResult, MonthlySimulationData } from "../types";
+import { cn } from "@/lib/utils";
+import type { RetirementConfig, SimulationResult } from "../types";
 
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<SimulationResult | null>(null);
   const [activeId, setActiveId] = useState<string>("v1");
-  const [activeScenario, setActiveScenario] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // ReferenceError 방지를 위한 초기 변수
-  let summary: SimulationResult["summary"] | Record<string, never> = {};
-  let monthlyData: MonthlySimulationData[] = [];
-  let chartData: MonthlySimulationData[] = [];
 
   const fetchData = async (scenarioId: string | null = null) => {
     setIsLoading(true);
@@ -42,11 +36,7 @@ export function RetirementTab() {
         setErrorMessage(simData.message || "시뮬레이션 실행 실패");
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMessage(err.message || "서버와 통신할 수 없습니다.");
-      } else {
-        setErrorMessage("서버와 통신할 수 없습니다.");
-      }
+      setErrorMessage(err instanceof Error ? err.message : "서버와 통신할 수 없습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +46,6 @@ export function RetirementTab() {
 
   const handleSwitchVersion = async (id: string) => {
     setActiveId(id);
-    setActiveScenario(null);
     try {
       await fetch("http://localhost:8000/api/retirement/config", {
         method: "POST",
@@ -69,14 +58,11 @@ export function RetirementTab() {
 
   if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse" data-testid="retirement-tab-content">Running Monte Carlo Simulation...</div>;
   if (errorMessage) return <div className="p-20 text-center space-y-6" data-testid="retirement-tab-content"><div className="flex justify-center"><AlertCircle size={64} className="text-red-500" /></div><h2 className="text-2xl font-black text-slate-50">오류 발생</h2><p>{errorMessage}</p><button onClick={() => fetchData()} className="px-8 py-3 bg-slate-800 text-slate-200 rounded-xl">재시도</button></div>;
+  if (!config || !simulationData) return <div className="p-20 text-center text-red-400 font-black" data-testid="retirement-tab-content">데이터가 없습니다.</div>;
 
-  if (simulationData) {
-    summary = simulationData.summary || {};
-    monthlyData = simulationData.monthly_data || [];
-    chartData = monthlyData.filter((d) => d.index % 12 === 0 || d.index === 1);
-  }
-
-  if (!config || monthlyData.length === 0) return <div className="p-20 text-center text-red-400 font-black" data-testid="retirement-tab-content">데이터가 없습니다.</div>;
+  const summary = simulationData.summary || {};
+  const monthlyData = simulationData.monthly_data || [];
+  const chartData = monthlyData.filter((d) => d.index % 12 === 0 || d.index === 1);
 
   const level = (() => {
     const years = summary.total_survival_years || 0;
@@ -95,14 +81,14 @@ export function RetirementTab() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.entries(config.assumptions || {}).map(([id, item]) => (
-            <div key={id} onClick={() => activeId !== id && handleSwitchVersion(id)} className={cn("p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer", activeId === id && !activeScenario ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-900/40 border-slate-800")}>
+            <div key={id} onClick={() => activeId !== id && handleSwitchVersion(id)} className={cn("p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer", activeId === id ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-900/40 border-slate-800")}>
               <div className="flex justify-between items-start mb-6">
                 <h4 className={cn("text-xl font-black", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
                 {activeId === id && <CheckCircle2 size={24} className="text-emerald-400 shadow-glow" />}
               </div>
               <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Return</p><EditableInput id={`return-${id}`} initialValue={item.expected_return * 100} masterValue={(item.master_return ?? 0.0485) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, expected_return: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); if(activeId===id) fetchData(); }} /></div>
-                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Inflation</p><EditableInput id={`inflation-${id}`} initialValue={item.inflation_rate * 100} masterValue={(item.master_inflation ?? 0.025) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, inflation_rate: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); if(activeId===id) fetchData(); }} /></div>
+                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Return</p><EditableInput id={`return-${id}`} initialValue={item.expected_return * 100} masterValue={(item.master_return ?? 0.0485) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, expected_return: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); fetchData(); }} /></div>
+                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Inflation</p><EditableInput id={`inflation-${id}`} initialValue={item.inflation_rate * 100} masterValue={(item.master_inflation ?? 0.025) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, inflation_rate: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); fetchData(); }} /></div>
               </div>
             </div>
           ))}
@@ -133,7 +119,6 @@ export function RetirementTab() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="index" type="number" domain={[0, 360]} tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem', fontSize: '12px' }} labelFormatter={(l) => `${Math.floor(Number(l)/12)}년차 (${l}개월)`} formatter={(v: number, name: string) => [`${(Number(v)/100000000).toFixed(1)}억`, name === "total_net_worth" ? "합산 자산" : name === "corp_balance" ? "법인 자산" : "연금 자산"]} />
                   <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
                   <Area name="total_net_worth" type="monotone" dataKey="total_net_worth" stroke="#f8fafc" strokeWidth={4} fill="url(#colorTotal)" isAnimationActive={true} />
@@ -146,7 +131,7 @@ export function RetirementTab() {
         </div>
       </section>
 
-      {/* Step 5. Detailed Log (무결성 증명 컬럼 확장) */}
+      {/* Step 5. Detailed Log */}
       <section className="space-y-6 pb-20">
         <div className="flex items-center gap-3 px-4"><div className="p-2 bg-slate-800 rounded-lg"><Coins size={20} className="text-slate-400" /></div><div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 5. Detailed Math Log</h3></div></div>
         <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
@@ -197,7 +182,7 @@ function EditableInput({ id, initialValue, masterValue, onCommit }: { id: string
   return (
     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
       <div className="relative flex items-center">
-        <input id={id} data-testid={id} type="text" className="bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 w-28 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all pr-10" value={value} onChange={(e) => setValue(e.target.value)} onBlur={() => !isNaN(parseFloat(value)) && onCommit(parseFloat(value))} onKeyDown={(e) => e.key === "Enter" && (e.target as any).blur()} />
+        <input id={id} data-testid={id} type="text" className="bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 w-28 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all pr-10" value={value} onChange={(e) => setValue(e.target.value)} onBlur={() => !isNaN(parseFloat(value)) && onCommit(parseFloat(value))} onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()} />
         <span className="absolute right-4 text-xs font-black text-slate-500">%</span>
       </div>
       {Math.abs(initialValue - masterValue) > 0.05 && <button onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }} className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"><RotateCcw size={16} strokeWidth={3} /><span className="text-[10px] font-black uppercase">Reset</span></button>}
