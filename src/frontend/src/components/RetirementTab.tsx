@@ -75,9 +75,26 @@ export function RetirementTab() {
     <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content">
       {/* Step 1. Assumptions */}
       <section className="space-y-6">
-        <div className="flex items-center gap-3 px-4">
-          <div className="p-2 bg-slate-800 rounded-lg"><Info size={20} className="text-slate-400" /></div>
-          <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3></div>
+        <div className="flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-800 rounded-lg"><Info size={20} className="text-slate-400" /></div>
+            <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3></div>
+          </div>
+          {/* [ADD] 사용된 포트폴리오 배지 표시 */}
+          <div className="flex gap-2">
+            {simulationData.meta?.used_portfolios?.corp && (
+              <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">Corp:</span>
+                <span className="text-[10px] font-black text-slate-300">{simulationData.meta.used_portfolios.corp.name} ({simulationData.meta.used_portfolios.corp.yield})</span>
+              </div>
+            )}
+            {simulationData.meta?.used_portfolios?.pension && (
+              <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2">
+                <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Pen:</span>
+                <span className="text-[10px] font-black text-slate-300">{simulationData.meta.used_portfolios.pension.name} ({simulationData.meta.used_portfolios.pension.yield})</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {Object.entries(config.assumptions || {}).map(([id, item]) => (

@@ -209,12 +209,20 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     if not assumption:
         return {"success": False, "message": "활성화된 미래 가정(Assumption) 데이터가 없습니다."}
 
-    # 4. 시뮬레이션 파라미터 결합 (하드코딩 상수 완전 배제)
+    # 4. 시뮬레이션 파라미터 결합 (포트폴리오 통계 포함)
     sim_params = config["simulation_params"]
     user_profile = config["user_profile"]
     trigger_params = config.get("trigger_thresholds", {"target_buffer_months": 24})
     
+    # [REQ-RAMS-1.4.1] 계좌별 포트폴리오 통계 추출
+    corp_stats = backend.get_portfolio_stats_by_type("Corporate")
+    pension_stats = backend.get_portfolio_stats_by_type("Pension")
+    
     base_params = {
+        "portfolio_stats": {
+            "corp": corp_stats,
+            "pension": pension_stats
+        },
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": assumption["expected_return"],
@@ -249,6 +257,24 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # 6. 엔진 실행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
+    
+    # [ADD] 사용된 포트폴리오 정보 메타데이터 추가
+    corp_p = next((p for p in backend.portfolios if p.get("account_type") == "Corporate"), None)
+    pen_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
+    
+    result["meta"] = {
+        "used_portfolios": {
+            "corp": {
+                "name": corp_p["name"] if corp_p else "Default (None)",
+                "yield": f"{corp_stats.get('dividend_yield', 0.04)*100:.2f}%"
+            },
+            "pension": {
+                "name": pen_p["name"] if pen_p else "Default (None)",
+                "yield": f"{pension_stats.get('dividend_yield', 0.035)*100:.2f}%"
+            }
+        }
+    }
+    
     return {"success": True, "data": result}
 
 @app.get("/api/retirement/snapshot")

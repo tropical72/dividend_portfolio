@@ -8,7 +8,8 @@
 |:---|:---|:---|:---|:---|:---|
 | REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | bc24140 |
 | REQ-RAMS-1.3 | 미래 확정 자금 이벤트 반영 엔진 | T-05-5.1.2 | TEST-API-EV | Done | b99a810 |
-| REQ-RAMS-1.4 | 포트폴리오 매니저 데이터 통합 | T-07-7.1 | TEST-API-INT | Backlog | - |
+| REQ-RAMS-1.4 | 포트폴리오 매니저 데이터 통합 | T-07-7.1 | TEST-API-INT | In Progress | - |
+| REQ-RAMS-1.4.5 | 포트폴리오 가시성(Visibility) 강화 | T-07-7.4 | TEST-UX-PORT | In Progress | - |
 | REQ-RAMS-2.1 | 법인 세후 현금흐름 실시간 시뮬레이션 | T-06-6.2.1 | TEST-TAX-SIM | Done | [Current] |
 | REQ-RAMS-2.2 | 지역건보료 점수제(재산/소득) 모듈 | T-01-1.2.2 | TEST-TAX-02 | Done | 98348ee |
 | REQ-RAMS-2.3 | 법인 vs 개인 타당성 분석 로직 | T-01-2.1.2 | TEST-TAX-03 | Done | 986d124 |

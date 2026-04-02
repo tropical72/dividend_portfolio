@@ -13,19 +13,7 @@
                 "price": 59.49,
                 "dividend_yield": 7.966044713397211,
                 "last_div_amount": 0.344,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
                 "symbol": "JEPQ",
@@ -35,19 +23,7 @@
                 "price": 58.15,
                 "dividend_yield": 10.55717970765262,
                 "last_div_amount": 0.466,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
                 "symbol": "DIVO",
@@ -57,20 +33,7 @@
                 "price": 46.92,
                 "dividend_yield": 6.135976129582266,
                 "last_div_amount": 0.183,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
                 "symbol": "SCHD",
@@ -80,12 +43,7 @@
                 "price": 31.61,
                 "dividend_yield": 3.312242961088264,
                 "last_div_amount": 0.278,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
+                "payment_months": [3, 6, 9, 12]
             },
             {
                 "symbol": "VOO",
@@ -95,12 +53,7 @@
                 "price": 634.02,
                 "dividend_yield": 1.1147913315037383,
                 "last_div_amount": 1.771,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
+                "payment_months": [3, 6, 9, 12]
             },
             {
                 "symbol": "QQQM",
@@ -110,12 +63,7 @@
                 "price": 250.67,
                 "dividend_yield": 0.5022539593888379,
                 "last_div_amount": 0.323,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
+                "payment_months": [3, 6, 9, 12]
             },
             {
                 "symbol": "SGOV",
@@ -125,144 +73,11 @@
                 "price": 100.57,
                 "dividend_yield": 4.037983494083723,
                 "last_div_amount": 0.309,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             }
         ],
         "created_at": "1771675484.616768",
-        "account_type": "Personal"
-    },
-    {
-        "id": "0fbbbf84-b9ce-4f6f-a81d-7dc527672307",
-        "name": "2",
-        "total_capital": 10000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "SGOV",
-                "name": "iShares 0-3 Month Treasury Bond ETF",
-                "category": "Cash",
-                "weight": 12,
-                "price": 100.57,
-                "dividend_yield": 4.037983494083723,
-                "last_div_amount": 0.309,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            },
-            {
-                "symbol": "SCHD",
-                "name": "Schwab U.S. Dividend Equity ETF",
-                "category": "Growth",
-                "weight": 10,
-                "price": 31.61,
-                "dividend_yield": 3.312242961088264,
-                "last_div_amount": 0.278,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
-            },
-            {
-                "symbol": "VOO",
-                "name": "Vanguard S&P 500 ETF",
-                "category": "Growth",
-                "weight": 15,
-                "price": 634.02,
-                "dividend_yield": 1.1147913315037383,
-                "last_div_amount": 1.771,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
-            },
-            {
-                "symbol": "QQQM",
-                "name": "Invesco NASDAQ 100 ETF",
-                "category": "Growth",
-                "weight": 15,
-                "price": 250.67,
-                "dividend_yield": 0.5022539593888379,
-                "last_div_amount": 0.323,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
-            },
-            {
-                "symbol": "JEPQ",
-                "name": "JPMorgan Nasdaq Equity Premium Income ETF",
-                "category": "Fixed",
-                "weight": 25,
-                "price": 58.15,
-                "dividend_yield": 10.55717970765262,
-                "last_div_amount": 0.466,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            },
-            {
-                "symbol": "QDVO",
-                "name": "Amplify CWP Growth & Income ETF",
-                "category": "Fixed",
-                "weight": 23,
-                "price": 28.35,
-                "dividend_yield": 10.335097001763668,
-                "last_div_amount": 0.245,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1771675484.616768"
+        "account_type": "Corporate"
     },
     {
         "id": "808e0f45-d657-48c3-9794-902cecdfc738",
@@ -278,19 +93,7 @@
                 "price": 74.81,
                 "dividend_yield": 3.8323753508889182,
                 "last_div_amount": 0.245,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             },
             {
                 "symbol": "VOO",
@@ -300,12 +103,7 @@
                 "price": 634.02,
                 "dividend_yield": 1.1147913315037383,
                 "last_div_amount": 1.771,
-                "payment_months": [
-                    3,
-                    6,
-                    9,
-                    12
-                ]
+                "payment_months": [3, 6, 9, 12]
             },
             {
                 "symbol": "SGOV",
@@ -315,19 +113,7 @@
                 "price": 100.57,
                 "dividend_yield": 4.037983494083723,
                 "last_div_amount": 0.309,
-                "payment_months": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             }
         ],
         "created_at": "1771746647.2801664",

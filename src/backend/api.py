@@ -27,6 +27,32 @@ class DividendBackend:
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
 
+    def get_portfolio_stats_by_type(self, account_type: str) -> Dict[str, float]:
+        """특정 계좌 타입의 대표 포트폴리오 통계를 산출합니다. [REQ-RAMS-1.4.1]"""
+        portfolio = next(
+            (p for p in self.portfolios if p.get("account_type") == account_type), None
+        )
+        if not portfolio or not portfolio.get("items"):
+            return {}
+
+        items = portfolio["items"]
+        total_weight = sum(item.get("weight", 0.0) for item in items)
+        if total_weight <= 0:
+            return {}
+
+        # 자산군별 가중 평균 배당률 및 비중 산출
+        stats = {"dividend_yield": 0.0, "weights": {}}
+        for item in items:
+            w = item.get("weight", 0.0) / total_weight
+            cat = item.get("category", "Growth")
+            stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
+            
+            # 배당률 가중 평균 (last_div_yield 또는 계산값 사용)
+            div_y = item.get("dividend_yield", 0.0)
+            stats["dividend_yield"] += (div_y / 100.0) * w
+
+        return stats
+
     def get_retirement_config(self) -> Dict[str, Any]:
         """저장된 은퇴 운용 설정 정보를 반환합니다."""
         return self.retirement_config
