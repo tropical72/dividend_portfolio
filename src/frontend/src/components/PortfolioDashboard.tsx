@@ -257,7 +257,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                           ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]" 
                           : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
                       )}>
-                        {p.account_type || "Personal"} Account
+                        {p.account_type || "Corporate"} Account
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest">

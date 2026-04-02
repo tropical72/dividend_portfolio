@@ -29,7 +29,7 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await page.waitForLoadState("networkidle");
     
     // Portfolio 탭으로 이동
-    const portfolioNavBtn = page.getByTestId("nav-portfolio");
+    const portfolioNavBtn = page.getByTestId("nav-portfolio-manager");
     await portfolioNavBtn.waitFor({ state: "visible", timeout: 30000 });
     await portfolioNavBtn.click({ force: true });
     
@@ -47,7 +47,7 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await expect(portfolioCards).toBeVisible();
 
     // 계좌 유형 배지 확인 (기본값 Personal)
-    await expect(portfolioCards.getByText(/Personal/i)).toBeVisible();
+    await expect(portfolioCards.getByText(/Corporate/i)).toBeVisible();
   });
 
   test("should expand accordion to show details when clicked", async ({ page }) => {

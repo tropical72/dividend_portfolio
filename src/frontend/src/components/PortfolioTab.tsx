@@ -268,24 +268,24 @@ export function PortfolioTab({
       )}
 
       {/* 서브 네비게이션 [GS-UI-03.3] */}
-      <div className="flex bg-slate-950/50 p-1.5 rounded-2xl border border-slate-800 w-fit self-center mx-auto mb-10 shadow-inner">
+      <div className="flex bg-slate-950/50 p-2 rounded-2xl border border-slate-800 w-fit self-center mx-auto mb-10 shadow-inner">
         <button 
           onClick={() => setActiveSubTab("design")}
           className={cn(
-            "flex items-center gap-2 px-8 py-3 text-xs font-black rounded-xl transition-all duration-300",
-            activeSubTab === "design" ? "bg-slate-800 text-emerald-400 shadow-xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
+            "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
+            activeSubTab === "design" ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <Layout size={16} /> Portfolio Designer
+          <Layout size={20} /> Portfolio Designer
         </button>
         <button 
           onClick={() => setActiveSubTab("manage")}
           className={cn(
-            "flex items-center gap-2 px-8 py-3 text-xs font-black rounded-xl transition-all duration-300",
-            activeSubTab === "manage" ? "bg-slate-800 text-emerald-400 shadow-xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
+            "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
+            activeSubTab === "manage" ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <PieChart size={16} /> Manage & Compare
+          <PieChart size={20} /> Manage & Compare
         </button>
       </div>
 
@@ -304,19 +304,19 @@ export function PortfolioTab({
                   className="bg-transparent border-none outline-none text-3xl font-black text-slate-50 flex-1 focus:ring-2 focus:ring-emerald-500/20 rounded-lg px-2 -ml-2 transition-all tracking-tight"
                   placeholder="포트폴리오 이름을 입력하세요"
                 />
-                <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
+                <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner w-fit">
                   <button 
-                    onClick={() => setAccountType("Personal")}
+                    onClick={() => setAccountType("Corporate")}
                     className={cn(
-                      "px-4 py-1.5 text-[10px] font-black rounded-lg transition-all",
-                      accountType === "Personal" ? "bg-slate-800 text-blue-400 shadow-sm" : "text-slate-500 hover:text-slate-400"
+                      "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
+                      accountType === "Corporate" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-900"
                     )}
-                  >Personal</button>
+                  >Corporate</button>
                   <button 
                     onClick={() => setAccountType("Pension")}
                     className={cn(
-                      "px-4 py-1.5 text-[10px] font-black rounded-lg transition-all",
-                      accountType === "Pension" ? "bg-slate-800 text-amber-400 shadow-sm" : "text-slate-500 hover:text-slate-400"
+                      "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
+                      accountType === "Pension" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-900"
                     )}
                   >Pension</button>
                 </div>

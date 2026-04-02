@@ -46,7 +46,7 @@ class SettingsRequest(BaseModel):
 
 class PortfolioRequest(BaseModel):
     name: str
-    account_type: Optional[str] = "Personal"
+    account_type: Optional[str] = "Corporate"
     total_capital: Optional[float] = 0.0
     currency: Optional[str] = "USD"
     items: Optional[list] = []

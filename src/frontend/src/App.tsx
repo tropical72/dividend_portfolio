@@ -105,7 +105,7 @@ function App() {
         <NavButton
           active={activeTab === "assets"}
           icon={<Wallet />}
-          label="Asset Setup"
+          label="Portfolio Manager"
           onClick={() => setActiveTab("assets")}
         />
         <NavButton

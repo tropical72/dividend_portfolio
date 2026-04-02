@@ -45,7 +45,7 @@ export interface PortfolioItem {
 export interface Portfolio {
   id: string;
   name: string;
-  account_type: "Personal" | "Pension";
+  account_type: "Corporate" | "Pension";
   total_capital: number;
   currency: string;
   items: PortfolioItem[];

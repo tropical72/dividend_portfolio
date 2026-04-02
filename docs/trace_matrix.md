@@ -27,7 +27,16 @@
 
 ## 2. Portfolio Manager Domain (02)
 
-... (생략) ...
+| 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit |
+|:---|:---|:---|:---|:---|:---|
+| REQ-PRT-01 | 포트폴리오 설계 및 비중 관리 (Designer) | T-02-2.1 | TEST-PRT-01 | Done | [Current] |
+| REQ-PRT-02 | Watchlist 유기적 연동 및 종목 이관 | T-02-3.1 | TEST-PRT-02 | Done | [Current] |
+| REQ-PRT-03 | 통화 이원화 및 실시간 시뮬레이션 엔진 | T-02-2.2 | TEST-PRT-03 | Done | [Current] |
+| REQ-PRT-03.4 | 카테고리별/전체 분석 결과 보고 | T-02-2.2.2 | TEST-PRT-03 | Done | - |
+| REQ-PRT-04.1 | 포트폴리오 저장 (Corporate/Pension) | T-02-1.1.1 | TEST-PRT-04 | Done | - |
+| REQ-PRT-04.2 | 저장 리스트 및 편집/이름변경 | T-02-4.1.2 | TEST-PRT-04 | In Progress | - |
+| REQ-PRT-06 | 비교 대시보드 및 월별 수입 시각화 | T-02-4.1 | TEST-PRT-06 | In Progress | - |
+| REQ-PRT-07 | UI 가독성(Sub-Tabs) 및 명칭(Corporate) 강화 | T-02-5.1 | TEST-PRT-07 | In Progress | - |
 
 ---
-*마지막 업데이트: 2026-02-22 22:15:00*
+*마지막 업데이트: 2026-04-02 10:30:00*
