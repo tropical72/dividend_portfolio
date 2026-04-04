@@ -14,6 +14,11 @@
 *   **Dependency Maintenance (MUST):** 새로운 라이브러리를 설치하거나 환경을 변경할 경우, 반드시 `requirements.txt`(Python) 또는 `package.json`(Node.js)을 즉시 업데이트하여 환경의 재현성을 보장해야 한다.
 *   **Comprehensive Korean Comments (MUST):** 모든 코드에는 한글 주석을 충실하게 기입한다. 특히 클래스/함수의 역할(Docstring), 복잡한 로직의 이유, 주요 변수의 의미를 명확히 설명해야 한다.
 *   **Structure Maintenance (MUST):** 프로젝트의 디렉토리 구조가 변경될 경우, 반드시 `GEMINI.md`의 '4. 프로젝트 디렉토리 구조' 섹션을 즉시 업데이트하여 최신 상태를 유지해야 한다.
+*   **Visual Debugging Protocol (NEW):** 말로 설명하기 어려운 UI/UX 문제는 다음 절차를 따른다.
+    1.  사용자가 화면을 캡처하여 클립보드에 저장한다.
+    2.  사용자가 "화면 검토해줘"라고 요청하면,AI는 `./save_clip.sh`를 실행하여 이미지를 추출한다. 
+    3.  또는 사용자가 수동으로 './save_clip.sh'를 실행해서 이미지를 저장할 수도 있다. 이 경우는 AI는 이 명령을 실행할 필요는 없다.
+    4.  AI는 `debug_screen.png`를 시각적으로 분석하여 문제를 진단하고 수정안을 제시한다.
 *   **커뮤니케이션:** 모든 대화는 한국어로 진행한다.
 
 ## 2. 문서 체계 및 관리 가이드
