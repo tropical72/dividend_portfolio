@@ -235,7 +235,8 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     }
 
     # 3. 활성 가정(Assumption) 추출
-    active_id = config.get("active_assumption_id", "v1")
+    # [FIX] 쿼리 스트링 scenario가 있으면 우선 사용
+    active_id = scenario or config.get("active_assumption_id", "v1")
     assumptions = config.get("assumptions", {})
     assumption = assumptions.get(active_id, assumptions.get("v1"))
     if not assumption:
