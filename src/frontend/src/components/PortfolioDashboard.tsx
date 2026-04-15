@@ -12,7 +12,8 @@ import {
   RotateCcw,
   PlusCircle,
   Layout,
-  X
+  X,
+  Info
 } from "lucide-react";
 import { 
   BarChart, 
@@ -49,6 +50,12 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate] = useState<number>(1425.5);
+
+  /** 가중 평균 배당률 계산 공통 함수 (안전한 참조 보장) */
+  const getDY = (p: Portfolio | undefined) => {
+    if (!p || !p.items || p.items.length === 0) return 0;
+    return p.items.reduce((s, i) => s + ((i.dividend_yield || 0) * ((i.weight || 0) / 100)), 0);
+  };
 
   // 데이터 로드
   useEffect(() => {
@@ -326,12 +333,6 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 const c_p = portfolios.find(p => p.id === m.corp_id);
                 const p_p = portfolios.find(p => p.id === m.pension_id);
                 
-                // 가중 평균 배당률 계산 (안전한 참조 보장)
-                const getDY = (p: Portfolio | undefined) => {
-                  if (!p || !p.items || p.items.length === 0) return 0;
-                  return p.items.reduce((s, i) => s + ((i.dividend_yield || 0) * ((i.weight || 0) / 100)), 0);
-                };
-
                 const c_dy = getDY(c_p);
                 const p_dy = getDY(p_p);
                 const c_cap = c_p?.total_capital || 0;
@@ -360,7 +361,13 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                     
                     <div className="flex items-center gap-16">
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Estimated Yield</p>
+                        <div className="flex items-center justify-end gap-1.5 mb-1 group/tip relative">
+                          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Estimated Yield</p>
+                          <Info size={10} className="text-slate-600 cursor-help" />
+                          <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover/tip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                            각 종목의 비중(Weight)을 가중치로 사용한 배당수익률(Dividend Yield)과 기대성장률의 가중평균 합산 결과입니다.
+                          </div>
+                        </div>
                         <p className="text-2xl font-black text-slate-100 tabular-nums">{avg_dy.toFixed(2)}<span className="text-xs text-slate-600 ml-1">%</span></p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -589,6 +596,14 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                     </div>
                     <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest">
                       <span>{items.length} Assets</span>
+                      <div className="w-1 h-1 rounded-full bg-slate-700" />
+                      <div className="flex items-center gap-1.5 group/ytip relative">
+                        <span className="text-emerald-500/80 font-black">Yield: {getDY(p).toFixed(2)}%</span>
+                        <Info size={10} className="text-slate-600 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover/ytip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          해당 포트폴리오의 가중 평균 배당률과 기대 수익률 합계입니다.
+                        </div>
+                      </div>
                       <div className="w-1 h-1 rounded-full bg-slate-700" />
                       <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
