@@ -11,7 +11,8 @@ import {
   BarChart3,
   RotateCcw,
   PlusCircle,
-  Layout
+  Layout,
+  X
 } from "lucide-react";
 import { 
   BarChart, 
@@ -142,6 +143,26 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       const data = await res.json();
       if (data.success) {
         setMasterPortfolios(prev => prev.filter(m => m.id !== id));
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  /** 이름 변경 실행 */
+  const handleRename = async (id: string) => {
+    if (!editingName.trim()) return;
+    try {
+      const res = await fetch(`http://localhost:8000/api/portfolios/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editingName })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setPortfolios(prev => prev.map(p => p.id === id ? { ...p, name: editingName } : p));
+        setEditingId(null);
       }
     } catch (err) { console.error(err); }
   };
@@ -531,9 +552,32 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   <button onClick={(e) => toggleSelect(e, p.id)} role="checkbox" aria-checked={isSelected} className={cn("p-2 rounded-xl transition-all", isSelected ? "text-emerald-400 bg-emerald-500/10" : "text-slate-700 hover:text-slate-500")}>
                     {isSelected ? <CheckSquare size={24} /> : <Square size={24} />}
                   </button>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-xl font-black text-slate-50 tracking-tight">{p.name}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1 group/name">
+                      {editingId === p.id ? (
+                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                          <input 
+                            autoFocus
+                            value={editingName} 
+                            onChange={e => setEditingName(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleRename(p.id)}
+                            className="bg-slate-950 border border-emerald-500/50 rounded-lg px-3 py-1 text-xl font-black text-slate-100 outline-none w-full max-w-[250px]"
+                          />
+                          <button onClick={() => handleRename(p.id)} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-slate-950 transition-all"><CheckSquare size={18} /></button>
+                          <button onClick={() => setEditingId(null)} className="p-2 bg-slate-800 text-slate-400 rounded-lg hover:bg-slate-700 transition-all"><X size={18} /></button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="text-xl font-black text-slate-50 tracking-tight truncate">{p.name}</h3>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setEditingId(p.id); setEditingName(p.name); }}
+                            className="opacity-0 group-hover/name:opacity-100 p-1 text-slate-500 hover:text-emerald-400 transition-all"
+                            title="이름 변경"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                        </>
+                      )}
                       <span className={cn(
                         "px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border transition-all duration-500",
                         (p.account_type?.toLowerCase() === "pension") 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart } from "lucide-react";
+import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart, Edit3, X, Plus } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { PortfolioItem, Portfolio, AppSettings } from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
@@ -38,6 +38,11 @@ export function PortfolioTab({
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
   const [exchangeRate] = useState<number>(1425.5); // 고정값 또는 설정에서 수신
   const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
+
+  // 저장 모달 상태 [NEW]
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [tempPortfolioName, setTempPortfolioName] = useState(portfolioName);
+  const [saveAsNew, setSaveAsNew] = useState(false);
 
   /** 전역 설정 동기화 [REQ-PRT-03] */
   useEffect(() => {
@@ -144,9 +149,20 @@ export function PortfolioTab({
     }
   };
 
-  /** 저장 [REQ-PRT-01.4, 04.1] */
-  const handleSave = async () => {
-    if (!portfolioName.trim()) {
+  /** 저장 버튼 클릭 (모달 열기) */
+  const handleSaveClick = () => {
+    if (!items.length) {
+      showStatus("종목을 먼저 추가해주세요.", "error");
+      return;
+    }
+    setTempPortfolioName(portfolioName);
+    setSaveAsNew(false); // 기본값은 업데이트
+    setIsSaveModalOpen(true);
+  };
+
+  /** 저장 실행 [REQ-PRT-01.4, 04.1] */
+  const handleSaveExec = async () => {
+    if (!tempPortfolioName.trim()) {
       showStatus("포트폴리오 이름을 입력해주세요.", "error");
       return;
     }
@@ -156,18 +172,20 @@ export function PortfolioTab({
       return;
     }
 
+    const isUpdating = portfolioId && !saveAsNew;
+
     try {
-      const url = portfolioId 
+      const url = isUpdating 
         ? `http://localhost:8000/api/portfolios/${portfolioId}`
         : "http://localhost:8000/api/portfolios";
       
-      const method = portfolioId ? "PATCH" : "POST";
+      const method = isUpdating ? "PATCH" : "POST";
 
       const res = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: portfolioName,
+          name: tempPortfolioName,
           account_type: accountType,
           items: items,
           total_capital: capitalUsd,
@@ -176,10 +194,13 @@ export function PortfolioTab({
       });
       const result = await res.json();
       if (result.success) {
-        if (!portfolioId && result.data?.id) {
+        if (!isUpdating && result.data?.id) {
           setPortfolioId(result.data.id);
         }
-        showStatus(portfolioId ? "업데이트되었습니다." : "저장되었습니다.", "success");
+        setPortfolioName(tempPortfolioName);
+        showStatus(isUpdating ? "업데이트되었습니다." : "새 포트폴리오로 저장되었습니다.", "success");
+        setIsSaveModalOpen(false);
+        setSaveAsNew(false);
       } else {
         showStatus(result.message || "저장 실패", "error");
       }
@@ -296,14 +317,20 @@ export function PortfolioTab({
           {/* 상단 헤더 및 액션 버튼 */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2">
-                <input 
-                  type="text"
-                  value={portfolioName}
-                  onChange={(e) => setPortfolioName(e.target.value)}
-                  className="bg-transparent border-none outline-none text-3xl font-black text-slate-50 flex-1 focus:ring-2 focus:ring-emerald-500/20 rounded-lg px-2 -ml-2 transition-all tracking-tight"
-                  placeholder="포트폴리오 이름을 입력하세요"
-                />
+              <div className="flex flex-col md:flex-row md:items-center gap-6 mb-2">
+                <div className="relative flex-1 group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors">
+                    <Edit3 size={20} />
+                  </div>
+                  <input 
+                    type="text"
+                    value={portfolioName}
+                    onChange={(e) => setPortfolioName(e.target.value)}
+                    className="w-full bg-slate-950/30 border border-transparent focus:border-emerald-500/30 focus:bg-slate-950/50 outline-none text-3xl font-black text-slate-50 rounded-2xl pl-12 pr-4 py-3 transition-all tracking-tight"
+                    placeholder="포트폴리오 이름을 입력하세요"
+                  />
+                </div>
+
                 <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner w-fit">
                   <button 
                     onClick={() => setAccountType("Corporate")}
@@ -335,7 +362,7 @@ export function PortfolioTab({
                 <RotateCcw size={18} /> 새로만들기
               </button>
               <button 
-                onClick={handleSave}
+                onClick={handleSaveClick}
                 className="flex items-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-black rounded-2xl transition-all shadow-xl shadow-emerald-500/10"
               >
                 <Save size={18} /> 포트폴리오 저장
@@ -555,6 +582,71 @@ export function PortfolioTab({
             </div>
           </div>
         </>
+      )}
+      {/* 저장 확인 모달 [REQ-PRT-04.1] */}
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 p-10 rounded-[3rem] shadow-2xl max-w-md w-full space-y-8 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-500/10 rounded-2xl"><Save className="text-emerald-400" size={24} /></div>
+              <div>
+                <h3 className="text-xl font-black text-slate-50 tracking-tight">Save Portfolio</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">이름을 확인하고 저장하세요</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Portfolio Name</label>
+              <input 
+                type="text" 
+                value={tempPortfolioName} 
+                onChange={(e) => setTempPortfolioName(e.target.value)}
+                autoFocus
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-lg font-black text-slate-50 focus:border-emerald-500/50 outline-none transition-all shadow-inner"
+                placeholder="전략 이름 입력"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveExec()}
+              />
+            </div>
+
+            {portfolioId && (
+              <div 
+                className={cn(
+                  "p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group",
+                  saveAsNew ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-950/50 border-slate-800 hover:border-slate-700"
+                )}
+                onClick={() => setSaveAsNew(!saveAsNew)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn("p-2 rounded-lg", saveAsNew ? "bg-emerald-500 text-slate-950" : "bg-slate-800 text-slate-500 group-hover:text-slate-300")}>
+                    <Plus size={16} strokeWidth={4} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Save as Copy</p>
+                    <p className="text-xs font-bold text-slate-300">다른 이름으로 새 항목 저장</p>
+                  </div>
+                </div>
+                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", saveAsNew ? "bg-emerald-500 border-emerald-500" : "border-slate-700")}>
+                  {saveAsNew && <CheckCircle2 size={12} className="text-slate-950" strokeWidth={4} />}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <button 
+                onClick={() => setIsSaveModalOpen(false)}
+                className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all"
+              >
+                취소
+              </button>
+              <button 
+                onClick={handleSaveExec}
+                className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl transition-all shadow-lg shadow-emerald-500/20"
+              >
+                저장하기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
