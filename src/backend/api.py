@@ -24,15 +24,89 @@ class DividendBackend:
         dart_key = self.settings.get("dart_api_key")
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
-        self.portfolios: List[Dict[str, Any]] = self.storage.load_json(
-            self.portfolios_file, []
-        )
+        self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
         self.master_portfolios_file = "master_portfolios.json"
         self.master_portfolios: List[Dict[str, Any]] = self.storage.load_json(
             self.master_portfolios_file, []
         )
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
+        self._normalize_all_portfolios()
+
+    def _normalize_portfolio_category(self, account_type: str, category: str) -> str:
+        """계좌 타입 기준 전략 카테고리 이름을 정규화합니다."""
+        normalized_account = account_type or "Corporate"
+        corporate_map = {
+            "Cash": "SGOV Buffer",
+            "Fixed": "High Income",
+            "Dividend": "Dividend Growth",
+            "Growth": "Growth Engine",
+            "HighIncome": "High Income",
+            "SGOV Buffer": "SGOV Buffer",
+            "High Income": "High Income",
+            "Dividend Growth": "Dividend Growth",
+            "Growth Engine": "Growth Engine",
+        }
+        pension_map = {
+            "Cash": "SGOV Buffer",
+            "Fixed": "Bond Buffer",
+            "Dividend": "Dividend Growth",
+            "Growth": "Growth Engine",
+            "HighIncome": "Dividend Growth",
+            "SGOV Buffer": "SGOV Buffer",
+            "Bond Buffer": "Bond Buffer",
+            "Dividend Growth": "Dividend Growth",
+            "Growth Engine": "Growth Engine",
+        }
+        category_map = corporate_map if normalized_account == "Corporate" else pension_map
+        return category_map.get(category or "Growth", "Growth Engine")
+
+    def _strategy_category_to_stats_bucket(self, account_type: str, category: str) -> str:
+        """신규 전략 카테고리를 기존 엔진 호환 버킷으로 매핑합니다."""
+        if category == "SGOV Buffer":
+            return "Cash"
+        if category == "Bond Buffer":
+            return "Fixed"
+        if category == "High Income":
+            return "Dividend"
+        if category == "Dividend Growth":
+            return "Dividend"
+        return "Growth"
+
+    def _normalize_portfolio_items(
+        self, account_type: str, items: Optional[List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
+        """포트폴리오 항목을 계좌 타입 기준의 전략 카테고리로 정규화합니다."""
+        normalized_items: List[Dict[str, Any]] = []
+        for item in items or []:
+            normalized = dict(item)
+            normalized["category"] = self._normalize_portfolio_category(
+                account_type, item.get("category", "Growth")
+            )
+            normalized_items.append(normalized)
+        return normalized_items
+
+    def _normalize_portfolio_record(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
+        """저장 포트폴리오 레코드의 기본 필드와 카테고리를 정규화합니다."""
+        normalized = dict(portfolio)
+        normalized["account_type"] = normalized.get("account_type") or "Corporate"
+        normalized["items"] = self._normalize_portfolio_items(
+            normalized["account_type"], normalized.get("items", [])
+        )
+        return normalized
+
+    def _normalize_all_portfolios(self) -> None:
+        """메모리 상의 모든 포트폴리오를 정규화하고, 변경 시 저장합니다."""
+        changed = False
+        normalized_portfolios = []
+        for portfolio in self.portfolios:
+            normalized = self._normalize_portfolio_record(portfolio)
+            if normalized != portfolio:
+                changed = True
+            normalized_portfolios.append(normalized)
+        self.portfolios = normalized_portfolios
+        if changed:
+            self.storage.save_json(self.portfolios_file, self.portfolios)
 
     def get_exchange_rate(self) -> float:
         """실시간 환율을 가져오거나 캐시된 값을 반환합니다. (12시간 주기 갱신)"""
@@ -87,6 +161,7 @@ class DividendBackend:
             return default_stats
 
         items = portfolio["items"]
+        account_type = portfolio.get("account_type", "Corporate")
         total_weight = sum(item.get("weight", 0.0) for item in items)
         if total_weight <= 0:
             return default_stats
@@ -94,7 +169,9 @@ class DividendBackend:
         stats = {"dividend_yield": 0.0, "expected_return": 0.0, "weights": {}}
         for item in items:
             w = item.get("weight", 0.0) / total_weight
-            cat = item.get("category", "Growth")
+            cat = self._strategy_category_to_stats_bucket(
+                account_type, item.get("category", "Growth")
+            )
             stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
             div_y = float(item.get("dividend_yield") or 0.0) / 100.0
             stats["dividend_yield"] += div_y * w
@@ -153,18 +230,25 @@ class DividendBackend:
 
     def get_portfolios(self) -> List[Dict[str, Any]]:
         """저장된 모든 포트폴리오 목록을 반환합니다."""
+        self._normalize_all_portfolios()
         return self.portfolios
 
     def add_portfolio(
-        self, name: str, total_capital: float = 0.0, currency: str = "USD", items: list = None
+        self,
+        name: str,
+        account_type: str = "Corporate",
+        total_capital: float = 0.0,
+        currency: str = "USD",
+        items: list = None,
     ) -> Dict[str, Any]:
         """새로운 포트폴리오를 생성합니다."""
         new_p = {
             "id": str(uuid.uuid4()),
             "name": name,
+            "account_type": account_type,
             "total_capital": total_capital,
             "currency": currency,
-            "items": items or [],
+            "items": self._normalize_portfolio_items(account_type, items or []),
             "created_at": str(
                 os.path.getmtime(self.data_dir)
             ),  # 실제 생성 시간 대신 더미 활용 가능
@@ -195,7 +279,7 @@ class DividendBackend:
             m_name = master["name"] if master else "알 수 없는 전략"
             return {
                 "success": False,
-                "message": f"마스터 전략 '{m_name}'에서 사용 중이므로 삭제할 수 없습니다."
+                "message": f"마스터 전략 '{m_name}'에서 사용 중이므로 삭제할 수 없습니다.",
             }
 
         for i, p in enumerate(self.portfolios):
@@ -210,35 +294,33 @@ class DividendBackend:
         for m in self.master_portfolios:
             corp_p = self.get_portfolio_by_id(m.get("corp_id"))
             pen_p = self.get_portfolio_by_id(m.get("pension_id"))
-            
+
             m["corp_name"] = corp_p["name"] if corp_p else "-"
             m["pension_name"] = pen_p["name"] if pen_p else "-"
-            
+
             # 통합 수익률(TR) 계산: (법인자산*법인수익률 + 연금자산*연금수익률) / 총자산
             c_stats = self.get_portfolio_stats_by_id(m.get("corp_id"))
             p_stats = self.get_portfolio_stats_by_id(m.get("pension_id"))
-            
+
             c_cap = corp_p["total_capital"] if corp_p else 0
             p_cap = pen_p["total_capital"] if pen_p else 0
             total_cap = c_cap + p_cap
-            
+
             if total_cap > 0:
                 combined_tr = (
-                    c_stats["expected_return"] * c_cap
-                    + p_stats["expected_return"] * p_cap
+                    c_stats["expected_return"] * c_cap + p_stats["expected_return"] * p_cap
                 ) / total_cap
             else:
-                combined_tr = (
-                    c_stats["expected_return"] or p_stats["expected_return"] or 0.07
-                )
-                
+                combined_tr = c_stats["expected_return"] or p_stats["expected_return"] or 0.07
+
             m["combined_yield"] = combined_tr
-            
+
         return self.master_portfolios
 
     def get_portfolio_by_id(self, p_id: str) -> Optional[Dict[str, Any]]:
         """ID로 개별 포트폴리오를 찾습니다."""
-        return next((p for p in self.portfolios if p["id"] == p_id), None)
+        portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
+        return self._normalize_portfolio_record(portfolio) if portfolio else None
 
     def add_master_portfolio(
         self, name: str, corp_id: str = None, pension_id: str = None
@@ -252,7 +334,7 @@ class DividendBackend:
             "name": name,
             "corp_id": corp_id,
             "pension_id": pension_id,
-            "is_active": len(self.master_portfolios) == 0  # 첫 번째면 자동 활성
+            "is_active": len(self.master_portfolios) == 0,  # 첫 번째면 자동 활성
         }
         self.master_portfolios.append(new_m)
         self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
@@ -267,27 +349,24 @@ class DividendBackend:
                 found_m = m
             else:
                 m["is_active"] = False
-        
+
         if found_m:
             # [NEW] 선택된 마스터 전략의 통합 수익률 계산
             c_stats = self.get_portfolio_stats_by_id(found_m.get("corp_id"))
             p_stats = self.get_portfolio_stats_by_id(found_m.get("pension_id"))
             corp_p = self.get_portfolio_by_id(found_m.get("corp_id"))
             pen_p = self.get_portfolio_by_id(found_m.get("pension_id"))
-            
+
             c_cap = corp_p["total_capital"] if corp_p else 0
             p_cap = pen_p["total_capital"] if pen_p else 0
             total_cap = c_cap + p_cap
-            
+
             if total_cap > 0:
                 combined_tr = (
-                    c_stats["expected_return"] * c_cap
-                    + p_stats["expected_return"] * p_cap
+                    c_stats["expected_return"] * c_cap + p_stats["expected_return"] * p_cap
                 ) / total_cap
             else:
-                combined_tr = (
-                    c_stats["expected_return"] or p_stats["expected_return"] or 0.07
-                )
+                combined_tr = c_stats["expected_return"] or p_stats["expected_return"] or 0.07
 
             # [NEW] retirement_config.json의 v1(Standard) 수익률 자동 업데이트
             if (
@@ -330,7 +409,15 @@ class DividendBackend:
         """특정 포트폴리오의 정보를 업데이트합니다. [REQ-PRT-04.2]"""
         for p in self.portfolios:
             if p["id"] == p_id:
-                p.update(updates)
+                merged = dict(p)
+                merged.update(updates)
+                account_type = merged.get("account_type") or "Corporate"
+                if "items" in merged:
+                    merged["items"] = self._normalize_portfolio_items(
+                        account_type, merged.get("items", [])
+                    )
+                merged["account_type"] = account_type
+                p.update(merged)
                 self.storage.save_json(self.portfolios_file, self.portfolios)
                 return {"success": True, "data": p}
         return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}

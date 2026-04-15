@@ -22,5 +22,15 @@
     - [x] **T-GLB-10.5.1** 계산 로직 단위 테스트 (`test_yield_centric_math.py`) 추가 및 검증 완료.
     - [x] **T-GLB-10.5.2** UI 지표 일관성 및 저장 기능 검증을 위한 Playwright 테스트 (`regression_metrics.spec.ts`) 작성 및 통과.
 
+### [Phase 11] 품질 게이트 명시화 및 전역 부채 추적 [NEW]
+- **T-GLB-11.1: [Policy] Feature 단위 품질 게이트 고정**
+    - [x] **T-GLB-11.1.1** Python 변경 feature의 필수 게이트를 `ruff + black --check + 관련 pytest`로 명시한다.
+    - [x] **T-GLB-11.1.2** Frontend 변경 feature의 필수 게이트를 `eslint + build + prettier --check + 관련 Playwright`로 명시한다.
+- **T-GLB-11.2: [Tooling] 생성물 제외 및 스타일 검증 정리**
+    - [x] **T-GLB-11.2.1** Frontend Prettier 검사 대상에서 `playwright-report`, `test-results`, `dist`를 제외한다.
+- **T-GLB-11.3: [Debt] 전역 정적 분석 부채 추적**
+    - [ ] **T-GLB-11.3.1** 저장소 전체 `black --check src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+    - [ ] **T-GLB-11.3.2** 저장소 전체 `mypy src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+
 ---
-*마지막 업데이트: 2026-04-15 19:10:00*
+*마지막 업데이트: 2026-04-16 09:20:00*

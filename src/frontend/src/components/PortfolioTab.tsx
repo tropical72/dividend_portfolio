@@ -1,38 +1,130 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart, Edit3, Plus } from "lucide-react";
+import {
+  PlusCircle,
+  RotateCcw,
+  Save,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  Layout,
+  PieChart,
+  Edit3,
+  Plus,
+} from "lucide-react";
 import { cn } from "../lib/utils";
-import type { PortfolioItem, Portfolio, AppSettings } from "../types";
+import type {
+  AccountType,
+  AppSettings,
+  Portfolio,
+  PortfolioCategory,
+  PortfolioItem,
+} from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
 
 /**
  * [REQ-PRT-01, 03, 06] 포트폴리오 설계 및 시뮬레이션 탭
  */
-export function PortfolioTab({ 
-  items, 
-  setItems, 
+export function PortfolioTab({
+  items,
+  setItems,
   activeTab,
-  globalSettings
-}: { 
-  items: PortfolioItem[], 
-  setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>,
-  activeTab: string,
-  globalSettings: AppSettings | null
+  globalSettings,
+  accountType,
+  setAccountType,
+}: {
+  items: PortfolioItem[];
+  setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>;
+  activeTab: string;
+  globalSettings: AppSettings | null;
+  accountType: AccountType;
+  setAccountType: React.Dispatch<React.SetStateAction<AccountType>>;
 }) {
-  const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">("design");
+  const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">(
+    "design",
+  );
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("My New Portfolio");
-  const [accountType, setAccountType] = useState<"Corporate" | "Pension">("Corporate");
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  const categories = [
-    { id: "Fixed", name: "Fixed Income", color: "bg-blue-400", textColor: "text-blue-400" },
-    { id: "Cash", name: "Bond/Cash Buffer", color: "bg-amber-400", textColor: "text-amber-400" },
-    { id: "Growth", name: "Growth/Dividend Growth", color: "bg-emerald-400", textColor: "text-emerald-400" },
-  ] as const;
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const categories = useMemo(
+    () =>
+      accountType === "Corporate"
+        ? [
+            {
+              id: "SGOV Buffer" as PortfolioCategory,
+              name: "SGOV Buffer",
+              subtitle: "1st Priority",
+              description: "생존 버퍼와 생활비 대기 자산",
+              color: "bg-blue-400",
+            },
+            {
+              id: "High Income" as PortfolioCategory,
+              name: "High Income",
+              subtitle: "2nd Priority",
+              description: "고인컴 현금흐름 보강 블록",
+              color: "bg-amber-400",
+            },
+            {
+              id: "Dividend Growth" as PortfolioCategory,
+              name: "Dividend Growth",
+              subtitle: "3rd Priority",
+              description: "배당성장 자산으로 중간 보강",
+              color: "bg-emerald-400",
+            },
+            {
+              id: "Growth Engine" as PortfolioCategory,
+              name: "Growth Engine",
+              subtitle: "4th Priority",
+              description: "최후의 순간까지 보호할 성장 엔진",
+              color: "bg-fuchsia-400",
+            },
+          ]
+        : [
+            {
+              id: "SGOV Buffer" as PortfolioCategory,
+              name: "SGOV Buffer",
+              subtitle: "1st Priority",
+              description: "연금 인출의 단기 현금 버퍼",
+              color: "bg-blue-400",
+            },
+            {
+              id: "Bond Buffer" as PortfolioCategory,
+              name: "Bond Buffer",
+              subtitle: "2nd Priority",
+              description: "중기 완충 채권 블록",
+              color: "bg-amber-400",
+            },
+            {
+              id: "Dividend Growth" as PortfolioCategory,
+              name: "Dividend Growth",
+              subtitle: "3rd Priority",
+              description: "배당성장 자산으로 버퍼 보강",
+              color: "bg-emerald-400",
+            },
+            {
+              id: "Growth Engine" as PortfolioCategory,
+              name: "Growth Engine",
+              subtitle: "4th Priority",
+              description: "Phase 3에서만 건드릴 장기 성장 엔진",
+              color: "bg-fuchsia-400",
+            },
+          ],
+    [accountType],
+  );
 
   // 수동 추가 모달 상태
-  const [manualAdd, setManualAdd] = useState<{ category: PortfolioItem["category"] | null }>({ category: null });
-  const [manualForm, setManualForm] = useState({ symbol: "", name: "", weight: 0 });
+  const [manualAdd, setManualAdd] = useState<{
+    category: PortfolioItem["category"] | null;
+  }>({ category: null });
+  const [manualForm, setManualForm] = useState({
+    symbol: "",
+    name: "",
+    weight: 0,
+  });
 
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
@@ -90,10 +182,10 @@ export function PortfolioTab({
       price: 100, // 기본값
       dividend_yield: 0,
       last_div_amount: 0,
-      payment_months: []
+      payment_months: [],
     };
 
-    setItems(prev => [...prev, newItem]);
+    setItems((prev) => [...prev, newItem]);
     setManualAdd({ category: null });
     setManualForm({ symbol: "", name: "", weight: 0 });
     showStatus("종목이 추가되었습니다.", "success");
@@ -102,10 +194,13 @@ export function PortfolioTab({
   /** 전체 비중 및 분석 데이터 실시간 계산 [REQ-PRT-01.3, 03.4] */
   const analysis = useMemo(() => {
     const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-    const catMap = items.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + item.weight;
-      return acc;
-    }, {} as Record<string, number>);
+    const catMap = items.reduce(
+      (acc, item) => {
+        acc[item.category] = (acc[item.category] || 0) + item.weight;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // 가중 평균 배당률 (DY)
     const weightedYield = items.reduce((sum, item) => {
@@ -118,13 +213,13 @@ export function PortfolioTab({
 
     const annualDividendUsd = capitalUsd * (weightedYield / 100);
 
-    return { 
-      totalWeight, 
+    return {
+      totalWeight,
       categoryWeights: catMap,
       weightedYield,
       weightedReturn,
       annualDividendUsd,
-      monthlyDividendUsd: annualDividendUsd / 12
+      monthlyDividendUsd: annualDividendUsd / 12,
     };
   }, [items, capitalUsd, globalSettings]);
 
@@ -149,7 +244,9 @@ export function PortfolioTab({
 
   /** 초기화 (새로만들기) [REQ-PRT-01.5] */
   const handleReset = () => {
-    if (window.confirm("현재 작성 중인 내용이 모두 사라집니다. 초기화할까요?")) {
+    if (
+      window.confirm("현재 작성 중인 내용이 모두 사라집니다. 초기화할까요?")
+    ) {
       setItems([]);
       setPortfolioId(null);
       setPortfolioName("My New Portfolio");
@@ -186,10 +283,10 @@ export function PortfolioTab({
     const isUpdating = portfolioId && !saveAsNew;
 
     try {
-      const url = isUpdating 
+      const url = isUpdating
         ? `http://localhost:8000/api/portfolios/${portfolioId}`
         : "http://localhost:8000/api/portfolios";
-      
+
       const method = isUpdating ? "PATCH" : "POST";
 
       const res = await fetch(url, {
@@ -200,7 +297,7 @@ export function PortfolioTab({
           account_type: accountType,
           items: items,
           total_capital: capitalUsd,
-          currency: "USD"
+          currency: "USD",
         }),
       });
       const result = await res.json();
@@ -209,7 +306,12 @@ export function PortfolioTab({
           setPortfolioId(result.data.id);
         }
         setPortfolioName(tempPortfolioName);
-        showStatus(isUpdating ? "업데이트되었습니다." : "새 포트폴리오로 저장되었습니다.", "success");
+        showStatus(
+          isUpdating
+            ? "업데이트되었습니다."
+            : "새 포트폴리오로 저장되었습니다.",
+          "success",
+        );
         setIsSaveModalOpen(false);
         setSaveAsNew(false);
       } else {
@@ -222,25 +324,52 @@ export function PortfolioTab({
 
   /** 비중 수정 */
   const updateWeight = (symbol: string, newWeight: number) => {
-    setItems(prev => prev.map(item => 
-      item.symbol === symbol ? { ...item, weight: Math.max(0, Math.min(100, newWeight)) } : item
-    ));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.symbol === symbol
+          ? { ...item, weight: Math.max(0, Math.min(100, newWeight)) }
+          : item,
+      ),
+    );
   };
 
   /** 종목 삭제 */
   const removeItem = (symbol: string) => {
-    setItems(prev => prev.filter(item => item.symbol !== symbol));
+    setItems((prev) => prev.filter((item) => item.symbol !== symbol));
   };
+
+  useEffect(() => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (accountType === "Corporate" && item.category === "Bond Buffer") {
+          return { ...item, category: "High Income" as PortfolioCategory };
+        }
+        if (accountType === "Pension" && item.category === "High Income") {
+          return { ...item, category: "Bond Buffer" as PortfolioCategory };
+        }
+        return item;
+      }),
+    );
+    setManualAdd({ category: null });
+  }, [accountType, setItems]);
 
   return (
     <section className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* 알림 토스트 */}
       {status && (
-        <div className={cn(
-          "fixed top-8 right-8 px-6 py-3 rounded-2xl text-sm font-bold shadow-2xl animate-in fade-in slide-in-from-right-4 z-[200] flex items-center gap-2",
-          status.type === "success" ? "bg-emerald-500 text-slate-950" : "bg-red-500 text-white"
-        )}>
-          {status.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+        <div
+          className={cn(
+            "fixed top-8 right-8 px-6 py-3 rounded-2xl text-sm font-bold shadow-2xl animate-in fade-in slide-in-from-right-4 z-[200] flex items-center gap-2",
+            status.type === "success"
+              ? "bg-emerald-500 text-slate-950"
+              : "bg-red-500 text-white",
+          )}
+        >
+          {status.type === "success" ? (
+            <CheckCircle2 size={18} />
+          ) : (
+            <AlertCircle size={18} />
+          )}
           {status.message}
         </div>
       )}
@@ -249,51 +378,74 @@ export function PortfolioTab({
       {manualAdd.category && (
         <div className="fixed inset-0 z-[300] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-slate-50 mb-2">Add Asset Manually</h3>
-            <p className="text-xs text-slate-500 mb-8 uppercase tracking-widest font-bold">Category: {manualAdd.category}</p>
-            
+            <h3 className="text-xl font-black text-slate-50 mb-2">
+              Add Asset Manually
+            </h3>
+            <p className="text-xs text-slate-500 mb-8 uppercase tracking-widest font-bold">
+              Category: {manualAdd.category}
+            </p>
+
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Ticker Symbol</label>
-                <input 
-                  type="text" 
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Ticker Symbol
+                </label>
+                <input
+                  type="text"
                   placeholder="e.g. AAPL"
                   value={manualForm.symbol}
-                  onChange={e => setManualForm({...manualForm, symbol: e.target.value})}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, symbol: e.target.value })
+                  }
                   className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Stock Name</label>
-                <input 
-                  type="text" 
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Stock Name
+                </label>
+                <input
+                  type="text"
                   placeholder="e.g. Apple Inc."
                   value={manualForm.name}
-                  onChange={e => setManualForm({...manualForm, name: e.target.value})}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, name: e.target.value })
+                  }
                   className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Allocation Weight (%)</label>
-                <input 
-                  type="number" 
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  Allocation Weight (%)
+                </label>
+                <input
+                  type="number"
                   placeholder="0"
                   value={manualForm.weight || ""}
-                  onChange={e => setManualForm({...manualForm, weight: parseFloat(e.target.value) || 0})}
+                  onChange={(e) =>
+                    setManualForm({
+                      ...manualForm,
+                      weight: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   className="w-full bg-slate-950/50 border border-slate-800 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-sm font-bold text-slate-100 outline-none transition-all"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 mt-10">
-              <button 
+              <button
                 onClick={() => setManualAdd({ category: null })}
                 className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
-              >Cancel</button>
-              <button 
+              >
+                Cancel
+              </button>
+              <button
                 onClick={handleAddManualItem}
                 className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg shadow-emerald-500/20"
-              >Add Asset</button>
+              >
+                Add Asset
+              </button>
             </div>
           </div>
         </div>
@@ -301,20 +453,24 @@ export function PortfolioTab({
 
       {/* 서브 네비게이션 [GS-UI-03.3] */}
       <div className="flex bg-slate-950/50 p-2 rounded-2xl border border-slate-800 w-fit self-center mx-auto mb-10 shadow-inner">
-        <button 
+        <button
           onClick={() => setActiveSubTab("design")}
           className={cn(
             "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
-            activeSubTab === "design" ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
+            activeSubTab === "design"
+              ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50"
+              : "text-slate-500 hover:text-slate-300",
           )}
         >
           <Layout size={20} /> Portfolio Designer
         </button>
-        <button 
+        <button
           onClick={() => setActiveSubTab("manage")}
           className={cn(
             "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
-            activeSubTab === "manage" ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50" : "text-slate-500 hover:text-slate-300"
+            activeSubTab === "manage"
+              ? "bg-slate-800 text-emerald-400 shadow-2xl border border-slate-700/50"
+              : "text-slate-500 hover:text-slate-300",
           )}
         >
           <PieChart size={20} /> Manage & Compare
@@ -333,7 +489,7 @@ export function PortfolioTab({
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors">
                     <Edit3 size={20} />
                   </div>
-                  <input 
+                  <input
                     type="text"
                     value={portfolioName}
                     onChange={(e) => setPortfolioName(e.target.value)}
@@ -343,36 +499,49 @@ export function PortfolioTab({
                 </div>
 
                 <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner w-fit">
-                  <button 
+                  <button
                     onClick={() => setAccountType("Corporate")}
                     className={cn(
                       "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
-                      accountType === "Corporate" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-900"
+                      accountType === "Corporate"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg"
+                        : "text-slate-500 hover:text-slate-300 hover:bg-slate-900",
                     )}
-                  >Corporate</button>
-                  <button 
+                  >
+                    Corporate
+                  </button>
+                  <button
                     onClick={() => setAccountType("Pension")}
                     className={cn(
                       "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
-                      accountType === "Pension" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-900"
+                      accountType === "Pension"
+                        ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-lg"
+                        : "text-slate-500 hover:text-slate-300 hover:bg-slate-900",
                     )}
-                  >Pension</button>
+                  >
+                    Pension
+                  </button>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">Design Mode</span>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+                  Design Mode
+                </span>
                 <div className="h-1 w-1 rounded-full bg-slate-700" />
-                <p className="text-slate-400 text-xs">자산 배분 및 종목별 비중을 설정합니다.</p>
+                <p className="text-slate-400 text-xs">
+                  계좌 타입별 4단 전략 카테고리로 자산 배분과 우선순위를
+                  설계합니다.
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={handleReset}
                 className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold rounded-2xl transition-all"
               >
                 <RotateCcw size={18} /> 새로만들기
               </button>
-              <button 
+              <button
                 onClick={handleSaveClick}
                 className="flex items-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-black rounded-2xl transition-all shadow-xl shadow-emerald-500/10"
               >
@@ -386,45 +555,70 @@ export function PortfolioTab({
             <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                  <TrendingUp className="text-emerald-400" size={20} /> Simulation Settings
+                  <TrendingUp className="text-emerald-400" size={20} />{" "}
+                  Simulation Settings
                 </h3>
                 <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
-                  <button 
+                  <button
                     onClick={() => setCalcMode("TTM")}
-                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "TTM" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-50")}
-                  >TTM (Past)</button>
-                  <button 
+                    className={cn(
+                      "px-4 py-1.5 text-xs font-black rounded-lg transition-all",
+                      calcMode === "TTM"
+                        ? "bg-slate-800 text-emerald-400 shadow-sm"
+                        : "text-slate-50",
+                    )}
+                  >
+                    TTM (Past)
+                  </button>
+                  <button
                     onClick={() => setCalcMode("Forward")}
-                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "Forward" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-50")}
-                  >Forward (Future)</button>
+                    className={cn(
+                      "px-4 py-1.5 text-xs font-black rounded-lg transition-all",
+                      calcMode === "Forward"
+                        ? "bg-slate-800 text-emerald-400 shadow-sm"
+                        : "text-slate-50",
+                    )}
+                  >
+                    Forward (Future)
+                  </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (USD)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">
+                    Total Capital (USD)
+                  </label>
                   <div className="relative group">
-                    <input 
+                    <input
                       type="text"
                       placeholder="USD Amount"
                       value={Math.round(capitalUsd).toLocaleString()}
                       onChange={(e) => handleUsdChange(e.target.value)}
                       className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
                     />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">
+                      $
+                    </span>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">
+                    Total Capital (KRW)
+                  </label>
                   <div className="relative group">
-                    <input 
+                    <input
                       type="text"
                       placeholder="KRW Amount"
-                      value={Math.round(capitalUsd * exchangeRate).toLocaleString()}
+                      value={Math.round(
+                        capitalUsd * exchangeRate,
+                      ).toLocaleString()}
                       onChange={(e) => handleKrwChange(e.target.value)}
                       className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
                     />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">₩</span>
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">
+                      ₩
+                    </span>
                   </div>
                 </div>
               </div>
@@ -437,36 +631,64 @@ export function PortfolioTab({
             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] p-8 flex flex-col justify-between relative overflow-hidden">
               <DollarSign className="absolute -right-4 -top-4 w-32 h-32 text-emerald-500/5 rotate-12" />
               <div className="relative z-10">
-                <h3 className="text-sm font-black text-emerald-500/60 uppercase tracking-widest mb-6">Expected Income (Tax-Excl.)</h3>
+                <h3 className="text-sm font-black text-emerald-500/60 uppercase tracking-widest mb-6">
+                  Expected Income (Tax-Excl.)
+                </h3>
                 <div className="space-y-6">
                   <div>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Annual Dividend</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
+                      Annual Dividend
+                    </p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-50 tracking-tighter">
-                        ₩{(analysis.annualDividendUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ₩
+                        {(
+                          analysis.annualDividendUsd * exchangeRate
+                        ).toLocaleString(undefined, {
+                          maximumFractionDigits: 0,
+                        })}
                       </span>
-                      <span className="text-slate-500 text-xs font-bold">/ year</span>
+                      <span className="text-slate-500 text-xs font-bold">
+                        / year
+                      </span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Monthly Income</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
+                      Monthly Income
+                    </p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-black text-emerald-400 tracking-tighter">
-                        ₩{(analysis.monthlyDividendUsd * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ₩
+                        {(
+                          analysis.monthlyDividendUsd * exchangeRate
+                        ).toLocaleString(undefined, {
+                          maximumFractionDigits: 0,
+                        })}
                       </span>
-                      <span className="text-slate-500 text-xs font-bold">/ month</span>
+                      <span className="text-slate-500 text-xs font-bold">
+                        / month
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 space-y-3">
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-slate-500 font-bold">Expected Yield</span>
-                  <span className="text-xl font-black text-slate-50">{analysis.weightedYield.toFixed(2)}%</span>
+                  <span className="text-slate-500 font-bold">
+                    Expected Yield
+                  </span>
+                  <span className="text-xl font-black text-slate-50">
+                    {analysis.weightedYield.toFixed(2)}%
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-base">
-                  <span className="text-slate-500 font-bold">Expected TR (Growth)</span>
-                  <span className="text-xl font-black text-emerald-400">{analysis.weightedReturn.toFixed(2)}%</span>
+                  <span className="text-slate-500 font-bold">
+                    Expected TR (Growth)
+                  </span>
+                  <span className="text-xl font-black text-emerald-400">
+                    {analysis.weightedReturn.toFixed(2)}%
+                  </span>
                 </div>
               </div>
             </div>
@@ -475,26 +697,45 @@ export function PortfolioTab({
           {/* 카테고리별 섹션 */}
           <div className="grid grid-cols-1 gap-8">
             {categories.map((cat) => {
-              const catItems = items.filter(i => i.category === cat.id);
+              const catItems = items.filter((i) => i.category === cat.id);
               const catWeight = analysis.categoryWeights[cat.id] || 0;
 
               return (
-                <div key={cat.id} className="bg-slate-900/20 border border-slate-800/60 rounded-[2.5rem] p-8 transition-all hover:bg-slate-900/30">
+                <div
+                  key={cat.id}
+                  className="bg-slate-900/20 border border-slate-800/60 rounded-[2.5rem] p-8 transition-all hover:bg-slate-900/30"
+                >
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                      <div className={cn("w-2.5 h-10 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]", cat.color)} />
+                      <div
+                        className={cn(
+                          "w-2.5 h-10 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]",
+                          cat.color,
+                        )}
+                      />
                       <div>
-                        <h3 className="text-xl font-black text-slate-100 tracking-tight">{cat.name}</h3>
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Asset Segment</p>
+                        <h3 className="text-xl font-black text-slate-100 tracking-tight">
+                          {cat.name}
+                        </h3>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                          {cat.subtitle}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400 font-medium">
+                          {cat.description}
+                        </p>
                       </div>
-                      <div className={cn(
-                        "ml-4 px-4 py-1.5 rounded-full font-black text-sm transition-all",
-                        catWeight > 0 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-slate-800/50 text-slate-600 border border-slate-800"
-                      )}>
+                      <div
+                        className={cn(
+                          "ml-4 px-4 py-1.5 rounded-full font-black text-sm transition-all",
+                          catWeight > 0
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : "bg-slate-800/50 text-slate-600 border border-slate-800",
+                        )}
+                      >
                         {catWeight.toFixed(1)}%
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setManualAdd({ category: cat.id })}
                       className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
                     >
@@ -508,28 +749,44 @@ export function PortfolioTab({
                         <tr>
                           <th className="py-5 px-8 w-24">Ticker</th>
                           <th className="py-5 px-4">Stock Name</th>
-                          <th className="py-5 px-4 text-right w-40">Weight (%)</th>
+                          <th className="py-5 px-4 text-right w-40">
+                            Weight (%)
+                          </th>
                           <th className="py-5 px-8 text-center w-20">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/30">
                         {catItems.map((item) => (
-                          <tr key={item.symbol} className="group hover:bg-slate-800/10 transition-colors">
-                            <td className="py-6 px-8 font-black text-emerald-400 tracking-tighter text-base">{item.symbol}</td>
-                            <td className="py-6 px-4 text-slate-300 font-medium text-sm leading-relaxed">{item.name}</td>
+                          <tr
+                            key={item.symbol}
+                            className="group hover:bg-slate-800/10 transition-colors"
+                          >
+                            <td className="py-6 px-8 font-black text-emerald-400 tracking-tighter text-base">
+                              {item.symbol}
+                            </td>
+                            <td className="py-6 px-4 text-slate-300 font-medium text-sm leading-relaxed">
+                              {item.name}
+                            </td>
                             <td className="py-6 px-4 text-right">
                               <div className="flex items-center justify-end gap-3">
-                                <input 
+                                <input
                                   type="number"
                                   value={item.weight}
-                                  onChange={(e) => updateWeight(item.symbol, parseFloat(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateWeight(
+                                      item.symbol,
+                                      parseFloat(e.target.value) || 0,
+                                    )
+                                  }
                                   className="w-24 bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 rounded-xl px-4 py-2.5 text-right text-slate-50 text-base font-black focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
                                 />
-                                <span className="text-slate-600 font-black text-xs">%</span>
+                                <span className="text-slate-600 font-black text-xs">
+                                  %
+                                </span>
                               </div>
                             </td>
                             <td className="py-6 px-8 text-center">
-                              <button 
+                              <button
                                 onClick={() => removeItem(item.symbol)}
                                 className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"
                               >
@@ -542,8 +799,13 @@ export function PortfolioTab({
                           <tr>
                             <td colSpan={4} className="py-20 text-center">
                               <div className="flex flex-col items-center gap-3 opacity-20">
-                                <PlusCircle size={40} className="text-slate-500" />
-                                <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">No assets in this category</p>
+                                <PlusCircle
+                                  size={40}
+                                  className="text-slate-500"
+                                />
+                                <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">
+                                  No assets in this category
+                                </p>
                               </div>
                             </td>
                           </tr>
@@ -557,36 +819,52 @@ export function PortfolioTab({
           </div>
 
           {/* 최종 검증 푸터 [REQ-PRT-01.4, 01.5] */}
-          <div className={cn(
-            "mt-12 p-12 border-2 border-dashed rounded-[3.5rem] flex flex-col md:flex-row items-center justify-between gap-10 transition-all duration-700",
-            analysis.totalWeight === 100 ? "bg-emerald-500/[0.03] border-emerald-500/20 shadow-2xl shadow-emerald-500/5" : "bg-slate-950/20 border-slate-800"
-          )}>
+          <div
+            className={cn(
+              "mt-12 p-12 border-2 border-dashed rounded-[3.5rem] flex flex-col md:flex-row items-center justify-between gap-10 transition-all duration-700",
+              analysis.totalWeight === 100
+                ? "bg-emerald-500/[0.03] border-emerald-500/20 shadow-2xl shadow-emerald-500/5"
+                : "bg-slate-950/20 border-slate-800",
+            )}
+          >
             <div className="flex items-center gap-16">
               <div className="text-center md:text-left">
-                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Asset Count</span>
-                <span className="text-4xl font-black text-slate-100">{items.length}</span>
+                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">
+                  Total Asset Count
+                </span>
+                <span className="text-4xl font-black text-slate-100">
+                  {items.length}
+                </span>
               </div>
               <div className="h-16 w-px bg-slate-800 hidden md:block" />
               <div className="text-center md:text-left">
-                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">Total Allocation</span>
+                <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">
+                  Total Allocation
+                </span>
                 <div className="flex items-baseline gap-1">
-                  <span className={cn(
-                    "text-6xl font-black tracking-tighter transition-all duration-700",
-                    Math.abs(analysis.totalWeight - 100) < 0.01 ? "text-emerald-400" : "text-red-500"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-6xl font-black tracking-tighter transition-all duration-700",
+                      Math.abs(analysis.totalWeight - 100) < 0.01
+                        ? "text-emerald-400"
+                        : "text-red-500",
+                    )}
+                  >
                     {analysis.totalWeight.toFixed(1)}
                   </span>
                   <span className="text-slate-600 font-black text-2xl">%</span>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col items-center md:items-end gap-4">
               {Math.abs(analysis.totalWeight - 100) > 0.01 ? (
                 <>
                   <div className="flex items-center gap-2 px-6 py-3 bg-red-500/10 rounded-2xl border border-red-500/20">
                     <AlertCircle className="text-red-500" size={20} />
-                    <p className="text-xl text-red-400 font-black tracking-tight">비중 합계가 100%여야 합니다</p>
+                    <p className="text-xl text-red-400 font-black tracking-tight">
+                      비중 합계가 100%여야 합니다
+                    </p>
                   </div>
                   <p className="text-sm text-slate-600 font-bold uppercase tracking-widest">
                     Need Adjustment: {(100 - analysis.totalWeight).toFixed(1)}%
@@ -595,7 +873,9 @@ export function PortfolioTab({
               ) : (
                 <div className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 animate-bounce">
                   <CheckCircle2 className="text-emerald-400" size={24} />
-                  <p className="text-2xl text-emerald-400 font-black tracking-tight uppercase">Ready to Save & Simulate</p>
+                  <p className="text-2xl text-emerald-400 font-black tracking-tight uppercase">
+                    Ready to Save & Simulate
+                  </p>
                 </div>
               )}
             </div>
@@ -607,18 +887,26 @@ export function PortfolioTab({
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 p-10 rounded-[3rem] shadow-2xl max-w-md w-full space-y-8 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-500/10 rounded-2xl"><Save className="text-emerald-400" size={24} /></div>
+              <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                <Save className="text-emerald-400" size={24} />
+              </div>
               <div>
-                <h3 className="text-xl font-black text-slate-50 tracking-tight">Save Portfolio</h3>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">이름을 확인하고 저장하세요</p>
+                <h3 className="text-xl font-black text-slate-50 tracking-tight">
+                  Save Portfolio
+                </h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                  이름을 확인하고 저장하세요
+                </p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Portfolio Name</label>
-              <input 
-                type="text" 
-                value={tempPortfolioName} 
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                Portfolio Name
+              </label>
+              <input
+                type="text"
+                value={tempPortfolioName}
                 onChange={(e) => setTempPortfolioName(e.target.value)}
                 autoFocus
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-lg font-black text-slate-50 focus:border-emerald-500/50 outline-none transition-all shadow-inner"
@@ -628,36 +916,62 @@ export function PortfolioTab({
             </div>
 
             {portfolioId && (
-              <div 
+              <div
                 className={cn(
                   "p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group",
-                  saveAsNew ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-950/50 border-slate-800 hover:border-slate-700"
+                  saveAsNew
+                    ? "bg-emerald-500/10 border-emerald-500/30"
+                    : "bg-slate-950/50 border-slate-800 hover:border-slate-700",
                 )}
                 onClick={() => setSaveAsNew(!saveAsNew)}
               >
                 <div className="flex items-center gap-3">
-                  <div className={cn("p-2 rounded-lg", saveAsNew ? "bg-emerald-500 text-slate-950" : "bg-slate-800 text-slate-500 group-hover:text-slate-300")}>
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg",
+                      saveAsNew
+                        ? "bg-emerald-500 text-slate-950"
+                        : "bg-slate-800 text-slate-500 group-hover:text-slate-300",
+                    )}
+                  >
                     <Plus size={16} strokeWidth={4} />
                   </div>
                   <div>
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">Save as Copy</p>
-                    <p className="text-xs font-bold text-slate-300">다른 이름으로 새 항목 저장</p>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
+                      Save as Copy
+                    </p>
+                    <p className="text-xs font-bold text-slate-300">
+                      다른 이름으로 새 항목 저장
+                    </p>
                   </div>
                 </div>
-                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", saveAsNew ? "bg-emerald-500 border-emerald-500" : "border-slate-700")}>
-                  {saveAsNew && <CheckCircle2 size={12} className="text-slate-950" strokeWidth={4} />}
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                    saveAsNew
+                      ? "bg-emerald-500 border-emerald-500"
+                      : "border-slate-700",
+                  )}
+                >
+                  {saveAsNew && (
+                    <CheckCircle2
+                      size={12}
+                      className="text-slate-950"
+                      strokeWidth={4}
+                    />
+                  )}
                 </div>
               </div>
             )}
 
             <div className="flex gap-3 pt-4">
-              <button 
+              <button
                 onClick={() => setIsSaveModalOpen(false)}
                 className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all"
               >
                 취소
               </button>
-              <button 
+              <button
                 onClick={handleSaveExec}
                 className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl transition-all shadow-lg shadow-emerald-500/20"
               >

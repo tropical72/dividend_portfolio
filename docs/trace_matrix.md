@@ -23,6 +23,10 @@
 | REQ-RAMS-7.1 | 시뮬레이션 정밀 검증 UI (상세 로그) | T-06-6.1.1 | TEST-UX-LOG | Done | f605a94 | 2026.04.15-14.13 |
 | REQ-RAMS-7.4 | Scenario Snapshot (은퇴일 스냅샷) | T-01-3.3 | TEST-SNP-01 | Done | 0bd7273 | 2026.02.22-12.18 |
 | REQ-RAMS-4.1 | 리밸런싱 트리거 및 세무 마찰 비용 엔진 | T-01-4.1 | TEST-REB-01 | Done | fe92271 | 2026.02.22-13.30 |
+| REQ-RAMS-1.7 | 계좌별 4단계 전략 카테고리 구조 | T-01-9.1.1 | TEST-RAMS-1.7 | In Progress | - | - |
+| REQ-RAMS-2.3 | 법인 현금흐름과 주주대여금 반환 분리 | T-01-9.2.1 | TEST-TAX-03 | Planned | - | - |
+| REQ-RAMS-3.2 | 연 1회 전략 매도 및 역할 하한선 상태 머신 | T-01-9.3.1 | TEST-SUR-02 | Planned | - | - |
+| REQ-RAMS-8.1 | 전략 파라미터 사용자 설정화 | T-01-9.4.1 | TEST-UI-RULE-01 | Planned | - | - |
 
 ---
 
@@ -41,6 +45,17 @@
 | REQ-PRT-08 | 마스터 전략(Master Strategy) 구성 및 관리 | T-02-8.1 | TEST-RAMS-1.5 | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-PRT-09 | 실시간 환율 동기화 및 캐싱 시스템 | T-02-9.1 | TEST-PRT-09 | Done | 7c5af70 | 2026.04.15-16.34 |
 | REQ-GLB-01 | 수익률 지표 표준화 (DY 중심 & PA 가산 모델) 및 설정 저장 버그 수정 | T-GLB-10.1 | TEST-GLB-10 | Done | a7f2b1d | 2026.04.15-19.10 |
+| REQ-PRT-01.1 | 계좌별 4단 전략 카테고리 편집기 | T-02-10.2.1 | TEST-PRT-01 | Done (Uncommitted) | - | 2026.04.16-02:35 |
 
 ---
-*마지막 업데이트: 2026-04-15 19:10:00*
+
+## 3. Global Standards Domain (00)
+
+| 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit | 완료 일시 |
+|:---|:---|:---|:---|:---|:---|:---|
+| REQ-GLB-11.1 | Feature 단위 품질 게이트 명시화 | T-GLB-11.1 | TEST-SYS-QG-01 | Done (Uncommitted) | - | 2026.04.16-09:20 |
+| REQ-GLB-11.2 | Frontend Prettier 생성물 제외 설정 | T-GLB-11.2.1 | TEST-SYS-QG-02 | Done (Uncommitted) | - | 2026.04.16-09:20 |
+| REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | In Progress | - | - |
+
+---
+*마지막 업데이트: 2026-04-16 09:20:00*

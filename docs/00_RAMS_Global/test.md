@@ -27,3 +27,13 @@
         - [ ] 스크립트 실행 시 두 개의 프로세스가 정상적으로 뜨는가?
         - [ ] 브라우저가 자동으로 `localhost:5173`을 여는가?
         - [ ] `Ctrl+C` 입력 시 모든 프로세스가 정상 종료되는가?
+
+## [Quality Gate] 커밋 전 코드품질 검증 [NEW]
+- **[TEST-SYS-QG-01] Python 변경분 정적 분석:**
+    - 시나리오: Python 파일 수정이 포함된 기능은 커밋 전 `PYTHONPATH=. .venv/bin/ruff check <changed_python_files>`와 `PYTHONPATH=. .venv/bin/black --check <changed_python_files>`를 모두 통과해야 한다.
+- **[TEST-SYS-QG-02] Frontend 변경분 정적 분석 및 스타일 검증:**
+    - 시나리오: 프론트엔드 수정이 포함된 기능은 커밋 전 `npm run lint`, `npm run build`, `npx prettier --check <changed_frontend_files>`를 모두 통과해야 한다.
+- **[TEST-SYS-QG-03] 기능 단위 자동 검증:**
+    - 시나리오: 각 feature는 변경 범위에 해당하는 `pytest` 및 `Playwright` 시나리오를 모두 통과해야 한다.
+- **[TEST-SYS-QG-04] 전역 타입/포맷 부채 추적:**
+    - 시나리오: 저장소 전체 기준 `mypy`, `black --check src tests` 등 전역 검사가 실패할 경우, 해당 오류는 별도 전역 태스크로 추적되며 신규 feature 커밋에서 오류 개수가 증가하지 않아야 한다.

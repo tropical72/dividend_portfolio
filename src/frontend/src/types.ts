@@ -4,6 +4,21 @@
 
 export const TYPES_VERSION = "1.0.0";
 
+export type AccountType = "Corporate" | "Pension";
+export type CorporateStrategyCategory =
+  | "SGOV Buffer"
+  | "High Income"
+  | "Dividend Growth"
+  | "Growth Engine";
+export type PensionStrategyCategory =
+  | "SGOV Buffer"
+  | "Bond Buffer"
+  | "Dividend Growth"
+  | "Growth Engine";
+export type PortfolioCategory =
+  | CorporateStrategyCategory
+  | PensionStrategyCategory;
+
 /** 앱 설정 인터페이스 */
 export interface AppSettings {
   dart_api_key: string;
@@ -35,7 +50,7 @@ export interface Stock {
 export interface PortfolioItem {
   symbol: string;
   name: string;
-  category: "Fixed" | "Cash" | "Growth" | "Dividend" | "HighIncome";
+  category: PortfolioCategory;
   weight: number;
   price: number;
   dividend_yield: number;
@@ -47,7 +62,7 @@ export interface PortfolioItem {
 export interface Portfolio {
   id: string;
   name: string;
-  account_type: "Corporate" | "Pension";
+  account_type: AccountType;
   total_capital: number;
   currency: string;
   items: PortfolioItem[];
@@ -180,4 +195,3 @@ export interface SimulationResult {
     };
   };
 }
-

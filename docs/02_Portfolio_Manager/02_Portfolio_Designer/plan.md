@@ -50,3 +50,19 @@
     - [ ] **T-02-7.2.1** `PortfolioDashboard.tsx` 리스트 항목에 Rename 버튼 및 인라인 편집 UI 추가.
     - [ ] **T-02-7.2.2** 백엔드 PATCH API 연동을 통한 실시간 이름 업데이트.
 
+### [Phase 10] 전략 카테고리 편집기 재설계 (T-02-10) - PLANNED
+- **T-02-10.1: 계좌별 4카테고리 데이터 모델 정렬**
+    - [x] **T-02-10.1.1** Corporate/Pension 계좌별 허용 카테고리 정의 및 타입 반영.
+    - [ ] **T-02-10.1.2** 기존 3단 카테고리 포트폴리오 마이그레이션 규칙 구현.
+- **T-02-10.2: Portfolio Designer UI 개편**
+    - [x] **T-02-10.2.1** Corporate용 `SGOV Buffer/High Income/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
+    - [x] **T-02-10.2.2** Pension용 `SGOV Buffer/Bond Buffer/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
+    - [x] **T-02-10.2.3** 각 카테고리 설명, 매도 우선순위, 역할 안내 UI 추가.
+- **T-02-10.3: Watchlist 연동 및 분석 리포트 정합성**
+    - [x] **T-02-10.3.1** 종목 이관 팝업의 카테고리 선택지를 계좌 타입별 4카테고리로 교체.
+    - [x] **T-02-10.3.2** 분석 리포트와 비교 대시보드의 카테고리 집계를 새 전략 카테고리 기준으로 갱신.
+
+### [Implementation Notes] 구현 메모
+- 기존 `Fixed/Cash/Growth/Dividend/HighIncome` 타입은 즉시 삭제하지 않고 호환 레이어로 잠시 유지한다.
+- Portfolio 저장 시에는 새 카테고리 문자열로 정규화하여 저장하고, 레거시 데이터는 로드 시 한 번만 변환한다.
+- 계좌 타입이 바뀌면 호환되지 않는 카테고리 종목은 자동 이동시키지 말고, 사용자 확인 후 재배치하도록 설계한다.

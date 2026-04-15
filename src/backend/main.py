@@ -32,9 +32,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class StockRequest(BaseModel):
     ticker: str
     country: Optional[str] = "US"
+
 
 class SettingsRequest(BaseModel):
     dart_api_key: Optional[str] = None
@@ -45,12 +47,14 @@ class SettingsRequest(BaseModel):
     default_currency: Optional[str] = "USD"
     price_appreciation_rate: Optional[float] = None
 
+
 class PortfolioRequest(BaseModel):
     name: str
     account_type: Optional[str] = "Corporate"
     total_capital: Optional[float] = 0.0
     currency: Optional[str] = "USD"
     items: Optional[list] = []
+
 
 class RetirementConfigRequest(BaseModel):
     active_assumption_id: Optional[str] = None
@@ -64,14 +68,17 @@ class RetirementConfigRequest(BaseModel):
     tax_and_insurance: Optional[dict] = None
     trigger_thresholds: Optional[dict] = None
 
+
 class MasterPortfolioRequest(BaseModel):
     name: str
     corp_id: Optional[str] = None
     pension_id: Optional[str] = None
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
 
 @app.get("/api/stock/{ticker}")
 async def get_stock_info(ticker: str):
@@ -81,17 +88,21 @@ async def get_stock_info(ticker: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/watchlist")
 async def get_watchlist():
     return {"success": True, "data": backend.get_watchlist()}
+
 
 @app.post("/api/watchlist")
 async def add_to_watchlist(req: StockRequest):
     return backend.add_to_watchlist(req.ticker, req.country)
 
+
 @app.delete("/api/watchlist/{ticker}")
 async def remove_from_watchlist(ticker: str):
     return backend.remove_from_watchlist(ticker)
+
 
 @app.get("/api/settings")
 async def get_settings():
@@ -100,69 +111,82 @@ async def get_settings():
     settings["current_exchange_rate"] = backend.get_exchange_rate()
     return {"success": True, "data": settings}
 
+
 @app.get("/api/exchange-rate")
 async def get_exchange_rate():
     return {"success": True, "rate": backend.get_exchange_rate()}
+
 
 @app.post("/api/settings")
 async def update_settings(req: SettingsRequest):
     settings_dict = req.model_dump(exclude_none=True)
     return backend.update_settings(settings_dict)
 
+
 @app.get("/api/portfolios")
 async def get_portfolios():
     return {"success": True, "data": backend.get_portfolios()}
+
 
 @app.post("/api/portfolios")
 async def create_portfolio(req: PortfolioRequest):
     return backend.add_portfolio(
         name=req.name,
+        account_type=req.account_type,
         total_capital=req.total_capital,
         currency=req.currency,
         items=req.items,
     )
 
+
 @app.delete("/api/portfolios/{p_id}")
 async def delete_portfolio(p_id: str):
     return backend.remove_portfolio(p_id)
+
 
 @app.patch("/api/portfolios/{p_id}")
 async def update_portfolio(p_id: str, req: PortfolioRequest):
     updates = req.model_dump(exclude_none=True)
     return backend.update_portfolio(p_id, updates)
 
+
 @app.get("/api/master-portfolios")
 async def get_master_portfolios():
     return {"success": True, "data": backend.get_master_portfolios()}
 
+
 @app.post("/api/master-portfolios")
 async def create_master_portfolio(req: MasterPortfolioRequest):
     return backend.add_master_portfolio(
-        name=req.name,
-        corp_id=req.corp_id,
-        pension_id=req.pension_id
+        name=req.name, corp_id=req.corp_id, pension_id=req.pension_id
     )
+
 
 @app.delete("/api/master-portfolios/{m_id}")
 async def delete_master_portfolio(m_id: str):
     return backend.remove_master_portfolio(m_id)
 
+
 @app.post("/api/master-portfolios/{m_id}/activate")
 async def activate_master_portfolio(m_id: str):
     return backend.activate_master_portfolio(m_id)
+
 
 @app.get("/api/portfolios/{p_id}/analysis")
 async def analyze_portfolio(p_id: str, mode: str = "TTM"):
     return backend.analyze_portfolio(p_id, mode=mode)
 
+
 @app.get("/api/retirement/config")
 async def get_retirement_config():
     return {"success": True, "data": backend.get_retirement_config()}
+
 
 @app.post("/api/retirement/config")
 async def update_retirement_config(req: RetirementConfigRequest):
     config_dict = req.model_dump(exclude_none=True)
     return backend.update_retirement_config(config_dict)
+
 
 @app.get("/api/retirement/simulate")
 async def run_retirement_simulation(scenario: Optional[str] = None):
@@ -247,10 +271,16 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     sim_params = config["simulation_params"]
     user_profile = config["user_profile"]
     trigger_params = config.get("trigger_thresholds", {"target_buffer_months": 24})
-    
+
     # [REQ-RAMS-1.5.1] 활성화된 마스터 포트폴리오 기반 데이터 추출
     active_master = backend.get_active_master_portfolio()
-    if active_master:
+    active_corp = (
+        backend.get_portfolio_by_id(active_master.get("corp_id")) if active_master else None
+    )
+    active_pension = (
+        backend.get_portfolio_by_id(active_master.get("pension_id")) if active_master else None
+    )
+    if active_master and (active_corp or active_pension):
         corp_stats = backend.get_portfolio_stats_by_id(active_master.get("corp_id"))
         pension_stats = backend.get_portfolio_stats_by_id(active_master.get("pension_id"))
     else:
@@ -259,12 +289,9 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         p_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
         corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None)
         pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None)
-    
+
     base_params = {
-        "portfolio_stats": {
-            "corp": corp_stats,
-            "pension": pension_stats
-        },
+        "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": assumption["expected_return"],
@@ -292,7 +319,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     tax_config = config["tax_and_insurance"]
     current_tax_engine = TaxEngine(config=tax_config)
     projection_engine.tax_engine = current_tax_engine
-    
+
     # 6. 스트레스 테스트 시나리오 적용 (필요 시)
     final_params = base_params
     # 쿼리 스트링 scenario가 시스템 예약어(CRASH, INFLATION 등)인 경우에만 스트레스 엔진 적용
@@ -302,12 +329,32 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # 7. 엔진 실행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
-    
+
     # [REQ-UI-05] 사용된 마스터 전략 및 포트폴리오 정보 메타데이터 추가
     active_m = backend.get_active_master_portfolio()
-    corp_p = backend.get_portfolio_by_id(active_m.get("corp_id")) if active_m else None
-    pen_p = backend.get_portfolio_by_id(active_m.get("pension_id")) if active_m else None
-    
+    if active_m:
+        corp_p = backend.get_portfolio_by_id(active_m.get("corp_id"))
+        pen_p = backend.get_portfolio_by_id(active_m.get("pension_id"))
+    else:
+        corp_p = next(
+            (p for p in backend.get_portfolios() if p.get("account_type") == "Corporate"),
+            None,
+        )
+        pen_p = next(
+            (p for p in backend.get_portfolios() if p.get("account_type") == "Pension"),
+            None,
+        )
+    if corp_p is None:
+        corp_p = next(
+            (p for p in backend.get_portfolios() if p.get("account_type") == "Corporate"),
+            None,
+        )
+    if pen_p is None:
+        pen_p = next(
+            (p for p in backend.get_portfolios() if p.get("account_type") == "Pension"),
+            None,
+        )
+
     # 마스터 전략의 통합 수익률 계산
     pa_rate = float(backend.settings.get("price_appreciation_rate", 3.0)) / 100.0
     combined_tr = 0.07
@@ -334,21 +381,23 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
             "corp": {
                 "name": corp_p["name"] if corp_p else "Default (None)",
                 "yield": f"{corp_stats.get('dividend_yield', 0)*100:.2f}%",
-                "expected_return": corp_stats.get("expected_return", 0.07)
+                "expected_return": corp_stats.get("expected_return", 0.07),
             },
             "pension": {
                 "name": pen_p["name"] if pen_p else "Default (None)",
                 "yield": f"{pension_stats.get('dividend_yield', 0)*100:.2f}%",
-                "expected_return": pension_stats.get("expected_return", 0.07)
-            }
-        }
+                "expected_return": pension_stats.get("expected_return", 0.07),
+            },
+        },
     }
-    
+
     return {"success": True, "data": result}
+
 
 @app.get("/api/retirement/snapshot")
 async def get_retirement_snapshot():
     return {"success": True, "data": backend.get_retirement_snapshot()}
+
 
 @app.post("/api/retirement/snapshot")
 async def create_retirement_snapshot(req: dict):
