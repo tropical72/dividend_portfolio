@@ -21,7 +21,7 @@ export function PortfolioTab({
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">("design");
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("My New Portfolio");
-  const [accountType, setAccountType] = useState<"Personal" | "Pension">("Personal");
+  const [accountType, setAccountType] = useState<"Corporate" | "Pension">("Corporate");
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const categories = [
@@ -58,7 +58,7 @@ export function PortfolioTab({
   const handleLoadPortfolio = (p: Portfolio) => {
     setPortfolioId(p.id);
     setPortfolioName(p.name);
-    setAccountType(p.account_type || "Personal");
+    setAccountType(p.account_type || "Corporate");
     setCapitalUsd(p.total_capital);
     setItems(p.items);
     setActiveSubTab("design");
@@ -138,7 +138,7 @@ export function PortfolioTab({
       setItems([]);
       setPortfolioId(null);
       setPortfolioName("My New Portfolio");
-      setAccountType("Personal");
+      setAccountType("Corporate");
       setCapitalUsd(10000);
       showStatus("초기화되었습니다.", "success");
     }

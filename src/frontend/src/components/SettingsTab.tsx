@@ -113,7 +113,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
 
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
               <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-3"><Wallet2 size={18} /> Pension Assets</h3>
-              <InputGroup label="Initial Capital" value={retireConfig.pension_params.initial_investment} isCurrency tooltip="현재 연금 계좌 잔액 총합" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, initial_investment: parseInt(v) || 0}})} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputGroup label="Initial Capital" value={retireConfig.pension_params.initial_investment} isCurrency tooltip="현재 연금 계좌 잔액 총합" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, initial_investment: parseInt(v) || 0}})} />
+                <InputGroup label="Withdrawal" value={retireConfig.pension_params.monthly_withdrawal_target} isCurrency tooltip="Phase 2 연금 수령기 월 목표 인출액" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, monthly_withdrawal_target: parseInt(v) || 0}})} />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <InputGroup label="Severance" value={retireConfig.pension_params.severance_reserve} isCurrency tooltip="예상 퇴직금 (연금 계좌 유입 가정)" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, severance_reserve: parseInt(v) || 0}})} />
                 <InputGroup label="Other" value={retireConfig.pension_params.other_reserve} isCurrency tooltip="기타 연금 가용 자산 (ISA 등)" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, other_reserve: parseInt(v) || 0}})} />
@@ -127,6 +130,11 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
               <InputGroup label="Total Inv." isCurrency tooltip="법인 설립 총 투자액" value={retireConfig.corp_params.initial_investment} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_investment: parseInt(v) || 0}})} />
               <InputGroup label="Capital" isCurrency tooltip="법인 자본금" value={retireConfig.corp_params.capital_stock} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, capital_stock: parseInt(v) || 0}})} />
               <InputGroup label="Loan" isCurrency tooltip="주주대여금 (비과세 인출 재원)" value={retireConfig.corp_params.initial_shareholder_loan} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_shareholder_loan: parseInt(v) || 0}})} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-800 pt-6">
+              <InputGroup label="Salary" isCurrency tooltip="본인 지급 월 급여" value={retireConfig.corp_params.monthly_salary} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_salary: parseInt(v) || 0}})} />
+              <InputGroup label="Fixed Cost" isCurrency tooltip="법인 유지 고정비 (임대료 등)" value={retireConfig.corp_params.monthly_fixed_cost} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_fixed_cost: parseInt(v) || 0}})} />
+              <InputGroup label="Employees" unit="Count" tooltip="4대보험 가입 직원 수" value={retireConfig.corp_params.employee_count} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, employee_count: parseInt(v) || 0}})} />
             </div>
           </section>
 

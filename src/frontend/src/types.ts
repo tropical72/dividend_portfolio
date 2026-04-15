@@ -52,6 +52,17 @@ export interface Portfolio {
   created_at: string;
 }
 
+/** 마스터 포트폴리오(전략 세트) 인터페이스 [REQ-PRT-08.1] */
+export interface MasterPortfolio {
+  id: string;
+  name: string;
+  corp_id: string | null;
+  pension_id: string | null;
+  is_active: boolean;
+  corp_name?: string;
+  pension_name?: string;
+}
+
 /** 은퇴 시뮬레이션 전역 설정 인터페이스 [REQ-RAMS-01] */
 export interface PlannedCashflow {
   id: string;
@@ -155,5 +166,12 @@ export interface SimulationResult {
   };
   survival_months: number;
   monthly_data: MonthlySimulationData[];
+  meta?: {
+    master_name?: string;
+    used_portfolios?: {
+      corp?: { name: string; yield: string };
+      pension?: { name: string; yield: string };
+    };
+  };
 }
 

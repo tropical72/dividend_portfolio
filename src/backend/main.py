@@ -63,6 +63,11 @@ class RetirementConfigRequest(BaseModel):
     tax_and_insurance: Optional[dict] = None
     trigger_thresholds: Optional[dict] = None
 
+class MasterPortfolioRequest(BaseModel):
+    name: str
+    corp_id: Optional[str] = None
+    pension_id: Optional[str] = None
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -117,6 +122,26 @@ async def delete_portfolio(p_id: str):
 async def update_portfolio(p_id: str, req: PortfolioRequest):
     updates = req.model_dump(exclude_none=True)
     return backend.update_portfolio(p_id, updates)
+
+@app.get("/api/master-portfolios")
+async def get_master_portfolios():
+    return {"success": True, "data": backend.get_master_portfolios()}
+
+@app.post("/api/master-portfolios")
+async def create_master_portfolio(req: MasterPortfolioRequest):
+    return backend.add_master_portfolio(
+        name=req.name,
+        corp_id=req.corp_id,
+        pension_id=req.pension_id
+    )
+
+@app.delete("/api/master-portfolios/{m_id}")
+async def delete_master_portfolio(m_id: str):
+    return backend.remove_master_portfolio(m_id)
+
+@app.post("/api/master-portfolios/{m_id}/activate")
+async def activate_master_portfolio(m_id: str):
+    return backend.activate_master_portfolio(m_id)
 
 @app.get("/api/portfolios/{p_id}/analysis")
 async def analyze_portfolio(p_id: str, mode: str = "TTM"):
@@ -214,9 +239,17 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     user_profile = config["user_profile"]
     trigger_params = config.get("trigger_thresholds", {"target_buffer_months": 24})
     
-    # [REQ-RAMS-1.4.1] 계좌별 포트폴리오 통계 추출
-    corp_stats = backend.get_portfolio_stats_by_type("Corporate")
-    pension_stats = backend.get_portfolio_stats_by_type("Pension")
+    # [REQ-RAMS-1.5.1] 활성화된 마스터 포트폴리오 기반 데이터 추출
+    active_master = backend.get_active_master_portfolio()
+    if active_master:
+        corp_stats = backend.get_portfolio_stats_by_id(active_master.get("corp_id"))
+        pension_stats = backend.get_portfolio_stats_by_id(active_master.get("pension_id"))
+    else:
+        # Fallback: 마스터가 없으면 타입별 첫 번째 포트폴리오 사용 (하위 호환)
+        c_p = next((p for p in backend.portfolios if p.get("account_type") == "Corporate"), None)
+        p_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
+        corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None)
+        pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None)
     
     base_params = {
         "portfolio_stats": {
@@ -258,19 +291,21 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     # 6. 엔진 실행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
     
-    # [ADD] 사용된 포트폴리오 정보 메타데이터 추가
-    corp_p = next((p for p in backend.portfolios if p.get("account_type") == "Corporate"), None)
-    pen_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
+    # [REQ-UI-05] 사용된 마스터 전략 및 포트폴리오 정보 메타데이터 추가
+    active_m = backend.get_active_master_portfolio()
+    corp_p = backend.get_portfolio_by_id(active_m.get("corp_id")) if active_m else None
+    pen_p = backend.get_portfolio_by_id(active_m.get("pension_id")) if active_m else None
     
     result["meta"] = {
+        "master_name": active_m["name"] if active_m else "None (Manual)",
         "used_portfolios": {
             "corp": {
                 "name": corp_p["name"] if corp_p else "Default (None)",
-                "yield": f"{corp_stats.get('dividend_yield', 0.04)*100:.2f}%"
+                "yield": f"{corp_stats.get('dividend_yield', 0)*100:.2f}%"
             },
             "pension": {
                 "name": pen_p["name"] if pen_p else "Default (None)",
-                "yield": f"{pension_stats.get('dividend_yield', 0.035)*100:.2f}%"
+                "yield": f"{pension_stats.get('dividend_yield', 0)*100:.2f}%"
             }
         }
     }

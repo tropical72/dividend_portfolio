@@ -80,20 +80,28 @@ export function RetirementTab() {
             <div className="p-2 bg-slate-800 rounded-lg"><Info size={20} className="text-slate-400" /></div>
             <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3></div>
           </div>
-          {/* [ADD] 사용된 포트폴리오 배지 표시 */}
+          {/* [ADD] 사용된 마스터 전략 배지 표시 */}
           <div className="flex gap-2">
-            {simulationData.meta?.used_portfolios?.corp && (
-              <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">Corp:</span>
-                <span className="text-[10px] font-black text-slate-300">{simulationData.meta.used_portfolios.corp.name} ({simulationData.meta.used_portfolios.corp.yield})</span>
+            {simulationData.meta?.master_name && (
+              <div className="px-4 py-1.5 bg-emerald-500 text-slate-950 border border-emerald-400/50 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                <span className="text-[10px] font-black uppercase tracking-widest">Strategy:</span>
+                <span className="text-xs font-black tracking-tight">{simulationData.meta.master_name}</span>
               </div>
             )}
-            {simulationData.meta?.used_portfolios?.pension && (
-              <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2">
-                <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Pen:</span>
-                <span className="text-[10px] font-black text-slate-300">{simulationData.meta.used_portfolios.pension.name} ({simulationData.meta.used_portfolios.pension.yield})</span>
-              </div>
-            )}
+            <div className="flex gap-2 opacity-60">
+              {simulationData.meta?.used_portfolios?.corp && (
+                <div className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full flex items-center gap-2">
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">Corp:</span>
+                  <span className="text-[10px] font-black text-slate-400">{simulationData.meta.used_portfolios.corp.name}</span>
+                </div>
+              )}
+              {simulationData.meta?.used_portfolios?.pension && (
+                <div className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full flex items-center gap-2">
+                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Pen:</span>
+                  <span className="text-[10px] font-black text-slate-400">{simulationData.meta.used_portfolios.pension.name}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -120,8 +128,12 @@ export function RetirementTab() {
             <div className="lg:col-span-5 space-y-10">
               <div className="space-y-6">
                 <div className={cn("inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>{level.icon} {level.label} Status</div>
-                <h2 className="text-3xl font-black text-slate-50 leading-tight">혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></h2>
-                <p className="text-base text-slate-400 font-medium">자산은 향후 <span className="text-slate-100 font-black">{summary.total_survival_years || 0}년</span> 동안 지속 가능합니다.</p>
+                {summary.total_survival_years >= (config.simulation_params.simulation_years || 30) ? (
+                  <h2 className="text-3xl font-black text-slate-50 leading-tight">혁님은 원하는 모습으로 <br /><span className="text-emerald-400">은퇴할 수 있습니다.</span></h2>
+                ) : (
+                  <h2 className="text-3xl font-black text-slate-50 leading-tight">혁님의 현재 전략으로는 <br /><span className="text-amber-400">자산 보강이 필요합니다.</span></h2>
+                )}
+                <p className="text-base text-slate-400 font-medium">자산은 향후 <span className={cn("font-black", (summary.total_survival_years || 0) >= 25 ? "text-slate-100" : "text-red-400")}>{summary.total_survival_years || 0}년</span> 동안 지속 가능합니다.</p>
               </div>
               <div className="grid grid-cols-2 gap-6"><MetricCard label="성장 자산 매도 시작" value={summary.growth_asset_sell_start_date || "-"} tooltip="생활비 충당을 위해 주식을 팔기 시작하는 시점" /><MetricCard label="안전 자산 고갈" value={summary.sgov_exhaustion_date || "-"} tooltip="현금성 자산이 0원이 되는 시점" /></div>
             </div>

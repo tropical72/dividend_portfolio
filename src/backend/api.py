@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.backend.data_provider import StockDataProvider
 from src.backend.storage import StorageManager
@@ -24,32 +24,42 @@ class DividendBackend:
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
         self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
+        self.master_portfolios_file = "master_portfolios.json"
+        self.master_portfolios: List[Dict[str, Any]] = self.storage.load_json(self.master_portfolios_file, [])
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
 
-    def get_portfolio_stats_by_type(self, account_type: str) -> Dict[str, float]:
-        """특정 계좌 타입의 대표 포트폴리오 통계를 산출합니다. [REQ-RAMS-1.4.1]"""
-        portfolio = next(
-            (p for p in self.portfolios if p.get("account_type") == account_type), None
-        )
-        if not portfolio or not portfolio.get("items"):
-            return {}
+    def get_portfolio_stats_by_id(self, p_id: Optional[str]) -> Dict[str, Any]:
+        """특정 ID의 포트폴리오 통계를 산출합니다. 없거나 비어있으면 기본값(4%/3.5%)을 반환합니다."""
+        # 기본값 설정
+        default_stats = {
+            "dividend_yield": 0.04,
+            "expected_return": 0.07,
+            "weights": {"Growth": 1.0}
+        }
+        
+        if not p_id:
+            return default_stats
+            
+        portfolio = self.get_portfolio_by_id(p_id)
+        if not portfolio or not portfolio.get("items") or len(portfolio["items"]) == 0:
+            # 포트폴리오 타입에 따른 차등 기본값 (나중에 확장 가능)
+            return default_stats
 
         items = portfolio["items"]
         total_weight = sum(item.get("weight", 0.0) for item in items)
         if total_weight <= 0:
-            return {}
+            return default_stats
 
-        # 자산군별 가중 평균 배당률 및 비중 산출
-        stats = {"dividend_yield": 0.0, "weights": {}}
+        stats = {"dividend_yield": 0.0, "expected_return": 0.0, "weights": {}}
         for item in items:
             w = item.get("weight", 0.0) / total_weight
             cat = item.get("category", "Growth")
             stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
-            
-            # 배당률 가중 평균 (last_div_yield 또는 계산값 사용)
-            div_y = item.get("dividend_yield", 0.0)
-            stats["dividend_yield"] += (div_y / 100.0) * w
+            div_y = float(item.get("dividend_yield") or 0.0) / 100.0
+            stats["dividend_yield"] += div_y * w
+            exp_r = float(item.get("expected_return") or (div_y * 100.0)) / 100.0
+            stats["expected_return"] += exp_r * w
 
         return stats
 
@@ -121,14 +131,94 @@ class DividendBackend:
         self.storage.save_json(self.portfolios_file, self.portfolios)
         return {"success": True, "data": new_p}
 
+    def is_portfolio_used_in_master(self, p_id: str) -> bool:
+        """포트폴리오가 마스터 전략에서 사용 중인지 확인합니다. [REQ-PRT-08.3]"""
+        for m in self.master_portfolios:
+            if m.get("corp_id") == p_id or m.get("pension_id") == p_id:
+                return True
+        return False
+
     def remove_portfolio(self, p_id: str) -> Dict[str, Any]:
-        """특정 포트폴리오를 삭제합니다."""
+        """특정 포트폴리오를 삭제합니다. [의존성 검사 추가]"""
+        if self.is_portfolio_used_in_master(p_id):
+            # 사용 중인 마스터 전략 이름 찾기
+            master = next(
+                (m for m in self.master_portfolios if m.get("corp_id") == p_id or m.get("pension_id") == p_id),
+                None
+            )
+            m_name = master["name"] if master else "알 수 없는 전략"
+            return {
+                "success": False,
+                "message": f"마스터 전략 '{m_name}'에서 사용 중이므로 삭제할 수 없습니다."
+            }
+
         for i, p in enumerate(self.portfolios):
             if p["id"] == p_id:
                 removed = self.portfolios.pop(i)
                 self.storage.save_json(self.portfolios_file, self.portfolios)
                 return {"success": True, "message": f"{removed['name']} 삭제됨"}
         return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
+
+    def get_master_portfolios(self) -> List[Dict[str, Any]]:
+        """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
+        # 실시간 요약 수치(DY, TR)를 가중 평균하여 계산 후 반환
+        for m in self.master_portfolios:
+            corp_stats = self.get_portfolio_by_id(m.get("corp_id"))
+            pen_stats = self.get_portfolio_by_id(m.get("pension_id"))
+            
+            # TODO: 총 투자액 기준 가중 평균 계산 로직 (프론트엔드에서도 사용 가능하도록)
+            m["corp_name"] = corp_stats["name"] if corp_stats else "-"
+            m["pension_name"] = pen_stats["name"] if pen_stats else "-"
+            
+        return self.master_portfolios
+
+    def get_portfolio_by_id(self, p_id: str) -> Optional[Dict[str, Any]]:
+        """ID로 개별 포트폴리오를 찾습니다."""
+        return next((p for p in self.portfolios if p["id"] == p_id), None)
+
+    def add_master_portfolio(self, name: str, corp_id: str = None, pension_id: str = None) -> Dict[str, Any]:
+        """새로운 마스터 전략을 생성합니다. [REQ-PRT-08.1]"""
+        if not corp_id and not pension_id:
+            return {"success": False, "message": "최소 하나 이상의 포트폴리오를 선택해야 합니다."}
+
+        new_m = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "corp_id": corp_id,
+            "pension_id": pension_id,
+            "is_active": len(self.master_portfolios) == 0  # 첫 번째면 자동 활성
+        }
+        self.master_portfolios.append(new_m)
+        self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+        return {"success": True, "data": new_m}
+
+    def activate_master_portfolio(self, m_id: str) -> Dict[str, Any]:
+        """특정 마스터 전략을 활성화합니다. [REQ-PRT-08.4]"""
+        found = False
+        for m in self.master_portfolios:
+            if m["id"] == m_id:
+                m["is_active"] = True
+                found = True
+            else:
+                m["is_active"] = False
+        
+        if found:
+            self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+            return {"success": True, "message": "전략이 활성화되었습니다."}
+        return {"success": False, "message": "전략을 찾을 수 없습니다."}
+
+    def remove_master_portfolio(self, m_id: str) -> Dict[str, Any]:
+        """마스터 전략을 삭제합니다."""
+        for i, m in enumerate(self.master_portfolios):
+            if m["id"] == m_id:
+                removed = self.master_portfolios.pop(i)
+                self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+                return {"success": True, "message": f"{removed['name']} 전략 삭제됨"}
+        return {"success": False, "message": "전략을 찾을 수 없습니다."}
+
+    def get_active_master_portfolio(self) -> Optional[Dict[str, Any]]:
+        """현재 활성화된 마스터 포트폴리오를 반환합니다."""
+        return next((m for m in self.master_portfolios if m.get("is_active")), None)
 
     def update_portfolio(self, p_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
         """특정 포트폴리오의 정보를 업데이트합니다. [REQ-PRT-04.2]"""
