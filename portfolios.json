@@ -213,36 +213,20 @@
         "account_type": "Pension"
     },
     {
-        "id": "0353cdfe-e185-4413-8db3-6eda89b703f8",
-        "name": "Test Portfolio 1775129170605-876",
-        "total_capital": 50000.0,
+        "id": "2e877bcd-ec96-40b7-a774-5b4fcc95de31",
+        "name": "corp-test1",
+        "total_capital": 1122413.1883549632,
         "currency": "USD",
         "items": [
             {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "category": "Cash",
+                "weight": 20,
+                "price": 100.57,
+                "dividend_yield": 4.037983494083723,
+                "last_div_amount": 0.309,
                 "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
                     2,
                     3,
                     4,
@@ -255,41 +239,100 @@
                     11,
                     12
                 ]
+            },
+            {
+                "symbol": "JEPI",
+                "name": "JPMorgan Equity Premium Income ETF",
+                "category": "Fixed",
+                "weight": 25,
+                "price": 59.49,
+                "dividend_yield": 7.966044713397211,
+                "last_div_amount": 0.344,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "JEPQ",
+                "name": "JPMorgan Nasdaq Equity Premium Income ETF",
+                "category": "Fixed",
+                "weight": 25,
+                "price": 58.15,
+                "dividend_yield": 10.55717970765262,
+                "last_div_amount": 0.466,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "QQQM",
+                "name": "Invesco NASDAQ 100 ETF",
+                "category": "Growth",
+                "weight": 15,
+                "price": 250.67,
+                "dividend_yield": 0.5022539593888379,
+                "last_div_amount": 0.323,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
+                "category": "Growth",
+                "weight": 15,
+                "price": 634.02,
+                "dividend_yield": 1.1147913315037383,
+                "last_div_amount": 1.771,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
             }
         ],
-        "created_at": "1775124986.5685153"
+        "created_at": "1776178966.4364026",
+        "account_type": "Corporate"
     },
     {
-        "id": "8320b496-4223-4ef0-ab09-b019d6f8a02e",
-        "name": "Test Portfolio 1775129170612-476",
-        "total_capital": 50000.0,
+        "id": "dd931ad2-b04b-4005-8cf2-f0b9970e85f2",
+        "name": "pension-test1",
+        "total_capital": 1122413.1883549632,
         "currency": "USD",
         "items": [
             {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "category": "Cash",
+                "weight": 20,
+                "price": 100.57,
+                "dividend_yield": 4.037983494083723,
+                "last_div_amount": 0.309,
                 "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
                     2,
                     3,
                     4,
@@ -302,41 +345,16 @@
                     11,
                     12
                 ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "e5613cd1-c0e0-4257-a724-4e46b6098b59",
-        "name": "Test Portfolio 1775129170628-565",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
             },
             {
-                "symbol": "O",
-                "name": "Realty Income",
+                "symbol": "JEPI",
+                "name": "JPMorgan Equity Premium Income ETF",
                 "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
+                "weight": 25,
+                "price": 59.49,
+                "dividend_yield": 7.966044713397211,
+                "last_div_amount": 0.344,
                 "payment_months": [
-                    1,
                     2,
                     3,
                     4,
@@ -349,41 +367,16 @@
                     11,
                     12
                 ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "f117d242-d9cc-484d-936b-9402ea6a0b9e",
-        "name": "Test Portfolio 1775129170625-278",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
             },
             {
-                "symbol": "O",
-                "name": "Realty Income",
+                "symbol": "JEPQ",
+                "name": "JPMorgan Nasdaq Equity Premium Income ETF",
                 "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
+                "weight": 25,
+                "price": 58.15,
+                "dividend_yield": 10.55717970765262,
+                "last_div_amount": 0.466,
                 "payment_months": [
-                    1,
                     2,
                     3,
                     4,
@@ -396,384 +389,39 @@
                     11,
                     12
                 ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "a5b7217d-5571-4b00-ba53-9ac4ee2c1cec",
-        "name": "Test Portfolio 1775129170633-361",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
+            },
             {
-                "symbol": "AAPL",
-                "name": "Apple",
+                "symbol": "QQQM",
+                "name": "Invesco NASDAQ 100 ETF",
                 "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
+                "weight": 15,
+                "price": 250.67,
+                "dividend_yield": 0.5022539593888379,
+                "last_div_amount": 0.323,
                 "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
+                    3,
+                    6,
+                    9,
+                    12
                 ]
             },
             {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
+                "category": "Growth",
+                "weight": 15,
+                "price": 634.02,
+                "dividend_yield": 1.1147913315037383,
+                "last_div_amount": 1.771,
                 "payment_months": [
-                    1,
-                    2,
                     3,
-                    4,
-                    5,
                     6,
-                    7,
-                    8,
                     9,
-                    10,
-                    11,
                     12
                 ]
             }
         ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "a246b29a-5322-4b91-9384-5db4328814dd",
-        "name": "Test Portfolio 1775129170671-363",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "f87a8200-4278-40a6-b4bb-734eeb5e33c5",
-        "name": "Test Portfolio 1775130065521-880",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "7dfc4f4c-db18-477a-bb78-1a73afadf816",
-        "name": "Test Portfolio 1775130065520-124",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "8fc6e55d-90ac-4e41-815e-a37db9cdfd39",
-        "name": "Test Portfolio 1775130065556-661",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "601d1f8a-30a4-4b49-a326-52d963c80204",
-        "name": "Test Portfolio 1775130065564-379",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "40d9800b-670c-4593-b833-a63757255fcb",
-        "name": "Test Portfolio 1775130065581-686",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
-    },
-    {
-        "id": "913f3ecf-6490-47a7-bf43-33bfe6d56926",
-        "name": "Test Portfolio 1775130065591-930",
-        "total_capital": 50000.0,
-        "currency": "USD",
-        "items": [
-            {
-                "symbol": "AAPL",
-                "name": "Apple",
-                "category": "Growth",
-                "weight": 60,
-                "price": 150,
-                "dividend_yield": 0.5,
-                "last_div_amount": 0.2,
-                "payment_months": [
-                    2,
-                    5,
-                    8,
-                    11
-                ]
-            },
-            {
-                "symbol": "O",
-                "name": "Realty Income",
-                "category": "Fixed",
-                "weight": 40,
-                "price": 60,
-                "dividend_yield": 5.5,
-                "last_div_amount": 0.25,
-                "payment_months": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12
-                ]
-            }
-        ],
-        "created_at": "1775124986.5685153"
+        "created_at": "1776178966.4364026",
+        "account_type": "Pension"
     }
 ]
