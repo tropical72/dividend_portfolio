@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, Coins, 
-  AlertCircle, Info, RotateCcw, TrendingUp
+  AlertCircle, Info, RotateCcw, TrendingUp,
+  Building2, Wallet2, Settings2
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
@@ -81,37 +82,74 @@ export function RetirementTab() {
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content">
+      {/* [MOD] Strategy Hero Dashboard: 마스터 전략 최우선 부각 및 환율 비중 조정 */}
+      <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[3.5rem] p-12 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+          {/* 장식용 글로우 효과 (마스터 전략 쪽으로 집중) */}
+          <div className="absolute left-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+          
+          <div className="relative z-10 flex flex-col gap-10">
+            {/* 상단: 마스터 전략 및 환율 배지 */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                  <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.5em]">Active Strategy</p>
+                </div>
+                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 tracking-tighter leading-[1.1]">
+                  {simulationData.meta?.master_name || "Custom Strategy Builder"}
+                </h1>
+              </div>
+
+              {/* 환율: 박스에서 차분한 배지로 변경 */}
+              <div className="flex items-center gap-4 bg-slate-950/50 border border-slate-800 rounded-2xl px-6 py-3 self-start lg:self-auto">
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
+                  <p className="text-xl font-black text-slate-300 tabular-nums leading-none">
+                    1,425.5 <span className="text-[10px] text-slate-600 ml-0.5">KRW/USD</span>
+                  </p>
+                </div>
+                <div className="w-px h-8 bg-slate-800 mx-1" />
+                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                  <RotateCcw size={14} className="text-emerald-500/60" />
+                </div>
+              </div>
+            </div>
+
+            {/* 하단: 세부 포트폴리오 카드 (대칭 구조) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-800/50">
+              <div className="bg-slate-950/30 border border-slate-800/50 rounded-3xl p-6 flex items-center gap-6 group hover:border-emerald-500/20 transition-all">
+                <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 group-hover:bg-emerald-500/10 transition-all">
+                  <Building2 className="text-emerald-500/60 group-hover:text-emerald-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Corporate Portfolio</p>
+                  <p className="text-lg font-black text-slate-200 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None (Default 4%)"}</p>
+                </div>
+              </div>
+              
+              <div className="bg-slate-950/30 border border-slate-800/50 rounded-3xl p-6 flex items-center gap-6 group hover:border-blue-500/20 transition-all">
+                <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 group-hover:bg-blue-500/10 transition-all">
+                  <Wallet2 className="text-blue-500/60 group-hover:text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Pension Portfolio</p>
+                  <p className="text-lg font-black text-slate-200 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None (Default 3.5%)"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Step 1. Assumptions */}
       <section className="space-y-6">
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-800 rounded-lg"><Info size={20} className="text-slate-400" /></div>
-            <div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3></div>
-          </div>
-          {/* [ADD] 사용된 마스터 전략 배지 표시 */}
-          <div className="flex gap-2">
-            {simulationData.meta?.master_name && (
-              <div className="px-4 py-1.5 bg-emerald-500 text-slate-950 border border-emerald-400/50 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                <span className="text-[10px] font-black uppercase tracking-widest">Strategy:</span>
-                <span className="text-xs font-black tracking-tight">{simulationData.meta.master_name}</span>
-              </div>
-            )}
-            <div className="flex gap-2 opacity-60">
-              {simulationData.meta?.used_portfolios?.corp && (
-                <div className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full flex items-center gap-2">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">Corp:</span>
-                  <span className="text-[10px] font-black text-slate-400">{simulationData.meta.used_portfolios.corp.name}</span>
-                </div>
-              )}
-              {simulationData.meta?.used_portfolios?.pension && (
-                <div className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full flex items-center gap-2">
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Pen:</span>
-                  <span className="text-[10px] font-black text-slate-400">{simulationData.meta.used_portfolios.pension.name}</span>
-                </div>
-              )}
-              <div className="px-3 py-1 bg-slate-900/50 border border-slate-800 rounded-full flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">Rate: 1USD = {exchangeRate.toFixed(1)} KRW</span>
-              </div>
+            <div className="p-2 bg-slate-800 rounded-lg"><Settings2 size={20} className="text-slate-400" /></div>
+            <div>
+              <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">미래 시장에 대한 본인만의 가정을 선택하세요</p>
             </div>
           </div>
         </div>
