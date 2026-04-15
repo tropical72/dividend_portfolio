@@ -255,8 +255,8 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
             </div>
           </section>
 
-          <section className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
-            <button onClick={() => setIsAdvancedOpen(!isAdvancedOpen)} className="w-full p-8 flex items-center justify-between hover:bg-slate-800/20 transition-all group" data-testid="advanced-settings-toggle">
+          <section className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 relative">
+            <button onClick={() => setIsAdvancedOpen(!isAdvancedOpen)} className="w-full p-8 flex items-center justify-between hover:bg-slate-800/20 transition-all group rounded-[2.5rem]" data-testid="advanced-settings-toggle">
               <div className="flex items-center gap-3 text-xs font-black text-amber-500 uppercase tracking-widest">
                 <Gauge size={18} /> Advanced Engine
                 <div className="group relative ml-2">
@@ -276,7 +276,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                     <div className="flex items-center gap-2">
                       <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Yield Multipliers</h4>
                       <div className="group relative">
-                        <Info size={10} className="text-slate-700 cursor-help" />
+                        <Info size={12} className="text-slate-700 cursor-help" />
                         <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                           자산군별로 시장 수익률 대비 가중치를 설정합니다.
                         </div>
@@ -291,7 +291,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                     <div className="flex items-center gap-2">
                       <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Trigger Thresholds</h4>
                       <div className="group relative">
-                        <Info size={10} className="text-slate-700 cursor-help" />
+                        <Info size={12} className="text-slate-700 cursor-help" />
                         <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                           리밸런싱이나 인출 전략이 변경되는 임계점 설정입니다.
                         </div>
