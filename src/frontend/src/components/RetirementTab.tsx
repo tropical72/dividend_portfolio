@@ -101,16 +101,16 @@ export function RetirementTab() {
                 </h1>
               </div>
 
-              {/* 환율: 박스에서 차분한 배지로 변경 */}
+              {/* 환율: 백엔드 실시간 동기화 값 반영 */}
               <div className="flex items-center gap-4 bg-slate-950/50 border border-slate-800 rounded-2xl px-6 py-3 self-start lg:self-auto">
                 <div className="text-right">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
                   <p className="text-xl font-black text-slate-300 tabular-nums leading-none">
-                    1,425.5 <span className="text-[10px] text-slate-600 ml-0.5">KRW/USD</span>
+                    {exchangeRate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-[10px] text-slate-600 ml-0.5">KRW/USD</span>
                   </p>
                 </div>
                 <div className="w-px h-8 bg-slate-800 mx-1" />
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <div className="p-2 bg-emerald-500/10 rounded-lg" title="12시간 주기로 실시간 환율 자동 갱신">
                   <RotateCcw size={14} className="text-emerald-500/60" />
                 </div>
               </div>
