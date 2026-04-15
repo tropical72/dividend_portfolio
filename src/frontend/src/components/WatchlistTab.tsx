@@ -234,7 +234,7 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
               </button>
             </div>
             <h3 className="text-base font-bold text-slate-50 mb-1">Select Category</h3>
-            <p className="text-slate-400 text-[10px] mb-4">어느 카테고리에 추가하시겠습니까?</p>
+            <p className="text-slate-400 text-[11px] mb-4">어느 카테고리에 추가하시겠습니까?</p>
             
             <div className="space-y-2">
               <button 
@@ -360,34 +360,34 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                 </button>
               </th>
               <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("symbol")}>
-                <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Ticker <SortIcon columnKey="symbol" /></div>
+                <div className="flex items-center gap-1 uppercase tracking-wider text-[11px]">Ticker <SortIcon columnKey="symbol" /></div>
               </th>
               <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors min-w-[180px]" onClick={() => handleSort("name")}>
-                <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Name <SortIcon columnKey="name" /></div>
+                <div className="flex items-center gap-1 uppercase tracking-wider text-[11px]">Name <SortIcon columnKey="name" /></div>
               </th>
               <th className="px-4 py-5 cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("price")}>
-                <div className="flex items-center gap-1 uppercase tracking-wider text-[10px]">Price <SortIcon columnKey="price" /></div>
+                <div className="flex items-center gap-1 uppercase tracking-wider text-[11px]">Price <SortIcon columnKey="price" /></div>
               </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_yield")}>
                 <div className="flex flex-col items-end leading-tight">
-                  <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Yield <SortIcon columnKey="dividend_yield" /></div>
-                  <span className="text-[10px] opacity-60 font-normal mr-4">TTM</span>
+                  <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">Yield <SortIcon columnKey="dividend_yield" /></div>
+                  <span className="text-[11px] opacity-60 font-normal mr-4">TTM</span>
                 </div>
               </th>
               <th className="px-4 py-5 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_frequency")}>
-                <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[10px]">Cycle <SortIcon columnKey="dividend_frequency" /></div>
+                <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[11px]">Cycle <SortIcon columnKey="dividend_frequency" /></div>
               </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("one_yr_return")}>
-                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">1-Yr Rtn <SortIcon columnKey="one_yr_return" /></div>
+                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">1-Yr Rtn <SortIcon columnKey="one_yr_return" /></div>
               </th>
               <th className="px-4 py-5 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("ex_div_date")}>
-                <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[10px]">Ex-Div <SortIcon columnKey="ex_div_date" /></div>
+                <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[11px]">Ex-Div <SortIcon columnKey="ex_div_date" /></div>
               </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("last_div_amount")}>
-                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Last Amt <SortIcon columnKey="last_div_amount" /></div>
+                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">Last Amt <SortIcon columnKey="last_div_amount" /></div>
               </th>
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors font-bold" onClick={() => handleSort("past_avg_monthly_div")}>
-                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px] text-emerald-400">Monthly <SortIcon columnKey="past_avg_monthly_div" /></div>
+                <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px] text-emerald-400">Monthly <SortIcon columnKey="past_avg_monthly_div" /></div>
               </th>
             </tr>
           </thead>
@@ -421,13 +421,13 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                 </td>
                 <td className="px-4 py-4 text-slate-100 whitespace-nowrap font-medium">
                   {(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  <span className="text-[10px] text-slate-500 ml-1">{item.currency || "USD"}</span>
+                  <span className="text-[11px] text-slate-500 ml-1">{item.currency || "USD"}</span>
                 </td>
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold">{(item.dividend_yield || 0).toFixed(2)}%</td>
                 <td className="px-4 py-4 text-center">
                   <div className="flex flex-col items-center gap-1">
                     <span className={cn(
-                      "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                      "px-2 py-0.5 rounded-full text-[11px] font-bold uppercase",
                       !item.dividend_frequency.includes("(New)") && item.dividend_frequency !== "None" 
                         ? "bg-emerald-500/10 text-emerald-400" 
                         : "bg-slate-800 text-slate-400"
@@ -435,7 +435,7 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                       {item.dividend_frequency.replace(" (New)", "")}
                     </span>
                     {item.dividend_frequency.includes("(New)") && (
-                      <span className="text-[10px] text-slate-500 font-medium leading-none">
+                      <span className="text-[11px] text-slate-500 font-medium leading-none">
                         (NEW)
                       </span>
                     )}
@@ -449,16 +449,16 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                 </td>
                 <td className="px-4 py-4 text-right text-slate-100 font-medium">
                   {(item.last_div_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  <span className="text-[10px] text-slate-500 ml-1">{item.currency || "USD"}</span>
+                  <span className="text-[11px] text-slate-500 ml-1">{item.currency || "USD"}</span>
                 </td>
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold text-base bg-emerald-500/5">
                   {(item.past_avg_monthly_div || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  <span className="text-[10px] text-slate-500/70 ml-1 font-normal">{item.currency || "USD"}</span>
+                  <span className="text-[11px] text-slate-500/70 ml-1 font-normal">{item.currency || "USD"}</span>
                 </td>
               </tr>
             ))}
             {watchlist.length === 0 && (
-              <tr><td colSpan={10} className="px-6 py-20 text-center text-slate-600 italic font-sans uppercase text-[10px] tracking-widest">No stocks added yet.</td></tr>
+              <tr><td colSpan={10} className="px-6 py-20 text-center text-slate-600 italic font-sans uppercase text-[11px] tracking-widest">No stocks added yet.</td></tr>
             )}
           </tbody>
         </table>

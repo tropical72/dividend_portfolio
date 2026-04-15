@@ -288,7 +288,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
           <div className="p-2 bg-emerald-500/10 rounded-lg"><TrendingUp size={20} className="text-emerald-400" /></div>
           <div>
             <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Master Strategy</h3>
-            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">은퇴 시뮬레이션에 주입할 최종 포트폴리오 세트</p>
+            <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">은퇴 시뮬레이션에 주입할 최종 포트폴리오 세트</p>
           </div>
         </div>
 
@@ -306,14 +306,14 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-200 focus:border-emerald-500/50 outline-none transition-all" 
               />
               <div className="space-y-2">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Corporate Portfolio</p>
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">Corporate Portfolio</p>
                 <select value={selectedCorpId} onChange={e => setSelectedCorpId(e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none">
                   <option value="">None</option>
                   {portfolios.filter(p => p.account_type === "Corporate").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Pension Portfolio</p>
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">Pension Portfolio</p>
                 <select value={selectedPenId} onChange={e => setSelectedPenId(e.target.value)} className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none">
                   <option value="">None</option>
                   {portfolios.filter(p => p.account_type === "Pension").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -357,9 +357,9 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
                           <h4 className="text-xl font-black text-slate-100">{m.name}</h4>
-                          {m.is_active && <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">Active</div>}
+                          {m.is_active && <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[11px] font-black rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">Active</div>}
                         </div>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-3">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-3">
                           <span className="text-emerald-500/80 font-black">Corp:</span> {c_p?.name || "-"} 
                           <span className="text-slate-800 mx-1">/</span>
                           <span className="text-blue-500/80 font-black">Pen:</span> {p_p?.name || "-"}
@@ -370,9 +370,9 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                     <div className="flex items-center gap-16">
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip relative">
-                          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Estimated Yield</p>
+                          <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Estimated Yield</p>
                           <Info size={10} className="text-slate-600 cursor-help" />
-                          <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover/tip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/tip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                             각 종목의 비중(Weight)을 가중치로 사용한 배당수익률(Dividend Yield)과 기대성장률의 가중평균 합산 결과입니다.
                           </div>
                         </div>
@@ -412,7 +412,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
             <h3 className="text-lg font-black text-slate-200 flex items-center gap-2 mb-1">
               <TrendingUp className="text-emerald-400" size={20} /> Global Simulator
             </h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Override individual capital for all portfolios below</p>
+            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Override individual capital for all portfolios below</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="relative group min-w-[220px]">
@@ -458,9 +458,9 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
                   <BarChart3 className="text-emerald-400" size={24} /> Monthly Dividend Comparison ({globalCurrency})
                 </h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">Aggregated income across selected portfolios</p>
+                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">Aggregated income across selected portfolios</p>
               </div>
-              <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700">Clear Selection</button>
+              <button onClick={() => setSelectedIds(new Set())} className="text-[11px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700">Clear Selection</button>
             </div>
             <div className="h-[350px] w-full text-xs">
               <ResponsiveContainer width="100%" height="100%">
@@ -476,7 +476,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       "Income"
                     ]} 
                   />
-                  <Legend wrapperStyle={{ paddingTop: '30px' }} iconType="circle" formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value}</span>} />
+                  <Legend wrapperStyle={{ paddingTop: '30px' }} iconType="circle" formatter={(value) => <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{value}</span>} />
                   {portfolios.filter(p => selectedIds.has(p.id)).map((p, idx) => (
                     <Bar key={p.id} dataKey={p.name} fill={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} radius={[6, 6, 0, 0]} barSize={selectedIds.size > 2 ? 15 : 30} />
                   ))}
@@ -515,27 +515,27 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-slate-800/50">
-                      <th className="py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Indicator</th>
+                      <th className="py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest">Indicator</th>
                       {metrics.map(m => (
-                        <th key={m.name} className="py-4 px-4 text-right text-[10px] font-black text-slate-300 uppercase truncate max-w-[100px]">{m.name}</th>
+                        <th key={m.name} className="py-4 px-4 text-right text-[11px] font-black text-slate-300 uppercase truncate max-w-[100px]">{m.name}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/30">
                     <tr>
-                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Avg Yield (DY)</td>
+                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Avg Yield (DY)</td>
                       {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-emerald-400">{m.yield.toFixed(2)}%</td>)}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Est. Income ({globalCurrency})</td>
+                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Est. Income ({globalCurrency})</td>
                       {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-slate-100">{globalCurrency === "USD" ? `$${Math.round(m.annualIncome).toLocaleString()}` : `₩${Math.round(m.annualIncome * exchangeRate).toLocaleString()}`}</td>)}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Assets Count</td>
+                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Assets Count</td>
                       {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-slate-400">{m.assetCount}</td>)}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Core Asset</td>
+                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Core Asset</td>
                       {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-blue-400">{m.topAsset}</td>)}
                     </tr>
                   </tbody>
@@ -606,7 +606,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       <div className="flex items-center gap-1.5 group/ytip relative">
                         <span className="text-emerald-500/80 font-black">Yield: {getDY(p).toFixed(2)}%</span>
                         <Info size={10} className="text-slate-600 cursor-help" />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover/ytip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/ytip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                           해당 포트폴리오의 가중 평균 배당률과 기대 수익률 합계입니다.
                         </div>
                       </div>
@@ -617,7 +617,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
+                    <p className="text-[11px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
                       * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
                     </p>
                   </div>

@@ -120,7 +120,7 @@ export function RetirementTab() {
             <div className="flex-1 space-y-1 relative">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-1 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Active Strategy</p>
+                <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Active Strategy</p>
               </div>
               
               <div 
@@ -141,7 +141,7 @@ export function RetirementTab() {
 
               {isSwitcherOpen && (
                 <div className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10">
-                  <p className="px-6 py-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">Change Plan</p>
+                  <p className="px-6 py-1.5 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">Change Plan</p>
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     {masterPortfolios.map(m => (
                       <div 
@@ -156,7 +156,7 @@ export function RetirementTab() {
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-black tracking-tight truncate">{m.name}</p>
                             {m.combined_yield !== undefined && (
-                              <span className="text-[10px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
+                              <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
                                 {(m.combined_yield * 100).toFixed(1)}%
                               </span>
                             )}
@@ -178,14 +178,14 @@ export function RetirementTab() {
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Building2 className="text-emerald-500/50" size={18} />
                 <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Corporate</p>
+                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Corporate</p>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None"}</p>
                 </div>
               </div>
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Wallet2 className="text-blue-500/50" size={18} />
                 <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Pension</p>
+                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Pension</p>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None"}</p>
                 </div>
               </div>
@@ -193,10 +193,10 @@ export function RetirementTab() {
 
             <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-6 py-3">
               <div className="text-right">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
                 <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
                   {exchangeRate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                  <span className="text-[10px] text-slate-600 ml-1 font-bold">KRW</span>
+                  <span className="text-[11px] text-slate-600 ml-1 font-bold">KRW</span>
                 </p>
               </div>
             </div>
@@ -211,7 +211,7 @@ export function RetirementTab() {
             <div className="p-2 bg-slate-800 rounded-lg"><Settings2 size={20} className="text-slate-400" /></div>
             <div>
               <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 1. Set the Basis</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">미래 시장에 대한 본인만의 가정을 선택하세요</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">미래 시장에 대한 본인만의 가정을 선택하세요</p>
             </div>
           </div>
         </div>
@@ -224,7 +224,7 @@ export function RetirementTab() {
               </div>
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase">Return</p>
+                  <p className="text-[11px] font-black text-slate-500 uppercase">Return</p>
                   <EditableInput 
                     id={`return-${id}`} 
                     initialValue={item.expected_return * 100} 
@@ -243,7 +243,7 @@ export function RetirementTab() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-500 uppercase">Inflation</p>
+                  <p className="text-[11px] font-black text-slate-500 uppercase">Inflation</p>
                   <EditableInput 
                     id={`inflation-${id}`} 
                     initialValue={item.inflation_rate * 100} 
@@ -316,7 +316,7 @@ export function RetirementTab() {
         <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
           <div className="max-h-[650px] overflow-y-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
                 <tr className="border-b border-slate-800">
                   <th className="px-6 py-5 text-center">Date (Age)</th>
                   <th className="px-6 py-5">Phase</th>
@@ -332,13 +332,13 @@ export function RetirementTab() {
                 {monthlyData.map((m, idx) => (
                   <tr key={idx} className={cn("hover:bg-slate-800/40 transition-colors group", m.event ? "bg-emerald-500/5" : "")}>
                     <td className="px-6 py-4 text-xs font-bold text-slate-400 text-center">{m.year}-{String(m.month).padStart(2, '0')} ({m.age}세)</td>
-                    <td className="px-6 py-4 text-left"><span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter shadow-sm", m.phase === "Phase 1" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : m.phase === "Phase 2" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20")}>{m.phase}</span></td>
-                    <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">{(m.target_cashflow / 10000).toFixed(0)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">만</span></td>
-                    <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">{((m.net_salary + (m.pension_draw || 0)) / 10000).toFixed(0)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">만</span></td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">{(m.corp_balance / 100000000).toFixed(2)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">억</span></td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">{(m.pension_balance / 100000000).toFixed(2)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">억</span></td>
-                    <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">{(m.total_net_worth / 100000000).toFixed(2)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">억</span></td>
-                    <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">{(m.loan_balance / 100000000).toFixed(2)}<span className="text-[10px] ml-0.5 opacity-50 text-slate-500">억</span></td>
+                    <td className="px-6 py-4 text-left"><span className={cn("px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-tighter shadow-sm", m.phase === "Phase 1" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : m.phase === "Phase 2" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20")}>{m.phase}</span></td>
+                    <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">{(m.target_cashflow / 10000).toFixed(0)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">만</span></td>
+                    <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">{((m.net_salary + (m.pension_draw || 0)) / 10000).toFixed(0)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">만</span></td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">{(m.corp_balance / 100000000).toFixed(2)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">억</span></td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">{(m.pension_balance / 100000000).toFixed(2)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">억</span></td>
+                    <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">{(m.total_net_worth / 100000000).toFixed(2)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">억</span></td>
+                    <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">{(m.loan_balance / 100000000).toFixed(2)}<span className="text-[11px] ml-0.5 opacity-50 text-slate-500">억</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -353,7 +353,7 @@ export function RetirementTab() {
 function MetricCard({ label, value, tooltip }: { label: string, value: string, tooltip: string }) {
   return (
     <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 group relative">
-      <div className="flex items-center gap-2 mb-2"><p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{label}</p><div className="group relative"><Info size={12} className="text-slate-600 cursor-help" /><div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal">{tooltip}</div></div></div>
+      <div className="flex items-center gap-2 mb-2"><p className="text-[11px] text-slate-500 uppercase font-black tracking-widest">{label}</p><div className="group relative"><Info size={12} className="text-slate-600 cursor-help" /><div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal">{tooltip}</div></div></div>
       <span className="text-base font-black text-slate-200">{value}</span>
     </div>
   );
@@ -369,7 +369,7 @@ function EditableInput({ id, initialValue, masterValue, onCommit }: { id: string
         <input id={id} data-testid={id} type="text" className="bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 w-28 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all pr-10" value={value} onChange={(e) => setValue(e.target.value)} onBlur={() => !isNaN(parseFloat(value)) && onCommit(parseFloat(value))} onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()} />
         <span className="absolute right-4 text-xs font-black text-slate-500">%</span>
       </div>
-      {Math.abs(initialValue - masterValue) > 0.05 && <button onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }} className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"><RotateCcw size={16} strokeWidth={3} /><span className="text-[10px] font-black uppercase">Reset</span></button>}
+      {Math.abs(initialValue - masterValue) > 0.05 && <button onClick={(e) => { e.stopPropagation(); onCommit(masterValue); }} className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"><RotateCcw size={16} strokeWidth={3} /><span className="text-[11px] font-black uppercase">Reset</span></button>}
     </div>
   );
 }

@@ -38,7 +38,7 @@ function SectionTitle({ icon: Icon, title, color, tooltip }: { icon: any, title:
       </h3>
       <div className="group relative">
         <Info size={14} className="text-slate-600 cursor-help" />
-        <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+        <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
           {tooltip}
         </div>
       </div>
@@ -169,23 +169,23 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
               <div className="flex items-center gap-4">
                 <div className="group relative">
                   <Info size={14} className="text-slate-600 cursor-help" />
-                  <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                     미래에 발생할 일시적인 자산 유입(부동산 매도 등)이나 큰 지출을 등록합니다.
                   </div>
                 </div>
                 <button onClick={addCashflow} className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition-all uppercase tracking-widest"><Plus size={16} /> Add Event</button>
               </div>
             </div>
-            <div className="space-y-6">{(!retireConfig.planned_cashflows || retireConfig.planned_cashflows.length === 0) ? <p className="text-center py-10 text-slate-600 text-[10px] font-black uppercase border border-dashed border-slate-800 rounded-2xl">No events planned</p> : 
+            <div className="space-y-6">{(!retireConfig.planned_cashflows || retireConfig.planned_cashflows.length === 0) ? <p className="text-center py-10 text-slate-600 text-[11px] font-black uppercase border border-dashed border-slate-800 rounded-2xl">No events planned</p> : 
                 retireConfig.planned_cashflows.map((ev) => (
                   <div key={ev.id} className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 space-y-6 group relative">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                      <div className="md:col-span-3 flex flex-col gap-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1">Type & Target</label><div className="flex gap-2"><select value={ev.type} onChange={(e) => updateCashflow(ev.id, {type: e.target.value as PlannedCashflow["type"]})} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2 text-[10px] font-black uppercase text-slate-300 outline-none"><option value="INFLOW">In (+) </option><option value="OUTFLOW">Out (-)</option></select><select value={ev.entity} onChange={(e) => updateCashflow(ev.id, {entity: e.target.value as PlannedCashflow["entity"]})} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-2 text-[10px] font-black uppercase text-slate-300 outline-none"><option value="CORP">Corp</option><option value="PENSION">Pen</option></select></div></div>
-                      <div className="md:col-span-5 flex flex-col gap-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1">Amount</label><div className="flex items-center gap-2"><select value={ev.currency || "USD"} onChange={(e) => updateCashflow(ev.id, {currency: e.target.value as PlannedCashflow["currency"]})} className="h-11 w-20 bg-slate-800 border border-slate-700 rounded-xl px-2 text-[10px] font-black text-slate-400 outline-none"><option value="USD">$</option><option value="KRW">₩</option></select><input type="text" value={Math.floor(ev.amount || 0).toLocaleString()} onChange={(e) => { const val = parseInt(e.target.value.replace(/,/g, "")) || 0; updateCashflow(ev.id, {amount: val}); }} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50" /></div></div>
-                      <div className="md:col-span-2 flex flex-col gap-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1">Year</label><input type="number" value={Math.floor(ev.year || 2030)} onChange={(e) => updateCashflow(ev.id, {year: parseInt(e.target.value) || 2030})} className="h-11 w-full bg-slate-900 border border-slate-800 rounded-xl px-3 text-sm font-black text-slate-200 text-center outline-none" /></div>
-                      <div className="md:col-span-2 flex flex-col gap-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1">Month</label><input type="number" value={Math.floor(ev.month || 1)} onChange={(e) => updateCashflow(ev.id, {month: parseInt(e.target.value) || 1})} className="h-11 w-full bg-slate-900 border border-slate-800 rounded-xl px-3 text-sm font-black text-slate-200 text-center outline-none" /></div>
+                      <div className="md:col-span-3 flex flex-col gap-2"><label className="text-[11px] font-black text-slate-500 uppercase ml-1">Type & Target</label><div className="flex gap-2"><select value={ev.type} onChange={(e) => updateCashflow(ev.id, {type: e.target.value as PlannedCashflow["type"]})} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2 text-[11px] font-black uppercase text-slate-300 outline-none"><option value="INFLOW">In (+) </option><option value="OUTFLOW">Out (-)</option></select><select value={ev.entity} onChange={(e) => updateCashflow(ev.id, {entity: e.target.value as PlannedCashflow["entity"]})} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-2 text-[11px] font-black uppercase text-slate-300 outline-none"><option value="CORP">Corp</option><option value="PENSION">Pen</option></select></div></div>
+                      <div className="md:col-span-5 flex flex-col gap-2"><label className="text-[11px] font-black text-slate-500 uppercase ml-1">Amount</label><div className="flex items-center gap-2"><select value={ev.currency || "USD"} onChange={(e) => updateCashflow(ev.id, {currency: e.target.value as PlannedCashflow["currency"]})} className="h-11 w-20 bg-slate-800 border border-slate-700 rounded-xl px-2 text-[11px] font-black text-slate-400 outline-none"><option value="USD">$</option><option value="KRW">₩</option></select><input type="text" value={Math.floor(ev.amount || 0).toLocaleString()} onChange={(e) => { const val = parseInt(e.target.value.replace(/,/g, "")) || 0; updateCashflow(ev.id, {amount: val}); }} className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50" /></div></div>
+                      <div className="md:col-span-2 flex flex-col gap-2"><label className="text-[11px] font-black text-slate-500 uppercase ml-1">Year</label><input type="number" value={Math.floor(ev.year || 2030)} onChange={(e) => updateCashflow(ev.id, {year: parseInt(e.target.value) || 2030})} className="h-11 w-full bg-slate-900 border border-slate-800 rounded-xl px-3 text-sm font-black text-slate-200 text-center outline-none" /></div>
+                      <div className="md:col-span-2 flex flex-col gap-2"><label className="text-[11px] font-black text-slate-500 uppercase ml-1">Month</label><input type="number" value={Math.floor(ev.month || 1)} onChange={(e) => updateCashflow(ev.id, {month: parseInt(e.target.value) || 1})} className="h-11 w-full bg-slate-900 border border-slate-800 rounded-xl px-3 text-sm font-black text-slate-200 text-center outline-none" /></div>
                     </div>
-                    <div className="flex flex-col gap-2 pt-4 border-t border-slate-900"><label className="text-[10px] font-black text-slate-500 uppercase ml-1">Description</label><div className="flex items-center gap-4"><input type="text" value={ev.description || ""} onFocus={(e) => e.target.select()} onChange={(e) => updateCashflow(ev.id, {description: e.target.value})} className="flex-1 bg-slate-900/50 border border-slate-800/50 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 placeholder:text-slate-700 outline-none focus:border-slate-600 focus:bg-slate-900" placeholder="상세 내용을 입력하세요" /><button onClick={() => removeCashflow(ev.id)} className="p-3 text-slate-600 hover:text-rose-500 bg-slate-900 hover:bg-rose-500/10 rounded-xl transition-all border border-slate-800"><Trash2 size={20} /></button></div></div>
+                    <div className="flex flex-col gap-2 pt-4 border-t border-slate-900"><label className="text-[11px] font-black text-slate-500 uppercase ml-1">Description</label><div className="flex items-center gap-4"><input type="text" value={ev.description || ""} onFocus={(e) => e.target.select()} onChange={(e) => updateCashflow(ev.id, {description: e.target.value})} className="flex-1 bg-slate-900/50 border border-slate-800/50 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 placeholder:text-slate-700 outline-none focus:border-slate-600 focus:bg-slate-900" placeholder="상세 내용을 입력하세요" /><button onClick={() => removeCashflow(ev.id)} className="p-3 text-slate-600 hover:text-rose-500 bg-slate-900 hover:bg-rose-500/10 rounded-xl transition-all border border-slate-800"><Trash2 size={20} /></button></div></div>
                   </div>
                 ))
               }</div>
@@ -203,17 +203,17 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5 ml-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Health Unit Price</label>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Health Unit Price</label>
                   <div className="group relative">
                     <Info size={12} className="text-slate-600 cursor-help" />
-                    <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                    <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                       지역가입자 건강보험료 산정을 위한 점수당 단가입니다. (2024년 기준 208.4원)
                     </div>
                   </div>
                 </div>
                 <div className="relative">
                   <input type="number" step="0.1" value={retireConfig.tax_and_insurance?.point_unit_price || 208.4} onChange={(e) => setRetireConfig({...retireConfig, tax_and_insurance: {...retireConfig.tax_and_insurance, point_unit_price: parseFloat(e.target.value)}})} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500" />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">KRW</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">KRW</span>
                 </div>
               </div>
               <InputGroup label="SGOV Buffer" unit="Mo" tooltip="법인 운영비 및 지출을 위해 안전 자산(SGOV 등)으로 확보해둘 목표 개월수입니다." value={retireConfig.trigger_thresholds?.target_buffer_months || 24} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, target_buffer_months: parseInt(v) || 0}})} />
@@ -226,10 +226,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
               {Object.entries(retireConfig.assumptions).map(([id, item]) => (
                 <div key={id} className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name || (id === 'v1' ? 'Standard' : 'Conservative')}</h4>
+                    <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{item.name || (id === 'v1' ? 'Standard' : 'Conservative')}</h4>
                     <div className="group relative">
                       <Info size={12} className="text-slate-700 cursor-help" />
-                      <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                         {id === 'v1' ? '표준적인 시장 상황을 가정한 시나리오입니다.' : '보수적이고 방어적인 시장 상황을 가정한 시나리오입니다.'}
                       </div>
                     </div>
@@ -261,7 +261,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                 <Gauge size={18} /> Advanced Engine
                 <div className="group relative ml-2">
                   <Info size={14} className="text-slate-700 cursor-help" />
-                  <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-200 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                  <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-200 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                     계산 엔진의 세부 동작 파라미터를 제어합니다. 전문가용 설정입니다.
                   </div>
                 </div>
@@ -274,10 +274,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                   <InputGroup label="High Income Cap" unit="%" tooltip="고소득(건보료 상한 등) 시 자산 인출을 제한하는 수익률 임계치입니다." value={retireConfig.trigger_thresholds.high_income_cap_rate * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, high_income_cap_rate: parseFloat(v)/100}})} />
                   <div className="space-y-4 pt-4 border-t border-slate-800/50">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Yield Multipliers</h4>
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Yield Multipliers</h4>
                       <div className="group relative">
                         <Info size={10} className="text-slate-700 cursor-help" />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                           자산군별로 시장 수익률 대비 가중치를 설정합니다.
                         </div>
                       </div>
@@ -289,10 +289,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
                   </div>
                   <div className="space-y-4 pt-4 border-t border-slate-800/50">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Trigger Thresholds</h4>
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Trigger Thresholds</h4>
                       <div className="group relative">
                         <Info size={10} className="text-slate-700 cursor-help" />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                           리밸런싱이나 인출 전략이 변경되는 임계점 설정입니다.
                         </div>
                       </div>
@@ -317,10 +317,10 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
             )}
             {!status && (
               <div className="flex items-center gap-2 px-2">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Commit strategy changes to server.</p>
+                <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest">Commit strategy changes to server.</p>
                 <div className="group relative">
                   <Info size={12} className="text-slate-700 cursor-help" />
-                  <div className="absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                  <div className="absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                     현재 수정된 모든 설정값을 서버에 영구적으로 저장합니다.
                   </div>
                 </div>
@@ -343,12 +343,12 @@ function InputGroup({ label, value, onChange, isCurrency = false, unit, tooltip,
   return (
     <div className="space-y-1.5" data-testid={`input-group-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center gap-1.5 ml-1">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
+        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
         {tooltip && (
           <div className="group relative">
             <Info size={12} className="text-slate-600 cursor-help" data-testid="tooltip-icon" />
             <div className={cn(
-              "absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95",
+              "absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95",
               tooltipAlign === "right" ? "right-0" : "left-0"
             )}>
               {tooltip}
@@ -363,7 +363,7 @@ function InputGroup({ label, value, onChange, isCurrency = false, unit, tooltip,
           onChange={(e) => { const rawValue = e.target.value.replace(/,/g, ""); onChange(rawValue === "" ? "0" : rawValue); }} 
           className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all" 
         />
-        {(isCurrency || unit) && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">{isCurrency ? "KRW" : unit}</span>}
+        {(isCurrency || unit) && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">{isCurrency ? "KRW" : unit}</span>}
       </div>
     </div>
   );
@@ -384,10 +384,10 @@ function EditableInput({ id, label, unit, initialValue, systemDefault, onCommit 
   return (
     <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-1.5 ml-1">
-        <label className="text-[10px] font-black text-slate-500 uppercase">{label}</label>
+        <label className="text-[11px] font-black text-slate-500 uppercase">{label}</label>
         <div className="group relative">
           <Info size={10} className="text-slate-700 cursor-help" />
-          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
             {label === "Expected Return" ? "미래 예상 수익률을 % 단위로 입력하세요." : "미래 예상 인플레이션율을 % 단위로 입력하세요."}
           </div>
         </div>
@@ -404,7 +404,7 @@ function EditableInput({ id, label, unit, initialValue, systemDefault, onCommit 
             onBlur={handleBlur} 
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} 
           />
-          {unit && <span className="absolute right-4 text-[10px] font-black text-slate-600">{unit}</span>}
+          {unit && <span className="absolute right-4 text-[11px] font-black text-slate-600">{unit}</span>}
         </div>
         {Math.abs(initialValue - (systemDefault * 100)) > 0.01 && (
           <button 

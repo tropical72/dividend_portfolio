@@ -249,7 +249,7 @@ export function PortfolioTab({
             
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Ticker Symbol</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Ticker Symbol</label>
                 <input 
                   type="text" 
                   placeholder="e.g. AAPL"
@@ -259,7 +259,7 @@ export function PortfolioTab({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Stock Name</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Stock Name</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Apple Inc."
@@ -269,7 +269,7 @@ export function PortfolioTab({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Allocation Weight (%)</label>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Allocation Weight (%)</label>
                 <input 
                   type="number" 
                   placeholder="0"
@@ -604,7 +604,7 @@ export function PortfolioTab({
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Portfolio Name</label>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Portfolio Name</label>
               <input 
                 type="text" 
                 value={tempPortfolioName} 
@@ -629,7 +629,7 @@ export function PortfolioTab({
                     <Plus size={16} strokeWidth={4} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Save as Copy</p>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">Save as Copy</p>
                     <p className="text-xs font-bold text-slate-300">다른 이름으로 새 항목 저장</p>
                   </div>
                 </div>
