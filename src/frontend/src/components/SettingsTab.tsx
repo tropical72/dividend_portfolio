@@ -172,7 +172,29 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={18} /> Assumptions</h3>
-            <div className="space-y-4">{Object.entries(retireConfig.assumptions).map(([id, item]) => (<div key={id} className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4"><h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name}</h4><div className="grid grid-cols-1 gap-4"><EditableInput label="Return" unit="%" initialValue={(item.master_return || item.expected_return) * 100} systemDefault={id === 'v1' ? 4.85 : 3.5} onCommit={(v) => setRetireConfig({...retireConfig, assumptions: {...retireConfig.assumptions, [id]: {...item, master_return: v/100, expected_return: v/100}}})} /><EditableInput label="Inflation" unit="%" initialValue={(item.master_inflation || item.inflation_rate) * 100} systemDefault={id === 'v1' ? 2.5 : 3.5} onCommit={(v) => setRetireConfig({...retireConfig, assumptions: {...retireConfig.assumptions, [id]: {...item, master_inflation: v/100, inflation_rate: v/100}}})} /></div></div>))}</div>
+            <div className="space-y-4">
+              {Object.entries(retireConfig.assumptions).map(([id, item]) => (
+                <div key={id} className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name || (id === 'v1' ? 'Standard' : 'Conservative')}</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <EditableInput 
+                      label="Expected Return" 
+                      unit="%" 
+                      initialValue={(item.master_return || item.expected_return) * 100} 
+                      systemDefault={id === 'v1' ? 0.0485 : 0.035} 
+                      onCommit={(v) => setRetireConfig({...retireConfig, assumptions: {...retireConfig.assumptions, [id]: {...item, master_return: v/100, expected_return: v/100}}})} 
+                    />
+                    <EditableInput 
+                      label="Inflation Rate" 
+                      unit="%" 
+                      initialValue={(item.master_inflation || item.inflation_rate) * 100} 
+                      systemDefault={id === 'v1' ? 0.025 : 0.035} 
+                      onCommit={(v) => setRetireConfig({...retireConfig, assumptions: {...retireConfig.assumptions, [id]: {...item, master_inflation: v/100, inflation_rate: v/100}}})} 
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
@@ -203,14 +225,45 @@ function InputGroup({ label, value, onChange, isCurrency = false, unit, tooltip,
   );
 }
 
-function EditableInput({ id, unit, initialValue, systemDefault, onCommit }: { id: string, unit?: string, initialValue: number, systemDefault: number, onCommit: (val: number) => void }) {
-  const [value, setValue] = useState(initialValue.toFixed(1));
-  useEffect(() => { setValue(initialValue.toFixed(1)); }, [initialValue]);
-  const handleBlur = () => { const num = parseFloat(value); if (!isNaN(num)) { onCommit(num); setValue(num.toFixed(1)); } else { setValue(initialValue.toFixed(1)); } };
+function EditableInput({ id, label, unit, initialValue, systemDefault, onCommit }: { id?: string, label: string, unit?: string, initialValue: number, systemDefault: number, onCommit: (val: number) => void }) {
+  const [value, setValue] = useState(initialValue.toFixed(2));
+  useEffect(() => { setValue(initialValue.toFixed(2)); }, [initialValue]);
+  const handleBlur = () => { 
+    const num = parseFloat(value); 
+    if (!isNaN(num)) { 
+      onCommit(num); 
+      setValue(num.toFixed(2)); 
+    } else { 
+      setValue(initialValue.toFixed(2)); 
+    } 
+  };
   return (
     <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Value</label>
-      <div className="flex items-center gap-3"><div className="relative flex-1 flex items-center"><input id={id} data-testid={id} type="text" className="w-full bg-slate-900 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-blue-500/50 pr-10" value={value} onChange={(e) => setValue(e.target.value)} onBlur={handleBlur} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />{unit && <span className="absolute right-4 text-[10px] font-black text-slate-600">{unit}</span>}</div>{Math.abs(initialValue - (systemDefault * 100)) > 0.01 && <button onClick={(e) => { e.stopPropagation(); onCommit(systemDefault * 100); }} className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl text-blue-400 transition-all flex-shrink-0"><RotateCcw size={14} /></button>}</div>
+      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{label}</label>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 flex items-center">
+          <input 
+            id={id} 
+            data-testid={id} 
+            type="text" 
+            className="w-full bg-slate-900 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-blue-500/50 pr-10" 
+            value={value} 
+            onChange={(e) => setValue(e.target.value)} 
+            onBlur={handleBlur} 
+            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} 
+          />
+          {unit && <span className="absolute right-4 text-[10px] font-black text-slate-600">{unit}</span>}
+        </div>
+        {Math.abs(initialValue - (systemDefault * 100)) > 0.01 && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onCommit(systemDefault * 100); }} 
+            className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl text-blue-400 transition-all flex-shrink-0"
+            title="Reset to System Default"
+          >
+            <RotateCcw size={14} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
