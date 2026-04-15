@@ -254,9 +254,14 @@ class DividendBackend:
         return {"success": False, "message": "전략을 찾을 수 없습니다."}
 
     def remove_master_portfolio(self, m_id: str) -> Dict[str, Any]:
-        """마스터 전략을 삭제합니다."""
+        """마스터 전략을 삭제합니다. [활성 전략 보호 추가]"""
         for i, m in enumerate(self.master_portfolios):
             if m["id"] == m_id:
+                if m.get("is_active"):
+                    return {
+                        "success": False,
+                        "message": f"마스터 전략 '{m['name']}'은(는) 현재 사용 중입니다. 삭제하려면 다른 전략을 먼저 활성화해 주세요."
+                    }
                 removed = self.master_portfolios.pop(i)
                 self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
                 return {"success": True, "message": f"{removed['name']} 전략 삭제됨"}

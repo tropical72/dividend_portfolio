@@ -2,16 +2,18 @@ import { useState, useEffect } from "react";
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, Coins, 
   AlertCircle, Info, RotateCcw, TrendingUp,
-  Building2, Wallet2, Settings2
+  Building2, Wallet2, Settings2, ChevronDown
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
-import type { RetirementConfig, SimulationResult } from "../types";
+import type { RetirementConfig, SimulationResult, MasterPortfolio } from "../types";
 
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<SimulationResult | null>(null);
+  const [masterPortfolios, setMasterPortfolios] = useState<MasterPortfolio[]>([]);
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("v1");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,11 +23,18 @@ export function RetirementTab() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const configRes = await fetch("http://localhost:8000/api/retirement/config");
+      const [configRes, masterRes] = await Promise.all([
+        fetch("http://localhost:8000/api/retirement/config"),
+        fetch("http://localhost:8000/api/master-portfolios")
+      ]);
+      
       const configData = await configRes.json();
+      const masterData = await masterRes.json();
+      
       if (!configData.success) throw new Error(configData.message || "설정을 불러올 수 없습니다.");
       
       setConfig(configData.data);
+      setMasterPortfolios(masterData.data || []);
       setActiveId(configData.data.active_assumption_id || "v1");
 
       // 실시간 환율 정보 가져오기
@@ -42,16 +51,18 @@ export function RetirementTab() {
       if (simData.success) {
         setSimulationData(simData.data);
       } else {
-        setErrorMessage(simData.message || "시뮬레이션 실행 실패");
+        throw new Error(simData.message || "시뮬레이션 실패");
       }
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "서버와 통신할 수 없습니다.");
+    } catch (err: any) {
+      setErrorMessage(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleSwitchVersion = async (id: string) => {
     setActiveId(id);
@@ -59,15 +70,29 @@ export function RetirementTab() {
       await fetch("http://localhost:8000/api/retirement/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active_assumption_id: id })
+        body: JSON.stringify({ ...config, active_assumption_id: id })
       });
-      fetchData();
+      await fetchData(id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /** 마스터 전략 교체 핸들러 */
+  const handleSwitchMaster = async (m_id: string) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/master-portfolios/${m_id}/activate`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setIsSwitcherOpen(false);
+        await fetchData(activeId); 
+      }
     } catch (err) { console.error(err); }
   };
 
-  if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-black animate-pulse" data-testid="retirement-tab-content">Running Monte Carlo Simulation...</div>;
-  if (errorMessage) return <div className="p-20 text-center space-y-6" data-testid="retirement-tab-content"><div className="flex justify-center"><AlertCircle size={64} className="text-red-500" /></div><h2 className="text-2xl font-black text-slate-50">오류 발생</h2><p>{errorMessage}</p><button onClick={() => fetchData()} className="px-8 py-3 bg-slate-800 text-slate-200 rounded-xl">재시도</button></div>;
-  if (!config || !simulationData) return <div className="p-20 text-center text-red-400 font-black" data-testid="retirement-tab-content">데이터가 없습니다.</div>;
+  if (isLoading && !simulationData) return <div className="p-20 text-center text-slate-500 font-bold uppercase tracking-[0.2em] animate-pulse">Calculating Simulation...</div>;
+  if (errorMessage) return <div className="p-20 text-center space-y-6"><div className="flex justify-center"><AlertTriangle size={64} className="text-red-500" /></div><h2 className="text-2xl font-black text-slate-50">오류 발생</h2><p>{errorMessage}</p><button onClick={() => fetchData()} className="px-8 py-3 bg-slate-800 text-slate-200 rounded-xl">재시도</button></div>;
+  if (!simulationData || !config) return null;
 
   const summary = simulationData.summary || {};
   const monthlyData = simulationData.monthly_data || [];
@@ -81,62 +106,85 @@ export function RetirementTab() {
   })();
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content">
-      {/* [MOD] Strategy Hero Dashboard: 마스터 전략 최우선 부각 및 환율 비중 조정 */}
+    <div className="space-y-8 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content" onClick={() => isSwitcherOpen && setIsSwitcherOpen(false)}>
+      {/* [MOD] Strategy Bar: 높이를 압축하여 Step 1과 조화를 이루도록 재설계 */}
       <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[3.5rem] p-12 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-          {/* 장식용 글로우 효과 (마스터 전략 쪽으로 집중) */}
-          <div className="absolute left-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md relative overflow-hidden">
+          <div className="absolute left-0 top-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
           
-          <div className="relative z-10 flex flex-col gap-10">
-            {/* 상단: 마스터 전략 및 환율 배지 */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                  <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.5em]">Active Strategy</p>
-                </div>
-                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 tracking-tighter leading-[1.1]">
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            {/* 좌측: 전략 선택 (핵심) */}
+            <div className="flex-1 space-y-1 relative">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-1 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Active Strategy</p>
+              </div>
+              
+              <div 
+                className="flex items-center gap-3 cursor-pointer group/title w-fit"
+                onClick={(e) => { e.stopPropagation(); setIsSwitcherOpen(!isSwitcherOpen); }}
+              >
+                <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all">
                   {simulationData.meta?.master_name || "Custom Strategy Builder"}
                 </h1>
+                <ChevronDown className={cn("text-slate-600 group-hover/title:text-emerald-400 transition-all", isSwitcherOpen && "rotate-180")} size={20} />
               </div>
 
-              {/* 환율: 백엔드 실시간 동기화 값 반영 */}
-              <div className="flex items-center gap-4 bg-slate-950/50 border border-slate-800 rounded-2xl px-6 py-3 self-start lg:self-auto">
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
-                  <p className="text-xl font-black text-slate-300 tabular-nums leading-none">
-                    {exchangeRate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-[10px] text-slate-600 ml-0.5">KRW/USD</span>
-                  </p>
+              {/* 퀵 스위처 드롭다운 */}
+              {isSwitcherOpen && (
+                <div className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10">
+                  <p className="px-6 py-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">Change Plan</p>
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar px-2">
+                    {masterPortfolios.map(m => (
+                      <div 
+                        key={m.id}
+                        onClick={() => handleSwitchMaster(m.id)}
+                        className={cn(
+                          "mx-2 px-6 py-3.5 rounded-xl cursor-pointer transition-all flex items-center justify-between group/item mb-0.5",
+                          m.is_active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                        )}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black tracking-tight truncate">{m.name}</p>
+                          <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1 truncate">C: {m.corp_name || "-"} / P: {m.pension_name || "-"}</p>
+                        </div>
+                        {m.is_active && <CheckCircle2 size={16} className="text-emerald-500" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="w-px h-8 bg-slate-800 mx-1" />
-                <div className="p-2 bg-emerald-500/10 rounded-lg" title="12시간 주기로 실시간 환율 자동 갱신">
-                  <RotateCcw size={14} className="text-emerald-500/60" />
+              )}
+            </div>
+
+            {/* 중앙: 구성 포트폴리오 요약 */}
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
+                <Building2 className="text-emerald-500/50" size={18} />
+                <div>
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Corp.</p>
+                  <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None"}</p>
+                </div>
+              </div>
+              <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
+                <Wallet2 className="text-blue-500/50" size={18} />
+                <div>
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Pen.</p>
+                  <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None"}</p>
                 </div>
               </div>
             </div>
 
-            {/* 하단: 세부 포트폴리오 카드 (대칭 구조) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-800/50">
-              <div className="bg-slate-950/30 border border-slate-800/50 rounded-3xl p-6 flex items-center gap-6 group hover:border-emerald-500/20 transition-all">
-                <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 group-hover:bg-emerald-500/10 transition-all">
-                  <Building2 className="text-emerald-500/60 group-hover:text-emerald-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Corporate Portfolio</p>
-                  <p className="text-lg font-black text-slate-200 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None (Default 4%)"}</p>
-                </div>
+            {/* 우측: 환율 배지 (콤팩트) */}
+            <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-5 py-3">
+              <div className="text-right">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
+                <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
+                  {exchangeRate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  <span className="text-[9px] text-slate-600 ml-1 font-bold">KRW</span>
+                </p>
               </div>
-              
-              <div className="bg-slate-950/30 border border-slate-800/50 rounded-3xl p-6 flex items-center gap-6 group hover:border-blue-500/20 transition-all">
-                <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 group-hover:bg-blue-500/10 transition-all">
-                  <Wallet2 className="text-blue-500/60 group-hover:text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Pension Portfolio</p>
-                  <p className="text-lg font-black text-slate-200 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None (Default 3.5%)"}</p>
-                </div>
-              </div>
+              <div className="w-px h-6 bg-slate-800" />
+              <RotateCcw size={12} className="text-slate-700" />
             </div>
           </div>
         </div>
@@ -205,12 +253,12 @@ export function RetirementTab() {
         </div>
       </section>
 
-      {/* Step 2. Verdict */}
-      <section className="space-y-8">
-        <div className="flex items-center gap-3 px-4"><div className="p-2 bg-slate-800 rounded-lg"><TrendingUp size={20} className="text-slate-400" /></div><div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 2. The Verdict & Proof</h3></div></div>
-        <div className={cn("p-12 rounded-[3.5rem] border shadow-2xl bg-slate-900/60 border-slate-800")}>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-5 space-y-10">
+      {/* Step 2. Projection Result */}
+      <section className="space-y-10 animate-in slide-in-from-bottom-4 duration-1000 delay-200">
+        <div className="flex items-center gap-3 px-4"><div className="p-2 bg-slate-800 rounded-lg"><Activity size={20} className="text-slate-400" /></div><div><h3 className="text-base font-black text-slate-300 uppercase tracking-widest">Step 2. Projection Result</h3></div></div>
+        <div className={cn("p-12 rounded-[3.5rem] border shadow-2xl backdrop-blur-md relative overflow-hidden transition-all duration-1000", level.bg, "border-white/5")}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
+            <div className="lg:col-span-5 flex flex-col justify-center space-y-10">
               <div className="space-y-6">
                 <div className={cn("inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest", level.bg, level.color)}>{level.icon} {level.label} Status</div>
                 {summary.total_survival_years >= (config.simulation_params.simulation_years || 30) ? (
@@ -220,11 +268,11 @@ export function RetirementTab() {
                 )}
                 <p className="text-base text-slate-400 font-medium">자산은 향후 <span className={cn("font-black", (summary.total_survival_years || 0) >= 25 ? "text-slate-100" : "text-red-400")}>{summary.total_survival_years || 0}년</span> 동안 지속 가능합니다.</p>
               </div>
-              <div className="grid grid-cols-2 gap-6"><MetricCard label="성장 자산 매도 시작" value={summary.growth_asset_sell_start_date || "-"} tooltip="생활비 충당을 위해 주식을 팔기 시작하는 시점" /><MetricCard label="안전 자산 고갈" value={summary.sgov_exhaustion_date || "-"} tooltip="현금성 자산이 0원이 되는 시점" /></div>
+              <div className="grid grid-cols-2 gap-4"><MetricCard label="Final NW" value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length-1].total_net_worth / 100000000 : 0).toFixed(1)}억`} tooltip="시뮬레이션 종료 시점의 예상 순자산" /><MetricCard label="Cash Exhaust" value={summary.sgov_exhaustion_date || "-"} tooltip="현금성 자산이 0원이 되는 시점" /></div>
             </div>
             <div className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f8fafc" stopOpacity={0.1}/><stop offset="95%" stopColor="#f8fafc" stopOpacity={0}/></linearGradient>
                     <linearGradient id="colorCorp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
@@ -297,6 +345,7 @@ function MetricCard({ label, value, tooltip }: { label: string, value: string, t
 function EditableInput({ id, initialValue, masterValue, onCommit }: { id: string, initialValue: number, masterValue: number, onCommit: (val: number) => void }) {
   const [value, setValue] = useState(initialValue.toFixed(1));
   useEffect(() => { setValue(initialValue.toFixed(1)); }, [initialValue]);
+  
   return (
     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
       <div className="relative flex items-center">
