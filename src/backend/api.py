@@ -205,14 +205,32 @@ class DividendBackend:
 
     def get_master_portfolios(self) -> List[Dict[str, Any]]:
         """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
-        # 실시간 요약 수치(DY, TR)를 가중 평균하여 계산 후 반환
         for m in self.master_portfolios:
-            corp_stats = self.get_portfolio_by_id(m.get("corp_id"))
-            pen_stats = self.get_portfolio_by_id(m.get("pension_id"))
+            corp_p = self.get_portfolio_by_id(m.get("corp_id"))
+            pen_p = self.get_portfolio_by_id(m.get("pension_id"))
             
-            # TODO: 총 투자액 기준 가중 평균 계산 로직 (프론트엔드에서도 사용 가능하도록)
-            m["corp_name"] = corp_stats["name"] if corp_stats else "-"
-            m["pension_name"] = pen_stats["name"] if pen_stats else "-"
+            m["corp_name"] = corp_p["name"] if corp_p else "-"
+            m["pension_name"] = pen_p["name"] if pen_p else "-"
+            
+            # 통합 수익률(TR) 계산: (법인자산*법인수익률 + 연금자산*연금수익률) / 총자산
+            c_stats = self.get_portfolio_stats_by_id(m.get("corp_id"))
+            p_stats = self.get_portfolio_stats_by_id(m.get("pension_id"))
+            
+            c_cap = corp_p["total_capital"] if corp_p else 0
+            p_cap = pen_p["total_capital"] if pen_p else 0
+            total_cap = c_cap + p_cap
+            
+            if total_cap > 0:
+                combined_tr = (
+                    c_stats["expected_return"] * c_cap
+                    + p_stats["expected_return"] * p_cap
+                ) / total_cap
+            else:
+                combined_tr = (
+                    c_stats["expected_return"] or p_stats["expected_return"] or 0.07
+                )
+                
+            m["combined_yield"] = combined_tr
             
         return self.master_portfolios
 
@@ -239,18 +257,50 @@ class DividendBackend:
         return {"success": True, "data": new_m}
 
     def activate_master_portfolio(self, m_id: str) -> Dict[str, Any]:
-        """특정 마스터 전략을 활성화합니다. [REQ-PRT-08.4]"""
-        found = False
+        """특정 마스터 전략을 활성화하고, 해당 수익률을 Standard Profile(v1)에 자동 반영합니다."""
+        found_m = None
         for m in self.master_portfolios:
             if m["id"] == m_id:
                 m["is_active"] = True
-                found = True
+                found_m = m
             else:
                 m["is_active"] = False
         
-        if found:
+        if found_m:
+            # [NEW] 선택된 마스터 전략의 통합 수익률 계산
+            c_stats = self.get_portfolio_stats_by_id(found_m.get("corp_id"))
+            p_stats = self.get_portfolio_stats_by_id(found_m.get("pension_id"))
+            corp_p = self.get_portfolio_by_id(found_m.get("corp_id"))
+            pen_p = self.get_portfolio_by_id(found_m.get("pension_id"))
+            
+            c_cap = corp_p["total_capital"] if corp_p else 0
+            p_cap = pen_p["total_capital"] if pen_p else 0
+            total_cap = c_cap + p_cap
+            
+            if total_cap > 0:
+                combined_tr = (
+                    c_stats["expected_return"] * c_cap
+                    + p_stats["expected_return"] * p_cap
+                ) / total_cap
+            else:
+                combined_tr = (
+                    c_stats["expected_return"] or p_stats["expected_return"] or 0.07
+                )
+
+            # [NEW] retirement_config.json의 v1(Standard) 수익률 자동 업데이트
+            if (
+                "assumptions" in self.retirement_config
+                and "v1" in self.retirement_config["assumptions"]
+            ):
+                self.retirement_config["assumptions"]["v1"]["expected_return"] = combined_tr
+                self.storage.save_json(self.retirement_config_file, self.retirement_config)
+
             self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
-            return {"success": True, "message": "전략이 활성화되었습니다."}
+            return {
+                "success": True,
+                "message": "전략이 활성화되었으며 Standard Profile에 반영되었습니다.",
+                "yield": combined_tr,
+            }
         return {"success": False, "message": "전략을 찾을 수 없습니다."}
 
     def remove_master_portfolio(self, m_id: str) -> Dict[str, Any]:
@@ -260,7 +310,10 @@ class DividendBackend:
                 if m.get("is_active"):
                     return {
                         "success": False,
-                        "message": f"마스터 전략 '{m['name']}'은(는) 현재 사용 중입니다. 삭제하려면 다른 전략을 먼저 활성화해 주세요."
+                        "message": (
+                            f"마스터 전략 '{m['name']}'은(는) 현재 사용 중입니다. "
+                            "삭제하려면 다른 전략을 먼저 활성화해 주세요."
+                        ),
                     }
                 removed = self.master_portfolios.pop(i)
                 self.storage.save_json(self.master_portfolios_file, self.master_portfolios)

@@ -62,6 +62,7 @@ export interface MasterPortfolio {
   is_active: boolean;
   corp_name?: string;
   pension_name?: string;
+  combined_yield?: number;
 }
 
 /** 은퇴 시뮬레이션 전역 설정 인터페이스 [REQ-RAMS-01] */
@@ -169,6 +170,7 @@ export interface SimulationResult {
   monthly_data: MonthlySimulationData[];
   meta?: {
     master_name?: string;
+    master_yield?: number;
     used_portfolios?: {
       corp?: { name: string; yield: string };
       pension?: { name: string; yield: string };

@@ -307,8 +307,23 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     corp_p = backend.get_portfolio_by_id(active_m.get("corp_id")) if active_m else None
     pen_p = backend.get_portfolio_by_id(active_m.get("pension_id")) if active_m else None
     
+    # 마스터 전략의 통합 수익률 계산
+    combined_yield = 0.07
+    if active_m:
+        c_cap = corp_p["total_capital"] if corp_p else 0
+        p_cap = pen_p["total_capital"] if pen_p else 0
+        total_cap = c_cap + p_cap
+        if total_cap > 0:
+            combined_yield = (
+                corp_stats.get("expected_return", 0.07) * c_cap
+                + pension_stats.get("expected_return", 0.06) * p_cap
+            ) / total_cap
+        else:
+            combined_yield = corp_stats.get("expected_return", 0.07)
+
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
+        "master_yield": combined_yield,
         "used_portfolios": {
             "corp": {
                 "name": corp_p["name"] if corp_p else "Default (None)",

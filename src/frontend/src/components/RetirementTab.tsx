@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, Coins, 
   AlertCircle, Info, RotateCcw, TrendingUp,
-  Building2, Wallet2, Settings2, ChevronDown
+  Building2, Wallet2, Settings2, ChevronDown, Activity
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function RetirementTab() {
       
       setConfig(configData.data);
       setMasterPortfolios(masterData.data || []);
-      setActiveId(configData.data.active_assumption_id || "v1");
+      setActiveId(scenarioId || configData.data.active_assumption_id || "v1");
 
       // 실시간 환율 정보 가져오기
       const settingsRes = await fetch("http://localhost:8000/api/settings");
@@ -44,7 +44,8 @@ export function RetirementTab() {
         setExchangeRate(settingsData.data.current_exchange_rate);
       }
 
-      const simUrl = scenarioId ? `http://localhost:8000/api/retirement/simulate?scenario=${scenarioId}` : `http://localhost:8000/api/retirement/simulate`;
+      const currentScenario = scenarioId || configData.data.active_assumption_id || "v1";
+      const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
       const simRes = await fetch(simUrl);
       const simData = await simRes.json();
       
@@ -65,6 +66,7 @@ export function RetirementTab() {
   }, []);
 
   const handleSwitchVersion = async (id: string) => {
+    if (!config) return;
     setActiveId(id);
     try {
       await fetch("http://localhost:8000/api/retirement/config", {
@@ -107,13 +109,14 @@ export function RetirementTab() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-32 max-w-6xl mx-auto px-4" data-testid="retirement-tab-content" onClick={() => isSwitcherOpen && setIsSwitcherOpen(false)}>
-      {/* [MOD] Strategy Bar: 높이를 압축하여 Step 1과 조화를 이루도록 재설계 */}
-      <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md relative overflow-hidden">
-          <div className="absolute left-0 top-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+      {/* [MOD] Strategy Bar: z-50 추가하여 하단 레이어 침범 방지 */}
+      <section className="animate-in fade-in slide-in-from-top-4 duration-700 relative z-50">
+        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md relative">
+          {/* 배경 장식 요소: 투명도를 낮추어 overflow 없이도 자연스럽게 처리 */}
+          <div className="absolute left-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
           
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
-            {/* 좌측: 전략 선택 (핵심) */}
             <div className="flex-1 space-y-1 relative">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-1 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
@@ -124,30 +127,45 @@ export function RetirementTab() {
                 className="flex items-center gap-3 cursor-pointer group/title w-fit"
                 onClick={(e) => { e.stopPropagation(); setIsSwitcherOpen(!isSwitcherOpen); }}
               >
-                <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all">
+                <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all flex items-center gap-3">
                   {simulationData.meta?.master_name || "Custom Strategy Builder"}
+                  {simulationData.meta?.master_yield !== undefined && (
+                    <span className="text-sm font-black bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
+                      TR {(simulationData.meta.master_yield * 100).toFixed(2)}%
+                    </span>
+                  )}
                 </h1>
                 <ChevronDown className={cn("text-slate-600 group-hover/title:text-emerald-400 transition-all", isSwitcherOpen && "rotate-180")} size={20} />
               </div>
 
-              {/* 퀵 스위처 드롭다운 */}
+
               {isSwitcherOpen && (
                 <div className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10">
                   <p className="px-6 py-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">Change Plan</p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar px-2">
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     {masterPortfolios.map(m => (
                       <div 
                         key={m.id}
                         onClick={() => handleSwitchMaster(m.id)}
                         className={cn(
                           "mx-2 px-6 py-3.5 rounded-xl cursor-pointer transition-all flex items-center justify-between group/item mb-0.5",
-                          m.is_active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                          m.is_active ? "bg-emerald-500/10 text-emerald-400" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-black tracking-tight truncate">{m.name}</p>
-                          <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1 truncate">C: {m.corp_name || "-"} / P: {m.pension_name || "-"}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-black tracking-tight truncate">{m.name}</p>
+                            {m.combined_yield !== undefined && (
+                              <span className="text-[9px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
+                                {(m.combined_yield * 100).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] font-bold opacity-60 uppercase tracking-tight truncate mt-0.5 text-slate-400">
+                            Corp: {m.corp_name || "-"} / Pen: {m.pension_name || "-"}
+                          </p>
                         </div>
+
                         {m.is_active && <CheckCircle2 size={16} className="text-emerald-500" />}
                       </div>
                     ))}
@@ -156,35 +174,31 @@ export function RetirementTab() {
               )}
             </div>
 
-            {/* 중앙: 구성 포트폴리오 요약 */}
             <div className="flex items-center gap-3">
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Building2 className="text-emerald-500/50" size={18} />
                 <div>
-                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Corp.</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Corporate</p>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None"}</p>
                 </div>
               </div>
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Wallet2 className="text-blue-500/50" size={18} />
                 <div>
-                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Pen.</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Pension</p>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None"}</p>
                 </div>
               </div>
             </div>
 
-            {/* 우측: 환율 배지 (콤팩트) */}
-            <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-5 py-3">
+            <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-6 py-3">
               <div className="text-right">
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">Exchange Rate</p>
                 <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
                   {exchangeRate.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                   <span className="text-[9px] text-slate-600 ml-1 font-bold">KRW</span>
                 </p>
               </div>
-              <div className="w-px h-6 bg-slate-800" />
-              <RotateCcw size={12} className="text-slate-700" />
             </div>
           </div>
         </div>
@@ -202,7 +216,7 @@ export function RetirementTab() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.entries(config.assumptions || {}).map(([id, item]) => (
+          {config && Object.entries(config.assumptions || {}).map(([id, item]) => (
             <div key={id} onClick={() => activeId !== id && handleSwitchVersion(id)} className={cn("p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer", activeId === id ? "bg-emerald-500/10 border-emerald-500/30" : "bg-slate-900/40 border-slate-800")}>
               <div className="flex justify-between items-start mb-6">
                 <h4 className={cn("text-xl font-black", activeId === id ? "text-emerald-400" : "text-slate-400")}>{item.name}</h4>
@@ -268,7 +282,10 @@ export function RetirementTab() {
                 )}
                 <p className="text-base text-slate-400 font-medium">자산은 향후 <span className={cn("font-black", (summary.total_survival_years || 0) >= 25 ? "text-slate-100" : "text-red-400")}>{summary.total_survival_years || 0}년</span> 동안 지속 가능합니다.</p>
               </div>
-              <div className="grid grid-cols-2 gap-4"><MetricCard label="Final NW" value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length-1].total_net_worth / 100000000 : 0).toFixed(1)}억`} tooltip="시뮬레이션 종료 시점의 예상 순자산" /><MetricCard label="Cash Exhaust" value={summary.sgov_exhaustion_date || "-"} tooltip="현금성 자산이 0원이 되는 시점" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <MetricCard label="Final NW" value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length-1].total_net_worth / 100000000 : 0).toFixed(1)}억`} tooltip="시뮬레이션 종료 시점의 예상 순자산" />
+                <MetricCard label="Cash Exhaust" value={summary.sgov_exhaustion_date || "-"} tooltip="현금성 자산이 0원이 되는 시점" />
+              </div>
             </div>
             <div className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative">
               <ResponsiveContainer width="100%" height="100%">
