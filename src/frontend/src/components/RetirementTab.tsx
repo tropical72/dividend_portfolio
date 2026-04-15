@@ -123,8 +123,44 @@ export function RetirementTab() {
                 {activeId === id && <CheckCircle2 size={24} className="text-emerald-400 shadow-glow" />}
               </div>
               <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Return</p><EditableInput id={`return-${id}`} initialValue={item.expected_return * 100} masterValue={(item.master_return ?? 0.0485) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, expected_return: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); fetchData(); }} /></div>
-                <div className="space-y-2"><p className="text-[10px] font-black text-slate-500 uppercase">Inflation</p><EditableInput id={`inflation-${id}`} initialValue={item.inflation_rate * 100} masterValue={(item.master_inflation ?? 0.025) * 100} onCommit={async (v) => { const nc = {...config, assumptions: {...config.assumptions, [id]: {...item, inflation_rate: v/100}}}; setConfig(nc); await fetch("http://localhost:8000/api/retirement/config", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(nc)}); fetchData(); }} /></div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase">Return</p>
+                  <EditableInput 
+                    id={`return-${id}`} 
+                    initialValue={item.expected_return * 100} 
+                    masterValue={(item.master_return ?? 0.0485) * 100} 
+                    onCommit={async (v) => { 
+                      const nc = {...config, active_assumption_id: id, assumptions: {...config.assumptions, [id]: {...item, expected_return: v/100}}}; 
+                      setConfig(nc); 
+                      setActiveId(id);
+                      await fetch("http://localhost:8000/api/retirement/config", {
+                        method: "POST", 
+                        headers: {"Content-Type": "application/json"}, 
+                        body: JSON.stringify(nc)
+                      }); 
+                      await fetchData(id); 
+                    }} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase">Inflation</p>
+                  <EditableInput 
+                    id={`inflation-${id}`} 
+                    initialValue={item.inflation_rate * 100} 
+                    masterValue={(item.master_inflation ?? 0.025) * 100} 
+                    onCommit={async (v) => { 
+                      const nc = {...config, active_assumption_id: id, assumptions: {...config.assumptions, [id]: {...item, inflation_rate: v/100}}}; 
+                      setConfig(nc); 
+                      setActiveId(id);
+                      await fetch("http://localhost:8000/api/retirement/config", {
+                        method: "POST", 
+                        headers: {"Content-Type": "application/json"}, 
+                        body: JSON.stringify(nc)
+                      }); 
+                      await fetchData(id); 
+                    }} 
+                  />
+                </div>
               </div>
             </div>
           ))}
