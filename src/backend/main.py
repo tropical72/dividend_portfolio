@@ -94,7 +94,14 @@ async def remove_from_watchlist(ticker: str):
 
 @app.get("/api/settings")
 async def get_settings():
-    return {"success": True, "data": backend.get_settings()}
+    settings = backend.get_settings()
+    # 응답 시 실시간 환율 정보 포함
+    settings["current_exchange_rate"] = backend.get_exchange_rate()
+    return {"success": True, "data": settings}
+
+@app.get("/api/exchange-rate")
+async def get_exchange_rate():
+    return {"success": True, "rate": backend.get_exchange_rate()}
 
 @app.post("/api/settings")
 async def update_settings(req: SettingsRequest):

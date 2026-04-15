@@ -49,7 +49,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   // 전역 시뮬레이션 상태 [REQ-PRT-06.3] - 복구됨
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
-  const [exchangeRate] = useState<number>(1425.5);
+  const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
 
   /** 가중 평균 배당률 계산 공통 함수 (안전한 참조 보장) */
   const getDY = (p: Portfolio | undefined) => {
@@ -81,14 +81,22 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
     fetch("http://localhost:8000/api/settings")
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data?.default_capital) {
-          const cap = res.data.default_capital;
-          if (res.data.default_currency === "KRW") {
-            setGlobalCapitalUsd(cap / 1425.5);
-            setGlobalCurrency("KRW");
-          } else {
-            setGlobalCapitalUsd(cap);
-            setGlobalCurrency("USD");
+        if (res.success && res.data) {
+          const s = res.data;
+          // 실시간 환율 반영
+          if (s.current_exchange_rate) {
+            setExchangeRate(s.current_exchange_rate);
+          }
+          
+          if (s.default_capital) {
+            const cap = s.default_capital;
+            if (s.default_currency === "KRW") {
+              setGlobalCapitalUsd(cap / (s.current_exchange_rate || 1425.5));
+              setGlobalCurrency("KRW");
+            } else {
+              setGlobalCapitalUsd(cap);
+              setGlobalCurrency("USD");
+            }
           }
         }
       })
@@ -594,9 +602,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         {p.account_type || "Corporate"} Account
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest">
-                      <span>{items.length} Assets</span>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
+                    <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest mt-1.5">
                       <div className="flex items-center gap-1.5 group/ytip relative">
                         <span className="text-emerald-500/80 font-black">Yield: {getDY(p).toFixed(2)}%</span>
                         <Info size={10} className="text-slate-600 cursor-help" />
@@ -605,10 +611,15 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         </div>
                       </div>
                       <div className="w-1 h-1 rounded-full bg-slate-700" />
+                      <span>{items.length} Assets</span>
+                      <div className="w-1 h-1 rounded-full bg-slate-700" />
                       <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
                       </span>
                     </div>
+                    <p className="text-[8px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
+                      * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

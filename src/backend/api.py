@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 from typing import Any, Dict, List, Optional
@@ -32,6 +33,40 @@ class DividendBackend:
         )
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
+
+    def get_exchange_rate(self) -> float:
+        """실시간 환율을 가져오거나 캐시된 값을 반환합니다. (12시간 주기 갱신)"""
+        now = datetime.datetime.now()
+        # settings.json 내의 캐시 정보 확인
+        cache = self.settings.get("exchange_rate_cache", {})
+        last_fetch_str = cache.get("last_fetch")
+        last_rate = cache.get("rate", 1425.5)
+
+        should_fetch = True
+        if last_fetch_str:
+            try:
+                last_fetch = datetime.datetime.fromisoformat(last_fetch_str)
+                # 12시간(하루 2회) 이내면 캐시 사용
+                if (now - last_fetch).total_seconds() < 12 * 3600:
+                    should_fetch = False
+            except ValueError:
+                pass
+
+        if should_fetch:
+            try:
+                print("[Backend] Fetching real-time exchange rate...")
+                new_rate = self.data_provider.get_usd_krw_rate()
+                if new_rate > 0:
+                    self.settings["exchange_rate_cache"] = {
+                        "last_fetch": now.isoformat(),
+                        "rate": new_rate,
+                    }
+                    self.storage.save_json(self.settings_file, self.settings)
+                    return new_rate
+            except Exception as e:
+                print(f"[Backend] Exchange rate fetch failed: {e}")
+
+        return last_rate
 
     def get_portfolio_stats_by_id(self, p_id: Optional[str]) -> Dict[str, Any]:
         """특정 ID의 포트폴리오 통계를 산출합니다.

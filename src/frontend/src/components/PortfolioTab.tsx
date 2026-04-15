@@ -36,7 +36,7 @@ export function PortfolioTab({
 
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
-  const [exchangeRate] = useState<number>(1425.5); // 고정값 또는 설정에서 수신
+  const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
 
   // 저장 모달 상태 [NEW]
@@ -46,18 +46,23 @@ export function PortfolioTab({
 
   /** 전역 설정 동기화 [REQ-PRT-03] */
   useEffect(() => {
-    // 포트폴리오 탭이 활성화되고, 기존 포트폴리오 로드가 아닌 "새 설계" 상태일 때만 기본값 적용
-    if (activeTab === "portfolio" && !portfolioId && globalSettings) {
-      if (globalSettings.default_capital) {
-        const capital = globalSettings.default_capital;
-        if (globalSettings.default_currency === "KRW") {
-          setCapitalUsd(capital / exchangeRate);
-        } else {
-          setCapitalUsd(capital);
+    if (globalSettings) {
+      const currentRate = globalSettings.current_exchange_rate || 1425.5;
+      setExchangeRate(currentRate);
+
+      // 포트폴리오 탭이 활성화되고, 기존 포트폴리오 로드가 아닌 "새 설계" 상태일 때만 기본값 적용
+      if (activeTab === "portfolio" && !portfolioId) {
+        if (globalSettings.default_capital) {
+          const capital = globalSettings.default_capital;
+          if (globalSettings.default_currency === "KRW") {
+            setCapitalUsd(capital / currentRate);
+          } else {
+            setCapitalUsd(capital);
+          }
         }
       }
     }
-  }, [activeTab, portfolioId, globalSettings, exchangeRate]);
+  }, [activeTab, portfolioId, globalSettings]);
 
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {
@@ -102,7 +107,7 @@ export function PortfolioTab({
       return acc;
     }, {} as Record<string, number>);
 
-    // 가중 평균 수익률 (TTM/Forward 구분은 나중에 백엔드와 연동)
+    // 가중 평균 수익률
     const weightedYield = items.reduce((sum, item) => {
       return sum + (item.weight / 100) * item.dividend_yield;
     }, 0);
@@ -143,6 +148,7 @@ export function PortfolioTab({
       setItems([]);
       setPortfolioId(null);
       setPortfolioName("My New Portfolio");
+      setTempPortfolioName("My New Portfolio");
       setAccountType("Corporate");
       setCapitalUsd(10000);
       showStatus("초기화되었습니다.", "success");
@@ -156,7 +162,7 @@ export function PortfolioTab({
       return;
     }
     setTempPortfolioName(portfolioName);
-    setSaveAsNew(false); // 기본값은 업데이트
+    setSaveAsNew(false);
     setIsSaveModalOpen(true);
   };
 
@@ -380,11 +386,11 @@ export function PortfolioTab({
                 <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
                   <button 
                     onClick={() => setCalcMode("TTM")}
-                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "TTM" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
+                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "TTM" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-50")}
                   >TTM (Past)</button>
                   <button 
                     onClick={() => setCalcMode("Forward")}
-                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "Forward" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-500")}
+                    className={cn("px-4 py-1.5 text-xs font-black rounded-lg transition-all", calcMode === "Forward" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-50")}
                   >Forward (Future)</button>
                 </div>
               </div>
@@ -392,31 +398,33 @@ export function PortfolioTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (USD)</label>
-                                <div className="relative group">
-                                  <input 
-                                    type="text"
-                                    placeholder="USD Amount"
-                                    value={Math.round(capitalUsd).toLocaleString()}
-                                    onChange={(e) => handleUsdChange(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
-                                  />
-                                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
-                                </div>                </div>
-                            <div className="space-y-3">
-                              <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
-                              <div className="relative group">
-                                <input 
-                                  type="text"
-                                  placeholder="KRW Amount"
-                                  value={Math.round(capitalUsd * exchangeRate).toLocaleString()}
-                                  onChange={(e) => handleKrwChange(e.target.value)}
-                                  className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
-                                />
-                                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">₩</span>
-                              </div>
-                            </div>              </div>
-              <p className="mt-4 text-xs text-slate-600 font-medium italic">
-                * 적용 환율: 1 USD = {exchangeRate.toLocaleString()} KRW (실시간 데이터 기준)
+                  <div className="relative group">
+                    <input 
+                      type="text"
+                      placeholder="USD Amount"
+                      value={Math.round(capitalUsd).toLocaleString()}
+                      onChange={(e) => handleUsdChange(e.target.value)}
+                      className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
+                    />
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Total Capital (KRW)</label>
+                  <div className="relative group">
+                    <input 
+                      type="text"
+                      placeholder="KRW Amount"
+                      value={Math.round(capitalUsd * exchangeRate).toLocaleString()}
+                      onChange={(e) => handleKrwChange(e.target.value)}
+                      className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
+                    />
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">₩</span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-slate-600 font-medium italic uppercase tracking-tighter">
+                * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
               </p>
             </div>
 

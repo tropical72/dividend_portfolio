@@ -12,6 +12,7 @@ export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<SimulationResult | null>(null);
   const [activeId, setActiveId] = useState<string>("v1");
+  const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -25,6 +26,13 @@ export function RetirementTab() {
       
       setConfig(configData.data);
       setActiveId(configData.data.active_assumption_id || "v1");
+
+      // 실시간 환율 정보 가져오기
+      const settingsRes = await fetch("http://localhost:8000/api/settings");
+      const settingsData = await settingsRes.json();
+      if (settingsData.success && settingsData.data?.current_exchange_rate) {
+        setExchangeRate(settingsData.data.current_exchange_rate);
+      }
 
       const simUrl = scenarioId ? `http://localhost:8000/api/retirement/simulate?scenario=${scenarioId}` : `http://localhost:8000/api/retirement/simulate`;
       const simRes = await fetch(simUrl);
@@ -101,6 +109,9 @@ export function RetirementTab() {
                   <span className="text-[10px] font-black text-slate-400">{simulationData.meta.used_portfolios.pension.name}</span>
                 </div>
               )}
+              <div className="px-3 py-1 bg-slate-900/50 border border-slate-800 rounded-full flex items-center gap-2">
+                <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">Rate: 1USD = {exchangeRate.toFixed(1)} KRW</span>
+              </div>
             </div>
           </div>
         </div>

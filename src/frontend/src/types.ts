@@ -10,6 +10,7 @@ export interface AppSettings {
   gemini_api_key: string;
   default_capital: number;
   default_currency: "USD" | "KRW";
+  current_exchange_rate?: number;
 }
 
 /** 주식 종목 정보 인터페이스 (Watchlist 용) [REQ-WCH-03] */
