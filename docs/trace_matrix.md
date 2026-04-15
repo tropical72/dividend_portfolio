@@ -6,7 +6,7 @@
 
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit | 완료 일시 |
 |:---|:---|:---|:---|:---|:---|:---|
-| REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | bc24140 | 2026.02.22-03.37 |
+| REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | b06085c | 2026.04.15-17.15 |
 | REQ-RAMS-1.3 | 미래 확정 자금 이벤트 반영 엔진 | T-05-5.1.2 | TEST-API-EV | Done | b99a810 | 2026.02.22-21.40 |
 | REQ-RAMS-1.4 | 포트폴리오 매니저 데이터 통합 | T-07-7.1 | TEST-API-INT | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-RAMS-1.4.5 | 포트폴리오 가시성(Visibility) 강화 | T-07-7.4 | TEST-UX-PORT | Done | 23abcca | 2026.04.15-13.36 |
