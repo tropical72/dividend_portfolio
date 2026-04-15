@@ -18,7 +18,8 @@ import {
   Gauge,
   ChevronDown,
   ChevronUp,
-  Clock
+  Clock,
+  Coins
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { RetirementConfig, AppSettings, PlannedCashflow } from "../types";
@@ -27,6 +28,22 @@ interface SettingsTabProps {
   onSettingsUpdate: () => void;
   globalSettings: AppSettings | null;
   globalRetireConfig: RetirementConfig | null;
+}
+
+function SectionTitle({ icon: Icon, title, color, tooltip }: { icon: any, title: string, color: string, tooltip: string }) {
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <h3 className={cn("text-xs font-black uppercase tracking-widest flex items-center gap-3", color)}>
+        <Icon size={18} /> {title}
+      </h3>
+      <div className="group relative">
+        <Info size={14} className="text-slate-600 cursor-help" />
+        <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+          {tooltip}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConfig }: SettingsTabProps) {
@@ -91,56 +108,75 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
 
   return (
     <div className="max-w-6xl mx-auto py-8 space-y-12 pb-40 px-4">
-      <div className="border-b border-slate-800 pb-8">
-        <h2 className="text-3xl font-black text-slate-50 flex items-center gap-4 tracking-tight"><Calculator className="text-emerald-400" size={32} /> Strategy Center</h2>
-        <p className="text-sm text-slate-400 mt-2 font-medium">은퇴 자산 시뮬레이션의 마스터 변수와 미래 이벤트를 제어하세요.</p>
+      <div className="border-b border-slate-800 pb-8 flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-slate-50 flex items-center gap-4 tracking-tight"><Calculator className="text-emerald-400" size={32} /> Strategy Center</h2>
+          <p className="text-sm text-slate-400 mt-2 font-medium">은퇴 자산 시뮬레이션의 마스터 변수와 미래 이벤트를 제어하세요.</p>
+        </div>
+        <div className="group relative">
+          <Info size={20} className="text-slate-600 cursor-help" />
+          <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 p-4 rounded-2xl text-[11px] text-slate-200 font-bold hidden group-hover:block z-[60] border border-slate-700 shadow-2xl leading-relaxed text-left animate-in fade-in slide-in-from-top-2">
+            은퇴 자산 시뮬레이션의 중앙 제어 센터입니다. 여기서 설정한 값들은 모든 탭의 계산 및 그래프에 즉시 반영됩니다.
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-              <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-3"><User size={18} /> User Profile</h3>
+              <SectionTitle icon={User} title="User Profile" color="text-blue-400" tooltip="사용자의 연령 및 연금 수령 시작 시점을 설정하여 생애 주기를 정의합니다." />
               <div className="grid grid-cols-2 gap-4">
-                <InputGroup label="Birth Year" unit="Year" tooltip="출생 연도 (만 나이 계산 기준)" value={retireConfig.user_profile.birth_year} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, birth_year: Math.floor(parseInt(v) || 0)}})} />
-                <InputGroup label="Birth Month" unit="Month" tooltip="출생 월 (연금 수령 시점 정밀 계산용)" value={retireConfig.user_profile.birth_month} onChange={(v) => { let val = Math.floor(parseInt(v) || 1); val = Math.max(1, Math.min(12, val)); setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, birth_month: val}}); }} />
+                <InputGroup label="Birth Year" unit="Year" tooltip="출생 연도를 입력하세요. 만 나이 계산의 기준이 됩니다." value={retireConfig.user_profile.birth_year} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, birth_year: Math.floor(parseInt(v) || 0)}})} />
+                <InputGroup label="Birth Month" unit="Month" tooltip="출생 월을 입력하세요. 연금 수령 개시 월을 정밀하게 산출합니다." value={retireConfig.user_profile.birth_month} onChange={(v) => { let val = Math.floor(parseInt(v) || 1); val = Math.max(1, Math.min(12, val)); setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, birth_month: val}}); }} />
               </div>
               <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
-                <InputGroup label="Private Pension" unit="Age" tooltip="개인연금 수령 시작 나이" value={retireConfig.user_profile.private_pension_start_age} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, private_pension_start_age: Math.floor(parseInt(v) || 0)}})} />
-                <InputGroup label="National Pension" unit="Age" tooltip="국민연금 수령 시작 나이" value={retireConfig.user_profile.national_pension_start_age} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, national_pension_start_age: Math.floor(parseInt(v) || 0)}})} />
+                <InputGroup label="Private Pension" unit="Age" tooltip="개인연금(IRP, 연금저축 등) 수령을 시작할 나이를 설정합니다." value={retireConfig.user_profile.private_pension_start_age} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, private_pension_start_age: Math.floor(parseInt(v) || 0)}})} />
+                <InputGroup label="National Pension" unit="Age" tooltip="국민연금 수령이 시작되는 나이입니다. (보통 65세)" value={retireConfig.user_profile.national_pension_start_age} onChange={(v) => setRetireConfig({...retireConfig, user_profile: {...retireConfig.user_profile, national_pension_start_age: Math.floor(parseInt(v) || 0)}})} />
               </div>
             </section>
 
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-              <h3 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-3"><Wallet2 size={18} /> Pension Assets</h3>
+              <SectionTitle icon={Wallet2} title="Pension Assets" color="text-amber-400" tooltip="개인연금, 퇴직금 등 노후 자산의 현황과 인출 목표를 관리합니다." />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputGroup label="Initial Capital" value={retireConfig.pension_params.initial_investment} isCurrency tooltip="현재 연금 계좌 잔액 총합" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, initial_investment: parseInt(v) || 0}})} />
-                <InputGroup label="Withdrawal" value={retireConfig.pension_params.monthly_withdrawal_target} isCurrency tooltip="Phase 2 연금 수령기 월 목표 인출액" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, monthly_withdrawal_target: parseInt(v) || 0}})} />
+                <InputGroup label="Initial Capital" value={retireConfig.pension_params.initial_investment} isCurrency tooltip="현재 연금 계좌에 들어있는 현금 및 주식의 총합입니다." onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, initial_investment: parseInt(v) || 0}})} />
+                <InputGroup label="Withdrawal" value={retireConfig.pension_params.monthly_withdrawal_target} isCurrency tooltip="연금 수령기에 매달 연금 계좌에서 인출하여 사용할 목표 금액입니다." onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, monthly_withdrawal_target: parseInt(v) || 0}})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <InputGroup label="Severance" value={retireConfig.pension_params.severance_reserve} isCurrency tooltip="예상 퇴직금 (연금 계좌 유입 가정)" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, severance_reserve: parseInt(v) || 0}})} />
-                <InputGroup label="Other" value={retireConfig.pension_params.other_reserve} isCurrency tooltip="기타 연금 가용 자산 (ISA 등)" onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, other_reserve: parseInt(v) || 0}})} />
+                <InputGroup label="Severance" value={retireConfig.pension_params.severance_reserve} isCurrency tooltip="퇴직 시 연금 계좌로 유입될 예상 퇴직금 총액입니다." onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, severance_reserve: parseInt(v) || 0}})} />
+                <InputGroup label="Other" value={retireConfig.pension_params.other_reserve} isCurrency tooltip="연금 외에 은퇴 자금으로 활용할 기타 예비 자산입니다." onChange={(v) => setRetireConfig({...retireConfig, pension_params: {...retireConfig.pension_params, other_reserve: parseInt(v) || 0}})} />
               </div>
             </section>
           </div>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-3"><Building2 size={18} /> Corporate Setup</h3>
+            <SectionTitle icon={Building2} title="Corporate Setup" color="text-emerald-400" tooltip="법인 자산의 초기 투자금과 운영 비용, 절세를 위한 주주대여금 상태를 설정합니다." />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputGroup label="Total Inv." isCurrency tooltip="법인 설립 총 투자액" value={retireConfig.corp_params.initial_investment} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_investment: parseInt(v) || 0}})} />
-              <InputGroup label="Capital" isCurrency tooltip="법인 자본금" value={retireConfig.corp_params.capital_stock} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, capital_stock: parseInt(v) || 0}})} />
-              <InputGroup label="Loan" isCurrency tooltip="주주대여금 (비과세 인출 재원)" value={retireConfig.corp_params.initial_shareholder_loan} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_shareholder_loan: parseInt(v) || 0}})} />
+              <InputGroup label="Total Inv." isCurrency tooltip="법인 계좌에서 운용 중인 총 투자 자산 규모입니다." value={retireConfig.corp_params.initial_investment} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_investment: parseInt(v) || 0}})} />
+              <InputGroup label="Capital" isCurrency tooltip="법인 설립 시 납입한 자본금입니다." value={retireConfig.corp_params.capital_stock} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, capital_stock: parseInt(v) || 0}})} />
+              <InputGroup label="Loan" isCurrency tooltip="법인에 빌려준 주주대여금 잔액입니다. 비과세 인출의 핵심 재원입니다." value={retireConfig.corp_params.initial_shareholder_loan} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, initial_shareholder_loan: parseInt(v) || 0}})} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-800 pt-6">
-              <InputGroup label="Salary" isCurrency tooltip="본인 지급 월 급여" value={retireConfig.corp_params.monthly_salary} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_salary: parseInt(v) || 0}})} />
-              <InputGroup label="Fixed Cost" isCurrency tooltip="법인 유지 고정비 (임대료 등)" value={retireConfig.corp_params.monthly_fixed_cost} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_fixed_cost: parseInt(v) || 0}})} />
-              <InputGroup label="Employees" unit="Count" tooltip="4대보험 가입 직원 수" value={retireConfig.corp_params.employee_count} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, employee_count: parseInt(v) || 0}})} />
+              <InputGroup label="Salary" isCurrency tooltip="본인에게 지급할 세전 월 급여입니다. 건강보험 및 국민연금 산정 기준이 됩니다." value={retireConfig.corp_params.monthly_salary} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_salary: parseInt(v) || 0}})} />
+              <InputGroup label="Fixed Cost" isCurrency tooltip="임대료, 기장료 등 법인 유지를 위해 매달 지출되는 고정 비용입니다." value={retireConfig.corp_params.monthly_fixed_cost} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, monthly_fixed_cost: parseInt(v) || 0}})} />
+              <InputGroup label="Employees" unit="Count" tooltip="4대보험을 납부하는 총 직원 수입니다. 법인 부담금 계산에 쓰입니다." value={retireConfig.corp_params.employee_count} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, employee_count: parseInt(v) || 0}})} />
             </div>
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <div className="flex justify-between items-center"><h3 className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-3"><Activity size={18} /> Cashflow Events</h3><button onClick={addCashflow} className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition-all uppercase tracking-widest"><Plus size={16} /> Add Event</button></div>
-            <div className="space-y-6">{(!retireConfig.planned_cashflows || retireConfig.planned_cashflows.length === 0) ? <p className="text-center py-10 text-slate-600 text-xs font-black uppercase border border-dashed border-slate-800 rounded-2xl">No events planned</p> : 
+            <div className="flex justify-between items-center">
+              <h3 className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-3"><Activity size={18} /> Cashflow Events</h3>
+              <div className="flex items-center gap-4">
+                <div className="group relative">
+                  <Info size={14} className="text-slate-600 cursor-help" />
+                  <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                    미래에 발생할 일시적인 자산 유입(부동산 매도 등)이나 큰 지출을 등록합니다.
+                  </div>
+                </div>
+                <button onClick={addCashflow} className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition-all uppercase tracking-widest"><Plus size={16} /> Add Event</button>
+              </div>
+            </div>
+            <div className="space-y-6">{(!retireConfig.planned_cashflows || retireConfig.planned_cashflows.length === 0) ? <p className="text-center py-10 text-slate-600 text-[10px] font-black uppercase border border-dashed border-slate-800 rounded-2xl">No events planned</p> : 
                 retireConfig.planned_cashflows.map((ev) => (
                   <div key={ev.id} className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 space-y-6 group relative">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
@@ -158,24 +194,46 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
 
         <div className="lg:col-span-4 space-y-8">
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-3"><Clock size={18} /> Sim Control</h3>
-            <InputGroup label="Duration" unit="Years" tooltip="시뮬레이션을 수행할 총 기간" value={retireConfig.simulation_params.simulation_years} onChange={(v) => setRetireConfig({...retireConfig, simulation_params: {...retireConfig.simulation_params, simulation_years: parseInt(v) || 30}})} />
+            <SectionTitle icon={Clock} title="Sim Control" color="text-slate-400" tooltip="시뮬레이션을 수행할 총 기간(연 단위)을 설정합니다." />
+            <InputGroup label="Duration" unit="Years" tooltip="은퇴 후 시뮬레이션을 지속할 총 연수입니다. 보통 30년을 기본으로 합니다." value={retireConfig.simulation_params.simulation_years} onChange={(v) => setRetireConfig({...retireConfig, simulation_params: {...retireConfig.simulation_params, simulation_years: parseInt(v) || 30}})} />
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-3"><Settings2 size={18} /> Basic Constants</h3>
+            <SectionTitle icon={Settings2} title="Basic Constants" color="text-slate-400" tooltip="건강보험료 점수 단가 등 계산 엔진의 기초 상수를 정의합니다." />
             <div className="space-y-6">
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Health Unit Price</label><div className="relative"><input type="number" step="0.1" value={retireConfig.tax_and_insurance?.point_unit_price || 208.4} onChange={(e) => setRetireConfig({...retireConfig, tax_and_insurance: {...retireConfig.tax_and_insurance, point_unit_price: parseFloat(e.target.value)}})} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500" /><span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">KRW</span></div></div>
-              <InputGroup label="SGOV Buffer" unit="Mo" tooltip="안전 자산 확보 목표 개월" value={retireConfig.trigger_thresholds?.target_buffer_months || 24} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, target_buffer_months: parseInt(v) || 0}})} />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Health Unit Price</label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      지역가입자 건강보험료 산정을 위한 점수당 단가입니다. (2024년 기준 208.4원)
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input type="number" step="0.1" value={retireConfig.tax_and_insurance?.point_unit_price || 208.4} onChange={(e) => setRetireConfig({...retireConfig, tax_and_insurance: {...retireConfig.tax_and_insurance, point_unit_price: parseFloat(e.target.value)}})} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500" />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">KRW</span>
+                </div>
+              </div>
+              <InputGroup label="SGOV Buffer" unit="Mo" tooltip="법인 운영비 및 지출을 위해 안전 자산(SGOV 등)으로 확보해둘 목표 개월수입니다." value={retireConfig.trigger_thresholds?.target_buffer_months || 24} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, target_buffer_months: parseInt(v) || 0}})} />
             </div>
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={18} /> Assumptions</h3>
+            <SectionTitle icon={ShieldCheck} title="Assumptions" color="text-slate-400" tooltip="시장 수익률과 인플레이션에 대한 미래 시나리오를 정의합니다." />
             <div className="space-y-4">
               {Object.entries(retireConfig.assumptions).map(([id, item]) => (
                 <div key={id} className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name || (id === 'v1' ? 'Standard' : 'Conservative')}</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name || (id === 'v1' ? 'Standard' : 'Conservative')}</h4>
+                    <div className="group relative">
+                      <Info size={12} className="text-slate-700 cursor-help" />
+                      <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                        {id === 'v1' ? '표준적인 시장 상황을 가정한 시나리오입니다.' : '보수적이고 방어적인 시장 상황을 가정한 시나리오입니다.'}
+                      </div>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 gap-4">
                     <EditableInput 
                       label="Expected Return" 
@@ -198,16 +256,81 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
           </section>
 
           <section className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden">
-            <button onClick={() => setIsAdvancedOpen(!isAdvancedOpen)} className="w-full p-8 flex items-center justify-between hover:bg-slate-800/20 transition-all group" data-testid="advanced-settings-toggle"><h3 className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-3"><Gauge size={18} /> Advanced Engine</h3>{isAdvancedOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</button>
-            {isAdvancedOpen && (<div className="px-8 pb-8 space-y-6 animate-in slide-in-from-top duration-300" data-testid="advanced-settings-content"><div className="space-y-6 border-t border-slate-800 pt-6"><InputGroup label="Employee Count" unit="Person" tooltip="법인 급여 지급 인원 (본인 포함)" value={retireConfig.corp_params.employee_count} onChange={(v) => setRetireConfig({...retireConfig, corp_params: {...retireConfig.corp_params, employee_count: parseInt(v) || 1}})} /><div className="space-y-4 pt-4 border-t border-slate-800/50"><h4 className="text-[10px] font-black text-slate-500 uppercase">Yield Multipliers</h4><div className="grid grid-cols-2 gap-4"><InputGroup label="Equity Mult" unit="x" tooltip="주식형(VOO 등) 수익률 가중치 (기본값: 1.2)" value={retireConfig.trigger_thresholds.equity_yield_multiplier * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, equity_yield_multiplier: parseFloat(v)/100}})} /><InputGroup label="Debt Mult" unit="x" tooltip="채권형(BND 등) 수익률 가중치 (기본값: 0.6)" tooltipAlign="right" value={retireConfig.trigger_thresholds.debt_yield_multiplier * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, debt_yield_multiplier: parseFloat(v)/100}})} /></div></div><div className="space-y-4 pt-4 border-t border-slate-800/50"><h4 className="text-[10px] font-black text-slate-500 uppercase">Trigger Thresholds</h4><InputGroup label="Market Panic" unit="%" tooltip="리밸런싱을 유도하는 하락장 임계치" value={retireConfig.trigger_thresholds.market_panic_threshold * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, market_panic_threshold: parseFloat(v)/100}})} /><InputGroup label="High Income Cap" unit="%" tooltip="고소득 시 자산 인출 제한 임계치" tooltipAlign="right" value={retireConfig.trigger_thresholds.high_income_cap_rate * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, high_income_cap_rate: parseFloat(v)/100}})} /></div></div></div>)}
+            <button onClick={() => setIsAdvancedOpen(!isAdvancedOpen)} className="w-full p-8 flex items-center justify-between hover:bg-slate-800/20 transition-all group" data-testid="advanced-settings-toggle">
+              <div className="flex items-center gap-3 text-xs font-black text-amber-500 uppercase tracking-widest">
+                <Gauge size={18} /> Advanced Engine
+                <div className="group relative ml-2">
+                  <Info size={14} className="text-slate-700 cursor-help" />
+                  <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-200 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                    계산 엔진의 세부 동작 파라미터를 제어합니다. 전문가용 설정입니다.
+                  </div>
+                </div>
+              </div>
+              {isAdvancedOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+            {isAdvancedOpen && (
+              <div className="px-8 pb-8 space-y-6 animate-in slide-in-from-top duration-300" data-testid="advanced-settings-content">
+                <div className="space-y-6 border-t border-slate-800 pt-6">
+                  <InputGroup label="High Income Cap" unit="%" tooltip="고소득(건보료 상한 등) 시 자산 인출을 제한하는 수익률 임계치입니다." value={retireConfig.trigger_thresholds.high_income_cap_rate * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, high_income_cap_rate: parseFloat(v)/100}})} />
+                  <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Yield Multipliers</h4>
+                      <div className="group relative">
+                        <Info size={10} className="text-slate-700 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          자산군별로 시장 수익률 대비 가중치를 설정합니다.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <InputGroup label="Equity Mult" unit="x" tooltip="주식형(VOO 등) 수익률 가중치입니다. (기본 1.2배)" value={retireConfig.trigger_thresholds.equity_yield_multiplier * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, equity_yield_multiplier: parseFloat(v)/100}})} />
+                      <InputGroup label="Debt Mult" unit="x" tooltip="채권형(BND 등) 수익률 가중치입니다. (기본 0.6배)" tooltipAlign="right" value={retireConfig.trigger_thresholds.debt_yield_multiplier * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, debt_yield_multiplier: parseFloat(v)/100}})} />
+                    </div>
+                  </div>
+                  <div className="space-y-4 pt-4 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Trigger Thresholds</h4>
+                      <div className="group relative">
+                        <Info size={10} className="text-slate-700 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          리밸런싱이나 인출 전략이 변경되는 임계점 설정입니다.
+                        </div>
+                      </div>
+                    </div>
+                    <InputGroup label="Market Panic" unit="%" tooltip="포트폴리오 리밸런싱을 중단하는 하락장 임계치입니다." value={retireConfig.trigger_thresholds.market_panic_threshold * 100} onChange={(v) => setRetireConfig({...retireConfig, trigger_thresholds: {...retireConfig.trigger_thresholds, market_panic_threshold: parseFloat(v)/100}})} />
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>
 
       <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-8 z-50">
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-4 rounded-[2rem] shadow-2xl flex items-center justify-between gap-10">
-          <div className="flex-1">{status && <div className={cn("flex items-center gap-3 text-sm font-bold", status.type === "success" ? "text-emerald-400" : "text-red-400")}>{status.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}{status.message}</div>}{!status && <p className="text-slate-500 text-[10px] font-black uppercase px-2">Commit strategy changes to server.</p>}</div>
-          <button onClick={handleSave} disabled={loading} className="flex items-center gap-3 px-10 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-800 text-slate-950 font-black rounded-xl transition-all shadow-lg text-xs">{loading ? <RefreshCcw className="animate-spin" size={18} /> : <Save size={18} />}{loading ? "Syncing..." : "Apply All Changes"}</button>
+          <div className="flex-1">
+            {status && (
+              <div className={cn("flex items-center gap-3 text-sm font-bold", status.type === "success" ? "text-emerald-400" : "text-red-400")}>
+                {status.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                {status.message}
+              </div>
+            )}
+            {!status && (
+              <div className="flex items-center gap-2 px-2">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Commit strategy changes to server.</p>
+                <div className="group relative">
+                  <Info size={12} className="text-slate-700 cursor-help" />
+                  <div className="absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                    현재 수정된 모든 설정값을 서버에 영구적으로 저장합니다.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <button onClick={handleSave} disabled={loading} className="flex items-center gap-3 px-10 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-800 text-slate-950 font-black rounded-xl transition-all shadow-lg text-xs">
+            {loading ? <RefreshCcw className="animate-spin" size={18} /> : <Save size={18} />}
+            {loading ? "Syncing..." : "Apply All Changes"}
+          </button>
         </div>
       </div>
     </div>
@@ -219,8 +342,29 @@ function InputGroup({ label, value, onChange, isCurrency = false, unit, tooltip,
   const displayValue = isCurrency ? numericValue.toLocaleString() : numericValue.toString();
   return (
     <div className="space-y-1.5" data-testid={`input-group-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center gap-1.5 ml-1"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>{tooltip && (<div className="group relative"><Info size={12} className="text-slate-600 cursor-help" data-testid="tooltip-icon" /><div className={cn("absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal", tooltipAlign === "right" ? "right-0" : "left-0")}>{tooltip}</div></div>)}</div>
-      <div className="relative"><input type="text" value={displayValue} onChange={(e) => { const rawValue = e.target.value.replace(/,/g, ""); onChange(rawValue === "" ? "0" : rawValue); }} className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all" />{(isCurrency || unit) && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">{isCurrency ? "KRW" : unit}</span>}</div>
+      <div className="flex items-center gap-1.5 ml-1">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
+        {tooltip && (
+          <div className="group relative">
+            <Info size={12} className="text-slate-600 cursor-help" data-testid="tooltip-icon" />
+            <div className={cn(
+              "absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95",
+              tooltipAlign === "right" ? "right-0" : "left-0"
+            )}>
+              {tooltip}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="relative">
+        <input 
+          type="text" 
+          value={displayValue} 
+          onChange={(e) => { const rawValue = e.target.value.replace(/,/g, ""); onChange(rawValue === "" ? "0" : rawValue); }} 
+          className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all" 
+        />
+        {(isCurrency || unit) && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600">{isCurrency ? "KRW" : unit}</span>}
+      </div>
     </div>
   );
 }
@@ -239,7 +383,15 @@ function EditableInput({ id, label, unit, initialValue, systemDefault, onCommit 
   };
   return (
     <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-      <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{label}</label>
+      <div className="flex items-center gap-1.5 ml-1">
+        <label className="text-[10px] font-black text-slate-500 uppercase">{label}</label>
+        <div className="group relative">
+          <Info size={10} className="text-slate-700 cursor-help" />
+          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[10px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+            {label === "Expected Return" ? "미래 예상 수익률을 % 단위로 입력하세요." : "미래 예상 인플레이션율을 % 단위로 입력하세요."}
+          </div>
+        </div>
+      </div>
       <div className="flex items-center gap-3">
         <div className="relative flex-1 flex items-center">
           <input 
@@ -258,7 +410,7 @@ function EditableInput({ id, label, unit, initialValue, systemDefault, onCommit 
           <button 
             onClick={(e) => { e.stopPropagation(); onCommit(systemDefault * 100); }} 
             className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl text-blue-400 transition-all flex-shrink-0"
-            title="Reset to System Default"
+            title="시스템 기본값으로 복구"
           >
             <RotateCcw size={14} />
           </button>
