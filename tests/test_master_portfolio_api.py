@@ -1,7 +1,9 @@
+
 import pytest
 from fastapi.testclient import TestClient
-from src.backend.main import app, backend
-import uuid
+
+from src.backend.main import app
+
 
 @pytest.fixture
 def client():

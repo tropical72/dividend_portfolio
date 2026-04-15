@@ -98,8 +98,10 @@ class DividendBackend:
             stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
             div_y = float(item.get("dividend_yield") or 0.0) / 100.0
             stats["dividend_yield"] += div_y * w
-            exp_r = float(item.get("expected_return") or (div_y * 100.0)) / 100.0
-            stats["expected_return"] += exp_r * w
+
+        # [REQ-GLB-01] Total Return = Portfolio Weighted Yield + Global Price Appreciation
+        pa_rate = float(self.settings.get("price_appreciation_rate", 3.0)) / 100.0
+        stats["expected_return"] = stats["dividend_yield"] + pa_rate
 
         return stats
 
@@ -391,6 +393,10 @@ class DividendBackend:
         # 최종 요약 계산
         annual_income_val = total_capital * (weighted_yield / 100.0)
 
+        # [REQ-GLB-01] Weighted Total Return = Weighted Yield + Global PA
+        pa_rate = float(self.settings.get("price_appreciation_rate", 3.0))
+        weighted_return = weighted_yield + pa_rate
+
         # 통화별 연간 수입 계산
         if p_currency == "USD":
             annual_usd = annual_income_val
@@ -404,6 +410,8 @@ class DividendBackend:
             "data": {
                 "total_weight": total_weight,
                 "weighted_yield": weighted_yield,
+                "weighted_return": weighted_return,
+                "pa_rate": pa_rate,
                 "mode": mode,
                 "currency": p_currency,
                 "exchange_rate": usd_krw_rate,
@@ -428,6 +436,12 @@ class DividendBackend:
 
     def get_settings(self) -> Dict[str, Any]:
         """저장된 설정 정보를 반환합니다."""
+        # 필수 필드 기본값 보정
+        self.settings.setdefault("dart_api_key", "")
+        self.settings.setdefault("gemini_api_key", "")
+        self.settings.setdefault("default_capital", 10000.0)
+        self.settings.setdefault("default_currency", "USD")
+        self.settings.setdefault("price_appreciation_rate", 3.0)
         return self.settings
 
     def add_to_watchlist(self, ticker: str, country: str = "US") -> Dict[str, Any]:

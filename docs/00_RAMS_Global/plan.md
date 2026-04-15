@@ -1,39 +1,26 @@
-# Plan: System Core (00)
+# Plan: System Core & Global Standards (00)
 
-## 🔄 진행 현황 (Progress)
+## 🔄 진행 현황 (Progress Mapping)
 
-- **[Task 0.1] 아키텍처 재설계 및 문서화**
-  - 상태: ✅ 완료 (2026-02-16)
-  - 내용: FastAPI + React 기반 SDD 문서 업데이트 및 테스트 표준 수립.
-- **[Task 0.2] 환경 정리 및 레거시 아카이브**
-  - 상태: ✅ 완료 (2026-02-16)
-  - 내용: 기존 Kivy 코드를 `src/frontend_legacy`로 이동 및 구조 정의 완료.
-- **[Task 0.4] 통합 실행 스크립트 구축**
-  - 상태: 🔄 진행 중
-  - 내용: 백엔드와 프론트엔드를 동시에 구동하고 브라우저를 자동 실행하는 `run_dev.py` 작성.
+### [Phase 1] 기본 아키텍처 및 설정 (DONE)
+- [x] **T-00-1.1** FastAPI/React 개발 환경 구축.
+- [x] **T-00-1.2** 설정 탭(SettingsTab) 구현 및 API 키 관리 UI.
 
-### [Phase 1] Backend API 전환 (FastAPI)
-- **Task 1.1: FastAPI 기초 인프라**
-    - [x] **1.1.1** 서버 스캐폴딩 및 기동 테스트 (`/health`)
-    - [ ] **1.1.2** FastAPI와 기존 `DividendBackend` 로직 연결 기초
-- **Task 1.2: Mocking 및 데이터 API**
-    - [x] **1.2.1** Pytest 기반 외부 API Mocking 환경 구축 (yfinance 등)
-    - [x] **1.2.2** 주식 정보 조회 API 엔드포인트 구현
-- **Task 1.3: 영속성 및 설정 API**
-    - [x] **1.3.1** Watchlist 데이터 CRUD API 연동
-    - [x] **1.3.2** 설정(Settings) 데이터 읽기/쓰기 API 연동
+### [Phase 10] 수익률 지표 표준화 (DY 중심 & PA 가산 모델) [NEW] - DONE
+- **T-GLB-10.1: [Backend] 설정값 확장 및 계산 로직 정립**
+    - [x] **T-GLB-10.1.1** `settings.json`에 `price_appreciation_rate` 필드 추가 및 `SettingsRequest` 모델 업데이트.
+    - [x] **T-GLB-10.1.2** `ProjectionEngine` 입력 시 `TR = DY + PA` 공식을 적용하도록 `api.py` 수정.
+- **T-GLB-10.2: [Frontend] 설정 UI 고도화 및 저장 버그 수정**
+    - [x] **T-GLB-10.2.1** `SettingsTab.tsx`에 '기본 자산 성장률(PA)' 입력 필드 추가.
+    - [x] **T-GLB-10.2.2** [Bug] 백엔드 모델 누락으로 인한 설정값 저장 실패 현상 수정 완료.
+- **T-GLB-10.3: [Frontend] 포트폴리오 디자이너/대시보드 UI 개편**
+    - [x] **T-GLB-10.3.1** `PortfolioDashboard.tsx` 리스트에서 'Yield'를 메인으로, 'TR'을 서브로 표시하도록 변경.
+    - [x] **T-GLB-10.3.2** `PortfolioTab.tsx` 분석 섹션에서 'Expected Yield'와 'Total Return (Yield + Growth)'를 명확히 구분하여 표시.
+- **T-GLB-10.4: [Frontend] 은퇴 시뮬레이션 결과 투명성 강화**
+    - [x] **T-GLB-10.4.1** `RetirementTab.tsx` 시뮬레이션 기초 정보 배지에 DY와 PA를 각각 노출하여 TR의 산출 근거 시각화.
+- **T-GLB-10.5: [Validation] TDD 기반 정합성 검증**
+    - [x] **T-GLB-10.5.1** 계산 로직 단위 테스트 (`test_yield_centric_math.py`) 추가 및 검증 완료.
+    - [x] **T-GLB-10.5.2** UI 지표 일관성 및 저장 기능 검증을 위한 Playwright 테스트 (`regression_metrics.spec.ts`) 작성 및 통과.
 
-### [Phase 2] Frontend & Test 인프라 (React/Playwright)
-- **Task 2.1: React 프로젝트 초기화**
-    - [x] **2.1.1** Vite + TS + Tailwind 스캐폴딩
-    - [x] **2.1.2** 전역 상태 관리 및 라우팅 구조(Tab 전환) 구축
-- **Task 2.2: 자동화 테스트 환경**
-    - [x] **2.2.1** Playwright 연동 및 기초 E2E 시나리오 작성
-    - [x] **2.2.2** Playwright용 API Interceptor (Mocking) 유틸리티 구현
-
-- **Task 2.3: 설정 및 API 키 관리 UI**
-    - [ ] **2.3.1** API 키(OpenDart, Gemini) 입력 및 저장 UI 구현 (Settings Tab)
-    - [ ] **2.3.2** API 키 유효성 검사 및 저장 후 실시간 반영 로직 구현
-
-## 📅 향후 작업 일정 (Backlog)
-- [ ] [SYS-04] pywebview를 이용한 데스크톱 패키징 (Phase 3)
+---
+*마지막 업데이트: 2026-04-15 19:10:00*

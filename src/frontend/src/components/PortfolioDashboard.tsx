@@ -30,7 +30,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis
 } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import type { Portfolio, MasterPortfolio } from "../types";
 
 /** [REQ-PRT-06] 포트폴리오 대시보드 및 비교 탭 */
@@ -50,11 +50,18 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
+  const [paRate, setPaRate] = useState<number>(3.0);
 
   /** 가중 평균 배당률 계산 공통 함수 (안전한 참조 보장) */
   const getDY = (p: Portfolio | undefined) => {
     if (!p || !p.items || p.items.length === 0) return 0;
     return p.items.reduce((s, i) => s + ((i.dividend_yield || 0) * ((i.weight || 0) / 100)), 0);
+  };
+
+  /** 총수익률(TR) 계산: DY + 전역 PA */
+  const getTR = (p: Portfolio | undefined) => {
+    const dy = getDY(p);
+    return dy + paRate;
   };
 
   // 데이터 로드
@@ -83,10 +90,9 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       .then(res => {
         if (res.success && res.data) {
           const s = res.data;
-          // 실시간 환율 반영
-          if (s.current_exchange_rate) {
-            setExchangeRate(s.current_exchange_rate);
-          }
+          // 실시간 환율 및 PA 반영
+          if (s.current_exchange_rate) setExchangeRate(s.current_exchange_rate);
+          if (s.price_appreciation_rate !== undefined) setPaRate(s.price_appreciation_rate);
           
           if (s.default_capital) {
             const cap = s.default_capital;
@@ -230,12 +236,14 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
     // 2. Metrics (Comparison Matrix)
     const comparisonMetrics = selectedPortfolios.map(p => {
       const totalYield = p.items?.reduce((s, i) => s + ((i.dividend_yield || 0) * ((i.weight || 0) / 100)), 0) || 0;
+      const totalTR = totalYield + paRate;
       const capital = globalCapitalUsd ?? (p.total_capital || 0);
       const annualIncome = capital * (totalYield / 100);
       
       return {
         name: p.name,
         yield: totalYield,
+        tr: totalTR,
         annualIncome: annualIncome,
         assetCount: p.items?.length || 0,
         topAsset: p.items?.sort((a, b) => (b.weight || 0) - (a.weight || 0))[0]?.symbol || "-"
@@ -243,7 +251,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
     });
 
     return { radarData: radar, metrics: comparisonMetrics };
-  }, [portfolios, selectedIds, globalCapitalUsd]);
+  }, [portfolios, selectedIds, globalCapitalUsd, paRate]);
 
   /** 선택 핸들러 */
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -350,6 +358,8 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                 const avg_dy = total_cap > 0 
                   ? (c_dy * c_cap + p_dy * p_cap) / total_cap 
                   : (c_dy || p_dy || 0);
+                
+                const avg_tr = avg_dy + paRate;
 
                 return (
                   <div key={m.id} className={cn("p-8 rounded-[2rem] border transition-all duration-500 flex items-center justify-between group", m.is_active ? "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.05)]" : "bg-slate-900/40 border-slate-800 hover:border-slate-700")}>
@@ -367,16 +377,26 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-16">
+                    <div className="flex items-center gap-12">
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip relative">
-                          <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Estimated Yield</p>
+                          <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Dividend Yield</p>
                           <Info size={10} className="text-slate-600 cursor-help" />
                           <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/tip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                            각 종목의 비중(Weight)을 가중치로 사용한 배당수익률(Dividend Yield)과 기대성장률의 가중평균 합산 결과입니다.
+                            포트폴리오 구성 종목들의 가중 평균 배당수익률입니다. (세전 기준)
                           </div>
                         </div>
-                        <p className="text-2xl font-black text-slate-100 tabular-nums">{avg_dy.toFixed(2)}<span className="text-xs text-slate-600 ml-1">%</span></p>
+                        <p className="text-xl font-black text-slate-400 tabular-nums">{avg_dy.toFixed(2)}<span className="text-xs text-slate-600 ml-1">%</span></p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1.5 mb-1 group/tip-tr relative">
+                          <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Expected TR</p>
+                          <Info size={10} className="text-emerald-600 cursor-help" />
+                          <div className="absolute right-0 bottom-full mb-2 w-52 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-200 font-bold hidden group-hover/tip-tr:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                            배당률({avg_dy.toFixed(2)}%)에 설정된 자산 성장률({paRate.toFixed(1)}%)을 더한 총수익률입니다. 은퇴 시뮬레이션의 기초 엔진 수익률로 사용됩니다.
+                          </div>
+                        </div>
+                        <p className="text-2xl font-black text-emerald-400 tabular-nums">{avg_tr.toFixed(2)}<span className="text-xs text-emerald-600 ml-1">%</span></p>
                       </div>
                       <div className="flex items-center gap-3">
                         {!m.is_active && (
@@ -472,7 +492,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                     cursor={{ fill: '#1e293b', opacity: 0.4 }} 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} 
                     formatter={(val: number | string) => [
-                      globalCurrency === "USD" ? `$${Number(val).toLocaleString()}` : `₩${Number(val).toLocaleString()}`, 
+                      globalCurrency === "USD" ? `$${Number(val || 0).toLocaleString()}` : `₩${Number(val || 0).toLocaleString()}`, 
                       "Income"
                     ]} 
                   />
@@ -524,7 +544,11 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                   <tbody className="divide-y divide-slate-800/30">
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Avg Yield (DY)</td>
-                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-emerald-400">{m.yield.toFixed(2)}%</td>)}
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-slate-400">{m.yield.toFixed(2)}%</td>)}
+                    </tr>
+                    <tr>
+                      <td className="py-4 text-[11px] font-black text-emerald-500/80 uppercase">Expected TR</td>
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-emerald-400">{m.tr.toFixed(2)}%</td>)}
                     </tr>
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">Est. Income ({globalCurrency})</td>
@@ -602,16 +626,8 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         {p.account_type || "Corporate"} Account
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-widest mt-1.5">
-                      <div className="flex items-center gap-1.5 group/ytip relative">
-                        <span className="text-emerald-500/80 font-black">Yield: {getDY(p).toFixed(2)}%</span>
-                        <Info size={10} className="text-slate-600 cursor-help" />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/ytip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                          해당 포트폴리오의 가중 평균 배당률과 기대 수익률 합계입니다.
-                        </div>
-                      </div>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
-                      <span>{items.length} Assets</span>
+                    <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest mt-1.5">
+                      <span className="text-slate-500">{items.length} Assets</span>
                       <div className="w-1 h-1 rounded-full bg-slate-700" />
                       <span className={cn("font-black", globalCapitalUsd !== null ? "text-emerald-400" : "text-slate-400")}>
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
@@ -622,12 +638,29 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+
+                <div className="flex items-center gap-10">
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Yield</p>
+                    <p className="text-xl font-black text-slate-400 tabular-nums">{getDY(p).toFixed(2)}%</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-1.5 mb-1 group/ytip-card relative">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Expected TR</p>
+                      <Info size={10} className="text-emerald-600 cursor-help" />
+                      <div className="absolute right-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/ytip-card:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                        가중 평균 배당률(Yield)과 설정된 자산 성장률({paRate.toFixed(1)}%)을 합산한 총수익률입니다.
+                      </div>
+                    </div>
+                    <p className="text-2xl font-black text-emerald-400 tabular-nums">{getTR(p).toFixed(2)}%</p>
+                  </div>
+                  <div className="flex items-center gap-4">
                   <button onClick={(e) => handleLoad(e, p)} className="hidden md:flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-sm font-black rounded-2xl transition-all border border-emerald-500/20"><Edit3 size={16} /> Load into Designer</button>
                   <button onClick={(e) => handleDelete(e, p.id, p.name)} className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"><Trash2 size={20} /></button>
                   <div className="p-2 text-slate-600">{isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}</div>
                 </div>
               </div>
+            </div>
 
               {/* 4. Detailed View [REQ-PRT-06.2] */}
               <div className={cn("portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40", isExpanded ? "max-h-[2000px] opacity-100 p-8" : "max-h-0 opacity-0")}>

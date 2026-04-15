@@ -18,8 +18,7 @@ import {
   Gauge,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Coins
+  Clock
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { RetirementConfig, AppSettings, PlannedCashflow } from "../types";
@@ -30,7 +29,7 @@ interface SettingsTabProps {
   globalRetireConfig: RetirementConfig | null;
 }
 
-function SectionTitle({ icon: Icon, title, color, tooltip }: { icon: any, title: string, color: string, tooltip: string }) {
+function SectionTitle({ icon: Icon, title, color, tooltip }: { icon: React.ElementType, title: string, color: string, tooltip: string }) {
   return (
     <div className="flex items-center justify-between mb-6">
       <h3 className={cn("text-xs font-black uppercase tracking-widest flex items-center gap-3", color)}>
@@ -52,6 +51,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
     gemini_api_key: "",
     default_capital: 10000,
     default_currency: "USD",
+    price_appreciation_rate: 3.0,
   });
   
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(null);
@@ -66,6 +66,7 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
         gemini_api_key: globalSettings.gemini_api_key || "",
         default_capital: globalSettings.default_capital ?? 10000,
         default_currency: globalSettings.default_currency || "USD",
+        price_appreciation_rate: globalSettings.price_appreciation_rate ?? 3.0,
       });
     }
     if (globalRetireConfig) setRetireConfig(JSON.parse(JSON.stringify(globalRetireConfig)));
@@ -199,9 +200,32 @@ export function SettingsTab({ onSettingsUpdate, globalSettings, globalRetireConf
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <SectionTitle icon={Settings2} title="Basic Constants" color="text-slate-400" tooltip="건강보험료 점수 단가 등 계산 엔진의 기초 상수를 정의합니다." />
+            <SectionTitle icon={Settings2} title="Basic Constants" color="text-slate-400" tooltip="건강보험료 점수 단가 및 자산 성장률 등 계산 엔진의 기초 상수를 정의합니다." />
             <div className="space-y-6">
               <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">Price Appreciation</label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      포트폴리오 전체에 일괄 적용되는 연간 주가 상승률입니다. 은퇴 시뮬레이션 시 '배당률 + 성장률'로 총수익률이 계산됩니다.
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    data-testid="price-appreciation-input"
+                    value={settings.price_appreciation_rate} 
+                    onChange={(e) => setSettings({...settings, price_appreciation_rate: parseFloat(e.target.value) || 0})} 
+                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-emerald-500" 
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">% / Year</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-4 border-t border-slate-800/50">
                 <div className="flex items-center gap-1.5 ml-1">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Health Unit Price</label>
                   <div className="group relative">

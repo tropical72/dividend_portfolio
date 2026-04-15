@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, Coins, 
-  AlertCircle, Info, RotateCcw, TrendingUp,
+  Info, RotateCcw,
   Building2, Wallet2, Settings2, ChevronDown, Activity
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import type { RetirementConfig, SimulationResult, MasterPortfolio } from "../types";
 
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
@@ -54,8 +54,9 @@ export function RetirementTab() {
       } else {
         throw new Error(simData.message || "시뮬레이션 실패");
       }
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
@@ -130,9 +131,15 @@ export function RetirementTab() {
                 <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all flex items-center gap-3">
                   {simulationData.meta?.master_name || "Custom Strategy Builder"}
                   {simulationData.meta?.master_yield !== undefined && (
-                    <span className="text-sm font-black bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
-                      TR {(simulationData.meta.master_yield * 100).toFixed(2)}%
-                    </span>
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                      <span className="text-[11px] font-black text-emerald-500/60 uppercase tracking-tighter">Yield</span>
+                      <span className="text-sm font-black text-emerald-400">{((simulationData.meta.combined_dy || 0) * 100).toFixed(2)}%</span>
+                      <span className="text-slate-700 font-bold mx-0.5">+</span>
+                      <span className="text-[11px] font-black text-blue-500/60 uppercase tracking-tighter">Growth</span>
+                      <span className="text-sm font-black text-blue-400">{((simulationData.meta.pa_rate || 0) * 100).toFixed(2)}%</span>
+                      <span className="text-slate-700 font-bold mx-1">=</span>
+                      <span className="text-sm font-black text-emerald-400 uppercase">TR {(simulationData.meta.master_yield * 100).toFixed(2)}%</span>
+                    </div>
                   )}
                 </h1>
                 <ChevronDown className={cn("text-slate-600 group-hover/title:text-emerald-400 transition-all", isSwitcherOpen && "rotate-180")} size={20} />
@@ -157,7 +164,7 @@ export function RetirementTab() {
                             <p className="text-sm font-black tracking-tight truncate">{m.name}</p>
                             {m.combined_yield !== undefined && (
                               <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                                {(m.combined_yield * 100).toFixed(1)}%
+                                {(m.combined_yield * 100).toFixed(2)}%
                               </span>
                             )}
                           </div>
@@ -178,14 +185,28 @@ export function RetirementTab() {
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Building2 className="text-emerald-500/50" size={18} />
                 <div>
-                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Corporate</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Corporate</p>
+                    {simulationData.meta?.used_portfolios?.corp?.expected_return !== undefined && (
+                      <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full border border-emerald-500/20">
+                        TR {(simulationData.meta.used_portfolios.corp.expected_return * 100).toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.corp?.name || "None"}</p>
                 </div>
               </div>
               <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
                 <Wallet2 className="text-blue-500/50" size={18} />
                 <div>
-                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Pension</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Pension</p>
+                    {simulationData.meta?.used_portfolios?.pension?.expected_return !== undefined && (
+                      <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-1.5 rounded-full border border-blue-500/20">
+                        TR {(simulationData.meta.used_portfolios.pension.expected_return * 100).toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs font-black text-slate-300 tracking-tight">{simulationData.meta?.used_portfolios?.pension?.name || "None"}</p>
                 </div>
               </div>
@@ -298,7 +319,7 @@ export function RetirementTab() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis dataKey="index" type="number" domain={[0, 360]} tickFormatter={(v) => `${Math.floor(v/12)}Y`} stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `${(v/100000000).toFixed(0)}억`} stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem', fontSize: '12px' }} labelFormatter={(l) => `${Math.floor(Number(l)/12)}년차 (${l}개월)`} formatter={(v: number, name: string) => [`${(Number(v)/100000000).toFixed(1)}억`, name === "total_net_worth" ? "합산 자산" : name === "corp_balance" ? "법인 자산" : "연금 자산"]} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '1rem', fontSize: '12px' }} labelFormatter={(l) => `${Math.floor(Number(l)/12)}년차 (${l}개월)`} formatter={(v: number | string, name: string) => [`${(Number(v || 0)/100000000).toFixed(1)}억`, name === "total_net_worth" ? "합산 자산" : name === "corp_balance" ? "법인 자산" : "연금 자산"]} />
                   <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
                   <Area name="total_net_worth" type="monotone" dataKey="total_net_worth" stroke="#f8fafc" strokeWidth={4} fill="url(#colorTotal)" isAnimationActive={true} />
                   <Area name="corp_balance" type="monotone" dataKey="corp_balance" stroke="#10b981" strokeWidth={2} fill="url(#colorCorp)" isAnimationActive={true} />

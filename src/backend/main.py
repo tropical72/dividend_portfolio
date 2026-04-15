@@ -43,6 +43,7 @@ class SettingsRequest(BaseModel):
     default_investment_goal: Optional[str] = None
     default_capital: Optional[float] = 10000.0
     default_currency: Optional[str] = "USD"
+    price_appreciation_rate: Optional[float] = None
 
 class PortfolioRequest(BaseModel):
     name: str
@@ -308,30 +309,37 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     pen_p = backend.get_portfolio_by_id(active_m.get("pension_id")) if active_m else None
     
     # 마스터 전략의 통합 수익률 계산
-    combined_yield = 0.07
+    pa_rate = float(backend.settings.get("price_appreciation_rate", 3.0)) / 100.0
+    combined_tr = 0.07
+    combined_dy = 0.04
     if active_m:
         c_cap = corp_p["total_capital"] if corp_p else 0
         p_cap = pen_p["total_capital"] if pen_p else 0
         total_cap = c_cap + p_cap
         if total_cap > 0:
-            combined_yield = (
-                corp_stats.get("expected_return", 0.07) * c_cap
-                + pension_stats.get("expected_return", 0.06) * p_cap
+            combined_dy = (
+                corp_stats.get("dividend_yield", 0.0) * c_cap
+                + pension_stats.get("dividend_yield", 0.0) * p_cap
             ) / total_cap
         else:
-            combined_yield = corp_stats.get("expected_return", 0.07)
+            combined_dy = corp_stats.get("dividend_yield", 0.04)
+        combined_tr = combined_dy + pa_rate
 
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
-        "master_yield": combined_yield,
+        "master_yield": combined_tr,
+        "combined_dy": combined_dy,
+        "pa_rate": pa_rate,
         "used_portfolios": {
             "corp": {
                 "name": corp_p["name"] if corp_p else "Default (None)",
-                "yield": f"{corp_stats.get('dividend_yield', 0)*100:.2f}%"
+                "yield": f"{corp_stats.get('dividend_yield', 0)*100:.2f}%",
+                "expected_return": corp_stats.get("expected_return", 0.07)
             },
             "pension": {
                 "name": pen_p["name"] if pen_p else "Default (None)",
-                "yield": f"{pension_stats.get('dividend_yield', 0)*100:.2f}%"
+                "yield": f"{pension_stats.get('dividend_yield', 0)*100:.2f}%",
+                "expected_return": pension_stats.get("expected_return", 0.07)
             }
         }
     }

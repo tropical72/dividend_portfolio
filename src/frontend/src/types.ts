@@ -11,6 +11,7 @@ export interface AppSettings {
   default_capital: number;
   default_currency: "USD" | "KRW";
   current_exchange_rate?: number;
+  price_appreciation_rate?: number;
 }
 
 /** 주식 종목 정보 인터페이스 (Watchlist 용) [REQ-WCH-03] */
@@ -171,9 +172,11 @@ export interface SimulationResult {
   meta?: {
     master_name?: string;
     master_yield?: number;
+    combined_dy?: number;
+    pa_rate?: number;
     used_portfolios?: {
-      corp?: { name: string; yield: string };
-      pension?: { name: string; yield: string };
+      corp?: { name: string; yield: string; expected_return?: number };
+      pension?: { name: string; yield: string; expected_return?: number };
     };
   };
 }

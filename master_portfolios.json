@@ -4,15 +4,19 @@
         "name": "테스트1",
         "corp_id": "6932a601-91e8-4fc0-b6aa-18b27a815542",
         "pension_id": "808e0f45-d657-48c3-9794-902cecdfc738",
-        "is_active": true,
+        "is_active": false,
         "corp_name": "존6.0-STD-법인",
-        "pension_name": "존6.0-STD-연금"
+        "pension_name": "존6.0-STD-연금",
+        "combined_yield": 0.058183221169254146
     },
     {
         "id": "b56fd65e-a3a3-4974-88ee-ee8110245553",
         "name": "test2",
         "corp_id": "2e877bcd-ec96-40b7-a774-5b4fcc95de31",
         "pension_id": "dd931ad2-b04b-4005-8cf2-f0b9970e85f2",
-        "is_active": false
+        "is_active": true,
+        "corp_name": "corp-test1",
+        "pension_name": "pension-test1",
+        "combined_yield": 0.0868095959771309
     }
 ]

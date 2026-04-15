@@ -1,21 +1,25 @@
-# Global UI/UX Standard
+# Global Standard: 수익률 지표 및 계산 로직
 
-## 1. Typography Standard (가독성 원칙)
+## 1. 용어 정의 (Terminology)
+- **Dividend Yield (DY, 배당 수익률):** 포트폴리오의 각 종목이 지급하는 배당금의 가중 평균 합계. UI에서 가장 우선적으로 노출되는 지표이다.
+- **Price Appreciation (PA, 자산 성장률):** 주가 상승에 따른 자산 가치의 증가율. 종목별 예측이 아닌, `Settings` 탭에서 사용자가 설정한 '시장 평균 성장률'을 전역적으로 적용한다.
+- **Total Return (TR, 총 수익률):** 은퇴 시뮬레이션 엔진에서 자산의 미래 가치를 계산하기 위해 사용하는 합계 수익률. (`TR = DY + PA`)
 
-사용자의 시력 보호와 직관적인 정보 전달을 위해 아래의 폰트 크기 표준을 절대 준수한다.
+## 2. 계산 공식 (Calculation Formula)
 
-- **[Min-Size Principle]:** 시스템 전체에서 사용하는 **절대 최소 폰트 크기는 11px**이다. 어떤 상황에서도 `text-[11px]`보다 작은 크기(8px, 9px, 10px 등)를 사용할 수 없다.
-- **[Standard Text]:** 일반적인 텍스트, 라벨, 도움말은 **`text-xs` (12px)** 또는 **`text-sm` (14px)** 이상을 권장한다. 
-- **[Heading Standard]:**
-    - 메인 타이틀: `text-3xl` (30px) ~ `text-4xl` (36px)
-    - 섹션 타이틀: `text-xl` (20px) ~ `text-2xl` (24px)
-    - 카드 헤더: `text-lg` (18px)
-- **[Data Highlighting]:** 시뮬레이션 결과 수치나 핵심 지표는 `text-base` (16px) 이상으로 강조하며, 굵은 서체(font-black 또는 font-bold)를 사용한다.
-- **[Exception]:** 차트의 축(Axis) 레이블이나 매우 부수적인 메타데이터에 한해서만 `text-[10px]`~`text-xs` 사용을 허용한다.
+### 2.1 포트폴리오 가중 평균 배당률 (Portfolio DY)
+$$DY_{portfolio} = \sum_{i=1}^{n} (Yield_i \times \frac{Weight_i}{100})$$
+- $Yield_i$: i번째 종목의 연간 배당률 (세전)
+- $Weight_i$: i번째 종목의 포트폴리오 내 비중 (%)
+
+### 2.2 은퇴 엔진 주입용 총 수익률 (Engine TR)
+$$TR_{engine} = DY_{portfolio} + PA_{settings}$$
+- $PA_{settings}$: `Settings` 탭에 저장된 '기본 자산 성장률' (Default: 3.0%)
+
+## 3. UI 노출 원칙
+1. **Portfolio Manager:** 'Dividend Yield'를 메인 지표로 표시한다. 'Total Return'은 분석용 보조 지표로만 활용하거나, 툴팁을 통해 PA가 합산된 결과임을 명시한다.
+2. **Retirement Engine:** 시뮬레이션 결과 화면에서 기초가 된 'Dividend Yield'와 적용된 'Price Appreciation'을 분리하여 표시함으로써 계산의 근거를 투명하게 공개한다.
+3. **Settings:** 사용자가 'Price Appreciation'을 언제든 수정할 수 있도록 입력 필드를 제공하며, 이는 즉시 모든 은퇴 시뮬레이션에 반영된다.
 
 ---
-
-## 2. Color & Layout Standard
-- **Background:** `bg-slate-950` 기반의 다크 테마.
-- **Accent:** `emerald-500` (Main), `blue-500` (Pension), `amber-500` (Warning).
-- **Radius:** 카드 및 버튼은 `rounded-2xl` 이상의 큰 곡률을 사용하여 현대적인 느낌을 유지한다.
+*Last Updated: 2026-04-15*

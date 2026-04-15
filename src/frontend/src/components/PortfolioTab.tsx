@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart, Edit3, X, Plus } from "lucide-react";
+import { PlusCircle, RotateCcw, Save, Trash2, AlertCircle, CheckCircle2, TrendingUp, DollarSign, Layout, PieChart, Edit3, Plus } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { PortfolioItem, Portfolio, AppSettings } from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
@@ -107,10 +107,14 @@ export function PortfolioTab({
       return acc;
     }, {} as Record<string, number>);
 
-    // 가중 평균 수익률
+    // 가중 평균 배당률 (DY)
     const weightedYield = items.reduce((sum, item) => {
-      return sum + (item.weight / 100) * item.dividend_yield;
+      return sum + (item.weight / 100) * (item.dividend_yield || 0);
     }, 0);
+
+    // 총수익률 (TR) = DY + 전역 PA
+    const paRate = globalSettings?.price_appreciation_rate ?? 3.0;
+    const weightedReturn = weightedYield + paRate;
 
     const annualDividendUsd = capitalUsd * (weightedYield / 100);
 
@@ -118,10 +122,11 @@ export function PortfolioTab({
       totalWeight, 
       categoryWeights: catMap,
       weightedYield,
+      weightedReturn,
       annualDividendUsd,
       monthlyDividendUsd: annualDividendUsd / 12
     };
-  }, [items, capitalUsd]);
+  }, [items, capitalUsd, globalSettings]);
 
   /** 통화별 입력 핸들러 [REQ-PRT-03.1, 03.2] */
   const handleUsdChange = (val: string) => {
@@ -454,9 +459,15 @@ export function PortfolioTab({
                   </div>
                 </div>
               </div>
-              <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 flex items-center justify-between text-base">
-                <span className="text-slate-500 font-bold">Expected Yield</span>
-                <span className="text-xl font-black text-slate-50">{analysis.weightedYield.toFixed(2)}%</span>
+              <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 space-y-3">
+                <div className="flex items-center justify-between text-base">
+                  <span className="text-slate-500 font-bold">Expected Yield</span>
+                  <span className="text-xl font-black text-slate-50">{analysis.weightedYield.toFixed(2)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-base">
+                  <span className="text-slate-500 font-bold">Expected TR (Growth)</span>
+                  <span className="text-xl font-black text-emerald-400">{analysis.weightedReturn.toFixed(2)}%</span>
+                </div>
               </div>
             </div>
           </div>
