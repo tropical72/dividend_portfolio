@@ -40,7 +40,7 @@ class ProjectionEngine:
         # 법인/연금 자산군별 초기 배분
         c_bal = float(initial_assets.get("corp", 0))
         p_bal = float(initial_assets.get("pension", 0))
-        
+
         c_w = c_stats.get("weights") or {"Growth": 0.7, "Cash": 0.3}
         p_w = p_stats.get("weights") or {"Growth": 0.4, "Dividend": 0.3, "Cash": 0.3}
 
@@ -92,6 +92,7 @@ class ProjectionEngine:
             s_y = cur_y + (cur_m + m - 2) // 12
             age = ((s_y - birth_year) * 12 + (s_m - birth_month)) // 12
 
+            # 이벤트 처리
             for event in planned_cashflows:
                 if int(event["year"]) == s_y and int(event["month"]) == s_m:
                     amt = float(event["amount"])
@@ -103,22 +104,26 @@ class ProjectionEngine:
                     else:
                         curr_assets[key] = max(0, curr_assets[key] - amt)
 
-            c_div = (c_stats.get("dividend_yield", 0.04) / 12)
-            p_div = (p_stats.get("dividend_yield", 0.035) / 12)
+            # 자산 수익 발생
+            c_div = c_stats.get("dividend_yield", 0.04) / 12
+            p_div = p_stats.get("dividend_yield", 0.035) / 12
             c_yield = c_stats.get("dividend_yield", 0.04)
             p_yield = p_stats.get("dividend_yield", 0.035)
             c_growth_rate = (c_stats.get("expected_return", 0.07) - c_yield) / 12
             p_growth_rate = (p_stats.get("expected_return", 0.06) - p_yield) / 12
-            
+
             for asset, bal in curr_assets.items():
-                if bal <= 0: continue
+                if bal <= 0:
+                    continue
                 if asset.startswith("corp"):
                     div, growth = c_div, c_growth_rate
                 else:
                     div, growth = p_div, p_growth_rate
-                if "cash" in asset: growth *= 0.5
-                curr_assets[asset] *= (1 + growth + div)
+                if "cash" in asset:
+                    growth *= 0.5
+                curr_assets[asset] *= 1 + growth + div
 
+            # 법인 운영비 지출
             ins_rate = (
                 self.tax_engine.health_rate
                 + self.tax_engine.pension_rate
@@ -128,12 +133,14 @@ class ProjectionEngine:
             total_corp_out = (salary * emp_count) + corp_ins_cost + fixed_cost
             curr_assets["corp_cash"] = max(0, curr_assets["corp_cash"] - total_corp_out)
 
+            # 목표 생활비 산출
             target_cf = base_cf * (1 + m_infl) ** m
             income_pension = n_amt * (1 + m_infl) ** m if age >= n_age else 0
             sal_info = self.tax_engine.calculate_income_tax(salary)
             income_salary = sal_info["net_salary"]
             deficit = max(0, target_cf - income_pension - income_salary)
 
+            # 인출 시퀀스
             actual_p_draw = 0
             phase = "Phase 1"
             if age >= p_age and deficit > 0:
@@ -153,29 +160,58 @@ class ProjectionEngine:
                 deficit = max(0, deficit - draw)
 
             if deficit > 0:
-                legacy_assets = {"VOO": curr_assets["corp_growth"], "SGOV": curr_assets["corp_cash"]}
+                legacy_assets = {
+                    "VOO": curr_assets["corp_growth"],
+                    "SGOV": curr_assets["corp_cash"],
+                }
                 cascade = CascadeEngine(target_buffer=target_cf * buffer_months)
                 decision = cascade.get_liquidation_decision(legacy_assets)
                 t_asset = decision["target_asset"] or "SGOV"
                 real_key = "corp_growth" if t_asset == "VOO" else "corp_cash"
                 draw = min(curr_assets[real_key], deficit)
                 curr_assets[real_key] -= draw
-                if draw < deficit: curr_assets["corp_cash"] = max(0, curr_assets["corp_cash"] - (deficit - draw))
-                if real_key == "corp_growth" and growth_sell_date == "None": growth_sell_date = f"{s_y}-{s_m:02d}"
+                if draw < deficit:
+                    curr_assets["corp_cash"] = max(
+                        0, curr_assets["corp_cash"] - (deficit - draw)
+                    )
+                if real_key == "corp_growth" and growth_sell_date == "None":
+                    growth_sell_date = f"{s_y}-{s_m:02d}"
                 deficit = 0
 
             total_nw = sum(curr_assets.values())
-            if total_nw <= 0: break
-            if curr_assets["corp_cash"] <= 0 and sgov_exhaust_date == "Permanent": sgov_exhaust_date = f"{s_y}-{s_m:02d}"
+            if total_nw <= 0:
+                break
+            if curr_assets["corp_cash"] <= 0 and sgov_exhaust_date == "Permanent":
+                sgov_exhaust_date = f"{s_y}-{s_m:02d}"
             survival_m = m
             if m <= months:
-                corp_bal = curr_assets["corp_growth"] + curr_assets["corp_dividend"] + curr_assets["corp_fixed"] + curr_assets["corp_cash"]
-                pen_bal = curr_assets["pen_growth"] + curr_assets["pen_dividend"] + curr_assets["pen_fixed"] + curr_assets["pen_cash"]
-                monthly_data.append({
-                    "index": m, "year": s_y, "month": s_m, "age": age, "phase": phase,
-                    "total_net_worth": total_nw, "corp_balance": corp_bal, "pension_balance": pen_bal,
-                    "loan_balance": loan_bal, "target_cashflow": target_cf, "net_salary": income_salary
-                })
+                corp_bal = (
+                    curr_assets["corp_growth"]
+                    + curr_assets["corp_dividend"]
+                    + curr_assets["corp_fixed"]
+                    + curr_assets["corp_cash"]
+                )
+                pen_bal = (
+                    curr_assets["pen_growth"]
+                    + curr_assets["pen_dividend"]
+                    + curr_assets["pen_fixed"]
+                    + curr_assets["pen_cash"]
+                )
+                monthly_data.append(
+                    {
+                        "index": m,
+                        "year": s_y,
+                        "month": s_m,
+                        "age": age,
+                        "phase": phase,
+                        "total_net_worth": total_nw,
+                        "corp_balance": corp_bal,
+                        "pension_balance": pen_bal,
+                        "loan_balance": loan_bal,
+                        "target_cashflow": target_cf,
+                        "net_salary": income_salary,
+                    }
+                )
 
         return {
             "summary": {
@@ -183,8 +219,8 @@ class ProjectionEngine:
                 "survival_months": survival_m,
                 "is_permanent": survival_m >= months,
                 "sgov_exhaustion_date": sgov_exhaust_date,
-                "growth_asset_sell_start_date": growth_sell_date
+                "growth_asset_sell_start_date": growth_sell_date,
             },
             "survival_months": survival_m,
-            "monthly_data": monthly_data
+            "monthly_data": monthly_data,
         }

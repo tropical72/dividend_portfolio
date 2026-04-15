@@ -10,7 +10,8 @@ import {
   Square,
   BarChart3,
   RotateCcw,
-  PlusCircle
+  PlusCircle,
+  Layout
 } from "lucide-react";
 import { 
   BarChart, 
@@ -20,7 +21,12 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  Legend
+  Legend,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis
 } from "recharts";
 import { cn } from "@/lib/utils";
 import type { Portfolio, MasterPortfolio } from "../types";
@@ -168,6 +174,40 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
       return dataPoint;
     });
   }, [portfolios, selectedIds, globalCapitalUsd, globalCurrency, exchangeRate]);
+
+  /** 레이더 차트 및 지표 데이터 계산 [REQ-PRT-06.5, 06.7] */
+  const { radarData, metrics } = useMemo(() => {
+    const selectedPortfolios = portfolios.filter(p => selectedIds.has(p.id));
+    if (selectedPortfolios.length === 0) return { radarData: [], metrics: [] };
+
+    // 1. Radar Data (Asset Mix)
+    const categories = ["Fixed", "Cash", "Growth", "Dividend", "HighIncome"];
+    const radar = categories.map(cat => {
+      const point: Record<string, string | number> = { subject: cat };
+      selectedPortfolios.forEach(p => {
+        const catWeight = p.items?.filter(i => i.category === cat).reduce((s, i) => s + (i.weight || 0), 0) || 0;
+        point[p.name] = catWeight;
+      });
+      return point;
+    });
+
+    // 2. Metrics (Comparison Matrix)
+    const comparisonMetrics = selectedPortfolios.map(p => {
+      const totalYield = p.items?.reduce((s, i) => s + ((i.dividend_yield || 0) * ((i.weight || 0) / 100)), 0) || 0;
+      const capital = globalCapitalUsd ?? (p.total_capital || 0);
+      const annualIncome = capital * (totalYield / 100);
+      
+      return {
+        name: p.name,
+        yield: totalYield,
+        annualIncome: annualIncome,
+        assetCount: p.items?.length || 0,
+        topAsset: p.items?.sort((a, b) => (b.weight || 0) - (a.weight || 0))[0]?.symbol || "-"
+      };
+    });
+
+    return { radarData: radar, metrics: comparisonMetrics };
+  }, [portfolios, selectedIds, globalCapitalUsd]);
 
   /** 선택 핸들러 */
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -372,43 +412,100 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
         </div>
       </div>
 
-      {/* 2. Chart Area [REQ-PRT-06.4] */}
+      {/* 2. Advanced Analysis Cluster [REQ-PRT-06.4, 06.5, 06.7] */}
       {selectedIds.size > 0 && (
-        <div className="comparison-chart-container bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl animate-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
-                <BarChart3 className="text-emerald-400" size={24} /> Monthly Dividend Comparison ({globalCurrency})
-              </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">Aggregated income across selected portfolios</p>
+        <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
+          {/* 2.1 Monthly Dividend Bar Chart */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
+                  <BarChart3 className="text-emerald-400" size={24} /> Monthly Dividend Comparison ({globalCurrency})
+                </h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">Aggregated income across selected portfolios</p>
+              </div>
+              <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700">Clear Selection</button>
             </div>
-            <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700">Clear Selection</button>
-          </div>
-          <div className="h-[400px] w-full text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} tickFormatter={(val) => globalCurrency === "USD" ? `$${val}` : `₩${(val/10000).toFixed(0)}만`} />
-                <Tooltip 
-                  cursor={{ fill: '#1e293b', opacity: 0.4 }} 
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} 
-                  formatter={(val: number | string) => {
-                    const numVal = Number(val) || 0;
-                    return [
-                      globalCurrency === "USD" 
-                        ? `$${numVal.toLocaleString()}` 
-                        : `₩${numVal.toLocaleString()}`, 
+            <div className="h-[350px] w-full text-xs">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} tickFormatter={(val) => globalCurrency === "USD" ? `$${val}` : `₩${(val/10000).toFixed(0)}만`} />
+                  <Tooltip 
+                    cursor={{ fill: '#1e293b', opacity: 0.4 }} 
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} 
+                    formatter={(val: number | string) => [
+                      globalCurrency === "USD" ? `$${Number(val).toLocaleString()}` : `₩${Number(val).toLocaleString()}`, 
                       "Income"
-                    ];
-                  }} 
-                />
-                <Legend wrapperStyle={{ paddingTop: '30px' }} iconType="circle" formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value}</span>} />
-                {portfolios.filter(p => selectedIds.has(p.id)).map((p, idx) => (
-                  <Bar key={p.id} dataKey={p.name} fill={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} radius={[6, 6, 0, 0]} barSize={selectedIds.size > 2 ? 15 : 30} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+                    ]} 
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '30px' }} iconType="circle" formatter={(value) => <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{value}</span>} />
+                  {portfolios.filter(p => selectedIds.has(p.id)).map((p, idx) => (
+                    <Bar key={p.id} dataKey={p.name} fill={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} radius={[6, 6, 0, 0]} barSize={selectedIds.size > 2 ? 15 : 30} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 2.2 Asset Mix Radar Chart [REQ-PRT-06.5] */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
+              <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                <PieChart size={18} className="text-blue-400" /> Strategy Character (Asset Mix)
+              </h4>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                    <PolarGrid stroke="#1e293b" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                    {portfolios.filter(p => selectedIds.has(p.id)).map((p, idx) => (
+                      <Radar key={p.id} name={p.name} dataKey={p.name} stroke={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} fill={['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5]} fillOpacity={0.3} />
+                    ))}
+                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', fontSize: '10px' }} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* 2.3 Metrics Comparison Matrix [REQ-PRT-06.7] */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
+              <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                <Layout size={18} className="text-emerald-400" /> Comparison Matrix
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-800/50">
+                      <th className="py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Indicator</th>
+                      {metrics.map(m => (
+                        <th key={m.name} className="py-4 px-4 text-right text-[10px] font-black text-slate-300 uppercase truncate max-w-[100px]">{m.name}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/30">
+                    <tr>
+                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Avg Yield (DY)</td>
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-emerald-400">{m.yield.toFixed(2)}%</td>)}
+                    </tr>
+                    <tr>
+                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Est. Income ({globalCurrency})</td>
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-slate-100">{globalCurrency === "USD" ? `$${Math.round(m.annualIncome).toLocaleString()}` : `₩${Math.round(m.annualIncome * exchangeRate).toLocaleString()}`}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Assets Count</td>
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-slate-400">{m.assetCount}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="py-4 text-[10px] font-black text-slate-500 uppercase">Core Asset</td>
+                      {metrics.map(m => <td key={m.name} className="py-4 px-4 text-right font-black text-blue-400">{m.topAsset}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}

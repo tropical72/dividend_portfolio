@@ -281,7 +281,13 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
           className="fixed bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-[100] min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors" onClick={() => showStatus("포트폴리오 기능은 다음 Phase에서 제공됩니다.", "error")}>
+          <button 
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors" 
+            onClick={(e) => {
+              setAddConfirm({ symbols: [contextMenu.symbol], x: e.clientX, y: e.clientY });
+              setContextMenu(null);
+            }}
+          >
             <PlusCircle size={18} /> Add to Portfolio
           </button>
           <div className="h-px bg-slate-800 mx-2 my-1" />

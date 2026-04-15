@@ -23,27 +23,32 @@ class DividendBackend:
         dart_key = self.settings.get("dart_api_key")
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
-        self.portfolios: List[Dict[str, Any]] = self.storage.load_json(self.portfolios_file, [])
+        self.portfolios: List[Dict[str, Any]] = self.storage.load_json(
+            self.portfolios_file, []
+        )
         self.master_portfolios_file = "master_portfolios.json"
-        self.master_portfolios: List[Dict[str, Any]] = self.storage.load_json(self.master_portfolios_file, [])
+        self.master_portfolios: List[Dict[str, Any]] = self.storage.load_json(
+            self.master_portfolios_file, []
+        )
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
 
     def get_portfolio_stats_by_id(self, p_id: Optional[str]) -> Dict[str, Any]:
-        """특정 ID의 포트폴리오 통계를 산출합니다. 없거나 비어있으면 기본값(4%/3.5%)을 반환합니다."""
+        """특정 ID의 포트폴리오 통계를 산출합니다.
+        데이터가 없거나 비어있으면 기본값(4%/3.5%)을 반환합니다.
+        """
         # 기본값 설정
         default_stats = {
             "dividend_yield": 0.04,
             "expected_return": 0.07,
-            "weights": {"Growth": 1.0}
+            "weights": {"Growth": 1.0},
         }
-        
+
         if not p_id:
             return default_stats
-            
+
         portfolio = self.get_portfolio_by_id(p_id)
         if not portfolio or not portfolio.get("items") or len(portfolio["items"]) == 0:
-            # 포트폴리오 타입에 따른 차등 기본값 (나중에 확장 가능)
             return default_stats
 
         items = portfolio["items"]
@@ -143,8 +148,12 @@ class DividendBackend:
         if self.is_portfolio_used_in_master(p_id):
             # 사용 중인 마스터 전략 이름 찾기
             master = next(
-                (m for m in self.master_portfolios if m.get("corp_id") == p_id or m.get("pension_id") == p_id),
-                None
+                (
+                    m
+                    for m in self.master_portfolios
+                    if m.get("corp_id") == p_id or m.get("pension_id") == p_id
+                ),
+                None,
             )
             m_name = master["name"] if master else "알 수 없는 전략"
             return {
@@ -176,7 +185,9 @@ class DividendBackend:
         """ID로 개별 포트폴리오를 찾습니다."""
         return next((p for p in self.portfolios if p["id"] == p_id), None)
 
-    def add_master_portfolio(self, name: str, corp_id: str = None, pension_id: str = None) -> Dict[str, Any]:
+    def add_master_portfolio(
+        self, name: str, corp_id: str = None, pension_id: str = None
+    ) -> Dict[str, Any]:
         """새로운 마스터 전략을 생성합니다. [REQ-PRT-08.1]"""
         if not corp_id and not pension_id:
             return {"success": False, "message": "최소 하나 이상의 포트폴리오를 선택해야 합니다."}
