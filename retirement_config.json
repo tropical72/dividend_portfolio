@@ -1,5 +1,5 @@
 {
-    "active_assumption_id": "v1",
+    "active_assumption_id": "conservative",
     "user_profile": {
         "birth_year": 1972,
         "birth_month": 8,
@@ -46,7 +46,7 @@
     },
     "trigger_thresholds": {
         "tax_threshold": 200000000,
-        "target_buffer_months": 24,
+        "target_buffer_months": 30,
         "high_income_cap_rate": 0.4,
         "market_panic_threshold": -0.2,
         "equity_yield_multiplier": 1.2,
@@ -55,14 +55,15 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.04850000000000001,
-            "inflation_rate": 0.025
+            "expected_return": 0.07,
+            "inflation_rate": 0.025,
+            "master_return": 0.07
         },
         "conservative": {
             "name": "Conservative Profile",
-            "expected_return": 0.035,
+            "expected_return": 0.01,
             "expected_growth": 0.01,
-            "inflation_rate": 0.035,
+            "inflation_rate": 0.1,
             "master_return": 0.035,
             "master_inflation": 0.035
         }
