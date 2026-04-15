@@ -617,7 +617,7 @@ export function PortfolioDashboard({ onLoad }: { onLoad: (p: Portfolio) => void 
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW {Math.round(capitalKrw).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-[8px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
+                    <p className="text-[10px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
                       * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
                     </p>
                   </div>

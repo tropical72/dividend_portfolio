@@ -4,7 +4,8 @@
 
 사용자의 시력 보호와 직관적인 정보 전달을 위해 아래의 폰트 크기 표준을 절대 준수한다.
 
-- **[Min-Size Principle]:** 모든 일반 텍스트, 라벨, 도움말의 최소 크기는 **`text-sm` (14px)** 이상으로 유지한다. `text-xs` 이하의 크기는 지양한다.
+- **[Min-Size Principle]:** 시스템 전체에서 사용하는 **절대 최소 폰트 크기는 10px**이다. 어떤 상황에서도 `text-[10px]`보다 작은 크기(8px, 9px 등)를 사용할 수 없다.
+- **[Standard Text]:** 일반적인 텍스트, 라벨, 도움말은 **`text-xs` (12px)** 또는 **`text-sm` (14px)** 이상을 권장한다. 
 - **[Heading Standard]:**
     - 메인 타이틀: `text-3xl` (30px) ~ `text-4xl` (36px)
     - 섹션 타이틀: `text-xl` (20px) ~ `text-2xl` (24px)

@@ -371,7 +371,7 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
               <th className="px-4 py-5 text-right cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_yield")}>
                 <div className="flex flex-col items-end leading-tight">
                   <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[10px]">Yield <SortIcon columnKey="dividend_yield" /></div>
-                  <span className="text-[8px] opacity-60 font-normal mr-4">TTM</span>
+                  <span className="text-[10px] opacity-60 font-normal mr-4">TTM</span>
                 </div>
               </th>
               <th className="px-4 py-5 text-center cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => handleSort("dividend_frequency")}>
@@ -435,7 +435,7 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                       {item.dividend_frequency.replace(" (New)", "")}
                     </span>
                     {item.dividend_frequency.includes("(New)") && (
-                      <span className="text-[9px] text-slate-500 font-medium leading-none">
+                      <span className="text-[10px] text-slate-500 font-medium leading-none">
                         (NEW)
                       </span>
                     )}
@@ -449,7 +449,7 @@ export function WatchlistTab({ onAddToPortfolio }: { onAddToPortfolio: (stocks: 
                 </td>
                 <td className="px-4 py-4 text-right text-slate-100 font-medium">
                   {(item.last_div_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  <span className="text-[9px] text-slate-500 ml-1">{item.currency || "USD"}</span>
+                  <span className="text-[10px] text-slate-500 ml-1">{item.currency || "USD"}</span>
                 </td>
                 <td className="px-4 py-4 text-right text-emerald-400 font-bold text-base bg-emerald-500/5">
                   {(item.past_avg_monthly_div || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
