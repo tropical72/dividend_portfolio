@@ -77,7 +77,13 @@ class ProjectionEngine:
         buffer_months = int(p("target_buffer_months", 24))
         planned_cashflows = p("planned_cashflows", [])
 
+        # [FIX] 사용자가 Retirement 탭에서 수정한 시장 수익률 가정 로드
+        m_ret_rate = float(p("market_return_rate", 0.07))
         m_infl = (1 + infl_rate) ** (1 / 12) - 1
+        
+        # 월간 시장 수익률 (단리 변환)
+        m_ret_monthly = m_ret_rate / 12
+
         cur_y, cur_m = int(p("simulation_start_year", 2026)), int(
             p("simulation_start_month", 3)
         )
@@ -104,13 +110,14 @@ class ProjectionEngine:
                     else:
                         curr_assets[key] = max(0, curr_assets[key] - amt)
 
-            # 자산 수익 발생
+            # 자산 수익 발생 (시장 수익률 가정 반영)
             c_div = c_stats.get("dividend_yield", 0.04) / 12
             p_div = p_stats.get("dividend_yield", 0.035) / 12
-            c_yield = c_stats.get("dividend_yield", 0.04)
-            p_yield = p_stats.get("dividend_yield", 0.035)
-            c_growth_rate = (c_stats.get("expected_return", 0.07) - c_yield) / 12
-            p_growth_rate = (p_stats.get("expected_return", 0.06) - p_yield) / 12
+            
+            # 성장률 = 시장 수익률 - 배당률 (단, 배당은 재투자 가정)
+            # 사용자가 입력한 m_ret_rate가 전체 TR(Total Return)이라고 가정할 때 가장 직관적임
+            c_growth_rate = m_ret_monthly - c_div
+            p_growth_rate = m_ret_monthly - p_div
 
             for asset, bal in curr_assets.items():
                 if bal <= 0:

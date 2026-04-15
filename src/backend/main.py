@@ -292,11 +292,14 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
     current_tax_engine = TaxEngine(config=tax_config)
     projection_engine.tax_engine = current_tax_engine
     
+    # 6. 스트레스 테스트 시나리오 적용 (필요 시)
     final_params = base_params
-    if scenario:
+    # 쿼리 스트링 scenario가 시스템 예약어(CRASH, INFLATION 등)인 경우에만 스트레스 엔진 적용
+    stress_scenarios = ["CRASH", "INFLATION", "STAGFLATION", "BOOM"]
+    if scenario and scenario.upper() in stress_scenarios:
         final_params = stress_engine.apply_scenario(base_params, scenario.upper())
 
-    # 6. 엔진 실행
+    # 7. 엔진 실행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
     
     # [REQ-UI-05] 사용된 마스터 전략 및 포트폴리오 정보 메타데이터 추가
