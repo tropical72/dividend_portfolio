@@ -157,19 +157,28 @@ export function WatchlistTab({
     }
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         targets.map((t) =>
           fetch(`http://localhost:8000/api/watchlist/${t}`, {
             method: "DELETE",
-          }),
+          }).then((res) => res.json()),
         ),
       );
 
-      setWatchlist((prev) =>
-        prev.filter((item) => !targets.includes(item.symbol)),
-      );
-      setSelectedSymbols(new Set());
-      showStatus(`${targets.length}개 종목 삭제 완료`, "success");
+      const failed = results.filter((r) => !r.success);
+      const successfulTargets = targets.filter((_, i) => results[i].success);
+
+      if (successfulTargets.length > 0) {
+        setWatchlist((prev) =>
+          prev.filter((item) => !successfulTargets.includes(item.symbol)),
+        );
+        setSelectedSymbols(new Set());
+        showStatus(`${successfulTargets.length}개 종목 삭제 완료`, "success");
+      }
+
+      if (failed.length > 0) {
+        showStatus(failed[0].message || "일부 삭제 실패", "error");
+      }
     } catch {
       showStatus("삭제 중 오류가 발생했습니다.", "error");
     } finally {
@@ -384,14 +393,35 @@ export function WatchlistTab({
           </button>
           <div className="h-px bg-slate-800 mx-2 my-1" />
           <button
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-            onClick={(e) =>
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors",
+              watchlist.find((s) => s.symbol === contextMenu.symbol)
+                ?.is_system_default
+                ? "text-slate-600 cursor-not-allowed opacity-50"
+                : "text-red-400 hover:bg-red-500/10",
+            )}
+            disabled={
+              watchlist.find((s) => s.symbol === contextMenu.symbol)
+                ?.is_system_default
+            }
+            title={
+              watchlist.find((s) => s.symbol === contextMenu.symbol)
+                ?.is_system_default
+                ? "기본 종목은 삭제할 수 없습니다"
+                : "Delete Stock"
+            }
+            onClick={(e) => {
+              if (
+                watchlist.find((s) => s.symbol === contextMenu.symbol)
+                  ?.is_system_default
+              )
+                return;
               setDeleteConfirm({
                 symbol: contextMenu.symbol,
                 x: e.clientX,
                 y: e.clientY,
-              })
-            }
+              });
+            }}
           >
             <Trash2 size={18} /> Delete Stock
           </button>
