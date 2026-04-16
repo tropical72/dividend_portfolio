@@ -60,7 +60,7 @@
 | REQ-GLB-11.1 | Feature 단위 품질 게이트 명시화 | T-GLB-11.1 | TEST-SYS-QG-01 | Done | 04bd94d | 2026.04.16-02.22 |
 | REQ-GLB-11.2 | Frontend Prettier 생성물 제외 설정 | T-GLB-11.2.1 | TEST-SYS-QG-02 | Done | 04bd94d | 2026.04.16-02.22 |
 | REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | Done | 06750bc | 2026.04.16-16.37 |
-| REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done (Uncommitted) | - | - |
+| REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done | d665e97 | 2026.04.16-17.02 |
 
 ---
-*마지막 업데이트: 2026-04-16 17:47:00*
+*마지막 업데이트: 2026-04-16 17:02:00*
