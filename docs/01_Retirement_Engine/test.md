@@ -67,6 +67,9 @@
     - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `pension.bond_min_total_ratio`, `bear_market_freeze_enabled` 값이 저장 후 재로드 시 유지되는지 확인.
 - **[TEST-UI-RULE-06] Step 2 규칙 요약 노출:**
     - `Projection Result` 영역에 실제 적용된 `Rebalance`, `Corp SGOV`, `Pension SGOV`, `Bear Freeze` 요약 배지가 렌더링되는지 확인.
+- **[TEST-UI-RULE-07] 사용자 노출 Assumption 프리셋 정규화 [NEW]:**
+    - `retirement_config.json`에 테스트 전용 assumption(`test_event`, `test_zero`)이 남아 있어도 Settings/Retirement UI에는 `Standard Profile`, `Conservative Profile`만 노출되는지 확인.
+    - `active_assumption_id`가 숨김 assumption을 가리킬 경우 백엔드가 `v1`로 정규화하여 시뮬레이션과 UI 상태가 깨지지 않는지 확인.
 
 ---
 
