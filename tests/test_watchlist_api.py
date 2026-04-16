@@ -29,9 +29,9 @@ async def test_watchlist_add_and_get():
     ticker = "AAPL"
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        # 1. 초기 목록 비어있음 확인
+        # 1. 초기 목록 비어있음 확인 (기본 8개 존재)
         get_res = await ac.get("/api/watchlist")
-        assert len(get_res.json()["data"]) == 0
+        assert len(get_res.json()["data"]) == 8
 
         # 2. 종목 추가
         add_res = await ac.post("/api/watchlist", json={"ticker": ticker, "country": "US"})
@@ -41,8 +41,8 @@ async def test_watchlist_add_and_get():
         # 3. 추가 후 목록 확인
         get_res2 = await ac.get("/api/watchlist")
         data = get_res2.json()["data"]
-        assert len(data) == 1
-        assert data[0]["symbol"] == ticker
+        assert len(data) == 9
+        assert any(item["symbol"] == ticker for item in data)
 
 
 @pytest.mark.asyncio

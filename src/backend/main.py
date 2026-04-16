@@ -89,6 +89,8 @@ async def health_check():
 async def get_stock_info(ticker: str):
     try:
         info = backend.data_provider.get_stock_info(ticker)
+        if "error" in info:
+            return {"success": False, "message": info["error"]}
         return {"success": True, "data": info}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

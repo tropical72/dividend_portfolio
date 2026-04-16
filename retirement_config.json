@@ -3,7 +3,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.07,
+            "expected_return": 0.15,
             "expected_growth": 0.02,
             "inflation_rate": 0.02,
             "master_return": 0.07,
@@ -62,13 +62,13 @@
         "simulation_start_year": 2026,
         "simulation_start_month": 1,
         "national_pension_amount": 1000000,
-        "simulation_years": 30
+        "simulation_years": 1
     },
     "corp_params": {
-        "initial_investment": 1600000000,
+        "initial_investment": 1000000000,
         "capital_stock": 10000000,
-        "initial_shareholder_loan": 1590000000,
-        "monthly_salary": 2500000,
+        "initial_shareholder_loan": 500000000,
+        "monthly_salary": 2000000,
         "monthly_fixed_cost": 500000,
         "employee_count": 1
     },

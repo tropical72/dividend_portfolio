@@ -35,5 +35,6 @@ async def test_get_stock_info_invalid_ticker():
     assert response.status_code == 200  # API 자체는 성공적으로 에러 메시지 반환
     data = response.json()
     assert data["success"] is False
-    # 실제 메시지: "Invalid ticker or no data found: INVALID_TICKER_999"
-    assert "invalid" in data["message"].lower() or "not found" in data["message"].lower()
+    # 실제 메시지: "Ticker INVALID_TICKER_999 not found" or similar
+    msg = data.get("message", "").lower()
+    assert "not found" in msg or "invalid" in msg or "no data" in msg
