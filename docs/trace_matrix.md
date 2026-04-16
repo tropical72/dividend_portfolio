@@ -26,7 +26,7 @@
 | REQ-RAMS-1.7 | 계좌별 4단계 전략 카테고리 구조 | T-01-9.1.1 | TEST-RAMS-1.7 | In Progress | - | - |
 | REQ-RAMS-2.3 | 법인 현금흐름과 주주대여금 반환 분리 | T-01-9.2.1 | TEST-TAX-03 | Planned | - | - |
 | REQ-RAMS-3.2 | 연 1회 전략 매도 및 역할 하한선 상태 머신 | T-01-9.3.1 | TEST-SUR-02 | Planned | - | - |
-| REQ-RAMS-8.1 | 전략 파라미터 사용자 설정화 | T-01-9.4.1 | TEST-UI-RULE-01 | Planned | - | - |
+| REQ-RAMS-8.1 | 전략 파라미터 사용자 설정화 | T-01-9.4.1 | TEST-UI-RULE-01 | Done (Uncommitted) | - | 2026.04.16-11:05 |
 
 ---
 
@@ -58,4 +58,4 @@
 | REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | In Progress | - | - |
 
 ---
-*마지막 업데이트: 2026-04-16 09:20:00*
+*마지막 업데이트: 2026-04-16 11:05:00*

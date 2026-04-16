@@ -58,6 +58,12 @@
     - 사용자가 버퍼/하한 값을 변경한 뒤 기본값 복원 버튼으로 문서 기본값을 되돌릴 수 있는지 확인.
 - **[TEST-UI-RULE-03] 시뮬레이션 반영성:**
     - Settings에서 변경한 전략 규칙이 시뮬레이션 재실행 시 즉시 반영되는지 확인.
+- **[TEST-UI-RULE-04] API 저장/기본값 병합:**
+    - `strategy_rules` 일부 필드만 저장해도 백엔드가 나머지 기본값을 유지하는지 확인.
+- **[TEST-UI-RULE-05] 재로드 지속성:**
+    - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `pension.bond_min_total_ratio`, `bear_market_freeze_enabled` 값이 저장 후 재로드 시 유지되는지 확인.
+- **[TEST-UI-RULE-06] Step 2 규칙 요약 노출:**
+    - `Projection Result` 영역에 실제 적용된 `Rebalance`, `Corp SGOV`, `Pension SGOV`, `Bear Freeze` 요약 배지가 렌더링되는지 확인.
 
 ---
 

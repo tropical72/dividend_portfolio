@@ -4,6 +4,7 @@ from src.backend.main import app
 
 client = TestClient(app)
 
+
 def test_get_retirement_config():
     """은퇴 설정 조회 API 테스트"""
     response = client.get("/api/retirement/config")
@@ -12,16 +13,37 @@ def test_get_retirement_config():
     assert data["success"] is True
     assert "user_profile" in data["data"]
 
+
 def test_update_retirement_config():
     """은퇴 설정 업데이트 API 테스트"""
     new_data = {
         "user_profile": {"birth_year": 1980},
-        "active_assumption_id": "conservative"
+        "active_assumption_id": "conservative",
     }
     response = client.post("/api/retirement/config", json=new_data)
     assert response.status_code == 200
-    
-    # 다시 조회해서 반영되었는지 확인
+
+
+def test_update_retirement_config_strategy_rules():
+    """전략 규칙이 API를 통해 저장되고 기본값과 병합되는지 검증한다."""
+    response = client.post(
+        "/api/retirement/config",
+        json={
+            "strategy_rules": {
+                "rebalance_month": 4,
+                "corporate": {"sgov_target_months": 40},
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    strategy_rules = response.json()["data"]["strategy_rules"]
+    assert strategy_rules["rebalance_month"] == 4
+    assert strategy_rules["rebalance_week"] == 2
+    assert strategy_rules["corporate"]["sgov_target_months"] == 40
+    assert strategy_rules["corporate"]["sgov_warn_months"] == 30
+
+
 def test_run_retirement_simulation_with_events():
     """미래 자금 이벤트(Planned Cashflows)가 반영된 시뮬레이션 테스트"""
     # 1. 특정 시점에 대규모 자금 유입 설정
@@ -32,7 +54,8 @@ def test_run_retirement_simulation_with_events():
         "simulation_params": {
             "simulation_start_year": 2026,
             "simulation_start_month": 3,
-            "target_monthly_cashflow": 9000000
+            "target_monthly_cashflow": 9000000,
+            "simulation_years": 12,
         },
         "planned_cashflows": [
             {
@@ -42,30 +65,30 @@ def test_run_retirement_simulation_with_events():
                 "month": 6,
                 "amount": event_amount,
                 "type": "INFLOW",
-                "entity": "CORP"
+                "entity": "CORP",
             }
-        ]
+        ],
     }
     client.post("/api/retirement/config", json=config_update)
-    
+
     # 2. 시뮬레이션 실행
     response = client.get("/api/retirement/simulate")
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-    
+
     monthly_data = data["data"]["monthly_data"]
-    
+
     # 3. 이벤트 발생 시점 전후의 자산 변화 확인
     found_event = False
     for i, m_data in enumerate(monthly_data):
         if m_data["year"] == event_year and m_data["month"] == 6:
             # 이전 달 대비 자산이 이벤트 금액만큼(수익률 제외하고도) 크게 늘었는지 확인
-            prev_nw = monthly_data[i-1]["total_net_worth"]
+            prev_nw = monthly_data[i - 1]["total_net_worth"]
             curr_nw = m_data["total_net_worth"]
             # 자산이 최소 4.5억 이상 증가했는지 확인 (수익률 변동폭 고려)
             assert curr_nw - prev_nw > 450000000
             found_event = True
             break
-            
+
     assert found_event is True, f"{event_year}년 {6}월 이벤트를 찾을 수 없습니다."

@@ -93,6 +93,26 @@ export interface PlannedCashflow {
   description: string;
 }
 
+export interface StrategyRules {
+  rebalance_month: number;
+  rebalance_week: number;
+  bear_market_freeze_enabled: boolean;
+  corporate: {
+    sgov_target_months: number;
+    sgov_warn_months: number;
+    sgov_crisis_months: number;
+    high_income_min_ratio: number;
+    high_income_max_ratio: number;
+    growth_sell_years_left_threshold: number;
+  };
+  pension: {
+    sgov_min_years: number;
+    bond_min_years: number;
+    bond_min_total_ratio: number;
+    dividend_min_ratio: number;
+  };
+}
+
 export interface RetirementConfig {
   active_assumption_id: string;
   user_profile: {
@@ -144,6 +164,7 @@ export interface RetirementConfig {
     equity_yield_multiplier: number;
     debt_yield_multiplier: number;
   };
+  strategy_rules: StrategyRules;
   assumptions: {
     [key: string]: {
       name: string;
@@ -189,6 +210,13 @@ export interface SimulationResult {
     master_yield?: number;
     combined_dy?: number;
     pa_rate?: number;
+    strategy_rules_summary?: {
+      rebalance_month: number;
+      rebalance_week: number;
+      corporate_sgov_target_months: number;
+      pension_sgov_min_years: number;
+      bear_market_freeze_enabled: boolean;
+    };
     used_portfolios?: {
       corp?: { name: string; yield: string; expected_return?: number };
       pension?: { name: string; yield: string; expected_return?: number };

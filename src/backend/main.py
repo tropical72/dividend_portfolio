@@ -67,6 +67,7 @@ class RetirementConfigRequest(BaseModel):
     assumptions: Optional[dict] = None
     tax_and_insurance: Optional[dict] = None
     trigger_thresholds: Optional[dict] = None
+    strategy_rules: Optional[dict] = None
 
 
 class MasterPortfolioRequest(BaseModel):
@@ -371,12 +372,22 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         else:
             combined_dy = corp_stats.get("dividend_yield", 0.04)
         combined_tr = combined_dy + pa_rate
+    strategy_rules = config.get("strategy_rules", {})
+    corporate_rules = strategy_rules.get("corporate", {})
+    pension_rules = strategy_rules.get("pension", {})
 
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
         "master_yield": combined_tr,
         "combined_dy": combined_dy,
         "pa_rate": pa_rate,
+        "strategy_rules_summary": {
+            "rebalance_month": strategy_rules.get("rebalance_month", 1),
+            "rebalance_week": strategy_rules.get("rebalance_week", 2),
+            "corporate_sgov_target_months": corporate_rules.get("sgov_target_months", 36),
+            "pension_sgov_min_years": pension_rules.get("sgov_min_years", 2),
+            "bear_market_freeze_enabled": strategy_rules.get("bear_market_freeze_enabled", True),
+        },
         "used_portfolios": {
             "corp": {
                 "name": corp_p["name"] if corp_p else "Default (None)",

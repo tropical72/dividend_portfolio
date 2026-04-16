@@ -32,6 +32,46 @@ class DividendBackend:
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
         self._normalize_all_portfolios()
+        self._ensure_retirement_config_defaults()
+
+    def _get_default_strategy_rules(self) -> Dict[str, Any]:
+        """stock-plan 기본값 기반 전략 규칙 기본 스키마를 반환합니다."""
+        return {
+            "rebalance_month": 1,
+            "rebalance_week": 2,
+            "bear_market_freeze_enabled": True,
+            "corporate": {
+                "sgov_target_months": 36,
+                "sgov_warn_months": 30,
+                "sgov_crisis_months": 24,
+                "high_income_min_ratio": 0.20,
+                "high_income_max_ratio": 0.35,
+                "growth_sell_years_left_threshold": 10,
+            },
+            "pension": {
+                "sgov_min_years": 2,
+                "bond_min_years": 5,
+                "bond_min_total_ratio": 0.05,
+                "dividend_min_ratio": 0.10,
+            },
+        }
+
+    def _deep_merge_dict(self, base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+        """중첩 딕셔너리를 재귀 병합하여 기본값을 보존합니다."""
+        merged = dict(base)
+        for key, value in updates.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = self._deep_merge_dict(merged[key], value)
+            else:
+                merged[key] = value
+        return merged
+
+    def _ensure_retirement_config_defaults(self) -> None:
+        """은퇴 설정에 필요한 기본 스키마를 보강합니다."""
+        self.retirement_config = self._deep_merge_dict(
+            {"strategy_rules": self._get_default_strategy_rules()},
+            self.retirement_config,
+        )
 
     def _normalize_portfolio_category(self, account_type: str, category: str) -> str:
         """계좌 타입 기준 전략 카테고리 이름을 정규화합니다."""
@@ -184,10 +224,12 @@ class DividendBackend:
 
     def get_retirement_config(self) -> Dict[str, Any]:
         """저장된 은퇴 운용 설정 정보를 반환합니다."""
+        self._ensure_retirement_config_defaults()
         return self.retirement_config
 
     def update_retirement_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
+        self._ensure_retirement_config_defaults()
         # 개별 필드 업데이트 (딕셔너리 depth 고려)
         for key, value in new_config.items():
             if (
@@ -195,7 +237,9 @@ class DividendBackend:
                 and key in self.retirement_config
                 and isinstance(self.retirement_config[key], dict)
             ):
-                self.retirement_config[key].update(value)
+                self.retirement_config[key] = self._deep_merge_dict(
+                    self.retirement_config[key], value
+                )
             else:
                 self.retirement_config[key] = value
 

@@ -151,6 +151,7 @@ export function RetirementTab() {
 
   const summary = simulationData.summary || {};
   const monthlyData = simulationData.monthly_data || [];
+  const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const chartData = monthlyData.filter(
     (d) => d.index % 12 === 0 || d.index === 1,
   );
@@ -553,6 +554,41 @@ export function RetirementTab() {
                   tooltip="현금성 자산이 0원이 되는 시점"
                 />
               </div>
+              {strategyRulesSummary && (
+                <div
+                  className="rounded-[2rem] border border-slate-800 bg-slate-950/40 p-5 space-y-4"
+                  data-testid="strategy-rules-summary"
+                >
+                  <div className="flex items-center gap-2">
+                    <Info size={16} className="text-violet-400" />
+                    <p className="text-[11px] font-black text-violet-400 uppercase tracking-widest">
+                      Applied Rules
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <RuleBadge
+                      label="Rebalance"
+                      value={`${strategyRulesSummary.rebalance_month}M / ${strategyRulesSummary.rebalance_week}W`}
+                    />
+                    <RuleBadge
+                      label="Corp SGOV"
+                      value={`${strategyRulesSummary.corporate_sgov_target_months} Mo`}
+                    />
+                    <RuleBadge
+                      label="Pension SGOV"
+                      value={`${strategyRulesSummary.pension_sgov_min_years} Yr`}
+                    />
+                    <RuleBadge
+                      label="Bear Freeze"
+                      value={
+                        strategyRulesSummary.bear_market_freeze_enabled
+                          ? "Enabled"
+                          : "Disabled"
+                      }
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative">
               <ResponsiveContainer width="100%" height="100%">
@@ -795,6 +831,17 @@ function MetricCard({
         </div>
       </div>
       <span className="text-base font-black text-slate-200">{value}</span>
+    </div>
+  );
+}
+
+function RuleBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3">
+      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+        {label}:
+      </p>
+      <p className="text-sm font-black text-slate-200 mt-1">{value}</p>
     </div>
   );
 }
