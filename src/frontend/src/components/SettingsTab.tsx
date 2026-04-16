@@ -1101,7 +1101,7 @@ export function SettingsTab({
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                      {item.name || (id === "v1" ? "Standard" : "Conservative")}
+                      {item.name || id}
                     </h4>
                     <div className="group relative">
                       <Info size={12} className="text-slate-700 cursor-help" />
