@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-from src.core.cascade_engine import CascadeEngine
 from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
 from src.core.trigger_engine import TriggerEngine
@@ -43,16 +42,18 @@ class ProjectionEngine:
 
         c_w = c_stats.get("weights") or {"Growth": 0.7, "Cash": 0.3}
         p_w = p_stats.get("weights") or {"Growth": 0.4, "Dividend": 0.3, "Cash": 0.3}
+        c_sw = c_stats.get("strategy_weights") or {}
+        p_sw = p_stats.get("strategy_weights") or {}
 
         curr_assets = {
-            "corp_growth": c_bal * c_w.get("Growth", 0),
-            "corp_dividend": c_bal * c_w.get("Dividend", 0),
-            "corp_fixed": c_bal * c_w.get("Fixed", 0),
-            "corp_cash": c_bal * c_w.get("Cash", 0),
-            "pen_growth": p_bal * p_w.get("Growth", 0),
-            "pen_dividend": p_bal * p_w.get("Dividend", 0),
-            "pen_fixed": p_bal * p_w.get("Fixed", 0),
-            "pen_cash": p_bal * p_w.get("Cash", 0),
+            "corp_growth": c_bal * (c_sw.get("Growth Engine", c_w.get("Growth", 0))),
+            "corp_dividend": c_bal * (c_sw.get("Dividend Growth", c_w.get("Dividend", 0))),
+            "corp_high_income": c_bal * (c_sw.get("High Income", c_w.get("Fixed", 0))),
+            "corp_cash": c_bal * (c_sw.get("SGOV Buffer", c_w.get("Cash", 0))),
+            "pen_growth": p_bal * (p_sw.get("Growth Engine", p_w.get("Growth", 0))),
+            "pen_dividend": p_bal * (p_sw.get("Dividend Growth", p_w.get("Dividend", 0))),
+            "pen_bond": p_bal * (p_sw.get("Bond Buffer", p_w.get("Fixed", 0))),
+            "pen_cash": p_bal * (p_sw.get("SGOV Buffer", p_w.get("Cash", 0))),
         }
 
         def p(k: str, d: Any) -> Any:
@@ -74,19 +75,26 @@ class ProjectionEngine:
             int(p("employee_count", 1)),
         )
 
-        buffer_months = int(p("target_buffer_months", 24))
+        rebalance_month = int(p("rebalance_month", 1))
+        bear_market_freeze_enabled = bool(p("bear_market_freeze_enabled", False))
+        sgov_crisis_months = float(p("sgov_crisis_months", 24))
+        sgov_warn_months = float(p("sgov_warn_months", 30))
+        high_income_min_ratio = float(p("high_income_min_ratio", 0.20))
+        growth_sell_years_left_threshold = float(p("growth_sell_years_left_threshold", 10))
+        years_left_estimate = float(p("years_left_estimate", float("inf")))
+        bond_min_years = float(p("bond_min_years", 5))
+        bond_min_total_ratio = float(p("bond_min_total_ratio", 0.05))
+        dividend_min_ratio = float(p("dividend_min_ratio", 0.10))
         planned_cashflows = p("planned_cashflows", [])
 
         # [FIX] 사용자가 Retirement 탭에서 수정한 시장 수익률 가정 로드
         m_ret_rate = float(p("market_return_rate", 0.07))
         m_infl = (1 + infl_rate) ** (1 / 12) - 1
-        
+
         # 월간 시장 수익률 (단리 변환)
         m_ret_monthly = m_ret_rate / 12
 
-        cur_y, cur_m = int(p("simulation_start_year", 2026)), int(
-            p("simulation_start_month", 3)
-        )
+        cur_y, cur_m = int(p("simulation_start_year", 2026)), int(p("simulation_start_month", 3))
 
         monthly_data = []
         survival_m = 0
@@ -111,15 +119,19 @@ class ProjectionEngine:
                         curr_assets[key] = max(0, curr_assets[key] - amt)
 
             # 자산 수익 발생 (시장 수익률 가정 반영)
+            # 배당/인컴은 자산 자체에 재투자하지 않고 계좌별 현금으로 유입한다.
             c_div = c_stats.get("dividend_yield", 0.04) / 12
             p_div = p_stats.get("dividend_yield", 0.035) / 12
-            
+
             # 성장률 = 시장 수익률 - 배당률 (단, 배당은 재투자 가정)
             # 사용자가 입력한 m_ret_rate가 전체 TR(Total Return)이라고 가정할 때 가장 직관적임
             c_growth_rate = m_ret_monthly - c_div
             p_growth_rate = m_ret_monthly - p_div
 
-            for asset, bal in curr_assets.items():
+            snapshot_assets = dict(curr_assets)
+            corp_income_to_cash = 0.0
+            pension_income_to_cash = 0.0
+            for asset, bal in snapshot_assets.items():
                 if bal <= 0:
                     continue
                 if asset.startswith("corp"):
@@ -128,7 +140,18 @@ class ProjectionEngine:
                     div, growth = p_div, p_growth_rate
                 if "cash" in asset:
                     growth *= 0.5
-                curr_assets[asset] *= 1 + growth + div
+                    curr_assets[asset] = bal * (1 + growth + div)
+                    continue
+
+                income_cash = bal * div
+                curr_assets[asset] = bal * (1 + growth)
+                if asset.startswith("corp"):
+                    corp_income_to_cash += income_cash
+                else:
+                    pension_income_to_cash += income_cash
+
+            curr_assets["corp_cash"] += corp_income_to_cash
+            curr_assets["pen_cash"] += pension_income_to_cash
 
             # 법인 운영비 지출
             ins_rate = (
@@ -150,14 +173,51 @@ class ProjectionEngine:
             # 인출 시퀀스
             actual_p_draw = 0
             phase = "Phase 1"
-            if age >= p_age and deficit > 0:
-                phase = "Phase 2" if age < n_age else "Phase 3"
+            if age >= n_age:
+                phase = "Phase 3"
+            elif age >= p_age:
+                phase = "Phase 2"
+
+            if phase in {"Phase 2", "Phase 3"} and deficit > 0:
                 p_target = min(p_cf * (1 + m_infl) ** m, deficit)
-                for pa in ["pen_cash", "pen_fixed", "pen_dividend", "pen_growth"]:
-                    draw = min(curr_assets[pa], p_target)
-                    curr_assets[pa] -= draw
-                    actual_p_draw += draw
-                    p_target -= draw
+                cash_draw = min(curr_assets["pen_cash"], p_target)
+                curr_assets["pen_cash"] -= cash_draw
+                actual_p_draw += cash_draw
+                p_target -= cash_draw
+
+                if p_target > 0 and s_m == rebalance_month:
+                    annual_pension_need = max(p_cf * 12, 1.0)
+                    pension_total = sum(
+                        curr_assets[k]
+                        for k in ["pen_cash", "pen_bond", "pen_dividend", "pen_growth"]
+                    )
+                    bond_floor = max(
+                        annual_pension_need * bond_min_years,
+                        pension_total * bond_min_total_ratio,
+                    )
+                    dividend_floor = pension_total * dividend_min_ratio
+
+                    bond_draw = min(curr_assets["pen_bond"], p_target)
+                    curr_assets["pen_bond"] -= bond_draw
+                    actual_p_draw += bond_draw
+                    p_target -= bond_draw
+
+                    if p_target > 0 and curr_assets["pen_bond"] <= bond_floor:
+                        dividend_draw = min(curr_assets["pen_dividend"], p_target)
+                        curr_assets["pen_dividend"] -= dividend_draw
+                        actual_p_draw += dividend_draw
+                        p_target -= dividend_draw
+
+                    if (
+                        p_target > 0
+                        and phase == "Phase 3"
+                        and curr_assets["pen_dividend"] <= dividend_floor
+                        and not (bear_market_freeze_enabled and m_ret_rate < 0)
+                    ):
+                        growth_draw = min(curr_assets["pen_growth"], p_target)
+                        curr_assets["pen_growth"] -= growth_draw
+                        actual_p_draw += growth_draw
+                        p_target -= growth_draw
                 deficit = max(0, deficit - actual_p_draw)
 
             if loan_bal > 0 and deficit > 0:
@@ -166,24 +226,54 @@ class ProjectionEngine:
                 curr_assets["corp_cash"] -= draw
                 deficit = max(0, deficit - draw)
 
-            if deficit > 0:
-                legacy_assets = {
-                    "VOO": curr_assets["corp_growth"],
-                    "SGOV": curr_assets["corp_cash"],
-                }
-                cascade = CascadeEngine(target_buffer=target_cf * buffer_months)
-                decision = cascade.get_liquidation_decision(legacy_assets)
-                t_asset = decision["target_asset"] or "SGOV"
-                real_key = "corp_growth" if t_asset == "VOO" else "corp_cash"
-                draw = min(curr_assets[real_key], deficit)
-                curr_assets[real_key] -= draw
-                if draw < deficit:
-                    curr_assets["corp_cash"] = max(
-                        0, curr_assets["corp_cash"] - (deficit - draw)
+            if deficit > 0 and s_m == rebalance_month:
+                current_month_need = max(deficit, 1.0)
+                corp_cash_buffer_months = curr_assets["corp_cash"] / current_month_need
+                corp_total = sum(
+                    curr_assets[k]
+                    for k in [
+                        "corp_cash",
+                        "corp_high_income",
+                        "corp_dividend",
+                        "corp_growth",
+                    ]
+                )
+                if corp_cash_buffer_months < sgov_warn_months:
+                    hi_draw = min(curr_assets["corp_high_income"], deficit)
+                    curr_assets["corp_high_income"] -= hi_draw
+                    deficit -= hi_draw
+
+                high_income_ratio = (
+                    curr_assets["corp_high_income"] / corp_total if corp_total > 0 else 0.0
+                )
+                if deficit > 0 and high_income_ratio <= high_income_min_ratio:
+                    dividend_draw = min(curr_assets["corp_dividend"], deficit)
+                    curr_assets["corp_dividend"] -= dividend_draw
+                    deficit -= dividend_draw
+
+                allow_corp_growth_sale = (
+                    deficit > 0
+                    and not (bear_market_freeze_enabled and m_ret_rate < 0)
+                    and (
+                        years_left_estimate <= growth_sell_years_left_threshold
+                        or (
+                            corp_cash_buffer_months < sgov_crisis_months
+                            and curr_assets["corp_high_income"] <= 0
+                            and curr_assets["corp_dividend"] <= 0
+                        )
                     )
-                if real_key == "corp_growth" and growth_sell_date == "None":
-                    growth_sell_date = f"{s_y}-{s_m:02d}"
-                deficit = 0
+                )
+                if allow_corp_growth_sale:
+                    growth_draw = min(curr_assets["corp_growth"], deficit)
+                    curr_assets["corp_growth"] -= growth_draw
+                    deficit -= growth_draw
+                    if growth_draw > 0 and growth_sell_date == "None":
+                        growth_sell_date = f"{s_y}-{s_m:02d}"
+
+                if deficit > 0:
+                    cash_draw = min(curr_assets["corp_cash"], deficit)
+                    curr_assets["corp_cash"] -= cash_draw
+                    deficit -= cash_draw
 
             total_nw = sum(curr_assets.values())
             if total_nw <= 0:
@@ -195,13 +285,13 @@ class ProjectionEngine:
                 corp_bal = (
                     curr_assets["corp_growth"]
                     + curr_assets["corp_dividend"]
-                    + curr_assets["corp_fixed"]
+                    + curr_assets["corp_high_income"]
                     + curr_assets["corp_cash"]
                 )
                 pen_bal = (
                     curr_assets["pen_growth"]
                     + curr_assets["pen_dividend"]
-                    + curr_assets["pen_fixed"]
+                    + curr_assets["pen_bond"]
                     + curr_assets["pen_cash"]
                 )
                 monthly_data.append(

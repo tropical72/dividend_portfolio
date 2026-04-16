@@ -73,6 +73,21 @@ class DividendBackend:
             self.retirement_config,
         )
 
+    def _validate_retirement_config(self, config: Dict[str, Any]) -> Optional[str]:
+        """은퇴 설정의 핵심 회계 관계를 검증하고 오류 메시지를 반환합니다."""
+        corp_params = config.get("corp_params", {})
+        initial_investment = float(corp_params.get("initial_investment") or 0)
+        capital_stock = float(corp_params.get("capital_stock") or 0)
+        shareholder_loan = float(corp_params.get("initial_shareholder_loan") or 0)
+
+        if initial_investment < capital_stock + shareholder_loan:
+            return (
+                "corp_params.initial_investment는 capital_stock + "
+                "initial_shareholder_loan 이상이어야 합니다."
+            )
+
+        return None
+
     def _normalize_portfolio_category(self, account_type: str, category: str) -> str:
         """계좌 타입 기준 전략 카테고리 이름을 정규화합니다."""
         normalized_account = account_type or "Corporate"
@@ -191,6 +206,7 @@ class DividendBackend:
             "dividend_yield": 0.04,
             "expected_return": 0.07,
             "weights": {"Growth": 1.0},
+            "strategy_weights": {"Growth Engine": 1.0},
         }
 
         if not p_id:
@@ -206,13 +222,24 @@ class DividendBackend:
         if total_weight <= 0:
             return default_stats
 
-        stats = {"dividend_yield": 0.0, "expected_return": 0.0, "weights": {}}
+        stats = {
+            "dividend_yield": 0.0,
+            "expected_return": 0.0,
+            "weights": {},
+            "strategy_weights": {},
+        }
         for item in items:
             w = item.get("weight", 0.0) / total_weight
+            strategy_cat = self._normalize_portfolio_category(
+                account_type, item.get("category", "Growth")
+            )
             cat = self._strategy_category_to_stats_bucket(
                 account_type, item.get("category", "Growth")
             )
             stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
+            stats["strategy_weights"][strategy_cat] = (
+                stats["strategy_weights"].get(strategy_cat, 0.0) + w
+            )
             div_y = float(item.get("dividend_yield") or 0.0) / 100.0
             stats["dividend_yield"] += div_y * w
 
@@ -230,18 +257,27 @@ class DividendBackend:
     def update_retirement_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
         self._ensure_retirement_config_defaults()
+        candidate_config = dict(self.retirement_config)
         # 개별 필드 업데이트 (딕셔너리 depth 고려)
         for key, value in new_config.items():
             if (
                 isinstance(value, dict)
-                and key in self.retirement_config
-                and isinstance(self.retirement_config[key], dict)
+                and key in candidate_config
+                and isinstance(candidate_config[key], dict)
             ):
-                self.retirement_config[key] = self._deep_merge_dict(
-                    self.retirement_config[key], value
-                )
+                candidate_config[key] = self._deep_merge_dict(candidate_config[key], value)
             else:
-                self.retirement_config[key] = value
+                candidate_config[key] = value
+
+        validation_error = self._validate_retirement_config(candidate_config)
+        if validation_error:
+            return {
+                "success": False,
+                "message": validation_error,
+                "data": self.retirement_config,
+            }
+
+        self.retirement_config = candidate_config
 
         self.storage.save_json(self.retirement_config_file, self.retirement_config)
         return {

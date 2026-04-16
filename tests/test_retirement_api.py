@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from src.backend.main import app
+from src.backend.main import app, backend
 
 client = TestClient(app)
 
@@ -44,6 +44,25 @@ def test_update_retirement_config_strategy_rules():
     assert strategy_rules["corporate"]["sgov_warn_months"] == 30
 
 
+def test_update_retirement_config_rejects_inconsistent_corp_principal():
+    """법인 총운용자산이 자본금+주주대여금보다 작으면 저장을 거부해야 한다."""
+    response = client.post(
+        "/api/retirement/config",
+        json={
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 10000000,
+                "initial_shareholder_loan": 120000000,
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is False
+    assert "initial_investment" in payload["message"]
+
+
 def test_run_retirement_simulation_with_events():
     """미래 자금 이벤트(Planned Cashflows)가 반영된 시뮬레이션 테스트"""
     # 1. 특정 시점에 대규모 자금 유입 설정
@@ -51,10 +70,32 @@ def test_run_retirement_simulation_with_events():
     event_amount = 500000000
     config_update = {
         "user_profile": {"birth_year": 1972, "birth_month": 3},
+        "active_assumption_id": "test_event",
+        "assumptions": {
+            "test_event": {
+                "inflation_rate": 0.0,
+                "expected_return": 0.0,
+            }
+        },
+        "corp_params": {
+            "initial_investment": 2000000000,
+            "capital_stock": 0,
+            "initial_shareholder_loan": 0,
+            "monthly_salary": 0,
+            "monthly_fixed_cost": 0,
+            "employee_count": 0,
+        },
+        "pension_params": {
+            "initial_investment": 0,
+            "severance_reserve": 0,
+            "other_reserve": 0,
+            "monthly_withdrawal_target": 0,
+        },
         "simulation_params": {
             "simulation_start_year": 2026,
             "simulation_start_month": 3,
             "target_monthly_cashflow": 9000000,
+            "national_pension_amount": 0,
             "simulation_years": 12,
         },
         "planned_cashflows": [
@@ -92,3 +133,77 @@ def test_run_retirement_simulation_with_events():
             break
 
     assert found_event is True, f"{event_year}년 {6}월 이벤트를 찾을 수 없습니다."
+
+
+def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
+    """사용자 설정 rebalance_month가 실제 엔진 매도 시점에 반영되어야 한다."""
+    client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1980,
+                "birth_month": 1,
+                "private_pension_start_age": 65,
+                "national_pension_start_age": 65,
+            },
+            "active_assumption_id": "test_zero",
+            "assumptions": {
+                "test_zero": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 120000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_fixed_cost": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 1000,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "strategy_rules": {"rebalance_month": 2},
+        },
+    )
+
+    original_get_active_master_portfolio = backend.get_active_master_portfolio
+    original_get_portfolio_by_id = backend.get_portfolio_by_id
+    original_portfolios = backend.portfolios
+    original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
+
+    try:
+        backend.get_active_master_portfolio = lambda: None
+        backend.get_portfolio_by_id = lambda _portfolio_id: None
+        backend.portfolios = []
+        backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
+            "dividend_yield": 0.0,
+            "expected_return": 0.0,
+            "weights": {"Growth": 1.0},
+        }
+
+        response = client.get("/api/retirement/simulate")
+    finally:
+        backend.get_active_master_portfolio = original_get_active_master_portfolio
+        backend.get_portfolio_by_id = original_get_portfolio_by_id
+        backend.portfolios = original_portfolios
+        backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    month1 = payload["data"]["monthly_data"][0]
+    assert month1["month"] == 1
+    assert month1["corp_balance"] == 120000
