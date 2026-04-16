@@ -117,8 +117,13 @@ export function RetirementTab() {
       );
       const data = await res.json();
       if (data.success) {
+        setMasterPortfolios((prev) =>
+          prev.map((m) => ({ ...m, is_active: m.id === m_id })),
+        );
         setIsSwitcherOpen(false);
         await fetchData(activeId);
+      } else {
+        setErrorMessage(data.message || "전략을 활성화할 수 없습니다.");
       }
     } catch (err) {
       console.error(err);
@@ -203,6 +208,7 @@ export function RetirementTab() {
 
               <div
                 className="flex items-center gap-3 cursor-pointer group/title w-fit"
+                data-testid="master-switcher-trigger"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsSwitcherOpen(!isSwitcherOpen);
@@ -247,7 +253,10 @@ export function RetirementTab() {
               </div>
 
               {isSwitcherOpen && (
-                <div className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10">
+                <div
+                  className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10"
+                  data-testid="master-switcher-menu"
+                >
                   <p className="px-6 py-1.5 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">
                     Change Plan
                   </p>
@@ -256,6 +265,7 @@ export function RetirementTab() {
                       <div
                         key={m.id}
                         onClick={() => handleSwitchMaster(m.id)}
+                        data-testid={`master-switcher-item-${m.id}`}
                         className={cn(
                           "mx-2 px-6 py-3.5 rounded-xl cursor-pointer transition-all flex items-center justify-between group/item mb-0.5",
                           m.is_active

@@ -186,6 +186,8 @@ export function PortfolioDashboard({
       const data = await res.json();
       if (data.success) {
         setMasterPortfolios((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        alert(data.message || "전략을 삭제할 수 없습니다.");
       }
     } catch (err) {
       console.error(err);
@@ -537,14 +539,28 @@ export function PortfolioDashboard({
                             onClick={() => handleActivateMaster(m.id)}
                             className="p-4 bg-slate-950/50 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all border border-slate-800"
                             title="전략 활성화"
+                            data-testid={`activate-master-${m.id}`}
                           >
                             <CheckSquare size={20} />
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteMaster(m.id)}
-                          className="p-4 bg-slate-950/50 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all border border-slate-800"
-                          title="전략 삭제"
+                          onClick={() =>
+                            !m.is_active && handleDeleteMaster(m.id)
+                          }
+                          disabled={m.is_active}
+                          data-testid={`delete-master-${m.id}`}
+                          className={cn(
+                            "p-4 rounded-2xl transition-all border border-slate-800",
+                            m.is_active
+                              ? "bg-slate-950/30 text-slate-700 cursor-not-allowed opacity-50"
+                              : "bg-slate-950/50 text-slate-500 hover:text-red-400 hover:bg-red-500/10",
+                          )}
+                          title={
+                            m.is_active
+                              ? "활성 전략은 삭제할 수 없습니다"
+                              : "전략 삭제"
+                          }
                         >
                           <Trash2 size={20} />
                         </button>
