@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 import OpenDartReader
 import pandas as pd
-import requests
+import requests  # type: ignore[import-untyped]
 import yfinance as yf
 from bs4 import BeautifulSoup
 
@@ -278,8 +278,8 @@ class StockDataProvider:
         try:
             hist = ticker.history(period="1y")
             if not hist.empty:
-                p1y = hist.iloc[0]["Close"]
-                return ((current_price - p1y) / p1y) * 100
+                p1y = float(hist.iloc[0]["Close"])
+                return float(((current_price - p1y) / p1y) * 100)
         except Exception:
             pass
         return 0.0
@@ -429,4 +429,5 @@ class StockDataProvider:
         df["month"] = df.index.month
         monthly_last = df.groupby("month").last()["Dividends"]
 
-        return monthly_last.to_dict()
+        monthly_dict = monthly_last.to_dict()
+        return {int(month): float(amount) for month, amount in monthly_dict.items()}

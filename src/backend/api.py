@@ -1,7 +1,7 @@
 import datetime
 import os
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from src.backend.data_provider import StockDataProvider
 from src.backend.storage import StorageManager
@@ -169,7 +169,7 @@ class DividendBackend:
         # settings.json 내의 캐시 정보 확인
         cache = self.settings.get("exchange_rate_cache", {})
         last_fetch_str = cache.get("last_fetch")
-        last_rate = cache.get("rate", 1425.5)
+        last_rate = float(cache.get("rate", 1425.5))
 
         should_fetch = True
         if last_fetch_str:
@@ -202,12 +202,7 @@ class DividendBackend:
         데이터가 없거나 비어있으면 기본값(4%/3.5%)을 반환합니다.
         """
         # 기본값 설정
-        default_stats = {
-            "dividend_yield": 0.04,
-            "expected_return": 0.07,
-            "weights": {"Growth": 1.0},
-            "strategy_weights": {"Growth Engine": 1.0},
-        }
+        default_stats = self._portfolio_default_stats()
 
         if not p_id:
             return default_stats
@@ -222,12 +217,14 @@ class DividendBackend:
         if total_weight <= 0:
             return default_stats
 
-        stats = {
+        stats: Dict[str, Any] = {
             "dividend_yield": 0.0,
             "expected_return": 0.0,
             "weights": {},
             "strategy_weights": {},
         }
+        weight_buckets = cast(Dict[str, float], stats["weights"])
+        strategy_buckets = cast(Dict[str, float], stats["strategy_weights"])
         for item in items:
             w = item.get("weight", 0.0) / total_weight
             strategy_cat = self._normalize_portfolio_category(
@@ -236,12 +233,10 @@ class DividendBackend:
             cat = self._strategy_category_to_stats_bucket(
                 account_type, item.get("category", "Growth")
             )
-            stats["weights"][cat] = stats["weights"].get(cat, 0.0) + w
-            stats["strategy_weights"][strategy_cat] = (
-                stats["strategy_weights"].get(strategy_cat, 0.0) + w
-            )
+            weight_buckets[cat] = weight_buckets.get(cat, 0.0) + w
+            strategy_buckets[strategy_cat] = strategy_buckets.get(strategy_cat, 0.0) + w
             div_y = float(item.get("dividend_yield") or 0.0) / 100.0
-            stats["dividend_yield"] += div_y * w
+            stats["dividend_yield"] = float(stats["dividend_yield"]) + (div_y * w)
 
         # [REQ-GLB-01] Total Return = Portfolio Weighted Yield + Global Price Appreciation
         pa_rate = float(self.settings.get("price_appreciation_rate", 3.0)) / 100.0
@@ -252,7 +247,7 @@ class DividendBackend:
     def get_retirement_config(self) -> Dict[str, Any]:
         """저장된 은퇴 운용 설정 정보를 반환합니다."""
         self._ensure_retirement_config_defaults()
-        return self.retirement_config
+        return cast(Dict[str, Any], self.retirement_config)
 
     def update_retirement_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
         """은퇴 운용 설정을 업데이트합니다. [REQ-RAMS-1.2]"""
@@ -293,7 +288,7 @@ class DividendBackend:
 
     def get_retirement_snapshot(self) -> Dict[str, Any]:
         """저장된 은퇴일 스냅샷을 반환합니다."""
-        return self.storage.load_json(self.snapshot_file, {})
+        return cast(Dict[str, Any], self.storage.load_json(self.snapshot_file, {}))
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
@@ -319,7 +314,7 @@ class DividendBackend:
         account_type: str = "Corporate",
         total_capital: float = 0.0,
         currency: str = "USD",
-        items: list = None,
+        items: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """새로운 포트폴리오를 생성합니다."""
         new_p = {
@@ -397,13 +392,18 @@ class DividendBackend:
 
         return self.master_portfolios
 
-    def get_portfolio_by_id(self, p_id: str) -> Optional[Dict[str, Any]]:
+    def get_portfolio_by_id(self, p_id: Optional[str]) -> Optional[Dict[str, Any]]:
         """ID로 개별 포트폴리오를 찾습니다."""
+        if not p_id:
+            return None
         portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
         return self._normalize_portfolio_record(portfolio) if portfolio else None
 
     def add_master_portfolio(
-        self, name: str, corp_id: str = None, pension_id: str = None
+        self,
+        name: str,
+        corp_id: Optional[str] = None,
+        pension_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """새로운 마스터 전략을 생성합니다. [REQ-PRT-08.1]"""
         if not corp_id and not pension_id:
@@ -609,7 +609,7 @@ class DividendBackend:
         self.settings.setdefault("default_capital", 10000.0)
         self.settings.setdefault("default_currency", "USD")
         self.settings.setdefault("price_appreciation_rate", 3.0)
-        return self.settings
+        return cast(Dict[str, Any], self.settings)
 
     def add_to_watchlist(self, ticker: str, country: str = "US") -> Dict[str, Any]:
         """새로운 종목을 추가하고 저장합니다."""
@@ -675,3 +675,11 @@ class DividendBackend:
         if "dart_api_key" in new_settings:
             self.data_provider = StockDataProvider(dart_api_key=self.settings["dart_api_key"])
         return {"success": True, "message": "설정이 저장되었습니다."}
+
+    def _portfolio_default_stats(self) -> Dict[str, Any]:
+        return {
+            "dividend_yield": 0.04,
+            "expected_return": 0.07,
+            "weights": {"Growth": 1.0},
+            "strategy_weights": {"Growth Engine": 1.0},
+        }

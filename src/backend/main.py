@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,21 +53,21 @@ class PortfolioRequest(BaseModel):
     account_type: Optional[str] = "Corporate"
     total_capital: Optional[float] = 0.0
     currency: Optional[str] = "USD"
-    items: Optional[list] = []
+    items: Optional[List[Dict[str, Any]]] = None
 
 
 class RetirementConfigRequest(BaseModel):
     active_assumption_id: Optional[str] = None
-    user_profile: Optional[dict] = None
-    simulation_params: Optional[dict] = None
-    corp_params: Optional[dict] = None
-    pension_params: Optional[dict] = None
-    personal_params: Optional[dict] = None
-    planned_cashflows: Optional[list] = None
-    assumptions: Optional[dict] = None
-    tax_and_insurance: Optional[dict] = None
-    trigger_thresholds: Optional[dict] = None
-    strategy_rules: Optional[dict] = None
+    user_profile: Optional[Dict[str, Any]] = None
+    simulation_params: Optional[Dict[str, Any]] = None
+    corp_params: Optional[Dict[str, Any]] = None
+    pension_params: Optional[Dict[str, Any]] = None
+    personal_params: Optional[Dict[str, Any]] = None
+    planned_cashflows: Optional[List[Dict[str, Any]]] = None
+    assumptions: Optional[Dict[str, Any]] = None
+    tax_and_insurance: Optional[Dict[str, Any]] = None
+    trigger_thresholds: Optional[Dict[str, Any]] = None
+    strategy_rules: Optional[Dict[str, Any]] = None
 
 
 class MasterPortfolioRequest(BaseModel):
@@ -97,7 +97,7 @@ async def get_watchlist():
 
 @app.post("/api/watchlist")
 async def add_to_watchlist(req: StockRequest):
-    return backend.add_to_watchlist(req.ticker, req.country)
+    return backend.add_to_watchlist(req.ticker, req.country or "US")
 
 
 @app.delete("/api/watchlist/{ticker}")
@@ -133,10 +133,10 @@ async def get_portfolios():
 async def create_portfolio(req: PortfolioRequest):
     return backend.add_portfolio(
         name=req.name,
-        account_type=req.account_type,
-        total_capital=req.total_capital,
-        currency=req.currency,
-        items=req.items,
+        account_type=req.account_type or "Corporate",
+        total_capital=req.total_capital or 0.0,
+        currency=req.currency or "USD",
+        items=req.items or [],
     )
 
 

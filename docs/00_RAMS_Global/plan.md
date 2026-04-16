@@ -29,8 +29,21 @@
 - **T-GLB-11.2: [Tooling] 생성물 제외 및 스타일 검증 정리**
     - [x] **T-GLB-11.2.1** Frontend Prettier 검사 대상에서 `playwright-report`, `test-results`, `dist`를 제외한다.
 - **T-GLB-11.3: [Debt] 전역 정적 분석 부채 추적**
-    - [ ] **T-GLB-11.3.1** 저장소 전체 `black --check src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
-    - [ ] **T-GLB-11.3.2** 저장소 전체 `mypy src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+    - [x] **T-GLB-11.3.1** 저장소 전체 `black --check src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+    - [x] **T-GLB-11.3.2** 저장소 전체 `mypy src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+
+### [Phase 11 Notes] 2026-04-16 전역 부채 1차 정비
+- `mypy src tests` 기준 오류를 41건에서 0건으로 감축했다.
+- 1차 정리 완료 범주:
+    - `Optional` 기본값 시그니처 정리 (`trigger_engine`, `stress_engine`, `rebalance_engine`, `tax_engine`)
+    - `main.py` 요청 모델의 `Optional`/리스트 기본값 정리
+    - `api.py`의 `strategy_weights`/설정/스냅샷 반환 경계 타입 정리
+- 정비 완료:
+    - `src/backend/data_provider.py`의 `requests` stub 처리
+    - `src/backend/data_provider.py` 반환 타입 정리
+    - 저장소 전체 `black --check src tests` 통과
+    - 저장소 전체 `mypy src tests` 통과
+    - 저장소 전체 `ruff check src tests` 통과
 
 ---
-*마지막 업데이트: 2026-04-16 09:20:00*
+*마지막 업데이트: 2026-04-16 16:55:00*

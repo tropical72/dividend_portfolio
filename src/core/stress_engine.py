@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class StressTestEngine:
@@ -7,7 +7,7 @@ class StressTestEngine:
     시나리오별 수치는 기본값을 가지나, 외부 설정을 통해 오버라이드 가능. [REQ-RAMS-5]
     """
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
         # 사용자 정의 스트레스 파라미터가 있다면 기본값 대체
         self.bear_drop = config.get("bear_market_drop", -0.30)

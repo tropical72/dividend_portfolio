@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict, Optional
 
 
 class TaxEngine:
@@ -7,23 +7,23 @@ class TaxEngine:
     모든 세무 상수는 외부에서 주입받으며, 미지정 시 기본값을 사용함. [REQ-ARCH-2]
     """
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
 
         # 건강보험 관련 변수 (2025년 기본값)
-        self.point_unit_price = config.get("point_unit_price", 208.4)
-        self.ltc_rate = config.get("ltc_rate", 0.1295)
+        self.point_unit_price = float(config.get("point_unit_price", 208.4))
+        self.ltc_rate = float(config.get("ltc_rate", 0.1295))
 
         # 법인세 관련 변수
-        self.corp_tax_threshold = config.get("corp_tax_threshold", 200000000)
-        self.corp_tax_low_rate = config.get("corp_tax_low_rate", 0.09)
-        self.corp_tax_high_rate = config.get("corp_tax_high_rate", 0.19)
+        self.corp_tax_threshold = float(config.get("corp_tax_threshold", 200000000))
+        self.corp_tax_low_rate = float(config.get("corp_tax_low_rate", 0.09))
+        self.corp_tax_high_rate = float(config.get("corp_tax_high_rate", 0.19))
 
         # 4대보험 요율 (근로자/사업자 합산 및 분담 로직용)
-        self.pension_rate = config.get("pension_rate", 0.045)  # 근로자분
-        self.health_rate = config.get("health_rate", 0.03545)
-        self.employment_rate = config.get("employment_rate", 0.009)
-        self.income_tax_estimate_rate = config.get("income_tax_estimate_rate", 0.05)
+        self.pension_rate = float(config.get("pension_rate", 0.045))  # 근로자분
+        self.health_rate = float(config.get("health_rate", 0.03545))
+        self.employment_rate = float(config.get("employment_rate", 0.009))
+        self.income_tax_estimate_rate = float(config.get("income_tax_estimate_rate", 0.05))
 
     def calculate_corp_tax(self, profit: float) -> float:
         """법인세 산출 (변수화된 세율 적용)"""

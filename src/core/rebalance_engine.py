@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class RebalanceEngine:
@@ -7,14 +7,14 @@ class RebalanceEngine:
     [REQ-RAMS-4.1, 4.2] 목표 비중 편차 감시 및 매매 시 발생하는 세무 비용 계산.
     """
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
-        self.deviation_threshold = config.get("deviation_threshold", 0.05)
-        self.corp_tax_rate = config.get("corp_tax_rate", 0.09)
+        self.deviation_threshold = float(config.get("deviation_threshold", 0.05))
+        self.corp_tax_rate = float(config.get("corp_tax_rate", 0.09))
 
     def check_rebalance_condition(
         self, current_assets: Dict[str, float], target_weights: Dict[str, float]
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """비중 이탈 확인"""
         total_value = sum(current_assets.values())
         if total_value <= 0:

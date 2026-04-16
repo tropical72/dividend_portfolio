@@ -1,6 +1,6 @@
 import os
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 
 def download_font():

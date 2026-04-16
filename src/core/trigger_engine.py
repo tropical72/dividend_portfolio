@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class TriggerEngine:
@@ -7,14 +7,16 @@ class TriggerEngine:
     모든 임계치는 설정 가능하며, 미지정 시 기본 가이드라인을 따름. [REQ-RAMS-6]
     """
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
         self.tax_limit = config.get("tax_threshold", 200000000)
         self.buffer_months = config.get("target_buffer_months", 24)
         self.high_income_cap = config.get("high_income_cap_rate", 0.40)
         self.panic_threshold = config.get("market_panic_threshold", -0.20)
 
-    def check_buffer_trigger(self, current_sgov: float, monthly_shortfall: float) -> List[Dict]:
+    def check_buffer_trigger(
+        self, current_sgov: float, monthly_shortfall: float
+    ) -> List[Dict[str, Any]]:
         signals = []
         target_buffer = monthly_shortfall * self.buffer_months
         if current_sgov < target_buffer:
@@ -27,7 +29,7 @@ class TriggerEngine:
             )
         return signals
 
-    def check_tax_trigger(self, tax_base: float) -> List[Dict]:
+    def check_tax_trigger(self, tax_base: float) -> List[Dict[str, Any]]:
         signals = []
         if tax_base > self.tax_limit:
             signals.append(
@@ -39,7 +41,7 @@ class TriggerEngine:
             )
         return signals
 
-    def check_concentration_trigger(self, high_income_weight: float) -> List[Dict]:
+    def check_concentration_trigger(self, high_income_weight: float) -> List[Dict[str, Any]]:
         signals = []
         if high_income_weight > self.high_income_cap:
             signals.append(
@@ -51,7 +53,7 @@ class TriggerEngine:
             )
         return signals
 
-    def check_market_trigger(self, mdd: float) -> List[Dict]:
+    def check_market_trigger(self, mdd: float) -> List[Dict[str, Any]]:
         signals = []
         if mdd <= self.panic_threshold:
             signals.append(

@@ -163,9 +163,7 @@ class DividendApp(MDApp):
         self.data_table = None
 
     def build(self):
-        font_path = os.path.join(
-            os.path.dirname(__file__), "../../assets/fonts/malgun.ttf"
-        )
+        font_path = os.path.join(os.path.dirname(__file__), "../../assets/fonts/malgun.ttf")
         LabelBase.register(name="Malgun", fn_regular=font_path)
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "BlueGray"
@@ -189,9 +187,7 @@ class DividendApp(MDApp):
                 "on_release": lambda x="KR": self.set_item(x),
             },
         ]
-        self.menu = MDDropdownMenu(
-            caller=root.ids.country_button, items=menu_items, width_mult=2
-        )
+        self.menu = MDDropdownMenu(caller=root.ids.country_button, items=menu_items, width_mult=2)
 
         return root
 
@@ -311,9 +307,7 @@ class DividendApp(MDApp):
         elif option == "1-Yr Return":
             watchlist.sort(key=lambda x: x.get("one_yr_return", 0), reverse=True)
         elif option == "Last Ex-Div Date":
-            watchlist.sort(
-                key=lambda x: x.get("ex_div_date", "0000-00-00"), reverse=True
-            )
+            watchlist.sort(key=lambda x: x.get("ex_div_date", "0000-00-00"), reverse=True)
 
         self.refresh_table()
 
