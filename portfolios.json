@@ -277,5 +277,14 @@
             }
         ],
         "created_at": "1776331808.613619"
+    },
+    {
+        "id": "c54762ed-e649-4190-8825-7e142af0fa74",
+        "name": "Test Corp 191128d1",
+        "account_type": "Corporate",
+        "total_capital": 1000.0,
+        "currency": "USD",
+        "items": [],
+        "created_at": "1776331808.613619"
     }
 ]

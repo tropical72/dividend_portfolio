@@ -145,7 +145,9 @@ export function WatchlistTab({
     const targets =
       symbol === "BULK"
         ? watchlist
-            .filter((s) => selectedSymbols.has(s.symbol) && !s.is_system_default)
+            .filter(
+              (s) => selectedSymbols.has(s.symbol) && !s.is_system_default,
+            )
             .map((s) => s.symbol)
         : [symbol];
 
@@ -420,7 +422,8 @@ export function WatchlistTab({
               <button
                 onClick={(e) => {
                   const deletableCount = watchlist.filter(
-                    (s) => selectedSymbols.has(s.symbol) && !s.is_system_default,
+                    (s) =>
+                      selectedSymbols.has(s.symbol) && !s.is_system_default,
                   ).length;
                   if (deletableCount === 0) {
                     showStatus("기본 종목은 삭제할 수 없습니다.", "error");

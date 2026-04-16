@@ -357,8 +357,7 @@ class DividendBackend:
 
     def _is_system_default_master(self, master: Dict[str, Any]) -> bool:
         return bool(
-            master.get("is_system_default")
-            or master.get("id") == self.DEFAULT_MASTER_PORTFOLIO_ID
+            master.get("is_system_default") or master.get("id") == self.DEFAULT_MASTER_PORTFOLIO_ID
         )
 
     def _ensure_default_master_bundle(self) -> None:
@@ -377,7 +376,11 @@ class DividendBackend:
 
         default_master = self._get_default_master_portfolio_seed_data()
         existing_master = next(
-            (master for master in self.master_portfolios if master.get("id") == default_master["id"]),
+            (
+                master
+                for master in self.master_portfolios
+                if master.get("id") == default_master["id"]
+            ),
             None,
         )
         if existing_master is None:
@@ -388,9 +391,15 @@ class DividendBackend:
                 existing_master["is_system_default"] = True
                 changed = True
 
-        if self.master_portfolios and not any(master.get("is_active") for master in self.master_portfolios):
+        if self.master_portfolios and not any(
+            master.get("is_active") for master in self.master_portfolios
+        ):
             default_existing = next(
-                (master for master in self.master_portfolios if master.get("id") == default_master["id"]),
+                (
+                    master
+                    for master in self.master_portfolios
+                    if master.get("id") == default_master["id"]
+                ),
                 None,
             )
             if default_existing is not None:
