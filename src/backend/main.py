@@ -76,6 +76,10 @@ class MasterPortfolioRequest(BaseModel):
     pension_id: Optional[str] = None
 
 
+class TestStateRequest(BaseModel):
+    data: Dict[str, Any]
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -427,3 +431,13 @@ async def get_retirement_snapshot():
 @app.post("/api/retirement/snapshot")
 async def create_retirement_snapshot(req: dict):
     return backend.save_retirement_snapshot(req)
+
+
+@app.get("/api/test/state")
+async def get_test_state():
+    return {"success": True, "data": backend.export_test_state()}
+
+
+@app.post("/api/test/state")
+async def restore_test_state(req: TestStateRequest):
+    return backend.restore_test_state(req.data)

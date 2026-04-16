@@ -1,5 +1,12 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
+import {
+  captureBackendState,
+  restoreBackendState,
+  type BackendTestState,
+} from "./helpers/backendState";
+import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
+
 async function createPortfolio(
   request: APIRequestContext,
   name: string,
@@ -20,6 +27,22 @@ async function createPortfolio(
 
 test.describe("Master Strategy Switcher [T-02-8.3]", () => {
   test.describe.configure({ mode: "serial" });
+  let originalState: BackendTestState;
+
+  test.beforeEach(async ({ request }) => {
+    await acquireE2ELock();
+    originalState = await captureBackendState(request);
+  });
+
+  test.afterEach(async ({ request }) => {
+    try {
+      if (originalState) {
+        await restoreBackendState(request, originalState);
+      }
+    } finally {
+      await releaseE2ELock();
+    }
+  });
 
   test("should switch active master strategy from retirement tab", async ({
     page,

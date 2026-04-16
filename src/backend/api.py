@@ -1,6 +1,7 @@
 import datetime
 import os
 import uuid
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, cast
 
 from src.backend.data_provider import StockDataProvider
@@ -289,6 +290,48 @@ class DividendBackend:
     def get_retirement_snapshot(self) -> Dict[str, Any]:
         """저장된 은퇴일 스냅샷을 반환합니다."""
         return cast(Dict[str, Any], self.storage.load_json(self.snapshot_file, {}))
+
+    def export_test_state(self) -> Dict[str, Any]:
+        """E2E 테스트용 현재 백엔드 상태 스냅샷을 반환합니다."""
+        self._ensure_retirement_config_defaults()
+        return {
+            "settings": deepcopy(self.settings),
+            "watchlist": deepcopy(self.watchlist),
+            "portfolios": deepcopy(self.portfolios),
+            "master_portfolios": deepcopy(self.master_portfolios),
+            "retirement_config": deepcopy(self.retirement_config),
+            "retirement_snapshot": deepcopy(self.get_retirement_snapshot()),
+        }
+
+    def restore_test_state(self, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+        """E2E 테스트용 백엔드 상태를 스냅샷 기준으로 복구합니다."""
+        restored = deepcopy(snapshot)
+        self.settings = cast(Dict[str, Any], restored.get("settings", {}))
+        dart_key = self.settings.get("dart_api_key")
+        self.data_provider = StockDataProvider(dart_api_key=dart_key)
+
+        self.watchlist = cast(List[Dict[str, Any]], restored.get("watchlist", []))
+        self.portfolios = cast(List[Dict[str, Any]], restored.get("portfolios", []))
+        self.master_portfolios = cast(List[Dict[str, Any]], restored.get("master_portfolios", []))
+        self.retirement_config = cast(Dict[str, Any], restored.get("retirement_config", {}))
+
+        self._normalize_all_portfolios()
+        self._ensure_retirement_config_defaults()
+
+        self.storage.save_json(self.settings_file, self.settings)
+        self.storage.save_json(self.watchlist_file, self.watchlist)
+        self.storage.save_json(self.portfolios_file, self.portfolios)
+        self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+        self.storage.save_json(self.retirement_config_file, self.retirement_config)
+        self.storage.save_json(
+            self.snapshot_file, cast(Dict[str, Any], restored.get("retirement_snapshot", {}))
+        )
+
+        return {
+            "success": True,
+            "message": "테스트 상태가 복구되었습니다.",
+            "data": self.export_test_state(),
+        }
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""

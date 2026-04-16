@@ -1,11 +1,21 @@
 import { test, expect } from "@playwright/test";
 
+import {
+  captureBackendState,
+  restoreBackendState,
+  type BackendTestState,
+} from "./helpers/backendState";
+import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
+
 test.describe("Portfolio Dashboard - List & Detail", () => {
   let uniqueName: string;
+  let originalState: BackendTestState;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
     test.setTimeout(60000);
+    await acquireE2ELock();
     uniqueName = `Test Portfolio ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    originalState = await captureBackendState(request);
 
     // 브라우저 로그 캡처
     page.on("console", (msg) => console.log(`BROWSER LOG: ${msg.text()}`));
@@ -57,6 +67,16 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     });
     await manageTabBtn.waitFor({ state: "visible", timeout: 10000 });
     await manageTabBtn.click({ force: true });
+  });
+
+  test.afterEach(async ({ request }) => {
+    try {
+      if (originalState) {
+        await restoreBackendState(request, originalState);
+      }
+    } finally {
+      await releaseE2ELock();
+    }
   });
 
   test("should display a list of saved portfolios", async ({ page }) => {

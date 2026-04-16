@@ -15,6 +15,8 @@
     - 시나리오: 각 탭 버튼 클릭 시 URL 또는 화면 컨텐츠가 정확히 전환되는가?
 - **[TEST-SYS-2.2.1] Playwright Mocking 동작**
     - 시나리오: 브라우저에서 나가는 API 요청이 가로채어져 Mock 데이터가 화면에 표시되는가?
+- **[TEST-SYS-2.2.2] Playwright 백엔드 상태 복구**
+    - 시나리오: 실제 백엔드와 연결되는 E2E 시작 전에 `/api/test/state`로 상태 snapshot을 저장하고, 테스트 종료 후 restore 호출 시 포트폴리오/마스터 전략/설정/은퇴 설정이 원래 상태로 복구되는가?
 
 - **[TEST-SYS-2.3.1] 설정 UI 및 API 키 저장**
     - 시나리오 1: 사용자가 설정 탭에서 OpenDart API 키 입력 후 'Save' 클릭 시 `settings.json`에 기록되는가?

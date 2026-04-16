@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
 
-const CONFIG_URL = "http://127.0.0.1:8000/api/retirement/config";
+import {
+  captureBackendState,
+  restoreBackendState,
+  type BackendTestState,
+} from "./helpers/backendState";
+import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
 
 test.describe("Settings Strategy Rules", () => {
-  let originalConfig: unknown;
+  let originalState: BackendTestState;
 
   test.beforeEach(async ({ page, request }) => {
-    const response = await request.get(CONFIG_URL);
-    const payload = await response.json();
-    originalConfig = payload.data;
+    await acquireE2ELock();
+    originalState = await captureBackendState(request);
 
     await page.goto("http://localhost:5173");
     await page.getByTestId("nav-strategy-settings").click();
@@ -16,8 +20,12 @@ test.describe("Settings Strategy Rules", () => {
   });
 
   test.afterEach(async ({ request }) => {
-    if (originalConfig) {
-      await request.post(CONFIG_URL, { data: originalConfig });
+    try {
+      if (originalState) {
+        await restoreBackendState(request, originalState);
+      }
+    } finally {
+      await releaseE2ELock();
     }
   });
 

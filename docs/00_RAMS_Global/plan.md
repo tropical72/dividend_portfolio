@@ -31,6 +31,9 @@
 - **T-GLB-11.3: [Debt] 전역 정적 분석 부채 추적**
     - [x] **T-GLB-11.3.1** 저장소 전체 `black --check src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
     - [x] **T-GLB-11.3.2** 저장소 전체 `mypy src tests` 실패 원인을 분류하고 정비 계획을 수립한다.
+- **T-GLB-11.4: [Isolation] Playwright 백엔드 상태 복구 체계**
+    - [x] **T-GLB-11.4.1** 백엔드에 상태 snapshot/restore API를 추가하여 실제 데이터 오염 없이 E2E가 복구 가능하도록 한다.
+    - [x] **T-GLB-11.4.2** 상태를 변경하는 Playwright 스펙에 공통 snapshot/restore helper를 적용하고, 실제 백엔드 재기동 상태에서 재검증한다.
 
 ### [Phase 11 Notes] 2026-04-16 전역 부채 1차 정비
 - `mypy src tests` 기준 오류를 41건에서 0건으로 감축했다.
@@ -46,4 +49,4 @@
     - 저장소 전체 `ruff check src tests` 통과
 
 ---
-*마지막 업데이트: 2026-04-16 16:55:00*
+*마지막 업데이트: 2026-04-16 17:47:00*

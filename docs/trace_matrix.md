@@ -4,6 +4,8 @@
 
 ## 1. Retirement Engine Domain (01)
 
+> `LEGACY-*` ID는 2026-04-16 요구사항 재정의 이전 커밋을 보존하기 위한 역사적 식별자다. 현재 활성 요구사항의 기준은 `docs/01_Retirement_Engine/requirement.md`다.
+
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit | 완료 일시 |
 |:---|:---|:---|:---|:---|:---|:---|
 | REQ-RAMS-1.2 | Versioned Assumption System 기초 (API) | T-01-1.1 | TEST-API-RE | Done | b06085c | 2026.04.15-17.15 |
@@ -15,11 +17,11 @@
 | REQ-RAMS-1.6 | 마스터 전략 퀵 스위처 및 활성 전략 삭제 보호 | T-02-8.3 | TEST-RAMS-1.6 | Done | 9d4d333 | 2026.04.16-12.24 |
 | REQ-RAMS-2.1 | 법인 세후 현금흐름 실시간 시뮬레이션 | T-06-6.2.1 | TEST-TAX-SIM | Done | 7a8fe62 | 2026.02.22-23.24 |
 | REQ-RAMS-2.2 | 지역건보료 점수제(재산/소득) 모듈 | T-01-1.2.2 | TEST-TAX-02 | Done | 98348ee | 2026.02.22-03.34 |
-| REQ-RAMS-2.3 | 법인 vs 개인 타당성 분석 로직 | T-01-2.1.2 | TEST-TAX-03 | Done | 986d124 | 2026.02.22-03.58 |
+| LEGACY-RAMS-2.3 | 법인 vs 개인 타당성 분석 로직 | T-01-2.1.2 | TEST-TAX-03 | Done | 986d124 | 2026.02.22-03.58 |
 | REQ-RAMS-3.1 | 연령 기반 Phase 자동 스위칭 엔진 | T-01-3.1 | TEST-PHS-01 | Done | 08423af | 2026.02.22-19.42 |
-| REQ-RAMS-3.2 | 인플레이션 및 자산 수익률 복리 엔진 | T-01-3.2 | TEST-SUR-01 | Done | 3a741f4 | 2026.02.22-04.01 |
+| LEGACY-RAMS-3.2 | 인플레이션 및 자산 수익률 복리 엔진 | T-01-3.2 | TEST-SUR-01 | Done | 3a741f4 | 2026.02.22-04.01 |
 | REQ-RAMS-3.3 | 30년 생애 주기 프로젝션 엔진 | T-01-3.2.1 | TEST-SUR-01 | Done | 3a741f4 | 2026.02.22-04.01 |
-| REQ-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Done | 46b0de0 | 2026.02.22-03.47 |
+| LEGACY-RAMS-3.3 | Tier Cascade Engine (상태 머신) | T-01-2.1 | TEST-CSC-01 | Done | 46b0de0 | 2026.02.22-03.47 |
 | REQ-RAMS-6.1 | 실시간 이벤트 트리거 및 Health Monitor | T-01-2.1.1 | TEST-TRG-01 | Done | a5fad29 | 2026.02.22-13.26 |
 | REQ-RAMS-5.2 | 표준 스트레스 테스트 시나리오 엔진 | T-01-3.1 | TEST-STR-01 | Done | fe258b7 | 2026.02.22-12.11 |
 | REQ-RAMS-7.1 | 시뮬레이션 정밀 검증 UI (상세 로그) | T-06-6.1.1 | TEST-UX-LOG | Done | f605a94 | 2026.04.15-14.13 |
@@ -58,6 +60,7 @@
 | REQ-GLB-11.1 | Feature 단위 품질 게이트 명시화 | T-GLB-11.1 | TEST-SYS-QG-01 | Done | 04bd94d | 2026.04.16-02.22 |
 | REQ-GLB-11.2 | Frontend Prettier 생성물 제외 설정 | T-GLB-11.2.1 | TEST-SYS-QG-02 | Done | 04bd94d | 2026.04.16-02.22 |
 | REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | Done | 06750bc | 2026.04.16-16.37 |
+| REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done (Uncommitted) | - | - |
 
 ---
-*마지막 업데이트: 2026-04-16 16:37:00*
+*마지막 업데이트: 2026-04-16 17:47:00*
