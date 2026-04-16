@@ -157,6 +157,7 @@ export function RetirementTab() {
   const summary = simulationData.summary || {};
   const monthlyData = simulationData.monthly_data || [];
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
+  const portfolioMeta = simulationData.meta?.used_portfolios;
   const chartData = monthlyData.filter(
     (d) => d.index % 12 === 0 || d.index === 1,
   );
@@ -301,6 +302,55 @@ export function RetirementTab() {
                   </div>
                 </div>
               )}
+
+              <div
+                className="flex flex-wrap items-center gap-3 mt-4"
+                data-testid="portfolio-visibility-badges"
+              >
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2"
+                  data-testid="master-strategy-badge"
+                >
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-500/70">
+                    Master
+                  </span>
+                  <span className="text-xs font-black text-emerald-300">
+                    {simulationData.meta?.master_name ||
+                      "Custom Strategy Builder"}
+                  </span>
+                </div>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2"
+                  data-testid="corp-portfolio-badge"
+                >
+                  <Building2 size={14} className="text-emerald-400/80" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                    Corp
+                  </span>
+                  <span className="text-xs font-black text-slate-200">
+                    {portfolioMeta?.corp?.name || "None"}
+                  </span>
+                  <span className="text-[11px] font-black text-emerald-400">
+                    {portfolioMeta?.corp?.yield || "0.00%"}
+                  </span>
+                </div>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2"
+                  data-testid="pension-portfolio-badge"
+                >
+                  <Wallet2 size={14} className="text-blue-400/80" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                    Pen
+                  </span>
+                  <span className="text-xs font-black text-slate-200">
+                    {portfolioMeta?.pension?.name || "None"}
+                  </span>
+                  <span className="text-[11px] font-black text-blue-400">
+                    {portfolioMeta?.pension?.yield || "0.00%"}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

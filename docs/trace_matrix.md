@@ -10,6 +10,7 @@
 | REQ-RAMS-1.3 | 미래 확정 자금 이벤트 반영 엔진 | T-05-5.1.2 | TEST-API-EV | Done | b99a810 | 2026.02.22-21.40 |
 | REQ-RAMS-1.4 | 포트폴리오 매니저 데이터 통합 | T-07-7.1 | TEST-API-INT | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-RAMS-1.4.5 | 포트폴리오 가시성(Visibility) 강화 | T-07-7.4 | TEST-UX-PORT | Done | 23abcca | 2026.04.15-13.36 |
+| REQ-RAMS-1.4.6 | Retirement 상단 포트폴리오 정보 배지 UI | T-07-7.4.2 | TEST-UX-PORT | Done (Uncommitted) | - | 2026.04.16-13.08 |
 | REQ-RAMS-1.5 | 마스터 포트폴리오 기반 엔진 구동 | T-02-8.1.3 | TEST-RAMS-1.5 | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-RAMS-1.6 | 마스터 전략 퀵 스위처 및 활성 전략 삭제 보호 | T-02-8.3 | TEST-RAMS-1.6 | Done | 9d4d333 | 2026.04.16-12.24 |
 | REQ-RAMS-2.1 | 법인 세후 현금흐름 실시간 시뮬레이션 | T-06-6.2.1 | TEST-TAX-SIM | Done | 7a8fe62 | 2026.02.22-23.24 |
@@ -59,4 +60,4 @@
 | REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | In Progress | - | - |
 
 ---
-*마지막 업데이트: 2026-04-16 12:24:00*
+*마지막 업데이트: 2026-04-16 13:08:00*

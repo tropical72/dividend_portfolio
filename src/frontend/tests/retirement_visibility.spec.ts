@@ -10,21 +10,10 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
   test("should display active master strategy badge at the top of Step 1", async ({
     page,
   }) => {
-    // Step 1 섹션 상단 확인
-    const step1Title = page.locator('h3:has-text("Step 1. Set the Basis")');
-    await expect(step1Title).toBeVisible();
-
-    // 마스터 전략 배지 확인
-    const strategyLabel = page.locator('span:has-text("Strategy:")');
-    // 데이터가 있는 경우 배지가 보여야 함
-    if (await strategyLabel.isVisible()) {
-      const badge = strategyLabel.locator("xpath=..");
-      await expect(badge).toBeVisible();
-      const strategyName = await badge.innerText();
-      console.log(`Active Strategy: ${strategyName}`);
-    } else {
-      console.log("No active master strategy found, badge is hidden");
-    }
+    await expect(page.getByTestId("portfolio-visibility-badges")).toBeVisible();
+    await expect(page.getByTestId("master-strategy-badge")).toBeVisible();
+    await expect(page.getByTestId("corp-portfolio-badge")).toBeVisible();
+    await expect(page.getByTestId("pension-portfolio-badge")).toBeVisible();
   });
 
   test("should update badges when switching between assumptions", async ({
@@ -38,10 +27,8 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
       // 시뮬레이션 로딩 대기
       await page.waitForTimeout(1000);
       // 포트폴리오 카드와 규칙 요약이 여전히 유효한지 확인
-      await expect(
-        page.locator('p:has-text("Corporate")').first(),
-      ).toBeVisible();
-      await expect(page.locator('p:has-text("Pension")').first()).toBeVisible();
+      await expect(page.getByTestId("corp-portfolio-badge")).toBeVisible();
+      await expect(page.getByTestId("pension-portfolio-badge")).toBeVisible();
       await expect(page.getByTestId("strategy-rules-summary")).toBeVisible();
     }
   });
