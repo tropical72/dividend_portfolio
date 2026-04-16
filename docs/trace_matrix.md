@@ -33,6 +33,7 @@
 | REQ-RAMS-8.1 | 전략 파라미터 사용자 설정화 | T-01-9.4.1 | TEST-UI-RULE-01 | Done | 8e9f885 | 2026.04.16-11.40 |
 | D-RAMS-8.1.1 | Settings Assumptions 영역의 테스트 전용 프리셋 노출 제거 및 활성 프리셋 정규화 | T-01-9.4.2 | TEST-UI-RULE-07 | Done | 1abf653 | 2026.04.16-21.46 |
 | D-RAMS-8.1.2 | 월 필요 생활비 입력 누락으로 인한 저지출 시뮬레이션 오인 방지 및 Settings 노출 보강 | T-01-9.4.4 | TEST-UI-RULE-08 | Done | [current] | 2026.04.16-22.00 |
+| D-RAMS-8.1.3 | Projection Result에서 실제 적용 중인 월 필요 생활비 배지 노출 | T-01-9.4.5 | TEST-UI-RULE-09 | Done | [current] | 2026.04.16-22.10 |
 
 ---
 

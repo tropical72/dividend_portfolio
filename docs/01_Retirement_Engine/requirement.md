@@ -82,6 +82,7 @@
     - `Sim Control` 섹션에서 `target_monthly_cashflow`(월 필요 생활비)와 `simulation_years`를 함께 수정할 수 있어야 한다.
 - **[REQ-RAMS-8.4] 기본값 복원:** 사용자는 전략 파라미터를 문서 기본값으로 즉시 되돌릴 수 있어야 한다.
 - **[REQ-RAMS-8.5] 투명성:** Step 2 Projection Result에는 실제 사용된 핵심 설정값(예: 법인 SGOV 목표 개월수, 연금 SGOV 하한, 리밸런싱 실행 월)을 확인할 수 있는 요약 정보 또는 상세 패널이 제공되어야 한다.
+    - 요약 정보에는 `target_monthly_cashflow`(월 필요 생활비)도 포함되어 사용자가 현재 시뮬레이션이 어떤 지출 가정 위에서 계산되었는지 즉시 확인할 수 있어야 한다.
 
 ---
 

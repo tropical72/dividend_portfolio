@@ -73,6 +73,9 @@
 - **[TEST-UI-RULE-08] 월 필요 생활비 설정 노출 및 저장 [NEW]:**
     - Settings `Sim Control` 섹션에 `Monthly Living Cost` 입력이 노출되는지 확인.
     - `10,000,000` 입력 후 저장/재로드 시 동일 값이 유지되고, Retirement 시뮬레이션이 해당 값을 기준으로 재계산되는지 확인.
+- **[TEST-UI-RULE-09] 결과 화면 월 필요 생활비 배지 노출 [NEW]:**
+    - Step 2 `Applied Rules` 영역에 `Monthly Cost` 배지가 노출되는지 확인.
+    - 배지 값이 현재 저장된 `target_monthly_cashflow`와 동일한 원화 표기값으로 렌더링되는지 확인.
 
 ---
 

@@ -331,16 +331,17 @@ export function RetirementTab() {
                             <p className="text-sm font-black tracking-tight truncate">
                               {m.name}
                             </p>
-                            {(m.combined_tr ?? m.combined_yield) !== undefined &&
+                            {(m.combined_tr ?? m.combined_yield) !==
+                              undefined &&
                               (m.combined_tr ?? m.combined_yield) !== null && (
-                              <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                                {(
-                                  ((m.combined_tr ?? m.combined_yield) || 0) *
-                                  100
-                                ).toFixed(2)}
-                                %
-                              </span>
-                            )}
+                                <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
+                                  {(
+                                    ((m.combined_tr ?? m.combined_yield) || 0) *
+                                    100
+                                  ).toFixed(2)}
+                                  %
+                                </span>
+                              )}
                             {m.broken_reference && (
                               <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
                                 Broken
@@ -549,7 +550,7 @@ export function RetirementTab() {
                     masterValue={
                       (id === "v1"
                         ? standardMasterReturn
-                        : item.master_return ?? 0.0485) * 100
+                        : (item.master_return ?? 0.0485)) * 100
                     }
                     onCommit={async (v) => {
                       const nc = {
@@ -716,6 +717,13 @@ export function RetirementTab() {
                           ? "Enabled"
                           : "Disabled"
                       }
+                    />
+                    <RuleBadge
+                      label="Monthly Cost"
+                      value={`₩${(
+                        config.simulation_params.target_monthly_cashflow || 0
+                      ).toLocaleString()}`}
+                      testId="rule-badge-monthly-cost"
                     />
                   </div>
                 </div>
@@ -966,9 +974,20 @@ function MetricCard({
   );
 }
 
-function RuleBadge({ label, value }: { label: string; value: string }) {
+function RuleBadge({
+  label,
+  value,
+  testId,
+}: {
+  label: string;
+  value: string;
+  testId?: string;
+}) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3">
+    <div
+      className="rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3"
+      data-testid={testId}
+    >
       <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
         {label}:
       </p>

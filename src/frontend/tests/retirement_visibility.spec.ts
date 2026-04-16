@@ -49,11 +49,17 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
   test("should display applied strategy rules summary in Step 2", async ({
     page,
   }) => {
+    const rulesSummary = page.getByTestId("strategy-rules-summary");
+
     await expect(page.getByText("Step 2. Projection Result")).toBeVisible();
-    await expect(page.getByTestId("strategy-rules-summary")).toBeVisible();
-    await expect(page.getByText(/Rebalance:/i)).toBeVisible();
-    await expect(page.getByText(/Corp SGOV:/i)).toBeVisible();
-    await expect(page.getByText(/Pension SGOV:/i)).toBeVisible();
-    await expect(page.getByText(/Bear Freeze:/i)).toBeVisible();
+    await expect(rulesSummary).toBeVisible();
+    await expect(rulesSummary).toContainText("Rebalance:");
+    await expect(rulesSummary).toContainText("Corp SGOV:");
+    await expect(rulesSummary).toContainText("Pension SGOV:");
+    await expect(rulesSummary).toContainText("Bear Freeze:");
+    await expect(page.getByTestId("rule-badge-monthly-cost")).toBeVisible();
+    await expect(page.getByTestId("rule-badge-monthly-cost")).toContainText(
+      "Monthly Cost:",
+    );
   });
 });
