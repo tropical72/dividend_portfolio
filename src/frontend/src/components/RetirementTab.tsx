@@ -29,6 +29,48 @@ import type {
   MasterPortfolio,
 } from "../types";
 
+const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
+const ASSUMPTION_NAME_FALLBACK: Record<string, string> = {
+  v1: "Standard Profile",
+  conservative: "Conservative Profile",
+};
+
+function getVisibleAssumptions(config: RetirementConfig | null) {
+  const assumptions = config?.assumptions || {};
+  return USER_VISIBLE_ASSUMPTION_IDS.map((id) => {
+    const item = assumptions[id];
+    if (!item) return null;
+    return [
+      id,
+      {
+        ...item,
+        name: item.name || ASSUMPTION_NAME_FALLBACK[id],
+      },
+    ] as const;
+  }).filter(Boolean) as Array<
+    readonly [
+      string,
+      RetirementConfig["assumptions"][string] & {
+        name: string;
+      },
+    ]
+  >;
+}
+
+function normalizeVisibleAssumptionId(
+  config: RetirementConfig | null,
+  candidate?: string,
+) {
+  const visibleIds = new Set(getVisibleAssumptions(config).map(([id]) => id));
+  if (candidate && visibleIds.has(candidate)) {
+    return candidate;
+  }
+  if (visibleIds.has("v1")) {
+    return "v1";
+  }
+  return getVisibleAssumptions(config)[0]?.[0] || "v1";
+}
+
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
   const [config, setConfig] = useState<RetirementConfig | null>(null);
@@ -43,6 +85,7 @@ export function RetirementTab() {
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const visibleAssumptions = getVisibleAssumptions(config);
 
   const fetchData = async (scenarioId: string | null = null) => {
     setIsLoading(true);
@@ -59,9 +102,14 @@ export function RetirementTab() {
       if (!configData.success)
         throw new Error(configData.message || "설정을 불러올 수 없습니다.");
 
+      const normalizedScenario = normalizeVisibleAssumptionId(
+        configData.data,
+        scenarioId || configData.data.active_assumption_id || "v1",
+      );
+
       setConfig(configData.data);
       setMasterPortfolios(masterData.data || []);
-      setActiveId(scenarioId || configData.data.active_assumption_id || "v1");
+      setActiveId(normalizedScenario);
 
       // 실시간 환율 정보 가져오기
       const settingsRes = await fetch("http://localhost:8000/api/settings");
@@ -70,8 +118,7 @@ export function RetirementTab() {
         setExchangeRate(settingsData.data.current_exchange_rate);
       }
 
-      const currentScenario =
-        scenarioId || configData.data.active_assumption_id || "v1";
+      const currentScenario = normalizedScenario;
       const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
       const simRes = await fetch(simUrl);
       const simData = await simRes.json();
@@ -443,100 +490,100 @@ export function RetirementTab() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {config &&
-            Object.entries(config.assumptions || {}).map(([id, item]) => (
-              <div
-                key={id}
-                onClick={() => activeId !== id && handleSwitchVersion(id)}
-                className={cn(
-                  "p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer",
-                  activeId === id
-                    ? "bg-emerald-500/10 border-emerald-500/30"
-                    : "bg-slate-900/40 border-slate-800",
-                )}
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <h4
-                    className={cn(
-                      "text-xl font-black",
-                      activeId === id ? "text-emerald-400" : "text-slate-400",
-                    )}
-                  >
-                    {item.name}
-                  </h4>
-                  {activeId === id && (
-                    <CheckCircle2
-                      size={24}
-                      className="text-emerald-400 shadow-glow"
-                    />
+          {visibleAssumptions.map(([id, item]) => (
+            <div
+              key={id}
+              data-testid={`assumption-card-${id}`}
+              onClick={() => activeId !== id && handleSwitchVersion(id)}
+              className={cn(
+                "p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer",
+                activeId === id
+                  ? "bg-emerald-500/10 border-emerald-500/30"
+                  : "bg-slate-900/40 border-slate-800",
+              )}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <h4
+                  className={cn(
+                    "text-xl font-black",
+                    activeId === id ? "text-emerald-400" : "text-slate-400",
                   )}
+                >
+                  {item.name}
+                </h4>
+                {activeId === id && (
+                  <CheckCircle2
+                    size={24}
+                    className="text-emerald-400 shadow-glow"
+                  />
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-black text-slate-500 uppercase">
+                    Return
+                  </p>
+                  <EditableInput
+                    id={`return-${id}`}
+                    initialValue={item.expected_return * 100}
+                    masterValue={(item.master_return ?? 0.0485) * 100}
+                    onCommit={async (v) => {
+                      const nc = {
+                        ...config,
+                        active_assumption_id: id,
+                        assumptions: {
+                          ...config.assumptions,
+                          [id]: { ...item, expected_return: v / 100 },
+                        },
+                      };
+                      setConfig(nc);
+                      setActiveId(id);
+                      await fetch(
+                        "http://localhost:8000/api/retirement/config",
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(nc),
+                        },
+                      );
+                      await fetchData(id);
+                    }}
+                  />
                 </div>
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-black text-slate-500 uppercase">
-                      Return
-                    </p>
-                    <EditableInput
-                      id={`return-${id}`}
-                      initialValue={item.expected_return * 100}
-                      masterValue={(item.master_return ?? 0.0485) * 100}
-                      onCommit={async (v) => {
-                        const nc = {
-                          ...config,
-                          active_assumption_id: id,
-                          assumptions: {
-                            ...config.assumptions,
-                            [id]: { ...item, expected_return: v / 100 },
-                          },
-                        };
-                        setConfig(nc);
-                        setActiveId(id);
-                        await fetch(
-                          "http://localhost:8000/api/retirement/config",
-                          {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(nc),
-                          },
-                        );
-                        await fetchData(id);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-black text-slate-500 uppercase">
-                      Inflation
-                    </p>
-                    <EditableInput
-                      id={`inflation-${id}`}
-                      initialValue={item.inflation_rate * 100}
-                      masterValue={(item.master_inflation ?? 0.025) * 100}
-                      onCommit={async (v) => {
-                        const nc = {
-                          ...config,
-                          active_assumption_id: id,
-                          assumptions: {
-                            ...config.assumptions,
-                            [id]: { ...item, inflation_rate: v / 100 },
-                          },
-                        };
-                        setConfig(nc);
-                        setActiveId(id);
-                        await fetch(
-                          "http://localhost:8000/api/retirement/config",
-                          {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(nc),
-                          },
-                        );
-                        await fetchData(id);
-                      }}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-black text-slate-500 uppercase">
+                    Inflation
+                  </p>
+                  <EditableInput
+                    id={`inflation-${id}`}
+                    initialValue={item.inflation_rate * 100}
+                    masterValue={(item.master_inflation ?? 0.025) * 100}
+                    onCommit={async (v) => {
+                      const nc = {
+                        ...config,
+                        active_assumption_id: id,
+                        assumptions: {
+                          ...config.assumptions,
+                          [id]: { ...item, inflation_rate: v / 100 },
+                        },
+                      };
+                      setConfig(nc);
+                      setActiveId(id);
+                      await fetch(
+                        "http://localhost:8000/api/retirement/config",
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(nc),
+                        },
+                      );
+                      await fetchData(id);
+                    }}
+                  />
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       </section>
 

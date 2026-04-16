@@ -57,6 +57,27 @@ class DividendBackend:
             },
         }
 
+    def _get_default_assumptions(self) -> Dict[str, Any]:
+        """사용자 화면에 노출되는 기본 가정 프로필 스키마를 반환합니다."""
+        return {
+            "v1": {
+                "name": "Standard Profile",
+                "expected_return": 0.0485,
+                "expected_growth": 0.02,
+                "inflation_rate": 0.025,
+                "master_return": 0.0485,
+                "master_inflation": 0.025,
+            },
+            "conservative": {
+                "name": "Conservative Profile",
+                "expected_return": 0.035,
+                "expected_growth": 0.01,
+                "inflation_rate": 0.035,
+                "master_return": 0.035,
+                "master_inflation": 0.035,
+            },
+        }
+
     def _deep_merge_dict(self, base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
         """중첩 딕셔너리를 재귀 병합하여 기본값을 보존합니다."""
         merged = dict(base)
@@ -70,7 +91,11 @@ class DividendBackend:
     def _ensure_retirement_config_defaults(self) -> None:
         """은퇴 설정에 필요한 기본 스키마를 보강합니다."""
         self.retirement_config = self._deep_merge_dict(
-            {"strategy_rules": self._get_default_strategy_rules()},
+            {
+                "active_assumption_id": "v1",
+                "assumptions": self._get_default_assumptions(),
+                "strategy_rules": self._get_default_strategy_rules(),
+            },
             self.retirement_config,
         )
 

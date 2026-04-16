@@ -16,6 +16,19 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
     await expect(page.getByTestId("pension-portfolio-badge")).toBeVisible();
   });
 
+  test("should show exactly two named assumption cards in Step 1", async ({
+    page,
+  }) => {
+    const cards = page.locator('[data-testid^="assumption-card-"]');
+    await expect(cards).toHaveCount(2);
+    await expect(page.getByTestId("assumption-card-v1")).toContainText(
+      "Standard Profile",
+    );
+    await expect(
+      page.getByTestId("assumption-card-conservative"),
+    ).toContainText("Conservative Profile");
+  });
+
   test("should update badges when switching between assumptions", async ({
     page,
   }) => {

@@ -12,6 +12,8 @@ def test_get_retirement_config():
     data = response.json()
     assert data["success"] is True
     assert "user_profile" in data["data"]
+    assert data["data"]["assumptions"]["v1"]["name"] == "Standard Profile"
+    assert data["data"]["assumptions"]["conservative"]["name"] == "Conservative Profile"
 
 
 def test_update_retirement_config():
