@@ -142,7 +142,17 @@ export function WatchlistTab({
   const removeStock = async () => {
     if (!deleteConfirm) return;
     const { symbol } = deleteConfirm;
-    const targets = symbol === "BULK" ? Array.from(selectedSymbols) : [symbol];
+    const targets =
+      symbol === "BULK"
+        ? watchlist
+            .filter((s) => selectedSymbols.has(s.symbol) && !s.is_system_default)
+            .map((s) => s.symbol)
+        : [symbol];
+
+    if (targets.length === 0) {
+      setDeleteConfirm(null);
+      return;
+    }
 
     try {
       await Promise.all(
@@ -409,6 +419,13 @@ export function WatchlistTab({
               </button>
               <button
                 onClick={(e) => {
+                  const deletableCount = watchlist.filter(
+                    (s) => selectedSymbols.has(s.symbol) && !s.is_system_default,
+                  ).length;
+                  if (deletableCount === 0) {
+                    showStatus("기본 종목은 삭제할 수 없습니다.", "error");
+                    return;
+                  }
                   const rect = e.currentTarget.getBoundingClientRect();
                   setDeleteConfirm({
                     symbol: "BULK",
@@ -554,6 +571,9 @@ export function WatchlistTab({
                   Monthly <SortIcon columnKey="past_avg_monthly_div" />
                 </div>
               </th>
+              <th className="px-4 py-5 w-10 text-center uppercase tracking-wider text-[11px]">
+                Act
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
@@ -659,12 +679,40 @@ export function WatchlistTab({
                     {item.currency || "USD"}
                   </span>
                 </td>
+                <td className="px-4 py-4 text-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (item.is_system_default) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setDeleteConfirm({
+                        symbol: item.symbol,
+                        x: rect.left,
+                        y: rect.top,
+                      });
+                    }}
+                    disabled={item.is_system_default}
+                    title={
+                      item.is_system_default
+                        ? "기본 종목은 삭제할 수 없습니다"
+                        : "삭제"
+                    }
+                    className={cn(
+                      "p-2 rounded-lg transition-all",
+                      item.is_system_default
+                        ? "text-slate-700 cursor-not-allowed opacity-30"
+                        : "text-slate-500 hover:text-red-400 hover:bg-red-400/10",
+                    )}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
               </tr>
             ))}
             {watchlist.length === 0 && (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={11}
                   className="px-6 py-20 text-center text-slate-600 italic font-sans uppercase text-[11px] tracking-widest"
                 >
                   No stocks added yet.

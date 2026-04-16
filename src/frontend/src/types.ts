@@ -44,6 +44,7 @@ export interface Stock {
   dividend_frequency: string;
   payment_months: number[];
   country?: string;
+  is_system_default?: boolean;
 }
 
 /** 포트폴리오 항목 인터페이스 (Portfolio 용) [REQ-PRT-01] */

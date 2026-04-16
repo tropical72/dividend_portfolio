@@ -32,5 +32,250 @@
             }
         ],
         "created_at": "1776331808.613619"
+    },
+    {
+        "id": "4203df7d-6708-448b-ab72-4cb05b2b2f9e",
+        "name": "pension-default",
+        "account_type": "Pension",
+        "total_capital": 10000.0,
+        "currency": "USD",
+        "is_system_default": true,
+        "items": [
+            {
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "category": "SGOV Buffer",
+                "weight": 15,
+                "price": 100.53,
+                "dividend_yield": 3.9460857455485927,
+                "last_div_amount": 0.293,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "SCHD",
+                "name": "Schwab U.S. Dividend Equity ETF",
+                "category": "Dividend Growth",
+                "weight": 20,
+                "price": 30.65,
+                "dividend_yield": 3.4420880913539973,
+                "last_div_amount": 0.257,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
+                "category": "Growth Engine",
+                "weight": 25,
+                "price": 643.45,
+                "dividend_yield": 1.1077783821586757,
+                "last_div_amount": 1.872,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "QQQM",
+                "name": "Invesco NASDAQ 100 ETF",
+                "category": "Growth Engine",
+                "weight": 10,
+                "price": 262.48,
+                "dividend_yield": 0.4834654068881439,
+                "last_div_amount": 0.328,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "BND",
+                "name": "Vanguard Total Bond Market Index Fund",
+                "category": "Bond Buffer",
+                "weight": 30,
+                "price": 73.88,
+                "dividend_yield": 3.9063345966432057,
+                "last_div_amount": 0.25,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            }
+        ],
+        "created_at": "1776331808.613619"
+    },
+    {
+        "id": "8fd43042-687c-4b87-9f4f-a95499220b10",
+        "name": "corp-default",
+        "account_type": "Corporate",
+        "total_capital": 10000.0,
+        "currency": "USD",
+        "is_system_default": true,
+        "items": [
+            {
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "category": "SGOV Buffer",
+                "weight": 22.5,
+                "price": 100.53,
+                "dividend_yield": 3.9460857455485927,
+                "last_div_amount": 0.293,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "JEPI",
+                "name": "JPMorgan Equity Premium Income ETF",
+                "category": "High Income",
+                "weight": 15,
+                "price": 57.61,
+                "dividend_yield": 8.288491581322688,
+                "last_div_amount": 0.421,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "JEPQ",
+                "name": "JPMorgan Nasdaq Equity Premium Income ETF",
+                "category": "High Income",
+                "weight": 10,
+                "price": 58.48,
+                "dividend_yield": 10.574555403556772,
+                "last_div_amount": 0.559,
+                "payment_months": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "DIVO",
+                "name": "Amplify CWP Enhanced Dividend Income ETF",
+                "category": "High Income",
+                "weight": 12,
+                "price": 45.74,
+                "dividend_yield": 6.366418889374725,
+                "last_div_amount": 0.179,
+                "payment_months": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ]
+            },
+            {
+                "symbol": "SCHD",
+                "name": "Schwab U.S. Dividend Equity ETF",
+                "category": "Dividend Growth",
+                "weight": 12,
+                "price": 30.65,
+                "dividend_yield": 3.4420880913539973,
+                "last_div_amount": 0.257,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
+                "category": "Growth Engine",
+                "weight": 16,
+                "price": 643.45,
+                "dividend_yield": 1.1077783821586757,
+                "last_div_amount": 1.872,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            },
+            {
+                "symbol": "QQQM",
+                "name": "Invesco NASDAQ 100 ETF",
+                "category": "Growth Engine",
+                "weight": 12.5,
+                "price": 262.48,
+                "dividend_yield": 0.4834654068881439,
+                "last_div_amount": 0.328,
+                "payment_months": [
+                    3,
+                    6,
+                    9,
+                    12
+                ]
+            }
+        ],
+        "created_at": "1776331808.613619"
     }
 ]

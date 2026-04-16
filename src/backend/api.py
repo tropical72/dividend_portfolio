@@ -40,6 +40,157 @@ class DividendBackend:
         self._ensure_retirement_config_defaults()
         if ensure_default_master_bundle:
             self._ensure_default_master_bundle()
+            self._ensure_default_watchlist()
+
+    def _get_default_watchlist_seed_data(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "symbol": "SGOV",
+                "name": "iShares 0-3 Month Treasury Bond ETF",
+                "price": 100.53,
+                "currency": "USD",
+                "dividend_yield": 3.9460857455485927,
+                "one_yr_return": 4.025528224888379,
+                "ex_div_date": "2026-04-01",
+                "last_div_amount": 0.293,
+                "last_div_yield": 0.29145528697901124,
+                "past_avg_monthly_div": 0.3305833333333334,
+                "dividend_frequency": "Monthly",
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "JEPI",
+                "name": "JPMorgan Equity Premium Income ETF",
+                "price": 57.61,
+                "currency": "USD",
+                "dividend_yield": 8.288491581322688,
+                "one_yr_return": 16.86163709965601,
+                "ex_div_date": "2026-04-01",
+                "last_div_amount": 0.421,
+                "last_div_yield": 0.730775906960597,
+                "past_avg_monthly_div": 0.3979166666666667,
+                "dividend_frequency": "Monthly",
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "JEPQ",
+                "name": "JPMorgan Nasdaq Equity Premium Income ETF",
+                "price": 58.48,
+                "currency": "USD",
+                "dividend_yield": 10.574555403556772,
+                "one_yr_return": 33.97156340782576,
+                "ex_div_date": "2026-04-01",
+                "last_div_amount": 0.559,
+                "last_div_yield": 0.9558823529411765,
+                "past_avg_monthly_div": 0.5153333333333333,
+                "dividend_frequency": "Monthly",
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "VOO",
+                "name": "Vanguard S&P 500 ETF",
+                "price": 643.45,
+                "currency": "USD",
+                "dividend_yield": 1.1077783821586757,
+                "one_yr_return": 34.752238715923326,
+                "ex_div_date": "2026-03-27",
+                "last_div_amount": 1.872,
+                "last_div_yield": 0.2909316963245008,
+                "past_avg_monthly_div": 0.594,
+                "dividend_frequency": "Quarterly",
+                "payment_months": [3, 6, 9, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "QQQM",
+                "name": "Invesco NASDAQ 100 ETF",
+                "price": 262.48,
+                "currency": "USD",
+                "dividend_yield": 0.4834654068881439,
+                "one_yr_return": 44.276256673826296,
+                "ex_div_date": "2026-03-23",
+                "last_div_amount": 0.328,
+                "last_div_yield": 0.12496190185918928,
+                "past_avg_monthly_div": 0.10575000000000001,
+                "dividend_frequency": "Quarterly",
+                "payment_months": [3, 6, 9, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "SCHD",
+                "name": "Schwab U.S. Dividend Equity ETF",
+                "price": 30.65,
+                "currency": "USD",
+                "dividend_yield": 3.4420880913539973,
+                "one_yr_return": 26.6774697153589,
+                "ex_div_date": "2026-03-25",
+                "last_div_amount": 0.257,
+                "last_div_yield": 0.8384991843393148,
+                "past_avg_monthly_div": 0.08791666666666668,
+                "dividend_frequency": "Quarterly",
+                "payment_months": [3, 6, 9, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "BND",
+                "name": "Vanguard Total Bond Market Index Fund",
+                "price": 73.88,
+                "currency": "USD",
+                "dividend_yield": 3.9063345966432057,
+                "one_yr_return": 5.512784692821852,
+                "ex_div_date": "2026-04-01",
+                "last_div_amount": 0.25,
+                "last_div_yield": 0.3383865728207905,
+                "past_avg_monthly_div": 0.24050000000000002,
+                "dividend_frequency": "Monthly",
+                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "DIVO",
+                "name": "Amplify CWP Enhanced Dividend Income ETF",
+                "price": 45.74,
+                "currency": "USD",
+                "dividend_yield": 6.366418889374725,
+                "one_yr_return": 24.93609189270294,
+                "ex_div_date": "2026-03-30",
+                "last_div_amount": 0.179,
+                "last_div_yield": 0.39134236991692173,
+                "past_avg_monthly_div": 0.24266666666666661,
+                "dividend_frequency": "Monthly",
+                "payment_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "US",
+                "is_system_default": True,
+            },
+        ]
+
+    def _ensure_default_watchlist(self) -> None:
+        """앱 시작 시 기본 관심종목을 보장한다."""
+        changed = False
+        default_watchlist = self._get_default_watchlist_seed_data()
+        existing_watchlist = {item.get("symbol"): item for item in self.watchlist}
+
+        for seed in default_watchlist:
+            existing = existing_watchlist.get(seed["symbol"])
+            if existing is None:
+                self.watchlist.append(dict(seed))
+                changed = True
+            elif not existing.get("is_system_default"):
+                existing["is_system_default"] = True
+                changed = True
+
+        if changed:
+            self.storage.save_json(self.watchlist_file, self.watchlist)
 
     def _get_default_portfolio_seed_data(self) -> List[Dict[str, Any]]:
         return [
@@ -1018,7 +1169,17 @@ class DividendBackend:
 
     def remove_from_watchlist(self, ticker: str) -> Dict[str, Any]:
         """관심종목에서 특정 종목을 제거합니다. (무결성 검사 포함)"""
-        # 1. 포트폴리오 무결성 체크: 삭제 전 사용 여부 확인
+        # 1. 시스템 기본 종목 삭제 보호 [REQ-WCH-01.8]
+        for item in self.watchlist:
+            if item["symbol"] == ticker.upper():
+                if item.get("is_system_default"):
+                    return {
+                        "success": False,
+                        "message": "기본 관심종목은 삭제할 수 없습니다.",
+                    }
+                break
+
+        # 2. 포트폴리오 무결성 체크: 삭제 전 사용 여부 확인
         if self.is_stock_in_portfolio(ticker.upper()):
             return {
                 "success": False,
