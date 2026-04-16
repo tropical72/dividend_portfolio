@@ -81,7 +81,7 @@
         "other_assets": 0
     },
     "tax_and_insurance": {
-        "point_unit_price": 200,
+        "point_unit_price": 208.4,
         "ltc_rate": 0.12,
         "corp_tax_threshold": 200000000,
         "corp_tax_low_rate": 0.1,
