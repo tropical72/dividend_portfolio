@@ -1,5 +1,5 @@
 {
-    "active_assumption_id": "conservative",
+    "active_assumption_id": "v1",
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
@@ -44,7 +44,7 @@
         "national_pension_start_age": 65
     },
     "simulation_params": {
-        "target_monthly_cashflow": 11500000,
+        "target_monthly_cashflow": 10000000,
         "inflation_rate": 0.025,
         "expected_market_growth": 0.0485,
         "simulation_start_year": 2026,
