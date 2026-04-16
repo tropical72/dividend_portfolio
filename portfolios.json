@@ -10,7 +10,7 @@
                 "symbol": "TEST1",
                 "name": "High Div",
                 "weight": 100,
-                "dividend_yield": 10.0,
+                "dividend_yield": 10,
                 "category": "Growth Engine"
             }
         ]
@@ -26,7 +26,7 @@
                 "symbol": "TEST2",
                 "name": "Low Div",
                 "weight": 100,
-                "dividend_yield": 2.0,
+                "dividend_yield": 2,
                 "category": "Growth Engine"
             }
         ]
@@ -35,7 +35,7 @@
         "id": "4203df7d-6708-448b-ab72-4cb05b2b2f9e",
         "name": "pension-default",
         "account_type": "Pension",
-        "total_capital": 10000.0,
+        "total_capital": 10000,
         "currency": "USD",
         "is_system_default": true,
         "items": [
@@ -135,7 +135,7 @@
         "id": "8fd43042-687c-4b87-9f4f-a95499220b10",
         "name": "corp-default",
         "account_type": "Corporate",
-        "total_capital": 10000.0,
+        "total_capital": 10000,
         "currency": "USD",
         "is_system_default": true,
         "items": [

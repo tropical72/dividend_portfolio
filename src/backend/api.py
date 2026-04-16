@@ -622,10 +622,19 @@ class DividendBackend:
                         "last_fetch": now.isoformat(),
                         "rate": new_rate,
                     }
+                    self.settings["current_exchange_rate"] = new_rate
                     self.storage.save_json(self.settings_file, self.settings)
                     return new_rate
             except Exception as e:
                 print(f"[Backend] Exchange rate fetch failed: {e}")
+
+        # 캐시된 값이 있으면 동기화 (UI 노출용)
+        if (
+            "current_exchange_rate" not in self.settings
+            or self.settings["current_exchange_rate"] != last_rate
+        ):
+            self.settings["current_exchange_rate"] = last_rate
+            self.storage.save_json(self.settings_file, self.settings)
 
         return last_rate
 
