@@ -116,3 +116,37 @@ def test_strategy_categories_are_converted_to_legacy_weight_buckets(tmp_path):
     assert stats["weights"]["Cash"] == pytest.approx(0.3)
     assert stats["weights"]["Dividend"] == pytest.approx(0.4)
     assert stats["weights"]["Growth"] == pytest.approx(0.3)
+
+
+def test_strategy_categories_are_exposed_as_strategy_weights(tmp_path):
+    """엔진이 직접 쓰는 4카테고리 strategy_weights가 유지되는지 검증한다."""
+    backend = DividendBackend(data_dir=str(tmp_path))
+    created = backend.add_portfolio(
+        name="Pension Strategy",
+        account_type="Pension",
+        total_capital=600000000,
+        currency="KRW",
+        items=[
+            {"symbol": "SGOV", "name": "SGOV", "category": "SGOV Buffer", "weight": 25},
+            {"symbol": "BND", "name": "BND", "category": "Bond Buffer", "weight": 35},
+            {
+                "symbol": "SCHD",
+                "name": "SCHD",
+                "category": "Dividend Growth",
+                "weight": 20,
+            },
+            {
+                "symbol": "VOO",
+                "name": "VOO",
+                "category": "Growth Engine",
+                "weight": 20,
+            },
+        ],
+    )
+
+    stats = backend.get_portfolio_stats_by_id(created["data"]["id"])
+
+    assert stats["strategy_weights"]["SGOV Buffer"] == pytest.approx(0.25)
+    assert stats["strategy_weights"]["Bond Buffer"] == pytest.approx(0.35)
+    assert stats["strategy_weights"]["Dividend Growth"] == pytest.approx(0.20)
+    assert stats["strategy_weights"]["Growth Engine"] == pytest.approx(0.20)
