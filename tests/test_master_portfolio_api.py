@@ -1,6 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
+from uuid import uuid4
 
+from src.backend.api import DividendBackend
 from src.backend.main import app
 
 
@@ -13,21 +15,31 @@ def test_master_portfolio_crud_and_dependency(client):
     """
     [TEST-RAMS-1.5] 마스터 포트폴리오 CRUD 및 삭제 방지 검증
     """
+    suffix = uuid4().hex[:8]
+
     # 1. 초기 개별 포트폴리오 준비
     corp_res = client.post(
         "/api/portfolios",
-        json={"name": "Test Corp", "account_type": "Corporate", "total_capital": 1000},
+        json={
+            "name": f"Test Corp {suffix}",
+            "account_type": "Corporate",
+            "total_capital": 1000,
+        },
     )
     corp_id = corp_res.json()["data"]["id"]
 
     # 2. 마스터 포트폴리오 생성
     master_res = client.post(
         "/api/master-portfolios",
-        json={"name": "Super Strategy", "corp_id": corp_id, "pension_id": None},
+        json={
+            "name": f"Super Strategy {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+        },
     )
     assert master_res.status_code == 200
     master_id = master_res.json()["data"]["id"]
-    assert master_res.json()["data"]["name"] == "Super Strategy"
+    assert master_res.json()["data"]["name"] == f"Super Strategy {suffix}"
 
     # 3. 마스터 포트폴리오 조회
     list_res = client.get("/api/master-portfolios")
@@ -54,10 +66,18 @@ def test_master_portfolio_crud_and_dependency(client):
     # 6. 다른 전략 생성 및 활성화 후에는 기존 전략 삭제 가능해야 함
     client.post(
         "/api/master-portfolios",
-        json={"name": "Another Strategy", "corp_id": corp_id, "pension_id": None},
+        json={
+            "name": f"Another Strategy {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+        },
     )
     list_res2 = client.get("/api/master-portfolios")
-    another_id = next(m["id"] for m in list_res2.json()["data"] if m["name"] == "Another Strategy")
+    another_id = next(
+        m["id"]
+        for m in list_res2.json()["data"]
+        if m["name"] == f"Another Strategy {suffix}"
+    )
 
     # 다른 전략 활성화
     client.post(f"/api/master-portfolios/{another_id}/activate")
@@ -74,3 +94,39 @@ def test_master_portfolio_crud_and_dependency(client):
     # 혹은 테스트 목적으로 Another Strategy를 삭제하기 위해
     # 시스템에 '기본(None)' 상태를 활성화하는 기능이 필요함.
     # 여기서는 요구사항대로 '활성 전략 삭제 불가'까지만 검증함.
+
+
+def test_default_master_bundle_is_seeded_on_app_boot(tmp_path):
+    """실앱 부팅 모드에서는 기본 master/corp/pension 번들이 자동 생성되어야 한다."""
+    backend = DividendBackend(
+        data_dir=str(tmp_path), ensure_default_master_bundle=True
+    )
+
+    portfolios = backend.get_portfolios()
+    masters = backend.get_master_portfolios()
+
+    assert any(p["id"] == backend.DEFAULT_CORP_PORTFOLIO_ID for p in portfolios)
+    assert any(p["id"] == backend.DEFAULT_PENSION_PORTFOLIO_ID for p in portfolios)
+    default_master = next(
+        m for m in masters if m["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
+    )
+    assert default_master["is_active"] is True
+    assert default_master["is_system_default"] is True
+
+
+def test_default_master_bundle_cannot_be_deleted(tmp_path):
+    """기본 master/corp/pension 번들은 삭제할 수 없어야 한다."""
+    backend = DividendBackend(
+        data_dir=str(tmp_path), ensure_default_master_bundle=True
+    )
+
+    corp_delete = backend.remove_portfolio(backend.DEFAULT_CORP_PORTFOLIO_ID)
+    pension_delete = backend.remove_portfolio(backend.DEFAULT_PENSION_PORTFOLIO_ID)
+    master_delete = backend.remove_master_portfolio(backend.DEFAULT_MASTER_PORTFOLIO_ID)
+
+    assert corp_delete["success"] is False
+    assert "기본 포트폴리오" in corp_delete["message"]
+    assert pension_delete["success"] is False
+    assert "기본 포트폴리오" in pension_delete["message"]
+    assert master_delete["success"] is False
+    assert "기본 마스터 전략" in master_delete["message"]

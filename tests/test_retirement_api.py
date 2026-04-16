@@ -67,6 +67,8 @@ def test_update_retirement_config_rejects_inconsistent_corp_principal():
 
 def test_run_retirement_simulation_with_events():
     """미래 자금 이벤트(Planned Cashflows)가 반영된 시뮬레이션 테스트"""
+    original_master_portfolios = backend.master_portfolios
+
     # 1. 특정 시점에 대규모 자금 유입 설정
     event_year = 2035
     event_amount = 500000000
@@ -114,8 +116,14 @@ def test_run_retirement_simulation_with_events():
     }
     client.post("/api/retirement/config", json=config_update)
 
-    # 2. 시뮬레이션 실행
-    response = client.get("/api/retirement/simulate")
+    try:
+        backend.master_portfolios = []
+
+        # 2. 시뮬레이션 실행
+        response = client.get("/api/retirement/simulate")
+    finally:
+        backend.master_portfolios = original_master_portfolios
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -209,3 +217,29 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     month1 = payload["data"]["monthly_data"][0]
     assert month1["month"] == 1
     assert month1["corp_balance"] == 120000
+
+
+def test_run_retirement_simulation_rejects_broken_active_master_reference():
+    """활성 마스터 전략의 포트폴리오 참조가 깨지면 시뮬레이션은 실패해야 한다."""
+    original_master_portfolios = backend.master_portfolios
+
+    try:
+        backend.master_portfolios = [
+            {
+                "id": "broken-master",
+                "name": "Broken Master",
+                "corp_id": "missing-corp",
+                "pension_id": None,
+                "is_active": True,
+            }
+        ]
+
+        response = client.get("/api/retirement/simulate")
+    finally:
+        backend.master_portfolios = original_master_portfolios
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is False
+    assert payload["broken_reference"] is True
+    assert "broken portfolio references" in payload["message"]

@@ -13,7 +13,11 @@ class DividendBackend:
     배당 포트폴리오 관리기의 핵심 비즈니스 로직을 담당하는 엔진입니다.
     """
 
-    def __init__(self, data_dir: str = ".") -> None:
+    DEFAULT_CORP_PORTFOLIO_ID = "8fd43042-687c-4b87-9f4f-a95499220b10"
+    DEFAULT_PENSION_PORTFOLIO_ID = "4203df7d-6708-448b-ab72-4cb05b2b2f9e"
+    DEFAULT_MASTER_PORTFOLIO_ID = "5a4f0ac9-c3b3-4561-a813-74a6e653d0d3"
+
+    def __init__(self, data_dir: str = ".", ensure_default_master_bundle: bool = False) -> None:
         self.storage = StorageManager(data_dir=data_dir)
         self.data_dir = os.path.abspath(data_dir)
         self.watchlist_file = "watchlist.json"
@@ -34,6 +38,218 @@ class DividendBackend:
         self.snapshot_file = "retirement_snapshot.json"
         self._normalize_all_portfolios()
         self._ensure_retirement_config_defaults()
+        if ensure_default_master_bundle:
+            self._ensure_default_master_bundle()
+
+    def _get_default_portfolio_seed_data(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "id": self.DEFAULT_PENSION_PORTFOLIO_ID,
+                "name": "pension-default",
+                "account_type": "Pension",
+                "total_capital": 10000.0,
+                "currency": "USD",
+                "is_system_default": True,
+                "items": [
+                    {
+                        "symbol": "SGOV",
+                        "name": "iShares 0-3 Month Treasury Bond ETF",
+                        "category": "SGOV Buffer",
+                        "weight": 15,
+                        "price": 100.53,
+                        "dividend_yield": 3.9460857455485927,
+                        "last_div_amount": 0.293,
+                        "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                    {
+                        "symbol": "SCHD",
+                        "name": "Schwab U.S. Dividend Equity ETF",
+                        "category": "Dividend Growth",
+                        "weight": 20,
+                        "price": 30.65,
+                        "dividend_yield": 3.4420880913539973,
+                        "last_div_amount": 0.257,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                    {
+                        "symbol": "VOO",
+                        "name": "Vanguard S&P 500 ETF",
+                        "category": "Growth Engine",
+                        "weight": 25,
+                        "price": 643.45,
+                        "dividend_yield": 1.1077783821586757,
+                        "last_div_amount": 1.872,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                    {
+                        "symbol": "QQQM",
+                        "name": "Invesco NASDAQ 100 ETF",
+                        "category": "Growth Engine",
+                        "weight": 10,
+                        "price": 262.48,
+                        "dividend_yield": 0.4834654068881439,
+                        "last_div_amount": 0.328,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                    {
+                        "symbol": "BND",
+                        "name": "Vanguard Total Bond Market Index Fund",
+                        "category": "Bond Buffer",
+                        "weight": 30,
+                        "price": 73.88,
+                        "dividend_yield": 3.9063345966432057,
+                        "last_div_amount": 0.25,
+                        "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                ],
+                "created_at": "1776331808.613619",
+            },
+            {
+                "id": self.DEFAULT_CORP_PORTFOLIO_ID,
+                "name": "corp-default",
+                "account_type": "Corporate",
+                "total_capital": 10000.0,
+                "currency": "USD",
+                "is_system_default": True,
+                "items": [
+                    {
+                        "symbol": "SGOV",
+                        "name": "iShares 0-3 Month Treasury Bond ETF",
+                        "category": "SGOV Buffer",
+                        "weight": 22.5,
+                        "price": 100.53,
+                        "dividend_yield": 3.9460857455485927,
+                        "last_div_amount": 0.293,
+                        "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                    {
+                        "symbol": "JEPI",
+                        "name": "JPMorgan Equity Premium Income ETF",
+                        "category": "High Income",
+                        "weight": 15,
+                        "price": 57.61,
+                        "dividend_yield": 8.288491581322688,
+                        "last_div_amount": 0.421,
+                        "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                    {
+                        "symbol": "JEPQ",
+                        "name": "JPMorgan Nasdaq Equity Premium Income ETF",
+                        "category": "High Income",
+                        "weight": 10,
+                        "price": 58.48,
+                        "dividend_yield": 10.574555403556772,
+                        "last_div_amount": 0.559,
+                        "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                    {
+                        "symbol": "DIVO",
+                        "name": "Amplify CWP Enhanced Dividend Income ETF",
+                        "category": "High Income",
+                        "weight": 12,
+                        "price": 45.74,
+                        "dividend_yield": 6.366418889374725,
+                        "last_div_amount": 0.179,
+                        "payment_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    },
+                    {
+                        "symbol": "SCHD",
+                        "name": "Schwab U.S. Dividend Equity ETF",
+                        "category": "Dividend Growth",
+                        "weight": 12,
+                        "price": 30.65,
+                        "dividend_yield": 3.4420880913539973,
+                        "last_div_amount": 0.257,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                    {
+                        "symbol": "VOO",
+                        "name": "Vanguard S&P 500 ETF",
+                        "category": "Growth Engine",
+                        "weight": 16,
+                        "price": 643.45,
+                        "dividend_yield": 1.1077783821586757,
+                        "last_div_amount": 1.872,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                    {
+                        "symbol": "QQQM",
+                        "name": "Invesco NASDAQ 100 ETF",
+                        "category": "Growth Engine",
+                        "weight": 12.5,
+                        "price": 262.48,
+                        "dividend_yield": 0.4834654068881439,
+                        "last_div_amount": 0.328,
+                        "payment_months": [3, 6, 9, 12],
+                    },
+                ],
+                "created_at": "1776331808.613619",
+            },
+        ]
+
+    def _get_default_master_portfolio_seed_data(self) -> Dict[str, Any]:
+        return {
+            "id": self.DEFAULT_MASTER_PORTFOLIO_ID,
+            "name": "strategy-default",
+            "corp_id": self.DEFAULT_CORP_PORTFOLIO_ID,
+            "pension_id": self.DEFAULT_PENSION_PORTFOLIO_ID,
+            "is_active": True,
+            "is_system_default": True,
+        }
+
+    def _is_system_default_portfolio(self, portfolio: Dict[str, Any]) -> bool:
+        return bool(
+            portfolio.get("is_system_default")
+            or portfolio.get("id")
+            in {self.DEFAULT_CORP_PORTFOLIO_ID, self.DEFAULT_PENSION_PORTFOLIO_ID}
+        )
+
+    def _is_system_default_master(self, master: Dict[str, Any]) -> bool:
+        return bool(
+            master.get("is_system_default")
+            or master.get("id") == self.DEFAULT_MASTER_PORTFOLIO_ID
+        )
+
+    def _ensure_default_master_bundle(self) -> None:
+        """앱 시작 시 기본 master/corp/pension 번들을 보장한다."""
+        changed = False
+        default_portfolios = self._get_default_portfolio_seed_data()
+        existing_portfolios = {portfolio.get("id"): portfolio for portfolio in self.portfolios}
+        for seed in default_portfolios:
+            existing = existing_portfolios.get(seed["id"])
+            if existing is None:
+                self.portfolios.append(self._normalize_portfolio_record(seed))
+                changed = True
+            elif not self._is_system_default_portfolio(existing):
+                existing["is_system_default"] = True
+                changed = True
+
+        default_master = self._get_default_master_portfolio_seed_data()
+        existing_master = next(
+            (master for master in self.master_portfolios if master.get("id") == default_master["id"]),
+            None,
+        )
+        if existing_master is None:
+            self.master_portfolios.append(dict(default_master))
+            changed = True
+        else:
+            if not self._is_system_default_master(existing_master):
+                existing_master["is_system_default"] = True
+                changed = True
+
+        if self.master_portfolios and not any(master.get("is_active") for master in self.master_portfolios):
+            default_existing = next(
+                (master for master in self.master_portfolios if master.get("id") == default_master["id"]),
+                None,
+            )
+            if default_existing is not None:
+                for master in self.master_portfolios:
+                    master["is_active"] = master.get("id") == default_master["id"]
+                changed = True
+
+        if changed:
+            self.storage.save_json(self.portfolios_file, self.portfolios)
+            self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
 
     def _get_default_strategy_rules(self) -> Dict[str, Any]:
         """stock-plan 기본값 기반 전략 규칙 기본 스키마를 반환합니다."""
@@ -98,6 +314,12 @@ class DividendBackend:
             },
             self.retirement_config,
         )
+        assumptions = self.retirement_config.get("assumptions", {})
+        for assumption in assumptions.values():
+            if assumption.get("master_return") is None:
+                assumption["master_return"] = assumption.get("expected_return", 0.0485)
+            if assumption.get("master_inflation") is None:
+                assumption["master_inflation"] = assumption.get("inflation_rate", 0.025)
 
     def _validate_retirement_config(self, config: Dict[str, Any]) -> Optional[str]:
         """은퇴 설정의 핵심 회계 관계를 검증하고 오류 메시지를 반환합니다."""
@@ -171,6 +393,8 @@ class DividendBackend:
         """저장 포트폴리오 레코드의 기본 필드와 카테고리를 정규화합니다."""
         normalized = dict(portfolio)
         normalized["account_type"] = normalized.get("account_type") or "Corporate"
+        if self._is_system_default_portfolio(normalized):
+            normalized["is_system_default"] = True
         normalized["items"] = self._normalize_portfolio_items(
             normalized["account_type"], normalized.get("items", [])
         )
@@ -376,6 +600,76 @@ class DividendBackend:
         self._normalize_all_portfolios()
         return self.portfolios
 
+    def get_master_reference_status(self, master: Dict[str, Any]) -> Dict[str, Any]:
+        """마스터 전략의 포트폴리오 참조 상태와 계산 가능 여부를 반환합니다."""
+        corp_id = master.get("corp_id")
+        pension_id = master.get("pension_id")
+        corp_portfolio = self.get_portfolio_by_id(corp_id)
+        pension_portfolio = self.get_portfolio_by_id(pension_id)
+        missing_refs: List[str] = []
+
+        if corp_id and corp_portfolio is None:
+            missing_refs.append("Corporate")
+        if pension_id and pension_portfolio is None:
+            missing_refs.append("Pension")
+
+        message = None
+        if missing_refs:
+            joined = ", ".join(missing_refs)
+            message = (
+                f"Master strategy '{master.get('name', '-')}' has broken portfolio references: "
+                f"{joined} portfolio not found."
+            )
+
+        return {
+            "corp_portfolio": corp_portfolio,
+            "pension_portfolio": pension_portfolio,
+            "missing_refs": missing_refs,
+            "is_broken": bool(missing_refs),
+            "message": message,
+        }
+
+    def calculate_master_portfolio_tr(self, master: Dict[str, Any]) -> Dict[str, Any]:
+        """마스터 전략의 TR 계산 결과 또는 깨진 참조 오류를 반환합니다."""
+        reference_status = self.get_master_reference_status(master)
+        if reference_status["is_broken"]:
+            return {
+                "success": False,
+                "message": reference_status["message"],
+                "data": reference_status,
+            }
+
+        corp_portfolio = cast(Optional[Dict[str, Any]], reference_status["corp_portfolio"])
+        pension_portfolio = cast(Optional[Dict[str, Any]], reference_status["pension_portfolio"])
+        corp_stats = self.get_portfolio_stats_by_id(master.get("corp_id"))
+        pension_stats = self.get_portfolio_stats_by_id(master.get("pension_id"))
+
+        corp_capital = corp_portfolio["total_capital"] if corp_portfolio else 0
+        pension_capital = pension_portfolio["total_capital"] if pension_portfolio else 0
+        total_capital = corp_capital + pension_capital
+
+        if total_capital > 0:
+            combined_tr = (
+                corp_stats["expected_return"] * corp_capital
+                + pension_stats["expected_return"] * pension_capital
+            ) / total_capital
+        elif corp_portfolio:
+            combined_tr = corp_stats["expected_return"]
+        elif pension_portfolio:
+            combined_tr = pension_stats["expected_return"]
+        else:
+            combined_tr = None
+
+        return {
+            "success": True,
+            "data": {
+                **reference_status,
+                "corp_stats": corp_stats,
+                "pension_stats": pension_stats,
+                "combined_tr": combined_tr,
+            },
+        }
+
     def add_portfolio(
         self,
         name: str,
@@ -409,6 +703,13 @@ class DividendBackend:
 
     def remove_portfolio(self, p_id: str) -> Dict[str, Any]:
         """특정 포트폴리오를 삭제합니다. [의존성 검사 추가]"""
+        portfolio = self.get_portfolio_by_id(p_id)
+        if portfolio and self._is_system_default_portfolio(portfolio):
+            return {
+                "success": False,
+                "message": "기본 포트폴리오는 삭제할 수 없습니다.",
+            }
+
         if self.is_portfolio_used_in_master(p_id):
             # 사용 중인 마스터 전략 이름 찾기
             master = next(
@@ -435,28 +736,30 @@ class DividendBackend:
     def get_master_portfolios(self) -> List[Dict[str, Any]]:
         """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
         for m in self.master_portfolios:
-            corp_p = self.get_portfolio_by_id(m.get("corp_id"))
-            pen_p = self.get_portfolio_by_id(m.get("pension_id"))
-
-            m["corp_name"] = corp_p["name"] if corp_p else "-"
-            m["pension_name"] = pen_p["name"] if pen_p else "-"
-
-            # 통합 수익률(TR) 계산: (법인자산*법인수익률 + 연금자산*연금수익률) / 총자산
-            c_stats = self.get_portfolio_stats_by_id(m.get("corp_id"))
-            p_stats = self.get_portfolio_stats_by_id(m.get("pension_id"))
-
-            c_cap = corp_p["total_capital"] if corp_p else 0
-            p_cap = pen_p["total_capital"] if pen_p else 0
-            total_cap = c_cap + p_cap
-
-            if total_cap > 0:
-                combined_tr = (
-                    c_stats["expected_return"] * c_cap + p_stats["expected_return"] * p_cap
-                ) / total_cap
+            master_calc = self.calculate_master_portfolio_tr(m)
+            if master_calc["success"]:
+                data = cast(Dict[str, Any], master_calc["data"])
+                corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
+                pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+                combined_tr = data["combined_tr"]
+                m["is_system_default"] = self._is_system_default_master(m)
+                m["corp_name"] = corp_p["name"] if corp_p else "-"
+                m["pension_name"] = pen_p["name"] if pen_p else "-"
+                m["combined_yield"] = combined_tr
+                m["combined_tr"] = combined_tr
+                m["broken_reference"] = False
+                m["broken_reason"] = None
             else:
-                combined_tr = c_stats["expected_return"] or p_stats["expected_return"] or 0.07
-
-            m["combined_yield"] = combined_tr
+                data = cast(Dict[str, Any], master_calc["data"])
+                corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
+                pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+                m["is_system_default"] = self._is_system_default_master(m)
+                m["corp_name"] = corp_p["name"] if corp_p else "-"
+                m["pension_name"] = pen_p["name"] if pen_p else "-"
+                m["combined_yield"] = None
+                m["combined_tr"] = None
+                m["broken_reference"] = True
+                m["broken_reason"] = master_calc["message"]
 
         return self.master_portfolios
 
@@ -490,52 +793,49 @@ class DividendBackend:
 
     def activate_master_portfolio(self, m_id: str) -> Dict[str, Any]:
         """특정 마스터 전략을 활성화하고, 해당 수익률을 Standard Profile(v1)에 자동 반영합니다."""
-        found_m = None
-        for m in self.master_portfolios:
-            if m["id"] == m_id:
-                m["is_active"] = True
-                found_m = m
-            else:
-                m["is_active"] = False
+        found_m = next((m for m in self.master_portfolios if m["id"] == m_id), None)
+        if not found_m:
+            return {"success": False, "message": "전략을 찾을 수 없습니다."}
 
-        if found_m:
-            # [NEW] 선택된 마스터 전략의 통합 수익률 계산
-            c_stats = self.get_portfolio_stats_by_id(found_m.get("corp_id"))
-            p_stats = self.get_portfolio_stats_by_id(found_m.get("pension_id"))
-            corp_p = self.get_portfolio_by_id(found_m.get("corp_id"))
-            pen_p = self.get_portfolio_by_id(found_m.get("pension_id"))
-
-            c_cap = corp_p["total_capital"] if corp_p else 0
-            p_cap = pen_p["total_capital"] if pen_p else 0
-            total_cap = c_cap + p_cap
-
-            if total_cap > 0:
-                combined_tr = (
-                    c_stats["expected_return"] * c_cap + p_stats["expected_return"] * p_cap
-                ) / total_cap
-            else:
-                combined_tr = c_stats["expected_return"] or p_stats["expected_return"] or 0.07
-
-            # [NEW] retirement_config.json의 v1(Standard) 수익률 자동 업데이트
-            if (
-                "assumptions" in self.retirement_config
-                and "v1" in self.retirement_config["assumptions"]
-            ):
-                self.retirement_config["assumptions"]["v1"]["expected_return"] = combined_tr
-                self.storage.save_json(self.retirement_config_file, self.retirement_config)
-
-            self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+        master_calc = self.calculate_master_portfolio_tr(found_m)
+        if not master_calc["success"]:
             return {
-                "success": True,
-                "message": "전략이 활성화되었으며 Standard Profile에 반영되었습니다.",
-                "yield": combined_tr,
+                "success": False,
+                "message": master_calc["message"],
+                "broken_reference": True,
             }
-        return {"success": False, "message": "전략을 찾을 수 없습니다."}
+
+        for master in self.master_portfolios:
+            master["is_active"] = master["id"] == m_id
+
+        combined_tr = cast(Dict[str, Any], master_calc["data"])["combined_tr"]
+
+        # [NEW] retirement_config.json의 v1(Standard) 수익률 자동 업데이트
+        if (
+            combined_tr is not None
+            and "assumptions" in self.retirement_config
+            and "v1" in self.retirement_config["assumptions"]
+        ):
+            self.retirement_config["assumptions"]["v1"]["expected_return"] = combined_tr
+            self.retirement_config["assumptions"]["v1"]["master_return"] = combined_tr
+            self.storage.save_json(self.retirement_config_file, self.retirement_config)
+
+        self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+        return {
+            "success": True,
+            "message": "전략이 활성화되었으며 Standard Profile에 반영되었습니다.",
+            "yield": combined_tr,
+        }
 
     def remove_master_portfolio(self, m_id: str) -> Dict[str, Any]:
         """마스터 전략을 삭제합니다. [활성 전략 보호 추가]"""
         for i, m in enumerate(self.master_portfolios):
             if m["id"] == m_id:
+                if self._is_system_default_master(m):
+                    return {
+                        "success": False,
+                        "message": "기본 마스터 전략은 삭제할 수 없습니다.",
+                    }
                 if m.get("is_active"):
                     return {
                         "success": False,

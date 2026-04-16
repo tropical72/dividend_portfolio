@@ -546,18 +546,22 @@ export function PortfolioDashboard({
                         )}
                         <button
                           onClick={() =>
-                            !m.is_active && handleDeleteMaster(m.id)
+                            !m.is_active &&
+                            !m.is_system_default &&
+                            handleDeleteMaster(m.id)
                           }
-                          disabled={m.is_active}
+                          disabled={m.is_active || m.is_system_default}
                           data-testid={`delete-master-${m.id}`}
                           className={cn(
                             "p-4 rounded-2xl transition-all border border-slate-800",
-                            m.is_active
+                            m.is_active || m.is_system_default
                               ? "bg-slate-950/30 text-slate-700 cursor-not-allowed opacity-50"
                               : "bg-slate-950/50 text-slate-500 hover:text-red-400 hover:bg-red-500/10",
                           )}
                           title={
-                            m.is_active
+                            m.is_system_default
+                              ? "기본 전략은 삭제할 수 없습니다"
+                              : m.is_active
                               ? "활성 전략은 삭제할 수 없습니다"
                               : "전략 삭제"
                           }
@@ -1076,8 +1080,21 @@ export function PortfolioDashboard({
                       <Edit3 size={16} /> Load into Designer
                     </button>
                     <button
-                      onClick={(e) => handleDelete(e, p.id, p.name)}
-                      className="p-3 text-slate-700 hover:text-red-400 hover:bg-red-400/5 rounded-2xl transition-all"
+                      onClick={(e) =>
+                        !p.is_system_default && handleDelete(e, p.id, p.name)
+                      }
+                      disabled={p.is_system_default}
+                      className={cn(
+                        "p-3 rounded-2xl transition-all",
+                        p.is_system_default
+                          ? "text-slate-700 cursor-not-allowed opacity-50"
+                          : "text-slate-700 hover:text-red-400 hover:bg-red-400/5",
+                      )}
+                      title={
+                        p.is_system_default
+                          ? "기본 포트폴리오는 삭제할 수 없습니다"
+                          : "포트폴리오 삭제"
+                      }
                     >
                       <Trash2 size={20} />
                     </button>

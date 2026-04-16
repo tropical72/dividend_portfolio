@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.backend.main import app
+from src.backend.main import app, backend
 
 client = TestClient(app)
 
@@ -10,8 +10,15 @@ def test_retirement_simulation_metadata_visibility():
     """
     [REQ-RAMS-1.4.5] 시뮬레이션 결과에 사용된 포트폴리오 메타데이터가 포함되는지 검증
     """
+    original_master_portfolios = backend.master_portfolios
+
     # 1. 시뮬레이션 실행
-    response = client.get("/api/retirement/simulate")
+    try:
+        backend.master_portfolios = []
+        response = client.get("/api/retirement/simulate")
+    finally:
+        backend.master_portfolios = original_master_portfolios
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True

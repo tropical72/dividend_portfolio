@@ -11,6 +11,7 @@ async function createPortfolio(
   request: APIRequestContext,
   name: string,
   accountType: "Corporate" | "Pension",
+  dividendYield = 0,
 ) {
   const response = await request.post("http://127.0.0.1:8000/api/portfolios", {
     data: {
@@ -18,7 +19,21 @@ async function createPortfolio(
       account_type: accountType,
       total_capital: 1000000,
       currency: "USD",
-      items: [],
+      items:
+        dividendYield > 0
+          ? [
+              {
+                symbol: `${name}-TICK`,
+                name: `${name} Holding`,
+                category: "Growth Engine",
+                weight: 100,
+                price: 100,
+                dividend_yield: dividendYield,
+                last_div_amount: 1,
+                payment_months: [1, 4, 7, 10],
+              },
+            ]
+          : [],
     },
   });
   const payload = await response.json();
@@ -96,6 +111,79 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
 
     await expect(page.getByTestId("master-switcher-trigger")).toContainText(
       `Switch-B-${suffix}`,
+    );
+  });
+
+  test("should show Standard Profile return as master TR after switching", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now();
+    const paRate = 3;
+    const firstDividendYield = 4;
+    const secondDividendYield = 9;
+
+    await request.post("http://127.0.0.1:8000/api/settings", {
+      data: { price_appreciation_rate: paRate },
+    });
+
+    const firstCorpId = await createPortfolio(
+      request,
+      `TR-Corp-A-${suffix}`,
+      "Corporate",
+      firstDividendYield,
+    );
+    const secondCorpId = await createPortfolio(
+      request,
+      `TR-Corp-B-${suffix}`,
+      "Corporate",
+      secondDividendYield,
+    );
+
+    const firstRes = await request.post(
+      "http://127.0.0.1:8000/api/master-portfolios",
+      {
+        data: {
+          name: `TR-A-${suffix}`,
+          corp_id: firstCorpId,
+          pension_id: null,
+        },
+      },
+    );
+    const firstMaster = (await firstRes.json()).data;
+
+    const secondRes = await request.post(
+      "http://127.0.0.1:8000/api/master-portfolios",
+      {
+        data: {
+          name: `TR-B-${suffix}`,
+          corp_id: secondCorpId,
+          pension_id: null,
+        },
+      },
+    );
+    const secondMaster = (await secondRes.json()).data;
+
+    await request.post(
+      `http://127.0.0.1:8000/api/master-portfolios/${firstMaster.id}/activate`,
+    );
+
+    await page.goto("http://localhost:5173");
+    await page.getByRole("button", { name: "Retirement" }).click();
+
+    const standardReturnInput = page.getByTestId("return-v1");
+    await expect(standardReturnInput).toHaveValue(
+      (firstDividendYield + paRate).toFixed(1),
+    );
+
+    await page.getByTestId("master-switcher-trigger").click();
+    await page.getByTestId(`master-switcher-item-${secondMaster.id}`).click();
+
+    await expect(page.getByTestId("master-switcher-trigger")).toContainText(
+      `TR-B-${suffix}`,
+    );
+    await expect(standardReturnInput).toHaveValue(
+      (secondDividendYield + paRate).toFixed(1),
     );
   });
 

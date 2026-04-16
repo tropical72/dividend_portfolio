@@ -1,8 +1,57 @@
 {
     "active_assumption_id": "v1",
+    "assumptions": {
+        "v1": {
+            "name": "Standard Profile",
+            "expected_return": 0.07,
+            "expected_growth": 0.02,
+            "inflation_rate": 0.02,
+            "master_return": 0.07,
+            "master_inflation": 0.025
+        },
+        "conservative": {
+            "name": "Conservative Profile",
+            "expected_return": 0.035,
+            "expected_growth": 0.01,
+            "inflation_rate": 0.035,
+            "master_return": 0.035,
+            "master_inflation": 0.035
+        },
+        "test_event": {
+            "inflation_rate": 0.0,
+            "expected_return": 0.0,
+            "master_return": 0.05,
+            "master_inflation": 0.025
+        },
+        "test_zero": {
+            "inflation_rate": 0.0,
+            "expected_return": 0.0,
+            "master_return": 0.03,
+            "master_inflation": 0.035
+        }
+    },
+    "strategy_rules": {
+        "rebalance_month": 2,
+        "rebalance_week": 2,
+        "bear_market_freeze_enabled": true,
+        "corporate": {
+            "sgov_target_months": 40,
+            "sgov_warn_months": 30,
+            "sgov_crisis_months": 24,
+            "high_income_min_ratio": 0.2,
+            "high_income_max_ratio": 0.35,
+            "growth_sell_years_left_threshold": 10
+        },
+        "pension": {
+            "sgov_min_years": 2,
+            "bond_min_years": 5,
+            "bond_min_total_ratio": 0.05,
+            "dividend_min_ratio": 0.1
+        }
+    },
     "user_profile": {
-        "birth_year": 1972,
-        "birth_month": 8,
+        "birth_year": 1980,
+        "birth_month": 1,
         "private_pension_start_age": 55,
         "national_pension_start_age": 65
     },
@@ -13,19 +62,19 @@
         "simulation_start_year": 2026,
         "simulation_start_month": 1,
         "national_pension_amount": 1000000,
-        "simulation_years": 30
+        "simulation_years": 1
     },
     "corp_params": {
-        "initial_investment": 1600000000,
-        "capital_stock": 10000000,
-        "initial_shareholder_loan": 1590000000,
-        "monthly_salary": 2500000,
+        "initial_investment": 1000000000,
+        "capital_stock": 0,
+        "initial_shareholder_loan": 500000000,
+        "monthly_salary": 2000000,
         "monthly_fixed_cost": 500000,
         "employee_count": 1
     },
     "pension_params": {
-        "initial_investment": 350000000,
-        "severance_reserve": 350000000,
+        "initial_investment": 500000000,
+        "severance_reserve": 0,
         "other_reserve": 0,
         "monthly_withdrawal_target": 2000000
     },
@@ -52,32 +101,15 @@
         "equity_yield_multiplier": 1.2,
         "debt_yield_multiplier": 0.6
     },
-    "assumptions": {
-        "v1": {
-            "name": "Standard Profile",
-            "expected_return": 0.05680959597713089,
-            "inflation_rate": 0.025,
-            "master_return": 0.07
-        },
-        "conservative": {
-            "name": "Conservative Profile",
-            "expected_return": 0.035,
-            "expected_growth": 0.01,
-            "inflation_rate": 0.035,
-            "master_return": 0.035,
-            "master_inflation": 0.035
-        }
-    },
     "planned_cashflows": [
         {
-            "id": "2e2de2e6-de83-4881-9b3a-d6be53e0b055",
+            "id": "test-event",
+            "name": "테스트 유입",
+            "year": 2035,
+            "month": 6,
+            "amount": 500000000,
             "type": "INFLOW",
-            "entity": "CORP",
-            "amount": 100000000,
-            "currency": "KRW",
-            "year": 5,
-            "month": 11,
-            "description": "자산 유입/지출 상세"
+            "entity": "CORP"
         }
     ]
 }

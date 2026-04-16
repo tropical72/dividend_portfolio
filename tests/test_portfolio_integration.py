@@ -33,7 +33,10 @@ def test_portfolio_integration_yield_mapping(client):
     }
 
     # 백엔드 메모리에 직접 주입 (파일 저장 없이 테스트)
+    original_portfolios = backend.portfolios
+    original_master_portfolios = backend.master_portfolios
     backend.portfolios = [corp_p, pen_p]
+    backend.master_portfolios = []
 
     # 2. 은퇴 설정 준비 (필수 필드 채우기)
     config = {
@@ -72,37 +75,41 @@ def test_portfolio_integration_yield_mapping(client):
             "income_tax_estimate_rate": 0.15,
         },
     }
-    backend.update_retirement_config(config)
+    try:
+        backend.update_retirement_config(config)
 
-    # 3. 시뮬레이션 실행
-    response = client.get("/api/retirement/simulate")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["success"] is True
+        # 3. 시뮬레이션 실행
+        response = client.get("/api/retirement/simulate")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
 
-    # 4. 검증: 메타데이터에 포트폴리오 정보가 포함되었는가? [REQ-RAMS-1.4.5]
-    meta = data["data"].get("meta", {})
-    assert meta["used_portfolios"]["corp"]["name"] == "High Yield Corp"
-    assert "10.00%" in meta["used_portfolios"]["corp"]["yield"]
-    assert meta["used_portfolios"]["pension"]["name"] == "Low Yield Pension"
-    assert "2.00%" in meta["used_portfolios"]["pension"]["yield"]
+        # 4. 검증: 메타데이터에 포트폴리오 정보가 포함되었는가? [REQ-RAMS-1.4.5]
+        meta = data["data"].get("meta", {})
+        assert meta["used_portfolios"]["corp"]["name"] == "High Yield Corp"
+        assert "10.00%" in meta["used_portfolios"]["corp"]["yield"]
+        assert meta["used_portfolios"]["pension"]["name"] == "Low Yield Pension"
+        assert "2.00%" in meta["used_portfolios"]["pension"]["yield"]
 
-    # 5. 검증: 엔진 계산 결과에 배당률 및 수익률이 반영되었는가? [REQ-RAMS-1.4.2]
-    first_month = data["data"]["monthly_data"][0]
+        # 5. 검증: 엔진 계산 결과에 배당률 및 수익률이 반영되었는가? [REQ-RAMS-1.4.2]
+        first_month = data["data"]["monthly_data"][0]
 
-    # 10억 * (10%/12) = 833.33만원 (법인 배당)
-    # 10억 * ((10%-10%)/12) = 0원 (법인 성장 - 성장률 0% 가정)
-    # 하지만 corp_cash는 growth가 절반(0.5) 적용되므로 0원
+        # 10억 * (10%/12) = 833.33만원 (법인 배당)
+        # 10억 * ((10%-10%)/12) = 0원 (법인 성장 - 성장률 0% 가정)
+        # 하지만 corp_cash는 growth가 절반(0.5) 적용되므로 0원
 
-    # 두 번째 시뮬레이션: 성장률 5% 주입
-    config["assumptions"]["v1"]["expected_return"] = 0.15  # 10% 배당 + 5% 성장
-    backend.update_retirement_config(config)
-    response = client.get("/api/retirement/simulate")
-    data = response.json()
-    first_month = data["data"]["monthly_data"][0]
+        # 두 번째 시뮬레이션: 성장률 5% 주입
+        config["assumptions"]["v1"]["expected_return"] = 0.15  # 10% 배당 + 5% 성장
+        backend.update_retirement_config(config)
+        response = client.get("/api/retirement/simulate")
+        data = response.json()
+        first_month = data["data"]["monthly_data"][0]
 
-    # 법인 총 자산 증가분 확인
-    # 초기 10억 -> 1개월 후 (배당 0.833% + 성장 0.416%) => 약 1.25% 증가 (1,250만원)
-    # 법인 운영비 지출: 약 300~400만원 (급여 200 + 건보료 등 + 고정비 50)
-    # 순증가: 약 850만원 이상 예상
-    assert first_month["corp_balance"] > 1000000000  # 10억보다 커야 함 (수익이 비용을 초과)
+        # 법인 총 자산 증가분 확인
+        # 초기 10억 -> 1개월 후 (배당 0.833% + 성장 0.416%) => 약 1.25% 증가 (1,250만원)
+        # 법인 운영비 지출: 약 300~400만원 (급여 200 + 건보료 등 + 고정비 50)
+        # 순증가: 약 850만원 이상 예상
+        assert first_month["corp_balance"] > 1000000000  # 10억보다 커야 함 (수익이 비용을 초과)
+    finally:
+        backend.portfolios = original_portfolios
+        backend.master_portfolios = original_master_portfolios

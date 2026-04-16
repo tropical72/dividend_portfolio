@@ -205,6 +205,11 @@ export function RetirementTab() {
   const monthlyData = simulationData.monthly_data || [];
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const portfolioMeta = simulationData.meta?.used_portfolios;
+  const standardMasterReturn =
+    simulationData.meta?.master_tr ??
+    simulationData.meta?.master_yield ??
+    config.assumptions?.v1?.master_return ??
+    0.0485;
   const chartData = monthlyData.filter(
     (d) => d.index % 12 === 0 || d.index === 1,
   );
@@ -326,9 +331,19 @@ export function RetirementTab() {
                             <p className="text-sm font-black tracking-tight truncate">
                               {m.name}
                             </p>
-                            {m.combined_yield !== undefined && (
+                            {(m.combined_tr ?? m.combined_yield) !== undefined &&
+                              (m.combined_tr ?? m.combined_yield) !== null && (
                               <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                                {(m.combined_yield * 100).toFixed(2)}%
+                                {(
+                                  ((m.combined_tr ?? m.combined_yield) || 0) *
+                                  100
+                                ).toFixed(2)}
+                                %
+                              </span>
+                            )}
+                            {m.broken_reference && (
+                              <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                                Broken
                               </span>
                             )}
                           </div>
@@ -336,6 +351,11 @@ export function RetirementTab() {
                             Corp: {m.corp_name || "-"} / Pen:{" "}
                             {m.pension_name || "-"}
                           </p>
+                          {m.broken_reference && m.broken_reason && (
+                            <p className="text-[10px] font-bold text-rose-400/80 mt-1 line-clamp-2">
+                              {m.broken_reason}
+                            </p>
+                          )}
                         </div>
 
                         {m.is_active && (
@@ -526,7 +546,11 @@ export function RetirementTab() {
                   <EditableInput
                     id={`return-${id}`}
                     initialValue={item.expected_return * 100}
-                    masterValue={(item.master_return ?? 0.0485) * 100}
+                    masterValue={
+                      (id === "v1"
+                        ? standardMasterReturn
+                        : item.master_return ?? 0.0485) * 100
+                    }
                     onCommit={async (v) => {
                       const nc = {
                         ...config,

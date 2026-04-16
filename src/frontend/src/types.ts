@@ -67,6 +67,7 @@ export interface Portfolio {
   currency: string;
   items: PortfolioItem[];
   created_at: string;
+  is_system_default?: boolean;
 }
 
 /** 마스터 포트폴리오(전략 세트) 인터페이스 [REQ-PRT-08.1] */
@@ -79,6 +80,10 @@ export interface MasterPortfolio {
   corp_name?: string;
   pension_name?: string;
   combined_yield?: number;
+  combined_tr?: number;
+  broken_reference?: boolean;
+  broken_reason?: string | null;
+  is_system_default?: boolean;
 }
 
 /** 은퇴 시뮬레이션 전역 설정 인터페이스 [REQ-RAMS-01] */
@@ -208,6 +213,7 @@ export interface SimulationResult {
   meta?: {
     master_name?: string;
     master_yield?: number;
+    master_tr?: number;
     combined_dy?: number;
     pa_rate?: number;
     strategy_rules_summary?: {

@@ -14,7 +14,7 @@ from src.core.trigger_engine import TriggerEngine
 
 DATA_DIR = os.getenv("APP_DATA_DIR", ".")
 app = FastAPI(title="Dividend Portfolio Manager API")
-backend = DividendBackend(data_dir=DATA_DIR)
+backend = DividendBackend(data_dir=DATA_DIR, ensure_default_master_bundle=True)
 
 tax_engine = TaxEngine()
 trigger_engine = TriggerEngine()
@@ -282,6 +282,15 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # [REQ-RAMS-1.5.1] 활성화된 마스터 포트폴리오 기반 데이터 추출
     active_master = backend.get_active_master_portfolio()
+    if active_master:
+        master_calc = backend.calculate_master_portfolio_tr(active_master)
+        if not master_calc["success"]:
+            return {
+                "success": False,
+                "message": master_calc["message"],
+                "broken_reference": True,
+            }
+
     active_corp = (
         backend.get_portfolio_by_id(active_master.get("corp_id")) if active_master else None
     )
@@ -380,8 +389,8 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # 마스터 전략의 통합 수익률 계산
     pa_rate = float(backend.settings.get("price_appreciation_rate", 3.0)) / 100.0
-    combined_tr = 0.07
-    combined_dy = 0.04
+    combined_tr = None
+    combined_dy = None
     if active_m:
         c_cap = corp_p["total_capital"] if corp_p else 0
         p_cap = pen_p["total_capital"] if pen_p else 0
@@ -391,12 +400,17 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
                 corp_stats.get("dividend_yield", 0.0) * c_cap
                 + pension_stats.get("dividend_yield", 0.0) * p_cap
             ) / total_cap
-        else:
-            combined_dy = corp_stats.get("dividend_yield", 0.04)
-        combined_tr = combined_dy + pa_rate
+        elif corp_p:
+            combined_dy = corp_stats.get("dividend_yield", 0.0)
+        elif pen_p:
+            combined_dy = pension_stats.get("dividend_yield", 0.0)
+
+        if combined_dy is not None:
+            combined_tr = combined_dy + pa_rate
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
         "master_yield": combined_tr,
+        "master_tr": combined_tr,
         "combined_dy": combined_dy,
         "pa_rate": pa_rate,
         "strategy_rules_summary": {

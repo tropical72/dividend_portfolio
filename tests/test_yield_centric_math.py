@@ -62,3 +62,37 @@ def test_master_portfolio_combined_tr_logic(temp_backend):
 
     # combined_yield 필드(실제로는 TR)가 7.5%여야 함
     assert master["combined_yield"] == pytest.approx(0.075)
+    assert master["combined_tr"] == pytest.approx(0.075)
+    assert master["broken_reference"] is False
+
+
+def test_activate_master_portfolio_syncs_standard_profile_to_master_tr(temp_backend):
+    """마스터 전략 활성화 시 Standard Profile의 표시/적용 수익률이 모두 TR로 동기화되어야 한다."""
+    created = temp_backend.add_master_portfolio("Master Strategy", corp_id="test-p-1")
+    master_id = created["data"]["id"]
+
+    result = temp_backend.activate_master_portfolio(master_id)
+
+    assert result["success"] is True
+    assert result["yield"] == pytest.approx(0.075)
+    assert temp_backend.retirement_config["assumptions"]["v1"]["expected_return"] == pytest.approx(
+        0.075
+    )
+    assert temp_backend.retirement_config["assumptions"]["v1"]["master_return"] == pytest.approx(
+        0.075
+    )
+
+
+def test_broken_master_reference_does_not_fallback_to_default_tr(temp_backend):
+    """깨진 마스터 참조는 7% fallback으로 숨기지 않고 오류 상태로 노출해야 한다."""
+    temp_backend.add_master_portfolio("Broken Strategy", corp_id="missing-corp")
+
+    master = temp_backend.get_master_portfolios()[0]
+    assert master["broken_reference"] is True
+    assert master["combined_yield"] is None
+    assert master["combined_tr"] is None
+
+    result = temp_backend.activate_master_portfolio(master["id"])
+    assert result["success"] is False
+    assert result["broken_reference"] is True
+    assert "broken portfolio references" in result["message"]

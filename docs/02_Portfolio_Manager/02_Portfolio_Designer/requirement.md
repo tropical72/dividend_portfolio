@@ -70,6 +70,10 @@
 - **[REQ-PRT-08.5] 활성 마스터 전략 삭제 보호:** 
     - 현재 'Active' 상태인 마스터 전략은 삭제할 수 없다.
     - 삭제 시도 시 "현재 사용 중인 전략입니다. 삭제하려면 다른 전략을 먼저 활성화하세요."라는 안내 메시지를 출력한다.
+- **[REQ-PRT-08.6] 시스템 기본 번들 보장 및 보호 (System Default) [NEW]:**
+    - 앱 부팅 시 `strategy-default`, `corp-default`, `pension-default`가 항상 존재하도록 자동 생성(Seeding) 로직을 갖춘다.
+    - 해당 기본 항목들은 `is_system_default: true` 속성을 가지며, 사용자가 삭제할 수 없도록 UI와 API 레벨에서 강력하게 보호한다.
+    - 기본 마스터 전략은 부팅 시 활성화(Active) 상태를 보장하여 사용자가 즉시 은퇴 시뮬레이션을 실행할 수 있도록 한다.
 
 ## [REQ-PRT-09] 마스터 전략 통합 UI [NEW]
 - **[REQ-PRT-09.1] 관리 섹션 통합:** 'Manage & Compare' 하위 탭 내 상단에 'Master Strategy' 관리 영역을 배치한다.
