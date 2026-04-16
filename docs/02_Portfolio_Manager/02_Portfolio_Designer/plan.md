@@ -42,18 +42,18 @@
     - [x] **T-02-5.2.1** 서브 탭 내비게이션(Designer/Manage) 크기(`text-sm`) 및 패딩 확대.
     - [x] **T-02-5.2.2** 계좌 타입 선택기 크기(`text-sm`) 및 선택 상태 색상 대비 강력 개선.
 
-### [Phase 7] Portfolio Name Management & Save UX (T-02-7) - CURRENT
+### [Phase 7] Portfolio Name Management & Save UX (T-02-7) - DONE
 - **T-02-7.1: Designer 탭 이름 입력 UX 개선**
     - [ ] **T-02-7.1.1** 포트폴리오 이름 필드에 Edit 아이콘 추가 및 포커스 스타일 강화.
     - [ ] **T-02-7.1.2** 저장(Save) 버튼 클릭 시 '이름 확인/수정' 모달 구현.
 - **T-02-7.2: 저장된 리스트 내 이름 변경 기능**
-    - [ ] **T-02-7.2.1** `PortfolioDashboard.tsx` 리스트 항목에 Rename 버튼 및 인라인 편집 UI 추가.
-    - [ ] **T-02-7.2.2** 백엔드 PATCH API 연동을 통한 실시간 이름 업데이트.
+    - [x] **T-02-7.2.1** `PortfolioDashboard.tsx` 리스트 항목에 Rename 버튼 및 인라인 편집 UI 추가.
+    - [x] **T-02-7.2.2** 백엔드 PATCH API 연동을 통한 실시간 이름 업데이트.
 
-### [Phase 10] 전략 카테고리 편집기 재설계 (T-02-10) - PLANNED
+### [Phase 10] 전략 카테고리 편집기 재설계 (T-02-10) - DONE
 - **T-02-10.1: 계좌별 4카테고리 데이터 모델 정렬**
     - [x] **T-02-10.1.1** Corporate/Pension 계좌별 허용 카테고리 정의 및 타입 반영.
-    - [ ] **T-02-10.1.2** 기존 3단 카테고리 포트폴리오 마이그레이션 규칙 구현.
+    - [x] **T-02-10.1.2** 기존 3단 카테고리 포트폴리오 마이그레이션 규칙 구현.
 - **T-02-10.2: Portfolio Designer UI 개편**
     - [x] **T-02-10.2.1** Corporate용 `SGOV Buffer/High Income/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
     - [x] **T-02-10.2.2** Pension용 `SGOV Buffer/Bond Buffer/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
@@ -66,3 +66,6 @@
 - 기존 `Fixed/Cash/Growth/Dividend/HighIncome` 타입은 즉시 삭제하지 않고 호환 레이어로 잠시 유지한다.
 - Portfolio 저장 시에는 새 카테고리 문자열로 정규화하여 저장하고, 레거시 데이터는 로드 시 한 번만 변환한다.
 - 계좌 타입이 바뀌면 호환되지 않는 카테고리 종목은 자동 이동시키지 말고, 사용자 확인 후 재배치하도록 설계한다.
+
+---
+*마지막 업데이트: 2026-04-16 17:05:00*
