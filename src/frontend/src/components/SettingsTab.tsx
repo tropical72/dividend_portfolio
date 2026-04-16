@@ -980,23 +980,40 @@ export function SettingsTab({
               icon={Clock}
               title="Sim Control"
               color="text-slate-400"
-              tooltip="시뮬레이션을 수행할 총 기간(연 단위)을 설정합니다."
+              tooltip="월 필요 생활비와 시뮬레이션 총 기간을 설정합니다."
             />
-            <InputGroup
-              label="Duration"
-              unit="Years"
-              tooltip="은퇴 후 시뮬레이션을 지속할 총 연수입니다. 보통 30년을 기본으로 합니다."
-              value={retireConfig.simulation_params.simulation_years}
-              onChange={(v) =>
-                setRetireConfig({
-                  ...retireConfig,
-                  simulation_params: {
-                    ...retireConfig.simulation_params,
-                    simulation_years: parseInt(v) || 30,
-                  },
-                })
-              }
-            />
+            <div className="grid grid-cols-1 gap-4">
+              <InputGroup
+                label="Monthly Living Cost"
+                isCurrency
+                tooltip="법인과 연금 자산에서 매달 충당해야 할 총 생활비 목표입니다. 월 1,000만원이면 10,000,000으로 입력합니다."
+                value={retireConfig.simulation_params.target_monthly_cashflow}
+                onChange={(v) =>
+                  setRetireConfig({
+                    ...retireConfig,
+                    simulation_params: {
+                      ...retireConfig.simulation_params,
+                      target_monthly_cashflow: parseInt(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label="Duration"
+                unit="Years"
+                tooltip="은퇴 후 시뮬레이션을 지속할 총 연수입니다. 보통 30년을 기본으로 합니다."
+                value={retireConfig.simulation_params.simulation_years}
+                onChange={(v) =>
+                  setRetireConfig({
+                    ...retireConfig,
+                    simulation_params: {
+                      ...retireConfig.simulation_params,
+                      simulation_years: parseInt(v) || 30,
+                    },
+                  })
+                }
+              />
+            </div>
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">

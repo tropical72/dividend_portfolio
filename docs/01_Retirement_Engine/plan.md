@@ -56,6 +56,7 @@
     - [x] **T-01-9.4.1** `Strategy Rules` UI 섹션 추가 및 기본값 복원 기능 구현.
     - [x] **T-01-9.4.2** 계좌별 버퍼/하한/예외 조건을 사용자 수정 가능하게 연결.
     - [x] **T-01-9.4.3** Step 2 결과 화면에 적용된 핵심 규칙 요약 정보 노출.
+    - [x] **T-01-9.4.4** `SettingsTab.tsx`의 `Sim Control` 섹션에 월 필요 생활비(`target_monthly_cashflow`) 입력을 추가하고 저장/재로드 정합성을 보강한다.
 
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 1. **Frontend/Backend 타입 정렬**

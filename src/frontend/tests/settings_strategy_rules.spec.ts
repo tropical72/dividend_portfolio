@@ -50,6 +50,11 @@ test.describe("Settings Strategy Rules", () => {
       .locator("input");
     await bondMinRatioInput.fill("7.5");
 
+    const monthlyLivingCostInput = page
+      .getByTestId("input-group-monthly-living-cost")
+      .locator("input");
+    await monthlyLivingCostInput.fill("10,000,000");
+
     await page.getByTestId("toggle-bear-freeze").getByRole("button").click();
     await page.getByRole("button", { name: /Apply All Changes/i }).click();
 
@@ -64,6 +69,7 @@ test.describe("Settings Strategy Rules", () => {
     await expect(rebalanceMonthInput).toHaveValue("3");
     await expect(corpTargetInput).toHaveValue("40");
     await expect(bondMinRatioInput).toHaveValue("7.5");
+    await expect(monthlyLivingCostInput).toHaveValue("10,000,000");
     await expect(page.getByTestId("toggle-bear-freeze")).toContainText(
       "Disabled",
     );

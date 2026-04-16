@@ -79,6 +79,7 @@
     - 연금 계좌용 설정과 법인 계좌용 설정을 시각적으로 분리하여 제공한다.
     - 각 설정은 설명 툴팁과 기본값 복원 기능을 포함한다.
 - **[REQ-RAMS-8.3] 시뮬레이션 프로필 구조화:** 기존 Settings 화면은 단순 입력 목록이 아니라 `User Profile / Pension / Corporate / Strategy Rules / Assumptions / Events` 등 구조화된 섹션으로 재편될 수 있어야 한다.
+    - `Sim Control` 섹션에서 `target_monthly_cashflow`(월 필요 생활비)와 `simulation_years`를 함께 수정할 수 있어야 한다.
 - **[REQ-RAMS-8.4] 기본값 복원:** 사용자는 전략 파라미터를 문서 기본값으로 즉시 되돌릴 수 있어야 한다.
 - **[REQ-RAMS-8.5] 투명성:** Step 2 Projection Result에는 실제 사용된 핵심 설정값(예: 법인 SGOV 목표 개월수, 연금 SGOV 하한, 리밸런싱 실행 월)을 확인할 수 있는 요약 정보 또는 상세 패널이 제공되어야 한다.
 

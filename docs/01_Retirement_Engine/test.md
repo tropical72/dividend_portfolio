@@ -70,6 +70,9 @@
 - **[TEST-UI-RULE-07] 사용자 노출 Assumption 프리셋 정규화 [NEW]:**
     - `retirement_config.json`에 테스트 전용 assumption(`test_event`, `test_zero`)이 남아 있어도 Settings/Retirement UI에는 `Standard Profile`, `Conservative Profile`만 노출되는지 확인.
     - `active_assumption_id`가 숨김 assumption을 가리킬 경우 백엔드가 `v1`로 정규화하여 시뮬레이션과 UI 상태가 깨지지 않는지 확인.
+- **[TEST-UI-RULE-08] 월 필요 생활비 설정 노출 및 저장 [NEW]:**
+    - Settings `Sim Control` 섹션에 `Monthly Living Cost` 입력이 노출되는지 확인.
+    - `10,000,000` 입력 후 저장/재로드 시 동일 값이 유지되고, Retirement 시뮬레이션이 해당 값을 기준으로 재계산되는지 확인.
 
 ---
 
