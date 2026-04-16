@@ -42,6 +42,8 @@ type StrategyRulesUpdates = {
   pension?: Partial<StrategyRules["pension"]>;
 };
 
+const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
+
 const DEFAULT_STRATEGY_RULES: StrategyRules = {
   rebalance_month: 1,
   rebalance_week: 2,
@@ -61,6 +63,16 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
     dividend_min_ratio: 0.1,
   },
 };
+
+function getVisibleAssumptions(config: RetirementConfig) {
+  return USER_VISIBLE_ASSUMPTION_IDS.map((id) => {
+    const item = config.assumptions[id];
+    if (!item) return null;
+    return [id, item] as const;
+  }).filter(Boolean) as Array<
+    readonly [string, RetirementConfig["assumptions"][string]]
+  >;
+}
 
 function SectionTitle({
   icon: Icon,
@@ -1094,7 +1106,7 @@ export function SettingsTab({
               tooltip="시장 수익률과 인플레이션에 대한 미래 시나리오를 정의합니다."
             />
             <div className="space-y-4">
-              {Object.entries(retireConfig.assumptions).map(([id, item]) => (
+              {getVisibleAssumptions(retireConfig).map(([id, item]) => (
                 <div
                   key={id}
                   className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4"

@@ -1,12 +1,12 @@
 {
-    "active_assumption_id": "test_zero",
+    "active_assumption_id": "v1",
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.06,
+            "expected_return": 0.09190409560160451,
             "expected_growth": 0.02,
             "inflation_rate": 0.02,
-            "master_return": 0.06,
+            "master_return": 0.09190409560160451,
             "master_inflation": 0.025
         },
         "conservative": {
@@ -16,16 +16,6 @@
             "inflation_rate": 0.035,
             "master_return": 0.035,
             "master_inflation": 0.035
-        },
-        "test_event": {
-            "inflation_rate": 0.0,
-            "expected_return": 0.0,
-            "master_return": 0.0,
-            "master_inflation": 0.0
-        },
-        "test_zero": {
-            "inflation_rate": 0.0,
-            "expected_return": 0.0
         }
     },
     "strategy_rules": {
@@ -60,7 +50,7 @@
         "simulation_start_year": 2026,
         "simulation_start_month": 1,
         "national_pension_amount": 0,
-        "simulation_years": 1
+        "simulation_years": 30
     },
     "corp_params": {
         "initial_investment": 120000,

@@ -16,6 +16,42 @@ def test_get_retirement_config():
     assert data["data"]["assumptions"]["conservative"]["name"] == "Conservative Profile"
 
 
+def test_get_retirement_config_filters_test_only_assumptions():
+    """테스트 전용 assumption이 저장돼 있어도 사용자 노출 설정에서는 제거되어야 한다."""
+    original_config = dict(backend.retirement_config)
+
+    try:
+        backend.retirement_config = {
+            "active_assumption_id": "test_zero",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.05,
+                    "inflation_rate": 0.02,
+                },
+                "conservative": {
+                    "name": "Conservative Profile",
+                    "expected_return": 0.03,
+                    "inflation_rate": 0.03,
+                },
+                "test_zero": {
+                    "expected_return": 0.0,
+                    "inflation_rate": 0.0,
+                },
+            },
+        }
+
+        response = client.get("/api/retirement/config")
+    finally:
+        backend.retirement_config = original_config
+        backend._ensure_retirement_config_defaults()
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert set(payload["assumptions"].keys()) == {"v1", "conservative"}
+    assert payload["active_assumption_id"] == "v1"
+
+
 def test_update_retirement_config():
     """은퇴 설정 업데이트 API 테스트"""
     new_data = {
@@ -74,9 +110,9 @@ def test_run_retirement_simulation_with_events():
     event_amount = 500000000
     config_update = {
         "user_profile": {"birth_year": 1972, "birth_month": 3},
-        "active_assumption_id": "test_event",
+        "active_assumption_id": "v1",
         "assumptions": {
-            "test_event": {
+            "v1": {
                 "inflation_rate": 0.0,
                 "expected_return": 0.0,
             }
@@ -156,9 +192,9 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
                 "private_pension_start_age": 65,
                 "national_pension_start_age": 65,
             },
-            "active_assumption_id": "test_zero",
+            "active_assumption_id": "v1",
             "assumptions": {
-                "test_zero": {
+                "v1": {
                     "inflation_rate": 0.0,
                     "expected_return": 0.0,
                 }

@@ -454,6 +454,27 @@ class DividendBackend:
             },
         }
 
+    def _sanitize_retirement_assumptions(self) -> None:
+        """사용자 노출용 Assumption 프리셋만 유지하고 활성 ID를 정규화합니다."""
+        default_assumptions = self._get_default_assumptions()
+        current_assumptions = self.retirement_config.get("assumptions", {})
+        sanitized_assumptions: Dict[str, Any] = {}
+
+        for assumption_id, default_value in default_assumptions.items():
+            current_value = current_assumptions.get(assumption_id, {})
+            if not isinstance(current_value, dict):
+                current_value = {}
+            sanitized_assumptions[assumption_id] = self._deep_merge_dict(
+                default_value, current_value
+            )
+
+        active_assumption_id = self.retirement_config.get("active_assumption_id")
+        if active_assumption_id not in sanitized_assumptions:
+            active_assumption_id = "v1"
+
+        self.retirement_config["assumptions"] = sanitized_assumptions
+        self.retirement_config["active_assumption_id"] = active_assumption_id
+
     def _deep_merge_dict(self, base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
         """중첩 딕셔너리를 재귀 병합하여 기본값을 보존합니다."""
         merged = dict(base)
@@ -474,6 +495,7 @@ class DividendBackend:
             },
             self.retirement_config,
         )
+        self._sanitize_retirement_assumptions()
         assumptions = self.retirement_config.get("assumptions", {})
         for assumption in assumptions.values():
             if assumption.get("master_return") is None:
