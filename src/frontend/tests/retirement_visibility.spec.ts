@@ -5,15 +5,31 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
     // 1. 초기 데이터 준비 (Mocking 없이 실제 백엔드 연동 확인)
     await page.goto("http://localhost:5173");
     await page.click('button:has-text("Retirement")');
+    await expect(page.getByTestId("retirement-tab-content")).toBeVisible({
+      timeout: 20000,
+    });
   });
 
   test("should display active master strategy badge at the top of Step 1", async ({
     page,
   }) => {
-    await expect(page.getByTestId("portfolio-visibility-badges")).toBeVisible();
-    await expect(page.getByTestId("master-strategy-badge")).toBeVisible();
-    await expect(page.getByTestId("corp-portfolio-badge")).toBeVisible();
-    await expect(page.getByTestId("pension-portfolio-badge")).toBeVisible();
+    await expect(page.getByTestId("master-switcher-trigger")).toBeVisible();
+    await expect(
+      page.getByTestId("active-strategy-master-metrics"),
+    ).toContainText("Master Yield");
+    await expect(
+      page.getByTestId("active-strategy-master-metrics"),
+    ).toContainText("Master TR");
+    await expect(page.getByTestId("active-strategy-summary")).toBeVisible();
+    await expect(page.getByTestId("active-strategy-corp-card")).toContainText(
+      "Corporate",
+    );
+    await expect(
+      page.getByTestId("active-strategy-pension-card"),
+    ).toContainText("Pension");
+    await expect(
+      page.getByTestId("active-strategy-exchange-rate"),
+    ).toContainText("Exchange Rate");
   });
 
   test("should show exactly two named assumption cards in Step 1", async ({
@@ -40,8 +56,10 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
       // 시뮬레이션 로딩 대기
       await page.waitForTimeout(1000);
       // 포트폴리오 카드와 규칙 요약이 여전히 유효한지 확인
-      await expect(page.getByTestId("corp-portfolio-badge")).toBeVisible();
-      await expect(page.getByTestId("pension-portfolio-badge")).toBeVisible();
+      await expect(page.getByTestId("active-strategy-corp-card")).toBeVisible();
+      await expect(
+        page.getByTestId("active-strategy-pension-card"),
+      ).toBeVisible();
       await expect(page.getByTestId("strategy-rules-summary")).toBeVisible();
     }
   });

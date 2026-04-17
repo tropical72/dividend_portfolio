@@ -270,31 +270,6 @@ export function RetirementTab() {
                 <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all flex items-center gap-3">
                   {simulationData.meta?.master_name ||
                     "Custom Strategy Builder"}
-                  {simulationData.meta?.master_yield !== undefined && (
-                    <div className="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                      <span className="text-[11px] font-black text-emerald-500/60 uppercase tracking-tighter">
-                        Yield
-                      </span>
-                      <span className="text-sm font-black text-emerald-400">
-                        {((simulationData.meta.combined_dy || 0) * 100).toFixed(
-                          2,
-                        )}
-                        %
-                      </span>
-                      <span className="text-slate-700 font-bold mx-0.5">+</span>
-                      <span className="text-[11px] font-black text-blue-500/60 uppercase tracking-tighter">
-                        Growth
-                      </span>
-                      <span className="text-sm font-black text-blue-400">
-                        {((simulationData.meta.pa_rate || 0) * 100).toFixed(2)}%
-                      </span>
-                      <span className="text-slate-700 font-bold mx-1">=</span>
-                      <span className="text-sm font-black text-emerald-400 uppercase">
-                        TR {(simulationData.meta.master_yield * 100).toFixed(2)}
-                        %
-                      </span>
-                    </div>
-                  )}
                 </h1>
                 <ChevronDown
                   className={cn(
@@ -303,6 +278,31 @@ export function RetirementTab() {
                   )}
                   size={20}
                 />
+              </div>
+              <div
+                className="mt-3 flex flex-wrap items-center gap-3"
+                data-testid="active-strategy-master-metrics"
+              >
+                <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5">
+                  <span className="text-[10px] font-black text-emerald-500/70 uppercase">
+                    Master Yield
+                  </span>
+                  <span className="ml-1.5 text-sm font-black text-emerald-300">
+                    {((simulationData.meta?.combined_dy || 0) * 100).toFixed(2)}
+                    %
+                  </span>
+                </div>
+                <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5">
+                  <span className="text-[10px] font-black text-blue-500/70 uppercase">
+                    Master TR
+                  </span>
+                  <span className="ml-1.5 text-sm font-black text-blue-300">
+                    {((simulationData.meta?.master_yield || 0) * 100).toFixed(
+                      2,
+                    )}
+                    %
+                  </span>
+                </div>
               </div>
 
               {isSwitcherOpen && (
@@ -370,123 +370,104 @@ export function RetirementTab() {
                   </div>
                 </div>
               )}
-
-              <div
-                className="flex flex-wrap items-center gap-3 mt-4"
-                data-testid="portfolio-visibility-badges"
-              >
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2"
-                  data-testid="master-strategy-badge"
-                >
-                  <ShieldCheck size={14} className="text-emerald-400" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-500/70">
-                    Master
-                  </span>
-                  <span className="text-xs font-black text-emerald-300">
-                    {simulationData.meta?.master_name ||
-                      "Custom Strategy Builder"}
-                  </span>
-                </div>
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2"
-                  data-testid="corp-portfolio-badge"
-                >
-                  <Building2 size={14} className="text-emerald-400/80" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                    Corp
-                  </span>
-                  <span className="text-xs font-black text-slate-200">
-                    {portfolioMeta?.corp?.name || "None"}
-                  </span>
-                  <span className="text-[11px] font-black text-emerald-400">
-                    {portfolioMeta?.corp?.yield || "0.00%"}
-                  </span>
-                </div>
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-2"
-                  data-testid="pension-portfolio-badge"
-                >
-                  <Wallet2 size={14} className="text-blue-400/80" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                    Pen
-                  </span>
-                  <span className="text-xs font-black text-slate-200">
-                    {portfolioMeta?.pension?.name || "None"}
-                  </span>
-                  <span className="text-[11px] font-black text-blue-400">
-                    {portfolioMeta?.pension?.yield || "0.00%"}
-                  </span>
-                </div>
-              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <div
+              className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[720px]"
+              data-testid="active-strategy-summary"
+            >
+              <div
+                className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-4 flex items-start gap-3"
+                data-testid="active-strategy-corp-card"
+              >
                 <Building2 className="text-emerald-500/50" size={18} />
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
                     <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
                       Corporate
                     </p>
-                    {simulationData.meta?.used_portfolios?.corp
-                      ?.expected_return !== undefined && (
-                      <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full border border-emerald-500/20">
-                        TR{" "}
+                  </div>
+                  <p className="text-sm font-black text-slate-200 tracking-tight truncate">
+                    {portfolioMeta?.corp?.name || "None"}
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
+                      <span className="text-[10px] font-black text-emerald-500/70 uppercase">
+                        Yield
+                      </span>
+                      <span className="ml-1 text-xs font-black text-emerald-300">
+                        {portfolioMeta?.corp?.yield || "0.00%"}
+                      </span>
+                    </div>
+                    <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
+                      <span className="text-[10px] font-black text-blue-500/70 uppercase">
+                        TR
+                      </span>
+                      <span className="ml-1 text-xs font-black text-blue-300">
                         {(
-                          simulationData.meta.used_portfolios.corp
-                            .expected_return * 100
+                          (portfolioMeta?.corp?.expected_return || 0) * 100
                         ).toFixed(2)}
                         %
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <p className="text-xs font-black text-slate-300 tracking-tight">
-                    {simulationData.meta?.used_portfolios?.corp?.name || "None"}
-                  </p>
                 </div>
               </div>
-              <div className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-3 flex items-center gap-3">
+              <div
+                className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-4 flex items-start gap-3"
+                data-testid="active-strategy-pension-card"
+              >
                 <Wallet2 className="text-blue-500/50" size={18} />
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
                     <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
                       Pension
                     </p>
-                    {simulationData.meta?.used_portfolios?.pension
-                      ?.expected_return !== undefined && (
-                      <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-1.5 rounded-full border border-blue-500/20">
-                        TR{" "}
+                  </div>
+                  <p className="text-sm font-black text-slate-200 tracking-tight truncate">
+                    {portfolioMeta?.pension?.name || "None"}
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
+                      <span className="text-[10px] font-black text-blue-500/70 uppercase">
+                        Yield
+                      </span>
+                      <span className="ml-1 text-xs font-black text-blue-300">
+                        {portfolioMeta?.pension?.yield || "0.00%"}
+                      </span>
+                    </div>
+                    <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1">
+                      <span className="text-[10px] font-black text-cyan-500/70 uppercase">
+                        TR
+                      </span>
+                      <span className="ml-1 text-xs font-black text-cyan-300">
                         {(
-                          simulationData.meta.used_portfolios.pension
-                            .expected_return * 100
+                          (portfolioMeta?.pension?.expected_return || 0) * 100
                         ).toFixed(2)}
                         %
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <p className="text-xs font-black text-slate-300 tracking-tight">
-                    {simulationData.meta?.used_portfolios?.pension?.name ||
-                      "None"}
-                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-6 py-3">
-              <div className="text-right">
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">
-                  Exchange Rate
-                </p>
-                <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
-                  {exchangeRate.toLocaleString(undefined, {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })}
-                  <span className="text-[11px] text-slate-600 ml-1 font-bold">
-                    KRW
-                  </span>
-                </p>
+              <div
+                className="flex items-center justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-6 py-4"
+                data-testid="active-strategy-exchange-rate"
+              >
+                <div className="text-right ml-auto">
+                  <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">
+                    Exchange Rate
+                  </p>
+                  <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
+                    {exchangeRate.toLocaleString(undefined, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}
+                    <span className="text-[11px] text-slate-600 ml-1 font-bold">
+                      KRW
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
