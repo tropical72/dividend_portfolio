@@ -32,8 +32,8 @@
 | REQ-RAMS-3.2 | 연 1회 전략 매도 및 역할 하한선 상태 머신 | T-01-9.3.1 | TEST-SUR-02 | Done | 5b73a18 | 2026.04.16-12.17 |
 | REQ-RAMS-8.1 | 전략 파라미터 사용자 설정화 | T-01-9.4.1 | TEST-UI-RULE-01 | Done | 8e9f885 | 2026.04.16-11.40 |
 | D-RAMS-8.1.1 | Settings Assumptions 영역의 테스트 전용 프리셋 노출 제거 및 활성 프리셋 정규화 | T-01-9.4.2 | TEST-UI-RULE-07 | Done | 1abf653 | 2026.04.16-21.46 |
-| D-RAMS-8.1.2 | 월 필요 생활비 입력 누락으로 인한 저지출 시뮬레이션 오인 방지 및 Settings 노출 보강 | T-01-9.4.4 | TEST-UI-RULE-08 | Done | [current] | 2026.04.16-22.00 |
-| D-RAMS-8.1.3 | Projection Result에서 실제 적용 중인 월 필요 생활비 배지 노출 | T-01-9.4.5 | TEST-UI-RULE-09 | Done | [current] | 2026.04.16-22.10 |
+| D-RAMS-8.1.2 | 월 필요 생활비 입력 누락으로 인한 저지출 시뮬레이션 오인 방지 및 Settings 노출 보강 | T-01-9.4.4 | TEST-UI-RULE-08 | Done | 1f34368 | 2026.04.16-22.00 |
+| D-RAMS-8.1.3 | Projection Result에서 실제 적용 중인 월 필요 생활비 배지 노출 | T-01-9.4.5 | TEST-UI-RULE-09 | Done | dffc4e6 | 2026.04.16-22.10 |
 
 ---
 
@@ -42,7 +42,7 @@
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit | 완료 일시 |
 |:---|:---|:---|:---|:---|:---|:---|
 | REQ-PRT-01 | 포트폴리오 설계 및 비중 관리 (Designer) | T-02-2.1 | TEST-PRT-01 | Done | 0bd7273 | 2026.02.22-12.18 |
-| REQ-WCH-01.8 | 시스템 기본 관심종목 보장 및 보호 (System Default) | T-02-1.2 | TEST-WCH-01 | Done | [current] | 2026.04.16-18.00 |
+| REQ-WCH-01.8 | 시스템 기본 관심종목 보장 및 보호 (System Default) | T-02-1.2 | TEST-WCH-01 | Done | a93aacb | 2026.04.16-18.00 |
 | REQ-PRT-02 | Watchlist 유기적 연동 및 종목 이관 | T-02-3.1 | TEST-PRT-02 | Done | f605a94 | 2026.04.15-14.13 |
 | REQ-PRT-03 | 통화 이원화 및 실시간 시뮬레이션 엔진 | T-02-2.2 | TEST-PRT-03 | Done | 7c5af70 | 2026.04.15-16.34 |
 | REQ-PRT-03.4 | 카테고리별/전체 분석 결과 보고 | T-02-2.2.2 | TEST-PRT-03 | Done | f674f26 | 2026.04.15-16.23 |
@@ -51,7 +51,7 @@
 | REQ-PRT-06 | 비교 대시보드 및 시각화 고도화(Radar) | T-02-6.1 | TEST-PRT-06 | Done | f674f26 | 2026.04.15-16.23 |
 | REQ-PRT-07 | UI 가독성(Sub-Tabs) 및 명칭(Corporate) 강화 | T-02-5.1 | TEST-PRT-07 | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-PRT-08 | 마스터 전략(Master Strategy) 구성 및 관리 | T-02-8.1 | TEST-RAMS-1.5 | Done | 23abcca | 2026.04.15-13.36 |
-| REQ-PRT-08.6 | 시스템 기본 번들 보장 및 보호 (System Default) | T-02-8.6 | TEST-RAMS-1.5 | Done | [current] | 2026.04.16-17.40 |
+| REQ-PRT-08.6 | 시스템 기본 번들 보장 및 보호 (System Default) | T-02-8.6 | TEST-RAMS-1.5 | Done | 21955e3 | 2026.04.16-17.40 |
 | REQ-PRT-09 | 실시간 환율 동기화 및 캐싱 시스템 | T-02-9.1 | TEST-PRT-09 | Done | 7c5af70 | 2026.04.15-16.34 |
 | REQ-GLB-01 | 수익률 지표 표준화 (DY 중심 & PA 가산 모델) 및 설정 저장 버그 수정 | T-GLB-10.1 | TEST-GLB-10 | Done | a7f2b1d | 2026.04.15-19.10 |
 | REQ-PRT-01.1 | 계좌별 4단 전략 카테고리 편집기 | T-02-10.2.1 | TEST-PRT-01 | Done | 04bd94d | 2026.04.16-02.22 |
