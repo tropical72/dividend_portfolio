@@ -12,6 +12,7 @@ import {
   Square,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useI18n } from "../i18n";
 import type { AccountType, PortfolioCategory, Stock } from "../types";
 
 type SortConfig = {
@@ -30,6 +31,79 @@ export function WatchlistTab({
   onAddToPortfolio: (stocks: Stock[], category: PortfolioCategory) => void;
   accountType: AccountType;
 }) {
+  const { isKorean } = useI18n();
+  const copy = isKorean
+    ? {
+        addDone: "추가 완료",
+        addFailed: "추가 실패",
+        serverError: "서버 통신 오류",
+        deleteDoneSuffix: "개 종목 삭제 완료",
+        partialDeleteFailed: "일부 삭제 실패",
+        deleteError: "삭제 중 오류가 발생했습니다.",
+        deleteSelected: "개 삭제",
+        confirmDelete: "삭제하시겠습니까?",
+        deleteSelectedDesc: "선택한 항목을 모두 제거합니다.",
+        deleteOneSuffix: "종목을 제거합니다.",
+        cancel: "취소",
+        delete: "삭제",
+        selectCategory: "카테고리 선택",
+        addToWhichCategory: "선택한 종목을 어느 카테고리에 추가할까요?",
+        addToPortfolio: "포트폴리오에 추가",
+        cannotDeleteDefault: "기본 종목은 삭제할 수 없습니다",
+        deleteStock: "종목 삭제",
+        watchlist: "관심종목",
+        addSelected: "포트폴리오 추가",
+        enterTicker: "티커 입력",
+        adding: "추가 중...",
+        add: "추가",
+        selectAllStocks: "모든 종목 선택",
+        name: "이름",
+        price: "가격",
+        yield: "배당률",
+        cycle: "주기",
+        oneYearReturn: "1년 수익률",
+        exDiv: "배당락",
+        lastAmount: "최근 금액",
+        monthly: "월평균",
+        action: "작업",
+        noStocks: "추가된 종목이 없습니다.",
+      }
+    : {
+        addDone: "Added",
+        addFailed: "Add failed",
+        serverError: "Server communication error",
+        deleteDoneSuffix: " stocks deleted",
+        partialDeleteFailed: "Partial delete failed",
+        deleteError: "An error occurred while deleting.",
+        deleteSelected: " Delete",
+        confirmDelete: "Delete this item?",
+        deleteSelectedDesc: "Remove all selected items.",
+        deleteOneSuffix: " will be removed.",
+        cancel: "Cancel",
+        delete: "Delete",
+        selectCategory: "Select Category",
+        addToWhichCategory:
+          "Which category should receive the selected stocks?",
+        addToPortfolio: "Add to Portfolio",
+        cannotDeleteDefault: "Default stocks cannot be deleted",
+        deleteStock: "Delete Stock",
+        watchlist: "Watchlist",
+        addSelected: "Add to Portfolio",
+        enterTicker: "Enter Ticker",
+        adding: "Adding...",
+        add: "Add",
+        selectAllStocks: "Select all stocks",
+        name: "Name",
+        price: "Price",
+        yield: "Yield",
+        cycle: "Cycle",
+        oneYearReturn: "1-Yr Rtn",
+        exDiv: "Ex-Div",
+        lastAmount: "Last Amt",
+        monthly: "Monthly",
+        action: "Act",
+        noStocks: "No stocks added yet.",
+      };
   const [ticker, setTicker] = useState("");
   const [country, setCountry] = useState("US");
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
@@ -124,15 +198,15 @@ export function WatchlistTab({
       if (result.success) {
         setWatchlist((prev) => [...prev, result.data]);
         setTicker("");
-        showStatus(result.message || "추가 완료", "success");
+        showStatus(result.message || copy.addDone, "success");
         setTimeout(() => {
           tableEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
       } else {
-        showStatus(result.message || "추가 실패", "error");
+        showStatus(result.message || copy.addFailed, "error");
       }
     } catch {
-      showStatus("서버 통신 오류", "error");
+      showStatus(copy.serverError, "error");
     } finally {
       setIsAdding(false);
     }
@@ -173,14 +247,17 @@ export function WatchlistTab({
           prev.filter((item) => !successfulTargets.includes(item.symbol)),
         );
         setSelectedSymbols(new Set());
-        showStatus(`${successfulTargets.length}개 종목 삭제 완료`, "success");
+        showStatus(
+          `${successfulTargets.length}${copy.deleteDoneSuffix}`,
+          "success",
+        );
       }
 
       if (failed.length > 0) {
-        showStatus(failed[0].message || "일부 삭제 실패", "error");
+        showStatus(failed[0].message || copy.partialDeleteFailed, "error");
       }
     } catch {
-      showStatus("삭제 중 오류가 발생했습니다.", "error");
+      showStatus(copy.deleteError, "error");
     } finally {
       setDeleteConfirm(null);
     }
@@ -221,16 +298,50 @@ export function WatchlistTab({
   const categoryOptions =
     accountType === "Corporate"
       ? [
-          ["SGOV Buffer", "생존 버퍼와 현금 대기 자산", "bg-blue-400"],
-          ["High Income", "고인컴 현금흐름 블록", "bg-amber-400"],
-          ["Dividend Growth", "배당성장 보강 자산", "bg-emerald-400"],
-          ["Growth Engine", "최후 보호 성장 엔진", "bg-fuchsia-400"],
+          [
+            "SGOV Buffer",
+            isKorean
+              ? "생존 버퍼와 현금 대기 자산"
+              : "Survival buffer and cash waiting assets",
+            "bg-blue-400",
+          ],
+          [
+            "High Income",
+            isKorean ? "고인컴 현금흐름 블록" : "High-income cashflow block",
+            "bg-amber-400",
+          ],
+          [
+            "Dividend Growth",
+            isKorean ? "배당성장 보강 자산" : "Dividend growth support assets",
+            "bg-emerald-400",
+          ],
+          [
+            "Growth Engine",
+            isKorean ? "최후 보호 성장 엔진" : "Last-resort growth engine",
+            "bg-fuchsia-400",
+          ],
         ]
       : [
-          ["SGOV Buffer", "단기 인출 버퍼", "bg-blue-400"],
-          ["Bond Buffer", "중기 완충 채권 버퍼", "bg-amber-400"],
-          ["Dividend Growth", "배당성장 보강 자산", "bg-emerald-400"],
-          ["Growth Engine", "은퇴 후반 성장 엔진", "bg-fuchsia-400"],
+          [
+            "SGOV Buffer",
+            isKorean ? "단기 인출 버퍼" : "Short-term withdrawal buffer",
+            "bg-blue-400",
+          ],
+          [
+            "Bond Buffer",
+            isKorean ? "중기 완충 채권 버퍼" : "Mid-term bond buffer",
+            "bg-amber-400",
+          ],
+          [
+            "Dividend Growth",
+            isKorean ? "배당성장 보강 자산" : "Dividend growth support assets",
+            "bg-emerald-400",
+          ],
+          [
+            "Growth Engine",
+            isKorean ? "은퇴 후반 성장 엔진" : "Late-retirement growth engine",
+            "bg-fuchsia-400",
+          ],
         ];
 
   return (
@@ -276,18 +387,18 @@ export function WatchlistTab({
             </div>
             <h3 className="text-base font-bold text-slate-50 mb-1">
               {deleteConfirm.symbol === "BULK"
-                ? `${selectedSymbols.size}개 삭제`
-                : "삭제하시겠습니까?"}
+                ? `${selectedSymbols.size}${copy.deleteSelected}`
+                : copy.confirmDelete}
             </h3>
             <p className="text-slate-400 text-[11px] mb-5 leading-relaxed">
               {deleteConfirm.symbol === "BULK" ? (
-                "선택한 항목을 모두 제거합니다."
+                copy.deleteSelectedDesc
               ) : (
                 <>
                   <span className="text-red-400 font-bold">
                     {deleteConfirm.symbol}
                   </span>{" "}
-                  종목을 제거합니다.
+                  {copy.deleteOneSuffix}
                 </>
               )}
             </p>
@@ -296,13 +407,13 @@ export function WatchlistTab({
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[11px] font-bold rounded-xl transition-colors"
               >
-                취소
+                {copy.cancel}
               </button>
               <button
                 onClick={removeStock}
                 className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white text-[11px] font-bold rounded-xl transition-colors"
               >
-                삭제
+                {copy.delete}
               </button>
             </div>
           </div>
@@ -335,10 +446,10 @@ export function WatchlistTab({
               </button>
             </div>
             <h3 className="text-base font-bold text-slate-50 mb-1">
-              Select Category
+              {copy.selectCategory}
             </h3>
             <p className="text-slate-400 text-[11px] mb-4">
-              {accountType} 전략의 어느 카테고리에 추가하시겠습니까?
+              {copy.addToWhichCategory}
             </p>
 
             <div className="space-y-2">
@@ -389,7 +500,7 @@ export function WatchlistTab({
               setContextMenu(null);
             }}
           >
-            <PlusCircle size={18} /> Add to Portfolio
+            <PlusCircle size={18} /> {copy.addToPortfolio}
           </button>
           <div className="h-px bg-slate-800 mx-2 my-1" />
           <button
@@ -407,8 +518,8 @@ export function WatchlistTab({
             title={
               watchlist.find((s) => s.symbol === contextMenu.symbol)
                 ?.is_system_default
-                ? "기본 종목은 삭제할 수 없습니다"
-                : "Delete Stock"
+                ? copy.cannotDeleteDefault
+                : copy.deleteStock
             }
             onClick={(e) => {
               if (
@@ -423,15 +534,18 @@ export function WatchlistTab({
               });
             }}
           >
-            <Trash2 size={18} /> Delete Stock
+            <Trash2 size={18} /> {copy.deleteStock}
           </button>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
-          <h2 className="flex items-center gap-2 text-2xl font-bold">
-            <ListTodo className="text-emerald-400" /> Watchlist
+          <h2
+            className="flex items-center gap-2 text-2xl font-bold"
+            data-testid="watchlist-title"
+          >
+            <ListTodo className="text-emerald-400" /> {copy.watchlist}
           </h2>
           {selectedSymbols.size > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
@@ -446,7 +560,7 @@ export function WatchlistTab({
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all"
               >
-                <PlusCircle size={14} /> Add to Portfolio (
+                <PlusCircle size={14} /> {copy.addSelected} (
                 {selectedSymbols.size})
               </button>
               <button
@@ -456,7 +570,7 @@ export function WatchlistTab({
                       selectedSymbols.has(s.symbol) && !s.is_system_default,
                   ).length;
                   if (deletableCount === 0) {
-                    showStatus("기본 종목은 삭제할 수 없습니다.", "error");
+                    showStatus(copy.cannotDeleteDefault, "error");
                     return;
                   }
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -468,7 +582,7 @@ export function WatchlistTab({
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all"
               >
-                <Trash2 size={14} /> Delete
+                <Trash2 size={14} /> {copy.delete}
               </button>
             </div>
           )}
@@ -488,7 +602,8 @@ export function WatchlistTab({
           </select>
           <input
             type="text"
-            placeholder="Enter Ticker"
+            data-testid="watchlist-ticker-input"
+            placeholder={copy.enterTicker}
             value={ticker}
             onChange={(e) => setTicker(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addStock()}
@@ -497,9 +612,10 @@ export function WatchlistTab({
           <button
             onClick={addStock}
             disabled={isAdding}
+            data-testid="watchlist-add-button"
             className="px-4 py-1.5 text-sm font-bold bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-800 text-slate-950 rounded-lg transition-all"
           >
-            {isAdding ? "Adding..." : "Add"}
+            {isAdding ? copy.adding : copy.add}
           </button>
         </div>
       </div>
@@ -517,7 +633,7 @@ export function WatchlistTab({
                     selectedSymbols.size === watchlist.length &&
                     watchlist.length > 0
                   }
-                  aria-label="Select all stocks"
+                  aria-label={copy.selectAllStocks}
                 >
                   {selectedSymbols.size === watchlist.length &&
                   watchlist.length > 0 ? (
@@ -540,7 +656,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center gap-1 uppercase tracking-wider text-[11px]">
-                  Name <SortIcon columnKey="name" />
+                  {copy.name} <SortIcon columnKey="name" />
                 </div>
               </th>
               <th
@@ -548,7 +664,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("price")}
               >
                 <div className="flex items-center gap-1 uppercase tracking-wider text-[11px]">
-                  Price <SortIcon columnKey="price" />
+                  {copy.price} <SortIcon columnKey="price" />
                 </div>
               </th>
               <th
@@ -557,7 +673,7 @@ export function WatchlistTab({
               >
                 <div className="flex flex-col items-end leading-tight">
                   <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">
-                    Yield <SortIcon columnKey="dividend_yield" />
+                    {copy.yield} <SortIcon columnKey="dividend_yield" />
                   </div>
                   <span className="text-[11px] opacity-60 font-normal mr-4">
                     TTM
@@ -569,7 +685,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("dividend_frequency")}
               >
                 <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[11px]">
-                  Cycle <SortIcon columnKey="dividend_frequency" />
+                  {copy.cycle} <SortIcon columnKey="dividend_frequency" />
                 </div>
               </th>
               <th
@@ -577,7 +693,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("one_yr_return")}
               >
                 <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">
-                  1-Yr Rtn <SortIcon columnKey="one_yr_return" />
+                  {copy.oneYearReturn} <SortIcon columnKey="one_yr_return" />
                 </div>
               </th>
               <th
@@ -585,7 +701,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("ex_div_date")}
               >
                 <div className="flex items-center justify-center gap-1 uppercase tracking-wider text-[11px]">
-                  Ex-Div <SortIcon columnKey="ex_div_date" />
+                  {copy.exDiv} <SortIcon columnKey="ex_div_date" />
                 </div>
               </th>
               <th
@@ -593,7 +709,7 @@ export function WatchlistTab({
                 onClick={() => handleSort("last_div_amount")}
               >
                 <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px]">
-                  Last Amt <SortIcon columnKey="last_div_amount" />
+                  {copy.lastAmount} <SortIcon columnKey="last_div_amount" />
                 </div>
               </th>
               <th
@@ -601,11 +717,11 @@ export function WatchlistTab({
                 onClick={() => handleSort("past_avg_monthly_div")}
               >
                 <div className="flex items-center justify-end gap-1 uppercase tracking-wider text-[11px] text-emerald-400">
-                  Monthly <SortIcon columnKey="past_avg_monthly_div" />
+                  {copy.monthly} <SortIcon columnKey="past_avg_monthly_div" />
                 </div>
               </th>
               <th className="px-4 py-5 w-10 text-center uppercase tracking-wider text-[11px]">
-                Act
+                {copy.action}
               </th>
             </tr>
           </thead>
@@ -727,8 +843,8 @@ export function WatchlistTab({
                     disabled={item.is_system_default}
                     title={
                       item.is_system_default
-                        ? "기본 종목은 삭제할 수 없습니다"
-                        : "삭제"
+                        ? copy.cannotDeleteDefault
+                        : copy.delete
                     }
                     className={cn(
                       "p-2 rounded-lg transition-all",
@@ -748,7 +864,7 @@ export function WatchlistTab({
                   colSpan={11}
                   className="px-6 py-20 text-center text-slate-600 italic font-sans uppercase text-[11px] tracking-widest"
                 >
-                  No stocks added yet.
+                  {copy.noStocks}
                 </td>
               </tr>
             )}

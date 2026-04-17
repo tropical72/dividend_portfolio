@@ -14,6 +14,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useI18n } from "../i18n";
 import type {
   AccountType,
   AppSettings,
@@ -41,11 +42,132 @@ export function PortfolioTab({
   accountType: AccountType;
   setAccountType: React.Dispatch<React.SetStateAction<AccountType>>;
 }) {
+  const { isKorean } = useI18n();
+  const copy = isKorean
+    ? {
+        defaultName: "새 포트폴리오",
+        loaded: "로드 완료",
+        inputTickerAndName: "티커와 종목명을 입력해주세요.",
+        itemAdded: "종목이 추가되었습니다.",
+        resetConfirm: "현재 작성 중인 내용이 모두 사라집니다. 초기화할까요?",
+        resetDone: "초기화되었습니다.",
+        addItemsFirst: "종목을 먼저 추가해주세요.",
+        nameRequired: "포트폴리오 이름을 입력해주세요.",
+        weightMustBe100: "비중 합계가 정확히 100%여야 합니다.",
+        updated: "업데이트되었습니다.",
+        savedNew: "새 포트폴리오로 저장되었습니다.",
+        saveFailed: "저장 실패",
+        serverError: "서버 통신 오류",
+        manualAddTitle: "자산 직접 추가",
+        category: "카테고리",
+        tickerSymbol: "티커",
+        stockName: "종목명",
+        allocationWeight: "비중 (%)",
+        cancel: "취소",
+        addAsset: "자산 추가",
+        portfolioDesigner: "포트폴리오 설계",
+        manageCompare: "관리 및 비교",
+        designMode: "설계 모드",
+        designDescription:
+          "계좌 타입별 4단 전략 카테고리로 자산 배분과 우선순위를 설계합니다.",
+        reset: "새로만들기",
+        savePortfolio: "포트폴리오 저장",
+        simulationSettings: "시뮬레이션 설정",
+        totalCapitalUsd: "총 투자금 (USD)",
+        totalCapitalKrw: "총 투자금 (KRW)",
+        usdAmount: "USD 금액",
+        krwAmount: "KRW 금액",
+        dailySync: "실시간 반영",
+        expectedIncome: "예상 현금흐름 (세전)",
+        annualDividend: "연간 배당금",
+        monthlyIncome: "월 현금흐름",
+        perYear: "/ 연",
+        perMonth: "/ 월",
+        expectedYield: "예상 배당률",
+        expectedTr: "예상 총수익률",
+        addManually: "직접 추가",
+        ticker: "티커",
+        action: "작업",
+        noAssets: "이 카테고리에 자산이 없습니다",
+        totalAssetCount: "총 종목 수",
+        totalAllocation: "총 비중",
+        weightNeed100: "비중 합계가 100%여야 합니다",
+        needAdjustment: "추가 조정 필요",
+        readyToSave: "저장 및 시뮬레이션 준비 완료",
+        savePortfolioTitle: "포트폴리오 저장",
+        savePortfolioSubtitle: "이름을 확인하고 저장하세요",
+        portfolioName: "포트폴리오 이름",
+        saveAsCopy: "사본으로 저장",
+        saveAsCopyDesc: "다른 이름으로 새 항목 저장",
+        confirmSave: "저장하기",
+        corporate: "법인",
+        pension: "연금",
+      }
+    : {
+        defaultName: "My New Portfolio",
+        loaded: "loaded",
+        inputTickerAndName: "Enter both ticker and stock name.",
+        itemAdded: "Asset added.",
+        resetConfirm:
+          "This will remove everything in the current design. Reset now?",
+        resetDone: "Reset complete.",
+        addItemsFirst: "Add assets first.",
+        nameRequired: "Enter a portfolio name.",
+        weightMustBe100: "Total allocation must be exactly 100%.",
+        updated: "Updated.",
+        savedNew: "Saved as a new portfolio.",
+        saveFailed: "Save failed",
+        serverError: "Server communication error",
+        manualAddTitle: "Add Asset Manually",
+        category: "Category",
+        tickerSymbol: "Ticker Symbol",
+        stockName: "Stock Name",
+        allocationWeight: "Allocation Weight (%)",
+        cancel: "Cancel",
+        addAsset: "Add Asset",
+        portfolioDesigner: "Portfolio Designer",
+        manageCompare: "Manage & Compare",
+        designMode: "Design Mode",
+        designDescription:
+          "Design allocation and priority using the four strategic categories for each account type.",
+        reset: "Reset",
+        savePortfolio: "Save Portfolio",
+        simulationSettings: "Simulation Settings",
+        totalCapitalUsd: "Total Capital (USD)",
+        totalCapitalKrw: "Total Capital (KRW)",
+        usdAmount: "USD Amount",
+        krwAmount: "KRW Amount",
+        dailySync: "Daily Sync",
+        expectedIncome: "Expected Income (Tax-Excl.)",
+        annualDividend: "Annual Dividend",
+        monthlyIncome: "Monthly Income",
+        perYear: "/ year",
+        perMonth: "/ month",
+        expectedYield: "Expected Yield",
+        expectedTr: "Expected TR (Growth)",
+        addManually: "Add Manually",
+        ticker: "Ticker",
+        action: "Action",
+        noAssets: "No assets in this category",
+        totalAssetCount: "Total Asset Count",
+        totalAllocation: "Total Allocation",
+        weightNeed100: "Total allocation must equal 100%",
+        needAdjustment: "Need Adjustment",
+        readyToSave: "Ready to Save & Simulate",
+        savePortfolioTitle: "Save Portfolio",
+        savePortfolioSubtitle: "Review the name and save",
+        portfolioName: "Portfolio Name",
+        saveAsCopy: "Save as Copy",
+        saveAsCopyDesc: "Save as a new item with a different name",
+        confirmSave: "Save",
+        corporate: "Corporate",
+        pension: "Pension",
+      };
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">(
     "design",
   );
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
-  const [portfolioName, setPortfolioName] = useState("My New Portfolio");
+  const [portfolioName, setPortfolioName] = useState(copy.defaultName);
   const [status, setStatus] = useState<{
     type: "success" | "error";
     message: string;
@@ -164,13 +286,13 @@ export function PortfolioTab({
     setCapitalUsd(p.total_capital);
     setItems(p.items);
     setActiveSubTab("design");
-    showStatus(`"${p.name}" 로드 완료`, "success");
+    showStatus(`"${p.name}" ${copy.loaded}`, "success");
   };
 
   /** 수동 종목 추가 실행 */
   const handleAddManualItem = () => {
     if (!manualForm.symbol || !manualForm.name || !manualAdd.category) {
-      showStatus("티커와 종목명을 입력해주세요.", "error");
+      showStatus(copy.inputTickerAndName, "error");
       return;
     }
 
@@ -188,7 +310,7 @@ export function PortfolioTab({
     setItems((prev) => [...prev, newItem]);
     setManualAdd({ category: null });
     setManualForm({ symbol: "", name: "", weight: 0 });
-    showStatus("종목이 추가되었습니다.", "success");
+    showStatus(copy.itemAdded, "success");
   };
 
   /** 전체 비중 및 분석 데이터 실시간 계산 [REQ-PRT-01.3, 03.4] */
@@ -244,23 +366,21 @@ export function PortfolioTab({
 
   /** 초기화 (새로만들기) [REQ-PRT-01.5] */
   const handleReset = () => {
-    if (
-      window.confirm("현재 작성 중인 내용이 모두 사라집니다. 초기화할까요?")
-    ) {
+    if (window.confirm(copy.resetConfirm)) {
       setItems([]);
       setPortfolioId(null);
-      setPortfolioName("My New Portfolio");
-      setTempPortfolioName("My New Portfolio");
+      setPortfolioName(copy.defaultName);
+      setTempPortfolioName(copy.defaultName);
       setAccountType("Corporate");
       setCapitalUsd(10000);
-      showStatus("초기화되었습니다.", "success");
+      showStatus(copy.resetDone, "success");
     }
   };
 
   /** 저장 버튼 클릭 (모달 열기) */
   const handleSaveClick = () => {
     if (!items.length) {
-      showStatus("종목을 먼저 추가해주세요.", "error");
+      showStatus(copy.addItemsFirst, "error");
       return;
     }
     setTempPortfolioName(portfolioName);
@@ -271,12 +391,12 @@ export function PortfolioTab({
   /** 저장 실행 [REQ-PRT-01.4, 04.1] */
   const handleSaveExec = async () => {
     if (!tempPortfolioName.trim()) {
-      showStatus("포트폴리오 이름을 입력해주세요.", "error");
+      showStatus(copy.nameRequired, "error");
       return;
     }
 
     if (Math.abs(analysis.totalWeight - 100) > 0.01) {
-      showStatus("비중 합계가 정확히 100%여야 합니다.", "error");
+      showStatus(copy.weightMustBe100, "error");
       return;
     }
 
@@ -306,19 +426,14 @@ export function PortfolioTab({
           setPortfolioId(result.data.id);
         }
         setPortfolioName(tempPortfolioName);
-        showStatus(
-          isUpdating
-            ? "업데이트되었습니다."
-            : "새 포트폴리오로 저장되었습니다.",
-          "success",
-        );
+        showStatus(isUpdating ? copy.updated : copy.savedNew, "success");
         setIsSaveModalOpen(false);
         setSaveAsNew(false);
       } else {
-        showStatus(result.message || "저장 실패", "error");
+        showStatus(result.message || copy.saveFailed, "error");
       }
     } catch {
-      showStatus("서버 통신 오류", "error");
+      showStatus(copy.serverError, "error");
     }
   };
 
@@ -379,16 +494,16 @@ export function PortfolioTab({
         <div className="fixed inset-0 z-[300] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-xl font-black text-slate-50 mb-2">
-              Add Asset Manually
+              {copy.manualAddTitle}
             </h3>
             <p className="text-xs text-slate-500 mb-8 uppercase tracking-widest font-bold">
-              Category: {manualAdd.category}
+              {copy.category}: {manualAdd.category}
             </p>
 
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                  Ticker Symbol
+                  {copy.tickerSymbol}
                 </label>
                 <input
                   type="text"
@@ -402,7 +517,7 @@ export function PortfolioTab({
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                  Stock Name
+                  {copy.stockName}
                 </label>
                 <input
                   type="text"
@@ -416,7 +531,7 @@ export function PortfolioTab({
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                  Allocation Weight (%)
+                  {copy.allocationWeight}
                 </label>
                 <input
                   type="number"
@@ -438,13 +553,13 @@ export function PortfolioTab({
                 onClick={() => setManualAdd({ category: null })}
                 className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 onClick={handleAddManualItem}
                 className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg shadow-emerald-500/20"
               >
-                Add Asset
+                {copy.addAsset}
               </button>
             </div>
           </div>
@@ -455,6 +570,7 @@ export function PortfolioTab({
       <div className="flex bg-slate-950/50 p-2 rounded-2xl border border-slate-800 w-fit self-center mx-auto mb-10 shadow-inner">
         <button
           onClick={() => setActiveSubTab("design")}
+          data-testid="portfolio-subtab-design"
           className={cn(
             "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
             activeSubTab === "design"
@@ -462,10 +578,11 @@ export function PortfolioTab({
               : "text-slate-500 hover:text-slate-300",
           )}
         >
-          <Layout size={20} /> Portfolio Designer
+          <Layout size={20} /> {copy.portfolioDesigner}
         </button>
         <button
           onClick={() => setActiveSubTab("manage")}
+          data-testid="portfolio-subtab-manage"
           className={cn(
             "flex items-center gap-3 px-10 py-4 text-sm font-black rounded-xl transition-all duration-300",
             activeSubTab === "manage"
@@ -473,7 +590,7 @@ export function PortfolioTab({
               : "text-slate-500 hover:text-slate-300",
           )}
         >
-          <PieChart size={20} /> Manage & Compare
+          <PieChart size={20} /> {copy.manageCompare}
         </button>
       </div>
 
@@ -494,13 +611,14 @@ export function PortfolioTab({
                     value={portfolioName}
                     onChange={(e) => setPortfolioName(e.target.value)}
                     className="w-full bg-slate-950/30 border border-transparent focus:border-emerald-500/30 focus:bg-slate-950/50 outline-none text-3xl font-black text-slate-50 rounded-2xl pl-12 pr-4 py-3 transition-all tracking-tight"
-                    placeholder="포트폴리오 이름을 입력하세요"
+                    placeholder={copy.nameRequired}
                   />
                 </div>
 
                 <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner w-fit">
                   <button
                     onClick={() => setAccountType("Corporate")}
+                    data-testid="portfolio-account-corporate"
                     className={cn(
                       "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
                       accountType === "Corporate"
@@ -508,10 +626,11 @@ export function PortfolioTab({
                         : "text-slate-500 hover:text-slate-300 hover:bg-slate-900",
                     )}
                   >
-                    Corporate
+                    {copy.corporate}
                   </button>
                   <button
                     onClick={() => setAccountType("Pension")}
+                    data-testid="portfolio-account-pension"
                     className={cn(
                       "px-6 py-2.5 text-sm font-black rounded-xl transition-all",
                       accountType === "Pension"
@@ -519,18 +638,17 @@ export function PortfolioTab({
                         : "text-slate-500 hover:text-slate-300 hover:bg-slate-900",
                     )}
                   >
-                    Pension
+                    {copy.pension}
                   </button>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                  Design Mode
+                  {copy.designMode}
                 </span>
                 <div className="h-1 w-1 rounded-full bg-slate-700" />
                 <p className="text-slate-400 text-xs">
-                  계좌 타입별 4단 전략 카테고리로 자산 배분과 우선순위를
-                  설계합니다.
+                  {copy.designDescription}
                 </p>
               </div>
             </div>
@@ -539,13 +657,14 @@ export function PortfolioTab({
                 onClick={handleReset}
                 className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold rounded-2xl transition-all"
               >
-                <RotateCcw size={18} /> 새로만들기
+                <RotateCcw size={18} /> {copy.reset}
               </button>
               <button
                 onClick={handleSaveClick}
+                data-testid="portfolio-save-button"
                 className="flex items-center gap-2 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-black rounded-2xl transition-all shadow-xl shadow-emerald-500/10"
               >
-                <Save size={18} /> 포트폴리오 저장
+                <Save size={18} /> {copy.savePortfolio}
               </button>
             </div>
           </div>
@@ -556,7 +675,7 @@ export function PortfolioTab({
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
                   <TrendingUp className="text-emerald-400" size={20} />{" "}
-                  Simulation Settings
+                  {copy.simulationSettings}
                 </h3>
                 <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-800">
                   <button
@@ -587,12 +706,12 @@ export function PortfolioTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">
-                    Total Capital (USD)
+                    {copy.totalCapitalUsd}
                   </label>
                   <div className="relative group">
                     <input
                       type="text"
-                      placeholder="USD Amount"
+                      placeholder={copy.usdAmount}
                       value={Math.round(capitalUsd).toLocaleString()}
                       onChange={(e) => handleUsdChange(e.target.value)}
                       className="w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-4 text-xl font-bold text-slate-100 outline-none transition-all"
@@ -604,12 +723,12 @@ export function PortfolioTab({
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">
-                    Total Capital (KRW)
+                    {copy.totalCapitalKrw}
                   </label>
                   <div className="relative group">
                     <input
                       type="text"
-                      placeholder="KRW Amount"
+                      placeholder={copy.krwAmount}
                       value={Math.round(
                         capitalUsd * exchangeRate,
                       ).toLocaleString()}
@@ -623,7 +742,7 @@ export function PortfolioTab({
                 </div>
               </div>
               <p className="mt-4 text-xs text-slate-600 font-medium italic uppercase tracking-tighter">
-                * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
+                * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW ({copy.dailySync})
               </p>
             </div>
 
@@ -632,12 +751,12 @@ export function PortfolioTab({
               <DollarSign className="absolute -right-4 -top-4 w-32 h-32 text-emerald-500/5 rotate-12" />
               <div className="relative z-10">
                 <h3 className="text-sm font-black text-emerald-500/60 uppercase tracking-widest mb-6">
-                  Expected Income (Tax-Excl.)
+                  {copy.expectedIncome}
                 </h3>
                 <div className="space-y-6">
                   <div>
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
-                      Annual Dividend
+                      {copy.annualDividend}
                     </p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black text-slate-50 tracking-tighter">
@@ -649,13 +768,13 @@ export function PortfolioTab({
                         })}
                       </span>
                       <span className="text-slate-500 text-xs font-bold">
-                        / year
+                        {copy.perYear}
                       </span>
                     </div>
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">
-                      Monthly Income
+                      {copy.monthlyIncome}
                     </p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl font-black text-emerald-400 tracking-tighter">
@@ -667,7 +786,7 @@ export function PortfolioTab({
                         })}
                       </span>
                       <span className="text-slate-500 text-xs font-bold">
-                        / month
+                        {copy.perMonth}
                       </span>
                     </div>
                   </div>
@@ -676,7 +795,7 @@ export function PortfolioTab({
               <div className="relative z-10 mt-8 pt-6 border-t border-emerald-500/10 space-y-3">
                 <div className="flex items-center justify-between text-base">
                   <span className="text-slate-500 font-bold">
-                    Expected Yield
+                    {copy.expectedYield}
                   </span>
                   <span className="text-xl font-black text-slate-50">
                     {analysis.weightedYield.toFixed(2)}%
@@ -684,7 +803,7 @@ export function PortfolioTab({
                 </div>
                 <div className="flex items-center justify-between text-base">
                   <span className="text-slate-500 font-bold">
-                    Expected TR (Growth)
+                    {copy.expectedTr}
                   </span>
                   <span className="text-xl font-black text-emerald-400">
                     {analysis.weightedReturn.toFixed(2)}%
@@ -739,7 +858,7 @@ export function PortfolioTab({
                       onClick={() => setManualAdd({ category: cat.id })}
                       className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
                     >
-                      <PlusCircle size={16} /> Add Manually
+                      <PlusCircle size={16} /> {copy.addManually}
                     </button>
                   </div>
 
@@ -747,12 +866,14 @@ export function PortfolioTab({
                     <table className="w-full text-left text-sm border-collapse">
                       <thead className="bg-slate-800/20 text-xs text-slate-500 font-black uppercase tracking-[0.15em]">
                         <tr>
-                          <th className="py-5 px-8 w-24">Ticker</th>
-                          <th className="py-5 px-4">Stock Name</th>
+                          <th className="py-5 px-8 w-24">{copy.ticker}</th>
+                          <th className="py-5 px-4">{copy.stockName}</th>
                           <th className="py-5 px-4 text-right w-40">
                             Weight (%)
                           </th>
-                          <th className="py-5 px-8 text-center w-20">Action</th>
+                          <th className="py-5 px-8 text-center w-20">
+                            {copy.action}
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/30">
@@ -804,7 +925,7 @@ export function PortfolioTab({
                                   className="text-slate-500"
                                 />
                                 <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">
-                                  No assets in this category
+                                  {copy.noAssets}
                                 </p>
                               </div>
                             </td>
@@ -830,7 +951,7 @@ export function PortfolioTab({
             <div className="flex items-center gap-16">
               <div className="text-center md:text-left">
                 <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">
-                  Total Asset Count
+                  {copy.totalAssetCount}
                 </span>
                 <span className="text-4xl font-black text-slate-100">
                   {items.length}
@@ -839,7 +960,7 @@ export function PortfolioTab({
               <div className="h-16 w-px bg-slate-800 hidden md:block" />
               <div className="text-center md:text-left">
                 <span className="text-xs text-slate-500 uppercase font-black tracking-[0.3em] block mb-3">
-                  Total Allocation
+                  {copy.totalAllocation}
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span
@@ -863,18 +984,19 @@ export function PortfolioTab({
                   <div className="flex items-center gap-2 px-6 py-3 bg-red-500/10 rounded-2xl border border-red-500/20">
                     <AlertCircle className="text-red-500" size={20} />
                     <p className="text-xl text-red-400 font-black tracking-tight">
-                      비중 합계가 100%여야 합니다
+                      {copy.weightNeed100}
                     </p>
                   </div>
                   <p className="text-sm text-slate-600 font-bold uppercase tracking-widest">
-                    Need Adjustment: {(100 - analysis.totalWeight).toFixed(1)}%
+                    {copy.needAdjustment}:{" "}
+                    {(100 - analysis.totalWeight).toFixed(1)}%
                   </p>
                 </>
               ) : (
                 <div className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 animate-bounce">
                   <CheckCircle2 className="text-emerald-400" size={24} />
                   <p className="text-2xl text-emerald-400 font-black tracking-tight uppercase">
-                    Ready to Save & Simulate
+                    {copy.readyToSave}
                   </p>
                 </div>
               )}
@@ -892,17 +1014,17 @@ export function PortfolioTab({
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-50 tracking-tight">
-                  Save Portfolio
+                  {copy.savePortfolioTitle}
                 </h3>
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                  이름을 확인하고 저장하세요
+                  {copy.savePortfolioSubtitle}
                 </p>
               </div>
             </div>
 
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                Portfolio Name
+                {copy.portfolioName}
               </label>
               <input
                 type="text"
@@ -910,7 +1032,7 @@ export function PortfolioTab({
                 onChange={(e) => setTempPortfolioName(e.target.value)}
                 autoFocus
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-lg font-black text-slate-50 focus:border-emerald-500/50 outline-none transition-all shadow-inner"
-                placeholder="전략 이름 입력"
+                placeholder={copy.portfolioName}
                 onKeyDown={(e) => e.key === "Enter" && handleSaveExec()}
               />
             </div>
@@ -938,10 +1060,10 @@ export function PortfolioTab({
                   </div>
                   <div>
                     <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
-                      Save as Copy
+                      {copy.saveAsCopy}
                     </p>
                     <p className="text-xs font-bold text-slate-300">
-                      다른 이름으로 새 항목 저장
+                      {copy.saveAsCopyDesc}
                     </p>
                   </div>
                 </div>
@@ -969,13 +1091,13 @@ export function PortfolioTab({
                 onClick={() => setIsSaveModalOpen(false)}
                 className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all"
               >
-                취소
+                {copy.cancel}
               </button>
               <button
                 onClick={handleSaveExec}
                 className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl transition-all shadow-lg shadow-emerald-500/20"
               >
-                저장하기
+                {copy.confirmSave}
               </button>
             </div>
           </div>

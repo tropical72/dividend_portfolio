@@ -3,10 +3,11 @@
     "gemini_api_key": "AIzaSyCBVYZa8ucZj5xHr6NAdgS6oRV73iZCeCE",
     "default_capital": 10000.0,
     "default_currency": "USD",
-    "current_exchange_rate": 1477.97998046875,
+    "current_exchange_rate": 1400.0,
     "price_appreciation_rate": 5.5,
     "exchange_rate_cache": {
-        "last_fetch": "2026-04-17T00:41:52.856644",
-        "rate": 1477.97998046875
-    }
+        "last_fetch": "2026-04-17T13:00:21.103997",
+        "rate": 1400
+    },
+    "ui_language": "ko"
 }

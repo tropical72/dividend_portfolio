@@ -62,7 +62,7 @@
     - [x] **T-GLB-12.4.1** 전역 네비게이션과 공통 버튼/레이블/빈 상태를 이관한다.
     - [x] **T-GLB-12.4.2** `RetirementTab.tsx`와 `SettingsTab.tsx`의 사용자 노출 문자열을 한국어/영어 모두 지원하도록 전환한다.
 - **T-GLB-12.5: [Frontend] 나머지 관리 화면 확장**
-    - [ ] **T-GLB-12.5.1** `Portfolio Manager`와 `Watchlist`를 동일 번역 계층으로 이관한다.
+    - [x] **T-GLB-12.5.1** `Portfolio Manager`와 `Watchlist`를 동일 번역 계층으로 이관한다.
     - [ ] **T-GLB-12.5.2** 토스트/에러/경고 메시지의 문자열 출처를 정리한다.
 - **T-GLB-12.6: [Validation] 다국어 회귀 검증**
     - [x] **T-GLB-12.6.1** 언어 저장/재로드 유지와 즉시 전환을 검증하는 Playwright 스펙을 작성한다.

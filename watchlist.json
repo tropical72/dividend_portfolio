@@ -202,5 +202,45 @@
         ],
         "country": "US",
         "is_system_default": true
+    },
+    {
+        "symbol": "AAPL",
+        "name": "Apple Inc.",
+        "price": 263.4,
+        "currency": "USD",
+        "dividend_yield": 0.39483675018982545,
+        "one_yr_return": 34.301967415117446,
+        "ex_div_date": "2026-02-09",
+        "last_div_amount": 0.26,
+        "last_div_yield": 0.09870918754745636,
+        "past_avg_monthly_div": 0.08666666666666667,
+        "dividend_frequency": "Quarterly",
+        "payment_months": [
+            2,
+            5,
+            8,
+            11
+        ],
+        "country": "US"
+    },
+    {
+        "symbol": "MSFT",
+        "name": "Microsoft Corporation",
+        "price": 420.26,
+        "currency": "USD",
+        "dividend_yield": 0.8280588207300243,
+        "one_yr_return": 15.144202668008933,
+        "ex_div_date": "2026-02-19",
+        "last_div_amount": 0.91,
+        "last_div_yield": 0.2165326226621615,
+        "past_avg_monthly_div": 0.29,
+        "dividend_frequency": "Quarterly",
+        "payment_months": [
+            2,
+            5,
+            8,
+            11
+        ],
+        "country": "US"
     }
 ]

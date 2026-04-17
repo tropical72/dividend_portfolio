@@ -8,8 +8,7 @@ test.describe("RAMS Global Navigation & Hierarchy", () => {
   });
 
   test("should land on Retirement Dashboard by default", async ({ page }) => {
-    // 첫 화면이 은퇴 전략 플래너인지 확인
-    await expect(page.getByText(/Retirement Strategic Planner/i)).toBeVisible();
+    await expect(page.getByTestId("retirement-tab-content")).toBeVisible();
   });
 
   test("should have organized sidebar groups", async ({ page }) => {
@@ -19,13 +18,15 @@ test.describe("RAMS Global Navigation & Hierarchy", () => {
     await expect(page.getByTestId("nav-strategy-settings")).toBeVisible();
   });
 
-  test("should switch to Asset Manager and show portfolio designer", async ({ page }) => {
+  test("should switch to Asset Manager and show portfolio designer", async ({
+    page,
+  }) => {
     await page.getByTestId("nav-asset-setup").click();
-    await expect(page.getByText(/Portfolio Designer/i)).toBeVisible();
+    await expect(page.getByTestId("portfolio-subtab-design")).toBeVisible();
   });
 
   test("should switch to Strategy Settings", async ({ page }) => {
     await page.getByTestId("nav-strategy-settings").click();
-    await expect(page.getByText(/Simulation Strategy Settings/i)).toBeVisible();
+    await expect(page.getByTestId("settings-title")).toBeVisible();
   });
 });

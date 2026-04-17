@@ -31,6 +31,7 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 import { cn } from "../lib/utils";
+import { useI18n } from "../i18n";
 import type { Portfolio, MasterPortfolio } from "../types";
 
 /** [REQ-PRT-06] 포트폴리오 대시보드 및 비교 탭 */
@@ -39,6 +40,122 @@ export function PortfolioDashboard({
 }: {
   onLoad: (p: Portfolio) => void;
 }) {
+  const { isKorean } = useI18n();
+  const copy = isKorean
+    ? {
+        deleteMasterConfirm: "이 마스터 전략을 삭제하시겠습니까?",
+        masterDeleteFailed: "전략을 삭제할 수 없습니다.",
+        renameTitle: "이름 변경",
+        syncData: "데이터 동기화 중...",
+        masterStrategy: "마스터 전략",
+        masterStrategySubtitle: "은퇴 시뮬레이션에 주입할 최종 포트폴리오 세트",
+        newStrategy: "새 전략",
+        strategyNamePlaceholder: "전략 명칭 입력",
+        corpPortfolio: "법인 포트폴리오",
+        pensionPortfolio: "연금 포트폴리오",
+        none: "없음",
+        saveStrategy: "전략 저장",
+        noMasterStrategies: "저장된 마스터 전략이 없습니다.",
+        active: "활성",
+        corpShort: "법인",
+        penShort: "연금",
+        dividendYield: "배당수익률",
+        expectedTr: "예상 총수익률",
+        activateStrategy: "전략 활성화",
+        cannotDeleteDefaultStrategy: "기본 전략은 삭제할 수 없습니다",
+        cannotDeleteActiveStrategy: "활성 전략은 삭제할 수 없습니다",
+        deleteStrategy: "전략 삭제",
+        globalSimulator: "전체 시뮬레이터",
+        overrideCapital:
+          "아래 모든 포트폴리오에 공통으로 적용할 투자금을 설정합니다",
+        globalUsdCapital: "전체 USD 투자금",
+        globalKrwCapital: "전체 KRW 투자금",
+        monthlyDividendComparison: "월 배당 비교",
+        aggregatedIncome: "선택한 포트폴리오의 월별 현금흐름 비교",
+        clearSelection: "선택 해제",
+        income: "현금흐름",
+        strategyCharacter: "전략 성격",
+        assetMix: "자산 배분",
+        comparisonMatrix: "비교 매트릭스",
+        indicator: "지표",
+        avgYield: "평균 배당률",
+        estimatedIncome: "예상 현금흐름",
+        assetCount: "종목 수",
+        coreAsset: "핵심 종목",
+        savedPortfolios: "저장된 포트폴리오",
+        totalSets: "총",
+        sets: "세트",
+        assets: "종목",
+        yield: "배당률",
+        loadIntoDesigner: "설계 화면으로 불러오기",
+        cannotDeleteDefaultPortfolio: "기본 포트폴리오는 삭제할 수 없습니다",
+        deletePortfolio: "포트폴리오 삭제",
+        individualPerformance: "개별 종목 성과",
+        basedOnCapital: "시뮬레이션 투자금 기준",
+        ticker: "티커",
+        weight: "비중",
+        annualUsd: "연간 (USD)",
+        annualKrw: "연간 (KRW)",
+        monthlyUsd: "월간 (USD)",
+        monthlyKrw: "월간 (KRW)",
+      }
+    : {
+        deleteMasterConfirm: "Delete this master strategy?",
+        masterDeleteFailed: "Unable to delete the strategy.",
+        renameTitle: "Rename",
+        syncData: "Synchronizing Data...",
+        masterStrategy: "Master Strategy",
+        masterStrategySubtitle:
+          "Final portfolio sets injected into retirement simulation",
+        newStrategy: "New Strategy",
+        strategyNamePlaceholder: "Strategy name",
+        corpPortfolio: "Corporate Portfolio",
+        pensionPortfolio: "Pension Portfolio",
+        none: "None",
+        saveStrategy: "Save Strategy",
+        noMasterStrategies: "No saved master strategies.",
+        active: "Active",
+        corpShort: "Corp",
+        penShort: "Pen",
+        dividendYield: "Dividend Yield",
+        expectedTr: "Expected TR",
+        activateStrategy: "Activate Strategy",
+        cannotDeleteDefaultStrategy: "Default strategies cannot be deleted",
+        cannotDeleteActiveStrategy: "Active strategies cannot be deleted",
+        deleteStrategy: "Delete Strategy",
+        globalSimulator: "Global Simulator",
+        overrideCapital: "Override capital used for all portfolios below",
+        globalUsdCapital: "Global USD Capital",
+        globalKrwCapital: "Global KRW Capital",
+        monthlyDividendComparison: "Monthly Dividend Comparison",
+        aggregatedIncome: "Aggregated income across selected portfolios",
+        clearSelection: "Clear Selection",
+        income: "Income",
+        strategyCharacter: "Strategy Character",
+        assetMix: "Asset Mix",
+        comparisonMatrix: "Comparison Matrix",
+        indicator: "Indicator",
+        avgYield: "Avg Yield (DY)",
+        estimatedIncome: "Est. Income",
+        assetCount: "Assets Count",
+        coreAsset: "Core Asset",
+        savedPortfolios: "Saved Portfolios",
+        totalSets: "Total",
+        sets: "Sets",
+        assets: "Assets",
+        yield: "Yield",
+        loadIntoDesigner: "Load into Designer",
+        cannotDeleteDefaultPortfolio: "Default portfolios cannot be deleted",
+        deletePortfolio: "Delete Portfolio",
+        individualPerformance: "Individual Asset Performance",
+        basedOnCapital: "Based on Simulation Capital",
+        ticker: "Ticker",
+        weight: "Weight",
+        annualUsd: "Annual (USD)",
+        annualKrw: "Annual (KRW)",
+        monthlyUsd: "Monthly (USD)",
+        monthlyKrw: "Monthly (KRW)",
+      };
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [masterPortfolios, setMasterPortfolios] = useState<MasterPortfolio[]>(
     [],
@@ -177,7 +294,7 @@ export function PortfolioDashboard({
 
   /** 마스터 전략 삭제 */
   const handleDeleteMaster = async (id: string) => {
-    if (!window.confirm("이 마스터 전략을 삭제하시겠습니까?")) return;
+    if (!window.confirm(copy.deleteMasterConfirm)) return;
     try {
       const res = await fetch(
         `http://localhost:8000/api/master-portfolios/${id}`,
@@ -187,7 +304,7 @@ export function PortfolioDashboard({
       if (data.success) {
         setMasterPortfolios((prev) => prev.filter((m) => m.id !== id));
       } else {
-        alert(data.message || "전략을 삭제할 수 없습니다.");
+        alert(data.message || copy.masterDeleteFailed);
       }
     } catch (err) {
       console.error(err);
@@ -323,7 +440,14 @@ export function PortfolioDashboard({
     name: string,
   ) => {
     e.stopPropagation();
-    if (!window.confirm(`"${name}" 포트폴리오를 삭제하시겠습니까?`)) return;
+    if (
+      !window.confirm(
+        isKorean
+          ? `"${name}" 포트폴리오를 삭제하시겠습니까?`
+          : `Delete portfolio "${name}"?`,
+      )
+    )
+      return;
     try {
       const res = await fetch(`http://localhost:8000/api/portfolios/${id}`, {
         method: "DELETE",
@@ -345,7 +469,7 @@ export function PortfolioDashboard({
   if (isLoading)
     return (
       <div className="p-10 text-center text-slate-500 font-bold uppercase tracking-[0.2em] animate-pulse">
-        Synchronizing Data...
+        {copy.syncData}
       </div>
     );
 
@@ -359,10 +483,10 @@ export function PortfolioDashboard({
           </div>
           <div>
             <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">
-              Master Strategy
+              {copy.masterStrategy}
             </h3>
             <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">
-              은퇴 시뮬레이션에 주입할 최종 포트폴리오 세트
+              {copy.masterStrategySubtitle}
             </p>
           </div>
         </div>
@@ -371,12 +495,12 @@ export function PortfolioDashboard({
           {/* 전략 생성 카드 */}
           <div className="p-8 rounded-[2.5rem] bg-slate-900/40 border border-slate-800 space-y-6">
             <h4 className="text-sm font-black text-slate-200 uppercase tracking-wider">
-              New Strategy
+              {copy.newStrategy}
             </h4>
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="전략 명칭 (예: 보수적 인출 플랜)"
+                placeholder={copy.strategyNamePlaceholder}
                 value={newMasterName}
                 onChange={(e) => setNewMasterName(e.target.value)}
                 data-testid="master-strategy-name-input"
@@ -384,14 +508,14 @@ export function PortfolioDashboard({
               />
               <div className="space-y-2">
                 <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
-                  Corporate Portfolio
+                  {copy.corpPortfolio}
                 </p>
                 <select
                   value={selectedCorpId}
                   onChange={(e) => setSelectedCorpId(e.target.value)}
                   className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none"
                 >
-                  <option value="">None</option>
+                  <option value="">{copy.none}</option>
                   {portfolios
                     .filter((p) => p.account_type === "Corporate")
                     .map((p) => (
@@ -403,14 +527,14 @@ export function PortfolioDashboard({
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
-                  Pension Portfolio
+                  {copy.pensionPortfolio}
                 </p>
                 <select
                   value={selectedPenId}
                   onChange={(e) => setSelectedPenId(e.target.value)}
                   className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none"
                 >
-                  <option value="">None</option>
+                  <option value="">{copy.none}</option>
                   {portfolios
                     .filter((p) => p.account_type === "Pension")
                     .map((p) => (
@@ -426,7 +550,7 @@ export function PortfolioDashboard({
                 data-testid="save-master-strategy-btn"
                 className="w-full py-4 bg-emerald-500 text-slate-950 rounded-[1.5rem] font-black text-sm hover:bg-emerald-400 transition-all disabled:opacity-20 flex items-center justify-center gap-2"
               >
-                <PlusCircle size={18} /> 전략 저장
+                <PlusCircle size={18} /> {copy.saveStrategy}
               </button>
             </div>
           </div>
@@ -435,7 +559,7 @@ export function PortfolioDashboard({
           <div className="lg:col-span-2 space-y-4">
             {masterPortfolios.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-800 rounded-[2.5rem] text-slate-600 font-bold italic">
-                저장된 마스터 전략이 없습니다.
+                {copy.noMasterStrategies}
               </div>
             ) : (
               masterPortfolios.map((m) => {
@@ -473,18 +597,18 @@ export function PortfolioDashboard({
                           </h4>
                           {m.is_active && (
                             <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[11px] font-black rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                              Active
+                              {copy.active}
                             </div>
                           )}
                         </div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-3">
                           <span className="text-emerald-500/80 font-black">
-                            Corp:
+                            {copy.corpShort}:
                           </span>{" "}
                           {c_p?.name || "-"}
                           <span className="text-slate-800 mx-1">/</span>
                           <span className="text-blue-500/80 font-black">
-                            Pen:
+                            {copy.penShort}:
                           </span>{" "}
                           {p_p?.name || "-"}
                         </p>
@@ -495,7 +619,7 @@ export function PortfolioDashboard({
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip relative">
                           <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
-                            Dividend Yield
+                            {copy.dividendYield}
                           </p>
                           <Info
                             size={10}
@@ -514,7 +638,7 @@ export function PortfolioDashboard({
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip-tr relative">
                           <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">
-                            Expected TR
+                            {copy.expectedTr}
                           </p>
                           <Info
                             size={10}
@@ -538,7 +662,7 @@ export function PortfolioDashboard({
                           <button
                             onClick={() => handleActivateMaster(m.id)}
                             className="p-4 bg-slate-950/50 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all border border-slate-800"
-                            title="전략 활성화"
+                            title={copy.activateStrategy}
                             data-testid={`activate-master-${m.id}`}
                           >
                             <CheckSquare size={20} />
@@ -560,10 +684,10 @@ export function PortfolioDashboard({
                           )}
                           title={
                             m.is_system_default
-                              ? "기본 전략은 삭제할 수 없습니다"
+                              ? copy.cannotDeleteDefaultStrategy
                               : m.is_active
-                              ? "활성 전략은 삭제할 수 없습니다"
-                              : "전략 삭제"
+                                ? copy.cannotDeleteActiveStrategy
+                                : copy.deleteStrategy
                           }
                         >
                           <Trash2 size={20} />
@@ -583,18 +707,18 @@ export function PortfolioDashboard({
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex-1">
             <h3 className="text-lg font-black text-slate-200 flex items-center gap-2 mb-1">
-              <TrendingUp className="text-emerald-400" size={20} /> Global
-              Simulator
+              <TrendingUp className="text-emerald-400" size={20} />{" "}
+              {copy.globalSimulator}
             </h3>
             <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-              Override individual capital for all portfolios below
+              {copy.overrideCapital}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="relative group min-w-[220px]">
               <input
                 type="text"
-                placeholder="Global USD Capital"
+                placeholder={copy.globalUsdCapital}
                 value={
                   globalCapitalUsd
                     ? Math.round(globalCapitalUsd).toLocaleString()
@@ -615,7 +739,7 @@ export function PortfolioDashboard({
             <div className="relative group min-w-[220px]">
               <input
                 type="text"
-                placeholder="Global KRW Capital"
+                placeholder={copy.globalKrwCapital}
                 value={
                   globalCapitalUsd
                     ? Math.round(
@@ -658,18 +782,18 @@ export function PortfolioDashboard({
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
-                  <BarChart3 className="text-emerald-400" size={24} /> Monthly
-                  Dividend Comparison ({globalCurrency})
+                  <BarChart3 className="text-emerald-400" size={24} />{" "}
+                  {copy.monthlyDividendComparison} ({globalCurrency})
                 </h3>
                 <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">
-                  Aggregated income across selected portfolios
+                  {copy.aggregatedIncome}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="text-[11px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700"
               >
-                Clear Selection
+                {copy.clearSelection}
               </button>
             </div>
             <div className="h-[350px] w-full text-xs">
@@ -711,7 +835,7 @@ export function PortfolioDashboard({
                       globalCurrency === "USD"
                         ? `$${Number(val || 0).toLocaleString()}`
                         : `₩${Number(val || 0).toLocaleString()}`,
-                      "Income",
+                      copy.income,
                     ]}
                   />
                   <Legend
@@ -751,8 +875,8 @@ export function PortfolioDashboard({
             {/* 2.2 Asset Mix Radar Chart [REQ-PRT-06.5] */}
             <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
               <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <PieChart size={18} className="text-blue-400" /> Strategy
-                Character (Asset Mix)
+                <PieChart size={18} className="text-blue-400" />{" "}
+                {copy.strategyCharacter} ({copy.assetMix})
               </h4>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -817,15 +941,15 @@ export function PortfolioDashboard({
             {/* 2.3 Metrics Comparison Matrix [REQ-PRT-06.7] */}
             <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
               <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <Layout size={18} className="text-emerald-400" /> Comparison
-                Matrix
+                <Layout size={18} className="text-emerald-400" />{" "}
+                {copy.comparisonMatrix}
               </h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-slate-800/50">
                       <th className="py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest">
-                        Indicator
+                        {copy.indicator}
                       </th>
                       {metrics.map((m) => (
                         <th
@@ -840,7 +964,7 @@ export function PortfolioDashboard({
                   <tbody className="divide-y divide-slate-800/30">
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
-                        Avg Yield (DY)
+                        {copy.avgYield}
                       </td>
                       {metrics.map((m) => (
                         <td
@@ -853,7 +977,7 @@ export function PortfolioDashboard({
                     </tr>
                     <tr>
                       <td className="py-4 text-[11px] font-black text-emerald-500/80 uppercase">
-                        Expected TR
+                        {copy.expectedTr}
                       </td>
                       {metrics.map((m) => (
                         <td
@@ -866,7 +990,7 @@ export function PortfolioDashboard({
                     </tr>
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
-                        Est. Income ({globalCurrency})
+                        {copy.estimatedIncome} ({globalCurrency})
                       </td>
                       {metrics.map((m) => (
                         <td
@@ -881,7 +1005,7 @@ export function PortfolioDashboard({
                     </tr>
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
-                        Assets Count
+                        {copy.assetCount}
                       </td>
                       {metrics.map((m) => (
                         <td
@@ -894,7 +1018,7 @@ export function PortfolioDashboard({
                     </tr>
                     <tr>
                       <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
-                        Core Asset
+                        {copy.coreAsset}
                       </td>
                       {metrics.map((m) => (
                         <td
@@ -916,10 +1040,10 @@ export function PortfolioDashboard({
       {/* 3. Portfolio List */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-black text-slate-50 flex items-center gap-2">
-          <PieChart className="text-emerald-400" /> Saved Portfolios
+          <PieChart className="text-emerald-400" /> {copy.savedPortfolios}
         </h2>
         <span className="text-xs text-slate-500 font-bold uppercase tracking-widest bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700">
-          Total {portfolios.length} Sets
+          {copy.totalSets} {portfolios.length} {copy.sets}
         </span>
       </div>
 
@@ -1005,7 +1129,7 @@ export function PortfolioDashboard({
                               setEditingName(p.name);
                             }}
                             className="opacity-0 group-hover/name:opacity-100 p-1 text-slate-500 hover:text-emerald-400 transition-all"
-                            title="이름 변경"
+                            title={copy.renameTitle}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -1019,12 +1143,14 @@ export function PortfolioDashboard({
                             : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]",
                         )}
                       >
-                        {p.account_type || "Corporate"} Account
+                        {p.account_type === "Pension"
+                          ? copy.pensionPortfolio
+                          : copy.corpPortfolio}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest mt-1.5">
                       <span className="text-slate-500">
-                        {items.length} Assets
+                        {items.length} {copy.assets}
                       </span>
                       <div className="w-1 h-1 rounded-full bg-slate-700" />
                       <span
@@ -1048,7 +1174,7 @@ export function PortfolioDashboard({
                 <div className="flex items-center gap-10">
                   <div className="text-right">
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">
-                      Yield
+                      {copy.yield}
                     </p>
                     <p className="text-xl font-black text-slate-400 tabular-nums">
                       {getDY(p).toFixed(2)}%
@@ -1077,7 +1203,7 @@ export function PortfolioDashboard({
                       onClick={(e) => handleLoad(e, p)}
                       className="hidden md:flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-sm font-black rounded-2xl transition-all border border-emerald-500/20"
                     >
-                      <Edit3 size={16} /> Load into Designer
+                      <Edit3 size={16} /> {copy.loadIntoDesigner}
                     </button>
                     <button
                       onClick={(e) =>
@@ -1092,8 +1218,8 @@ export function PortfolioDashboard({
                       )}
                       title={
                         p.is_system_default
-                          ? "기본 포트폴리오는 삭제할 수 없습니다"
-                          : "포트폴리오 삭제"
+                          ? copy.cannotDeleteDefaultPortfolio
+                          : copy.deletePortfolio
                       }
                     >
                       <Trash2 size={20} />
@@ -1120,26 +1246,28 @@ export function PortfolioDashboard({
               >
                 <div className="space-y-6">
                   <h4 className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <PieChart size={16} /> Individual Asset Performance (Based
-                    on Simulation Capital)
+                    <PieChart size={16} /> {copy.individualPerformance} (
+                    {copy.basedOnCapital})
                   </h4>
                   <div className="rounded-[2rem] border border-slate-800 overflow-hidden shadow-inner bg-slate-900/20">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead className="bg-slate-800/40 text-slate-500 font-black uppercase tracking-widest">
                         <tr>
-                          <th className="py-5 px-6">Ticker</th>
-                          <th className="py-5 px-4 text-right">Weight</th>
+                          <th className="py-5 px-6">{copy.ticker}</th>
+                          <th className="py-5 px-4 text-right">
+                            {copy.weight}
+                          </th>
                           <th className="py-5 px-4 text-right border-l border-slate-800/50 text-emerald-500/70">
-                            Annual (USD)
+                            {copy.annualUsd}
                           </th>
                           <th className="py-5 px-4 text-right text-emerald-500/70">
-                            Annual (KRW)
+                            {copy.annualKrw}
                           </th>
                           <th className="py-5 px-4 text-right border-l border-slate-800/50 text-blue-400/70">
-                            Monthly (USD)
+                            {copy.monthlyUsd}
                           </th>
                           <th className="py-5 px-6 text-right text-blue-400/70">
-                            Monthly (KRW)
+                            {copy.monthlyKrw}
                           </th>
                         </tr>
                       </thead>

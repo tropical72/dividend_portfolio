@@ -11,34 +11,49 @@ test.describe("Watchlist Columns", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
+        headers: {
+          "access-control-allow-origin": "*",
+        },
         body: JSON.stringify({
           success: true,
-          data: [{
-            symbol: "AAPL",
-            name: "Apple Inc.",
-            price: 250.0,
-            currency: "USD",
-            dividend_yield: 0.5,
-            one_yr_return: 15.0,
-            ex_div_date: "2024-02-10",
-            last_div_amount: 0.24,
-            last_div_yield: 0.1,
-            past_avg_monthly_div: 0.08
-          }]
+          data: [
+            {
+              symbol: "AAPL",
+              name: "Apple Inc.",
+              price: 250.0,
+              currency: "USD",
+              dividend_yield: 0.5,
+              one_yr_return: 15.0,
+              ex_div_date: "2024-02-10",
+              last_div_amount: 0.24,
+              last_div_yield: 0.1,
+              past_avg_monthly_div: 0.08,
+            },
+          ],
         }),
       });
     });
 
     await page.goto("/");
+    await page.getByTestId("nav-watchlist").click();
+    await expect(page.getByTestId("watchlist-title")).toBeVisible();
 
     // 9개 필수 헤더 존재 여부 확인
     const expectedHeaders = [
-      "Ticker", "Name", "Price", "Yield", "1-Yr Return", 
-      "Ex-Div Date", "Last Amt", "Last Yield", "Monthly Div"
+      "Ticker",
+      "Name",
+      "Price",
+      "Yield",
+      "1-Yr Rtn",
+      "Ex-Div",
+      "Last Amt",
+      "Monthly",
     ];
 
     for (const header of expectedHeaders) {
-      await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("columnheader", { name: header, exact: true }),
+      ).toBeVisible();
     }
   });
 });

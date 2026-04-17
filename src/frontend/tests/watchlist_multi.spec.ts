@@ -37,6 +37,9 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
+        headers: {
+          "access-control-allow-origin": "*",
+        },
         body: JSON.stringify({ success: true, data: seedWatchlist }),
       });
     });
@@ -47,6 +50,9 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
+          headers: {
+            "access-control-allow-origin": "*",
+          },
           body: JSON.stringify({ success: true, message: "삭제됨" }),
         });
       },
@@ -93,12 +99,12 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     }
 
     // 3. 'Delete' 버튼 노출 확인 및 클릭
-    const deleteBtn = page.getByRole("button", { name: /^Delete$/i });
+    const deleteBtn = page.getByRole("button", { name: /^Delete$|^삭제$/i });
     await expect(deleteBtn).toBeVisible({ timeout: 10000 });
     await deleteBtn.click({ force: true });
 
     // 4. 삭제 확인 모달의 '삭제' 버튼 클릭
-    const confirmBtn = page.getByRole("button", { name: /^삭제$/ });
+    const confirmBtn = page.getByRole("button", { name: /^삭제$|^Delete$/ });
     await expect(confirmBtn).toBeVisible();
     await confirmBtn.click({ force: true });
 
@@ -120,7 +126,7 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
 
     // 1. 전체 선택
     await page
-      .getByRole("checkbox", { name: "Select all stocks" })
+      .getByRole("checkbox", { name: /Select all stocks|모든 종목 선택/ })
       .click({ force: true });
 
     // 2. 모든 행이 체크되었는지 먼저 확인
@@ -140,13 +146,13 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await msftCheckbox.click({ force: true });
 
     // 4. 'Delete' 버튼 확인
-    const deleteBtn = page.getByRole("button", { name: /^Delete$/i });
+    const deleteBtn = page.getByRole("button", { name: /^Delete$|^삭제$/i });
     await deleteBtn.scrollIntoViewIfNeeded();
     await expect(deleteBtn).toBeVisible({ timeout: 10000 });
     await deleteBtn.click({ force: true });
 
     // 5. 삭제 확정
-    const confirmBtn = page.getByRole("button", { name: /^삭제$/ });
+    const confirmBtn = page.getByRole("button", { name: /^삭제$|^Delete$/ });
     await expect(confirmBtn).toBeVisible();
     await confirmBtn.click({ force: true });
 
@@ -168,12 +174,14 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
       .click({ force: true });
 
     // 2. 'Add to Portfolio' 버튼 클릭 (멀티 선택 시 노출되어야 함)
-    const addBtn = page.getByRole("button", { name: /Add to Portfolio/i });
+    const addBtn = page.getByRole("button", {
+      name: /Add to Portfolio|포트폴리오 추가/i,
+    });
     await expect(addBtn).toBeVisible();
     await addBtn.click({ force: true });
 
     // 3. 카테고리 선택 팝업 노출 확인
-    await expect(page.getByText("Select Category")).toBeVisible();
+    await expect(page.getByText(/Select Category|카테고리 선택/)).toBeVisible();
     const sgovBtn = page.getByRole("button", { name: /SGOV Buffer/i });
     await expect(sgovBtn).toBeVisible();
 
@@ -181,7 +189,7 @@ test.describe("Watchlist - Multi-selection and Bulk Delete", () => {
     await sgovBtn.click({ force: true });
 
     // 5. Portfolio 탭으로 자동 이동 확인 (또는 수동 이동 후 확인)
-    await page.getByTestId("nav-portfolio-manager").click();
+    await page.getByTestId("nav-asset-setup").click();
 
     // 6. SGOV Buffer 섹션에 AAPL이 있는지 확인
     await expect(

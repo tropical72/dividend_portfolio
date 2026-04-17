@@ -3,7 +3,7 @@
     "assumptions": {
         "v1": {
             "name": "Standard Profile",
-            "expected_return": 0.12833333333333333,
+            "expected_return": 0.1,
             "expected_growth": 0.02,
             "inflation_rate": 0.025,
             "master_return": 0.12833333333333333,
@@ -23,8 +23,8 @@
         "rebalance_week": 2,
         "bear_market_freeze_enabled": true,
         "corporate": {
-            "sgov_target_months": 40,
-            "sgov_warn_months": 30,
+            "sgov_target_months": 30,
+            "sgov_warn_months": 18,
             "sgov_crisis_months": 24,
             "high_income_min_ratio": 0.2,
             "high_income_max_ratio": 0.35,
@@ -44,7 +44,7 @@
         "national_pension_start_age": 65
     },
     "simulation_params": {
-        "target_monthly_cashflow": 10000000,
+        "target_monthly_cashflow": 11500000,
         "inflation_rate": 0.025,
         "expected_market_growth": 0.0485,
         "simulation_start_year": 2026,
