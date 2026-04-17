@@ -67,7 +67,7 @@
 | REQ-GLB-11.3 | 전역 black/mypy 부채 정비 계획 수립 | T-GLB-11.3 | TEST-SYS-QG-04 | Done | 06750bc | 2026.04.16-16.37 |
 | REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done | d665e97 | 2026.04.16-17.02 |
 | REQ-SYS-05 | UI 다국어 지원 (ko/en) | T-GLB-12.5 | TEST-SYS-I18N-03 | Done | fcf36b4 | 2026.04.17-15.50 |
-| REQ-GLB-13 | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1 | TEST-SYS-STR-01 | Done | [current] | 2026.04.17-18.15 |
+| REQ-GLB-13 | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1 | TEST-SYS-STR-01 | Done | 2830367 | 2026.04.17-18.15 |
 
 ---
 *마지막 업데이트: 2026-04-17 18:15:00*
