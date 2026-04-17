@@ -28,8 +28,8 @@ const translations = {
     "retirement.retry": "Retry",
     "retirement.activeStrategy": "Active Strategy",
     "retirement.customStrategyBuilder": "Custom Strategy Builder",
-    "retirement.masterYield": "Master Yield",
-    "retirement.masterTr": "Master TR",
+    "retirement.masterYield": "Master DY",
+    "retirement.tr": "TR",
     "retirement.changePlan": "Change Plan",
     "retirement.broken": "Broken",
     "retirement.corporate": "Corporate",
@@ -229,8 +229,8 @@ const translations = {
       "Choose the default language for the entire app UI.",
     "settings.korean": "Korean",
     "settings.english": "English",
-    "settings.priceAppreciation": "Price Appreciation",
-    "settings.priceAppreciationTooltip":
+    "settings.pa": "Price Appreciation",
+    "settings.paTooltip":
       "Annual price appreciation rate applied across the portfolio.",
     "settings.perYear": "% / Year",
     "settings.healthUnitPrice": "Health Unit Price",
@@ -246,9 +246,11 @@ const translations = {
       "Scenario assuming standard market conditions.",
     "settings.assumptionConservativeTooltip":
       "Scenario assuming conservative and defensive market conditions.",
-    "settings.expectedReturn": "Expected Return",
-    "settings.expectedReturnTooltip":
-      "Enter the expected return in percentage terms.",
+    "settings.tr": "TR",
+    "settings.trTooltip":
+      "Enter the expected Total Return in percentage terms.",
+    "settings.dy": "Dividend Yield",
+    "settings.dyTooltip": "Dividend yield from historical data.",
     "settings.inflationRate": "Inflation Rate",
     "settings.inflationRateTooltip":
       "Enter the expected inflation rate in percentage terms.",
@@ -256,6 +258,13 @@ const translations = {
     "settings.advancedEngine": "Advanced Engine",
     "settings.advancedEngineTooltip":
       "Control detailed engine parameters intended for expert use.",
+    "settings.appreciationRates": "Categorized Price Appreciation",
+    "settings.appreciationRatesTooltip":
+      "Define different annual price appreciation rates for each asset category.",
+    "settings.catCash": "SGOV Buffer",
+    "settings.catFixed": "Fixed Income",
+    "settings.catDividend": "Dividend Stocks",
+    "settings.catGrowth": "Growth Stocks",
     "settings.highIncomeCap": "High Income Cap",
     "settings.highIncomeCapTooltip":
       "Yield threshold that limits withdrawals in high-income cases.",
@@ -288,8 +297,8 @@ const translations = {
     "retirement.retry": "재시도",
     "retirement.activeStrategy": "활성 전략",
     "retirement.customStrategyBuilder": "사용자 전략 빌더",
-    "retirement.masterYield": "마스터 배당률",
-    "retirement.masterTr": "마스터 총수익률",
+    "retirement.masterYield": "마스터 배당수익률",
+    "retirement.tr": "TR",
     "retirement.changePlan": "전략 변경",
     "retirement.broken": "참조 오류",
     "retirement.corporate": "법인",
@@ -475,9 +484,9 @@ const translations = {
     "settings.uiLanguageTooltip": "앱 전체 UI에 적용할 기본 언어를 선택합니다.",
     "settings.korean": "한국어",
     "settings.english": "영어",
-    "settings.priceAppreciation": "주가 상승률",
-    "settings.priceAppreciationTooltip":
-      "포트폴리오 전체에 공통 적용되는 연간 주가 상승률입니다.",
+    "settings.pa": "기대주가상승률",
+    "settings.paTooltip":
+      "포트폴리오 전체에 공통 적용되는 연간 기대주가상승률입니다.",
     "settings.perYear": "% / 연",
     "settings.healthUnitPrice": "건보 점수 단가",
     "settings.healthUnitPriceTooltip":
@@ -492,8 +501,10 @@ const translations = {
       "표준적인 시장 상황을 가정한 시나리오입니다.",
     "settings.assumptionConservativeTooltip":
       "보수적이고 방어적인 시장 상황을 가정한 시나리오입니다.",
-    "settings.expectedReturn": "기대 수익률",
-    "settings.expectedReturnTooltip": "미래 예상 수익률을 % 단위로 입력합니다.",
+    "settings.tr": "TR",
+    "settings.trTooltip": "미래 예상 TR(총수익률)을 % 단위로 입력합니다.",
+    "settings.dy": "배당수익률",
+    "settings.dyTooltip": "과거 데이터 기반 배당수익률입니다.",
     "settings.inflationRate": "인플레이션율",
     "settings.inflationRateTooltip":
       "미래 예상 인플레이션율을 % 단위로 입력합니다.",
@@ -501,6 +512,13 @@ const translations = {
     "settings.advancedEngine": "고급 엔진 설정",
     "settings.advancedEngineTooltip":
       "계산 엔진의 세부 동작 파라미터를 제어하는 전문가용 설정입니다.",
+    "settings.appreciationRates": "자산군별 기대주가상승률",
+    "settings.appreciationRatesTooltip":
+      "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다.",
+    "settings.catCash": "SGOV 버퍼",
+    "settings.catFixed": "채권/인컴",
+    "settings.catDividend": "배당성장",
+    "settings.catGrowth": "성장엔진",
     "settings.highIncomeCap": "고소득 상한",
     "settings.highIncomeCapTooltip":
       "고소득 상황에서 인출을 제한하는 수익률 임계치입니다.",

@@ -29,6 +29,12 @@ export interface AppSettings {
   ui_language: UiLanguage;
   current_exchange_rate?: number;
   price_appreciation_rate?: number;
+  appreciation_rates?: {
+    cash_sgov: number;
+    fixed_income: number;
+    dividend_stocks: number;
+    growth_stocks: number;
+  };
 }
 
 /** 주식 종목 정보 인터페이스 (Watchlist 용) [REQ-WCH-03] */
@@ -218,6 +224,7 @@ export interface SimulationResult {
     master_yield?: number;
     master_tr?: number;
     combined_dy?: number;
+    combined_tr?: number;
     pa_rate?: number;
     strategy_rules_summary?: {
       rebalance_month: number;

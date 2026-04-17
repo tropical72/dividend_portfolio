@@ -666,22 +666,45 @@ class DividendBackend:
         }
         weight_buckets = cast(Dict[str, float], stats["weights"])
         strategy_buckets = cast(Dict[str, float], stats["strategy_weights"])
+
+        # [REQ-GLB-13] 자산군별 기대주가상승률(PA) 로드
+        a_rates = self.settings.get(
+            "appreciation_rates",
+            {
+                "cash_sgov": 0.1,
+                "fixed_income": 2.5,
+                "dividend_stocks": 5.5,
+                "growth_stocks": 9.5,
+            },
+        )
+
         for item in items:
             w = item.get("weight", 0.0) / total_weight
             strategy_cat = self._normalize_portfolio_category(
-                account_type, item.get("category", "Growth")
+                account_type, item.get("category", "Growth Engine")
             )
             cat = self._strategy_category_to_stats_bucket(
-                account_type, item.get("category", "Growth")
+                account_type, item.get("category", "Growth Engine")
             )
             weight_buckets[cat] = weight_buckets.get(cat, 0.0) + w
             strategy_buckets[strategy_cat] = strategy_buckets.get(strategy_cat, 0.0) + w
-            div_y = float(item.get("dividend_yield") or 0.0) / 100.0
-            stats["dividend_yield"] = float(stats["dividend_yield"]) + (div_y * w)
 
-        # [REQ-GLB-01] Total Return = Portfolio Weighted Yield + Global Price Appreciation
-        pa_rate = float(self.settings.get("price_appreciation_rate", 3.0)) / 100.0
-        stats["expected_return"] = stats["dividend_yield"] + pa_rate
+            # 카테고리별 PA 매칭
+            cat_name = item.get("category", "Growth Engine")
+            pa = 0.0
+            if cat_name == "SGOV Buffer":
+                pa = a_rates.get("cash_sgov", 0.1)
+            elif cat_name in ["High Income", "Bond Buffer"]:
+                pa = a_rates.get("fixed_income", 2.5)
+            elif cat_name == "Dividend Growth":
+                pa = a_rates.get("dividend_stocks", 5.5)
+            elif cat_name == "Growth Engine":
+                pa = a_rates.get("growth_stocks", 9.5)
+
+            div_y = float(item.get("dividend_yield") or 0.0)
+            # TR(expected_return) = (배당수익률 + 기대주가상승률) * 비중
+            stats["expected_return"] = float(stats["expected_return"]) + ((div_y + pa) / 100.0 * w)
+            stats["dividend_yield"] = float(stats["dividend_yield"]) + (div_y / 100.0 * w)
 
         return stats
 
@@ -839,17 +862,26 @@ class DividendBackend:
         pension_capital = pension_portfolio["total_capital"] if pension_portfolio else 0
         total_capital = corp_capital + pension_capital
 
+        combined_tr = 0.0
+        combined_yield = 0.0
         if total_capital > 0:
             combined_tr = (
                 corp_stats["expected_return"] * corp_capital
                 + pension_stats["expected_return"] * pension_capital
             ) / total_capital
+            combined_yield = (
+                corp_stats["dividend_yield"] * corp_capital
+                + pension_stats["dividend_yield"] * pension_capital
+            ) / total_capital
         elif corp_portfolio:
             combined_tr = corp_stats["expected_return"]
+            combined_yield = corp_stats["dividend_yield"]
         elif pension_portfolio:
             combined_tr = pension_stats["expected_return"]
+            combined_yield = pension_stats["dividend_yield"]
         else:
             combined_tr = None
+            combined_yield = None
 
         return {
             "success": True,
@@ -858,6 +890,7 @@ class DividendBackend:
                 "corp_stats": corp_stats,
                 "pension_stats": pension_stats,
                 "combined_tr": combined_tr,
+                "combined_yield": combined_yield,
             },
         }
 
@@ -932,14 +965,19 @@ class DividendBackend:
                 data = cast(Dict[str, Any], master_calc["data"])
                 corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
                 pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
-                combined_tr = data["combined_tr"]
+
+                # [FIX] 소수점 단위를 % 단위로 변환하여 프론트엔드에 전달
+                c_tr = data.get("combined_tr")
+                c_dy = data.get("combined_yield")
+
                 m["is_system_default"] = self._is_system_default_master(m)
                 m["corp_name"] = corp_p["name"] if corp_p else "-"
                 m["pension_name"] = pen_p["name"] if pen_p else "-"
-                m["combined_yield"] = combined_tr
-                m["combined_tr"] = combined_tr
+                m["combined_yield"] = c_dy * 100.0 if c_dy is not None else 0.0
+                m["combined_tr"] = c_tr * 100.0 if c_tr is not None else 0.0
                 m["broken_reference"] = False
                 m["broken_reason"] = None
+
             else:
                 data = cast(Dict[str, Any], master_calc["data"])
                 corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])

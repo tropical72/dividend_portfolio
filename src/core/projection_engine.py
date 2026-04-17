@@ -87,13 +87,22 @@ class ProjectionEngine:
         dividend_min_ratio = float(p("dividend_min_ratio", 0.10))
         planned_cashflows = p("planned_cashflows", [])
 
+        # [NEW] 자산군별 기대주가상승률(PA) 로드
+        a_rates = p(
+            "appreciation_rates",
+            {
+                "cash_sgov": 0.001,
+                "fixed_income": 0.025,
+                "dividend_stocks": 0.055,
+                "growth_stocks": 0.095,
+            },
+        )
+
         # [FIX] 사용자가 Retirement 탭에서 수정한 시장 수익률 가정 로드
         m_ret_rate = float(p("market_return_rate", 0.07))
         m_infl = (1 + infl_rate) ** (1 / 12) - 1
 
         # 월간 시장 수익률 (단리 변환)
-        m_ret_monthly = m_ret_rate / 12
-
         cur_y, cur_m = int(p("simulation_start_year", 2026)), int(p("simulation_start_month", 3))
 
         monthly_data = []
@@ -123,26 +132,33 @@ class ProjectionEngine:
             c_div = c_stats.get("dividend_yield", 0.04) / 12
             p_div = p_stats.get("dividend_yield", 0.035) / 12
 
-            # 성장률 = 시장 수익률 - 배당률 (단, 배당은 재투자 가정)
-            # 사용자가 입력한 m_ret_rate가 전체 TR(Total Return)이라고 가정할 때 가장 직관적임
-            c_growth_rate = m_ret_monthly - c_div
-            p_growth_rate = m_ret_monthly - p_div
-
             snapshot_assets = dict(curr_assets)
             corp_income_to_cash = 0.0
             pension_income_to_cash = 0.0
             for asset, bal in snapshot_assets.items():
                 if bal <= 0:
                     continue
-                if asset.startswith("corp"):
-                    div, growth = c_div, c_growth_rate
+
+                # [NEW] 자산군별 기대주가상승률(PA) 적용
+                if "growth" in asset:
+                    growth = a_rates.get("growth_stocks", 0.095) / 12
+                elif "dividend" in asset:
+                    growth = a_rates.get("dividend_stocks", 0.055) / 12
+                elif "high_income" in asset or "bond" in asset:
+                    growth = a_rates.get("fixed_income", 0.025) / 12
+                elif "cash" in asset:
+                    growth = a_rates.get("cash_sgov", 0.001) / 12
                 else:
-                    div, growth = p_div, p_growth_rate
+                    growth = 0.0
+
+                div = c_div if asset.startswith("corp") else p_div
+
+                # 현금성 자산(cash)은 배당을 즉시 재투자하는 것으로 간주하여 가치에 합산
                 if "cash" in asset:
-                    growth *= 0.5
                     curr_assets[asset] = bal * (1 + growth + div)
                     continue
 
+                # 그 외 자산은 배당을 별도 현금으로 인출
                 income_cash = bal * div
                 curr_assets[asset] = bal * (1 + growth)
                 if asset.startswith("corp"):

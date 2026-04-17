@@ -47,6 +47,7 @@ class SettingsRequest(BaseModel):
     default_currency: Optional[str] = "USD"
     ui_language: Optional[str] = "ko"
     price_appreciation_rate: Optional[float] = None
+    appreciation_rates: Optional[Dict[str, float]] = None
 
 
 class PortfolioRequest(BaseModel):
@@ -312,6 +313,18 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     base_params = {
         "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
+        "appreciation_rates": {
+            k: v / 100.0
+            for k, v in backend.settings.get(
+                "appreciation_rates",
+                {
+                    "cash_sgov": 0.1,
+                    "fixed_income": 2.5,
+                    "dividend_stocks": 5.5,
+                    "growth_stocks": 9.5,
+                },
+            ).items()
+        },
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": assumption["expected_return"],
@@ -391,7 +404,6 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         )
 
     # 마스터 전략의 통합 수익률 계산
-    pa_rate = float(backend.settings.get("price_appreciation_rate", 3.0)) / 100.0
     combined_tr = None
     combined_dy = None
     if active_m:
@@ -403,19 +415,25 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
                 corp_stats.get("dividend_yield", 0.0) * c_cap
                 + pension_stats.get("dividend_yield", 0.0) * p_cap
             ) / total_cap
+            # [REQ-GLB-13] 자산군별 PA가 이미 반영된 expected_return을 가중 평균
+            combined_tr = (
+                corp_stats.get("expected_return", 0.0) * c_cap
+                + pension_stats.get("expected_return", 0.0) * p_cap
+            ) / total_cap
         elif corp_p:
             combined_dy = corp_stats.get("dividend_yield", 0.0)
+            combined_tr = corp_stats.get("expected_return", 0.0)
         elif pen_p:
             combined_dy = pension_stats.get("dividend_yield", 0.0)
+            combined_tr = pension_stats.get("expected_return", 0.0)
 
-        if combined_dy is not None:
-            combined_tr = combined_dy + pa_rate
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
-        "master_yield": combined_tr,
-        "master_tr": combined_tr,
+        "master_yield": combined_dy,  # DY 표시용
+        "master_tr": combined_tr,  # TR 표시용
         "combined_dy": combined_dy,
-        "pa_rate": pa_rate,
+        "combined_tr": combined_tr,
+        "pa_rate": combined_tr - combined_dy if (combined_tr and combined_dy) else 0.0,
         "strategy_rules_summary": {
             "rebalance_month": strategy_rules.get("rebalance_month", 1),
             "rebalance_week": strategy_rules.get("rebalance_week", 2),

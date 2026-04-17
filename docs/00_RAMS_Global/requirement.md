@@ -28,6 +28,21 @@
 - **[REQ-SYS-05.4] 핵심 화면 우선 적용:** 1차 적용 범위는 전역 네비게이션, `Retirement`, `Settings`, 공통 에러/빈 상태 메시지로 정의한다.
 - **[REQ-SYS-05.5] 혼용 방지:** 하나의 화면에서 한국어/영어가 임의로 섞여 노출되지 않아야 하며, 번역 키 누락 시에는 정의된 fallback 언어로 일관되게 처리되어야 한다.
 
+## [REQ-GLB-13] 자산군별 기대주가상승률 차등화 및 용어 표준화
+- **[REQ-GLB-13.1] 용어 표준화:** 시스템 전역에서 다음 용어를 일관되게 사용한다.
+    - **TR (Total Return):** "TR"로 표기.
+    - **DY (Dividend Yield):** "배당수익률"로 표기.
+    - **PA (Price Appreciation):** "기대주가상승률"로 표기.
+- **[REQ-GLB-13.2] 자산군별 기대주가상승률(PA) 차등 적용:** 시뮬레이션의 현실성을 높이기 위해 종목이 속한 카테고리에 따라 서로 다른 PA를 적용한다.
+    - **SGOV Buffer:** 연 0.1%
+    - **Fixed Income:** 연 2.5%
+    - **Dividend Stocks:** 연 5.5%
+    - **Growth Stocks:** 연 9.5%
+- **[REQ-GLB-13.3] 사용자 설정 및 UX 반영:**
+    - **Settings:** 사용자는 4개 자산군별 PA 값을 직접 수정할 수 있으며, '시스템 기본값으로 복구' 기능을 제공해야 한다.
+    - **Portfolio Designer:** 각 카테고리 헤더에 해당 카테고리의 `기대주가상승률`과 합산된 `TR`을 실시간으로 표시한다.
+    - **Retirement Simulation:** 국민연금 수령 시작 연령(60~70세)과 월 예상 수령액 설정을 보강하여 Phase 3 시뮬레이션에 반영한다.
+
 ## Related Files
 - `src/backend/server.py` (FastAPI Entry Point)
 - `src/frontend/src/` (React Source)

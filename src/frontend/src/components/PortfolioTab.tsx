@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   PlusCircle,
   RotateCcw,
@@ -25,7 +25,7 @@ import type {
 import { PortfolioDashboard } from "./PortfolioDashboard";
 
 /**
- * [REQ-PRT-01, 03, 06] 포트폴리오 설계 및 시뮬레이션 탭
+ * [REQ-PRT-01, 03, 06, REQ-GLB-13] 포트폴리오 설계 및 시뮬레이션 탭
  */
 export function PortfolioTab({
   items,
@@ -83,8 +83,9 @@ export function PortfolioTab({
         monthlyIncome: "월 현금흐름",
         perYear: "/ 연",
         perMonth: "/ 월",
-        expectedYield: "예상 배당률",
-        expectedTr: "예상 총수익률",
+        expectedYield: "배당수익률",
+        expectedTr: "TR",
+        pa: "기대주가상승률",
         addManually: "직접 추가",
         ticker: "티커",
         action: "작업",
@@ -143,8 +144,9 @@ export function PortfolioTab({
         monthlyIncome: "Monthly Income",
         perYear: "/ year",
         perMonth: "/ month",
-        expectedYield: "Expected Yield",
-        expectedTr: "Expected TR (Growth)",
+        expectedYield: "Dividend Yield",
+        expectedTr: "TR",
+        pa: "Appreciation",
         addManually: "Add Manually",
         ticker: "Ticker",
         action: "Action",
@@ -172,6 +174,28 @@ export function PortfolioTab({
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  const getCategoryPA = useCallback(
+    (catId: PortfolioCategory) => {
+      if (!globalSettings?.appreciation_rates) return 0;
+      const rates = globalSettings.appreciation_rates;
+      switch (catId) {
+        case "SGOV Buffer":
+          return rates.cash_sgov;
+        case "High Income":
+        case "Bond Buffer":
+          return rates.fixed_income;
+        case "Dividend Growth":
+          return rates.dividend_stocks;
+        case "Growth Engine":
+          return rates.growth_stocks;
+        default:
+          return 0;
+      }
+    },
+    [globalSettings],
+  );
+
   const categories = useMemo(
     () =>
       accountType === "Corporate"
@@ -329,9 +353,11 @@ export function PortfolioTab({
       return sum + (item.weight / 100) * (item.dividend_yield || 0);
     }, 0);
 
-    // 총수익률 (TR) = DY + 전역 PA
-    const paRate = globalSettings?.price_appreciation_rate ?? 3.0;
-    const weightedReturn = weightedYield + paRate;
+    // [REQ-GLB-13] 자산군별 가중 평균 TR 계산
+    const weightedReturn = items.reduce((sum, item) => {
+      const pa = getCategoryPA(item.category);
+      return sum + (item.weight / 100) * ((item.dividend_yield || 0) + pa);
+    }, 0);
 
     const annualDividendUsd = capitalUsd * (weightedYield / 100);
 
@@ -343,7 +369,7 @@ export function PortfolioTab({
       annualDividendUsd,
       monthlyDividendUsd: annualDividendUsd / 12,
     };
-  }, [items, capitalUsd, globalSettings]);
+  }, [items, capitalUsd, globalSettings, getCategoryPA]);
 
   /** 통화별 입력 핸들러 [REQ-PRT-03.1, 03.2] */
   const handleUsdChange = (val: string) => {
@@ -819,12 +845,24 @@ export function PortfolioTab({
               const catItems = items.filter((i) => i.category === cat.id);
               const catWeight = analysis.categoryWeights[cat.id] || 0;
 
+              // 카테고리별 DY (가중 평균)
+              const catDY =
+                catWeight > 0
+                  ? catItems.reduce(
+                      (sum, i) =>
+                        sum + (i.weight / catWeight) * i.dividend_yield,
+                      0,
+                    )
+                  : 0;
+              const catPA = getCategoryPA(cat.id);
+              const catTR = catDY + catPA;
+
               return (
                 <div
                   key={cat.id}
                   className="bg-slate-900/20 border border-slate-800/60 rounded-[2.5rem] p-8 transition-all hover:bg-slate-900/30"
                 >
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                     <div className="flex items-center gap-4">
                       <div
                         className={cn(
@@ -839,10 +877,35 @@ export function PortfolioTab({
                         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                           {cat.subtitle}
                         </p>
-                        <p className="mt-1 text-xs text-slate-400 font-medium">
-                          {cat.description}
-                        </p>
                       </div>
+
+                      <div className="hidden lg:flex items-center gap-3 ml-6 px-4 py-2 bg-slate-950/50 rounded-2xl border border-slate-800/50 shadow-inner">
+                        <div className="flex flex-col items-center px-3 border-r border-slate-800">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">
+                            {copy.expectedYield}
+                          </span>
+                          <span className="text-xs font-black text-slate-300">
+                            {catDY.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center px-3 border-r border-slate-800">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">
+                            {copy.pa}
+                          </span>
+                          <span className="text-xs font-black text-slate-300">
+                            {catPA.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center px-3">
+                          <span className="text-[9px] font-black text-emerald-500/60 uppercase tracking-tighter mb-0.5">
+                            {copy.expectedTr}
+                          </span>
+                          <span className="text-sm font-black text-emerald-400">
+                            {catTR.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+
                       <div
                         className={cn(
                           "ml-4 px-4 py-1.5 rounded-full font-black text-sm transition-all",
@@ -856,7 +919,7 @@ export function PortfolioTab({
                     </div>
                     <button
                       onClick={() => setManualAdd({ category: cat.id })}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 text-slate-400 rounded-2xl transition-all font-black text-xs uppercase tracking-wider self-start md:self-center"
                     >
                       <PlusCircle size={16} /> {copy.addManually}
                     </button>

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Layers,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
@@ -64,6 +65,13 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
     bond_min_total_ratio: 0.05,
     dividend_min_ratio: 0.1,
   },
+};
+
+const DEFAULT_APPRECIATION_RATES = {
+  cash_sgov: 0.1,
+  fixed_income: 2.5,
+  dividend_stocks: 5.5,
+  growth_stocks: 9.5,
 };
 
 function getVisibleAssumptions(config: RetirementConfig) {
@@ -117,13 +125,14 @@ export function SettingsTab({
   globalRetireConfig,
 }: SettingsTabProps) {
   const { isKorean, setLanguage, t } = useI18n();
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<AppSettings>({
     dart_api_key: "",
     gemini_api_key: "",
     default_capital: 10000,
     default_currency: "USD",
     ui_language: "ko" as UiLanguage,
     price_appreciation_rate: 3.0,
+    appreciation_rates: { ...DEFAULT_APPRECIATION_RATES },
   });
 
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(
@@ -145,6 +154,9 @@ export function SettingsTab({
         default_currency: globalSettings.default_currency || "USD",
         ui_language: globalSettings.ui_language || "ko",
         price_appreciation_rate: globalSettings.price_appreciation_rate ?? 3.0,
+        appreciation_rates: globalSettings.appreciation_rates || {
+          ...DEFAULT_APPRECIATION_RATES,
+        },
       });
     }
     if (globalRetireConfig) {
@@ -1141,45 +1153,6 @@ export function SettingsTab({
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 ml-1">
-                  <label
-                    className={cn(
-                      isKorean
-                        ? "text-xs font-bold text-emerald-300 tracking-normal"
-                        : "text-[11px] font-black text-emerald-500 uppercase tracking-widest",
-                    )}
-                  >
-                    {t("settings.priceAppreciation")}
-                  </label>
-                  <div className="group relative">
-                    <Info size={12} className="text-slate-600 cursor-help" />
-                    <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                      {t("settings.priceAppreciationTooltip")}
-                    </div>
-                  </div>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    data-testid="price-appreciation-input"
-                    value={settings.price_appreciation_rate}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        price_appreciation_rate:
-                          parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-emerald-500"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
-                    {t("settings.perYear")}
-                  </span>
-                </div>
-              </div>
-
               <div className="space-y-2 pt-4 border-t border-slate-800/50">
                 <div className="flex items-center gap-1.5 ml-1">
                   <label
@@ -1242,6 +1215,91 @@ export function SettingsTab({
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
+            <div className="flex items-center justify-between">
+              <SectionTitle
+                icon={Layers}
+                title={t("settings.appreciationRates")}
+                color="text-emerald-400"
+                tooltip={t("settings.appreciationRatesTooltip")}
+              />
+              <button
+                onClick={() =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: { ...DEFAULT_APPRECIATION_RATES },
+                  })
+                }
+                className="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700 transition-all"
+                title={t("settings.restoreSystemDefault")}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-4">
+                <InputGroup
+                  label={t("settings.catCash")}
+                  unit="%"
+                  value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
+                  onChange={(v) =>
+                    setSettings({
+                      ...settings,
+                      appreciation_rates: {
+                        ...settings.appreciation_rates!,
+                        cash_sgov: parseFloat(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={t("settings.catFixed")}
+                  unit="%"
+                  value={(settings.appreciation_rates?.fixed_income || 0) * 1}
+                  onChange={(v) =>
+                    setSettings({
+                      ...settings,
+                      appreciation_rates: {
+                        ...settings.appreciation_rates!,
+                        fixed_income: parseFloat(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={t("settings.catDividend")}
+                  unit="%"
+                  value={
+                    (settings.appreciation_rates?.dividend_stocks || 0) * 1
+                  }
+                  onChange={(v) =>
+                    setSettings({
+                      ...settings,
+                      appreciation_rates: {
+                        ...settings.appreciation_rates!,
+                        dividend_stocks: parseFloat(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={t("settings.catGrowth")}
+                  unit="%"
+                  value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
+                  onChange={(v) =>
+                    setSettings({
+                      ...settings,
+                      appreciation_rates: {
+                        ...settings.appreciation_rates!,
+                        growth_stocks: parseFloat(v) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={ShieldCheck}
               title={t("settings.assumptions")}
@@ -1277,13 +1335,13 @@ export function SettingsTab({
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <EditableInput
-                      label={t("settings.expectedReturn")}
+                      label={t("settings.tr")}
                       unit="%"
                       initialValue={
                         (item.master_return || item.expected_return) * 100
                       }
                       systemDefault={id === "v1" ? 0.0485 : 0.035}
-                      tooltip={t("settings.expectedReturnTooltip")}
+                      tooltip={t("settings.trTooltip")}
                       resetTitle={t("settings.restoreSystemDefault")}
                       onCommit={(v) =>
                         setRetireConfig({
@@ -1568,9 +1626,9 @@ function InputGroup({
   testId?: string;
 }) {
   const { isKorean } = useI18n();
-  const numericValue = Math.floor(value || 0);
+  const numericValue = value || 0;
   const displayValue = isCurrency
-    ? numericValue.toLocaleString()
+    ? Math.floor(numericValue).toLocaleString()
     : numericValue.toString();
   return (
     <div

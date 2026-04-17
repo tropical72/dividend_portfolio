@@ -5,6 +5,12 @@
     "default_currency": "USD",
     "current_exchange_rate": 1400.0,
     "price_appreciation_rate": 5.5,
+    "appreciation_rates": {
+        "cash_sgov": 0.1,
+        "fixed_income": 2.5,
+        "dividend_stocks": 5.5,
+        "growth_stocks": 9.5
+    },
     "exchange_rate_cache": {
         "last_fetch": "2026-04-17T13:00:21.103997",
         "rate": 1400

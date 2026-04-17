@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -72,7 +72,7 @@ function normalizeVisibleAssumptionId(
   return getVisibleAssumptions(config)[0]?.[0] || "v1";
 }
 
-/** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
+/** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07, REQ-GLB-13] */
 export function RetirementTab() {
   const { isKorean, t } = useI18n();
   const [config, setConfig] = useState<RetirementConfig | null>(null);
@@ -89,59 +89,62 @@ export function RetirementTab() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const visibleAssumptions = getVisibleAssumptions(config);
 
-  const fetchData = async (scenarioId: string | null = null) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const [configRes, masterRes] = await Promise.all([
-        fetch("http://localhost:8000/api/retirement/config"),
-        fetch("http://localhost:8000/api/master-portfolios"),
-      ]);
+  const fetchData = useCallback(
+    async (scenarioId: string | null = null) => {
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const [configRes, masterRes] = await Promise.all([
+          fetch("http://localhost:8000/api/retirement/config"),
+          fetch("http://localhost:8000/api/master-portfolios"),
+        ]);
 
-      const configData = await configRes.json();
-      const masterData = await masterRes.json();
+        const configData = await configRes.json();
+        const masterData = await masterRes.json();
 
-      if (!configData.success) {
-        throw new Error(configData.message || t("retirement.errorTitle"));
+        if (!configData.success) {
+          throw new Error(configData.message || t("retirement.errorTitle"));
+        }
+
+        const normalizedScenario = normalizeVisibleAssumptionId(
+          configData.data,
+          scenarioId || configData.data.active_assumption_id || "v1",
+        );
+
+        setConfig(configData.data);
+        setMasterPortfolios(masterData.data || []);
+        setActiveId(normalizedScenario);
+
+        // 실시간 환율 정보 가져오기
+        const settingsRes = await fetch("http://localhost:8000/api/settings");
+        const settingsData = await settingsRes.json();
+        if (settingsData.success && settingsData.data?.current_exchange_rate) {
+          setExchangeRate(settingsData.data.current_exchange_rate);
+        }
+
+        const currentScenario = normalizedScenario;
+        const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
+        const simRes = await fetch(simUrl);
+        const simData = await simRes.json();
+
+        if (simData.success) {
+          setSimulationData(simData.data);
+        } else {
+          throw new Error(simData.message || t("retirement.errorTitle"));
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setErrorMessage(message);
+      } finally {
+        setIsLoading(false);
       }
-
-      const normalizedScenario = normalizeVisibleAssumptionId(
-        configData.data,
-        scenarioId || configData.data.active_assumption_id || "v1",
-      );
-
-      setConfig(configData.data);
-      setMasterPortfolios(masterData.data || []);
-      setActiveId(normalizedScenario);
-
-      // 실시간 환율 정보 가져오기
-      const settingsRes = await fetch("http://localhost:8000/api/settings");
-      const settingsData = await settingsRes.json();
-      if (settingsData.success && settingsData.data?.current_exchange_rate) {
-        setExchangeRate(settingsData.data.current_exchange_rate);
-      }
-
-      const currentScenario = normalizedScenario;
-      const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
-      const simRes = await fetch(simUrl);
-      const simData = await simRes.json();
-
-      if (simData.success) {
-        setSimulationData(simData.data);
-      } else {
-        throw new Error(simData.message || t("retirement.errorTitle"));
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setErrorMessage(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [t],
+  );
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSwitchVersion = async (id: string) => {
     if (!config) return;
@@ -250,10 +253,8 @@ export function RetirementTab() {
       data-testid="retirement-tab-content"
       onClick={() => isSwitcherOpen && setIsSwitcherOpen(false)}
     >
-      {/* [MOD] Strategy Bar: z-50 추가하여 하단 레이어 침범 방지 */}
       <section className="animate-in fade-in slide-in-from-top-4 duration-700 relative z-50">
         <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md relative">
-          {/* 배경 장식 요소: 투명도를 낮추어 overflow 없이도 자연스럽게 처리 */}
           <div className="absolute left-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
@@ -308,12 +309,10 @@ export function RetirementTab() {
                 </div>
                 <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5">
                   <span className="text-[10px] font-black text-blue-500/70 uppercase">
-                    {t("retirement.masterTr")}
+                    {t("retirement.tr")}
                   </span>
                   <span className="ml-1.5 text-sm font-black text-blue-300">
-                    {((simulationData.meta?.master_yield || 0) * 100).toFixed(
-                      2,
-                    )}
+                    {((simulationData.meta?.combined_tr || 0) * 100).toFixed(2)}
                     %
                   </span>
                 </div>
@@ -352,15 +351,10 @@ export function RetirementTab() {
                             <p className="text-sm font-black tracking-tight truncate">
                               {m.name}
                             </p>
-                            {(m.combined_tr ?? m.combined_yield) !==
-                              undefined &&
-                              (m.combined_tr ?? m.combined_yield) !== null && (
+                            {m.combined_tr !== undefined &&
+                              m.combined_tr !== null && (
                                 <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                                  {(
-                                    ((m.combined_tr ?? m.combined_yield) || 0) *
-                                    100
-                                  ).toFixed(2)}
-                                  %
+                                  {(m.combined_tr * 100).toFixed(2)}%
                                 </span>
                               )}
                             {m.broken_reference && (
@@ -426,7 +420,7 @@ export function RetirementTab() {
                             : "text-[10px] font-black text-emerald-500/70 uppercase",
                         )}
                       >
-                        {t("retirement.return")}
+                        {t("settings.dy")}
                       </span>
                       <span className="ml-1 text-xs font-black text-emerald-300">
                         {portfolioMeta?.corp?.yield || "0.00%"}
@@ -440,7 +434,7 @@ export function RetirementTab() {
                             : "text-[10px] font-black text-blue-500/70 uppercase",
                         )}
                       >
-                        {t("retirement.masterTr")}
+                        {t("retirement.tr")}
                       </span>
                       <span className="ml-1 text-xs font-black text-blue-300">
                         {(
@@ -481,7 +475,7 @@ export function RetirementTab() {
                             : "text-[10px] font-black text-blue-500/70 uppercase",
                         )}
                       >
-                        {t("retirement.return")}
+                        {t("settings.dy")}
                       </span>
                       <span className="ml-1 text-xs font-black text-blue-300">
                         {portfolioMeta?.pension?.yield || "0.00%"}
@@ -495,7 +489,7 @@ export function RetirementTab() {
                             : "text-[10px] font-black text-cyan-500/70 uppercase",
                         )}
                       >
-                        {t("retirement.masterTr")}
+                        {t("retirement.tr")}
                       </span>
                       <span className="ml-1 text-xs font-black text-cyan-300">
                         {(
@@ -610,7 +604,7 @@ export function RetirementTab() {
                         : "text-[11px] font-black text-slate-500 uppercase",
                     )}
                   >
-                    {t("retirement.return")}
+                    {t("retirement.tr")}
                   </p>
                   <EditableInput
                     id={`return-${id}`}
@@ -648,7 +642,7 @@ export function RetirementTab() {
                     className={cn(
                       isKorean
                         ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-500 uppercase",
+                        : "text-[11px] font-black text-slate-50 uppercase",
                     )}
                   >
                     {t("retirement.inflation")}

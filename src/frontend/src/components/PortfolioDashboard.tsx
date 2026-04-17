@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -34,7 +34,7 @@ import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
 import type { Portfolio, MasterPortfolio } from "../types";
 
-/** [REQ-PRT-06] 포트폴리오 대시보드 및 비교 탭 */
+/** [REQ-PRT-06, REQ-GLB-13] 포트폴리오 대시보드 및 비교 탭 */
 export function PortfolioDashboard({
   onLoad,
 }: {
@@ -60,7 +60,7 @@ export function PortfolioDashboard({
         corpShort: "법인",
         penShort: "연금",
         dividendYield: "배당수익률",
-        expectedTr: "예상 총수익률",
+        expectedTr: "TR",
         activateStrategy: "전략 활성화",
         cannotDeleteDefaultStrategy: "기본 전략은 삭제할 수 없습니다",
         cannotDeleteActiveStrategy: "활성 전략은 삭제할 수 없습니다",
@@ -118,7 +118,7 @@ export function PortfolioDashboard({
         corpShort: "Corp",
         penShort: "Pen",
         dividendYield: "Dividend Yield",
-        expectedTr: "Expected TR",
+        expectedTr: "TR",
         activateStrategy: "Activate Strategy",
         cannotDeleteDefaultStrategy: "Default strategies cannot be deleted",
         cannotDeleteActiveStrategy: "Active strategies cannot be deleted",
@@ -169,26 +169,40 @@ export function PortfolioDashboard({
   const [selectedCorpId, setSelectedCorpId] = useState<string>("");
   const [selectedPenId, setSelectedPenId] = useState<string>("");
 
-  // 전역 시뮬레이션 상태 [REQ-PRT-06.3] - 복구됨
+  // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
-  const [paRate, setPaRate] = useState<number>(3.0);
+  const [paRates, setPaRates] = useState<Record<string, number>>({});
 
-  /** 가중 평균 배당률 계산 공통 함수 (안전한 참조 보장) */
-  const getDY = (p: Portfolio | undefined) => {
+  /** 가중 평균 배당률 계산 공통 함수 */
+  const getDY = useCallback((p: Portfolio | undefined) => {
     if (!p || !p.items || p.items.length === 0) return 0;
     return p.items.reduce(
       (s, i) => s + (i.dividend_yield || 0) * ((i.weight || 0) / 100),
       0,
     );
-  };
+  }, []);
 
-  /** 총수익률(TR) 계산: DY + 전역 PA */
-  const getTR = (p: Portfolio | undefined) => {
-    const dy = getDY(p);
-    return dy + paRate;
-  };
+  /** [REQ-GLB-13] 차등 PA를 반영한 포트폴리오별 TR 계산 */
+  const getTR = useCallback(
+    (p: Portfolio | undefined) => {
+      if (!p || !p.items || p.items.length === 0) return 0;
+      return p.items.reduce((sum, item) => {
+        let pa = 0;
+        const cat = item.category;
+        if (cat === "SGOV Buffer") pa = paRates.cash_sgov || 0.1;
+        else if (cat === "High Income" || cat === "Bond Buffer")
+          pa = paRates.fixed_income || 2.5;
+        else if (cat === "Dividend Growth") pa = paRates.dividend_stocks || 5.5;
+        else if (cat === "Growth Engine") pa = paRates.growth_stocks || 9.5;
+        return (
+          sum + ((item.dividend_yield || 0) + pa) * ((item.weight || 0) / 100)
+        );
+      }, 0);
+    },
+    [paRates],
+  );
 
   // 데이터 로드
   useEffect(() => {
@@ -216,10 +230,8 @@ export function PortfolioDashboard({
       .then((res) => {
         if (res.success && res.data) {
           const s = res.data;
-          // 실시간 환율 및 PA 반영
           if (s.current_exchange_rate) setExchangeRate(s.current_exchange_rate);
-          if (s.price_appreciation_rate !== undefined)
-            setPaRate(s.price_appreciation_rate);
+          if (s.appreciation_rates) setPaRates(s.appreciation_rates);
 
           if (s.default_capital) {
             const cap = s.default_capital;
@@ -335,7 +347,7 @@ export function PortfolioDashboard({
     }
   };
 
-  /** 차트 데이터 계산 [REQ-PRT-06.4] */
+  /** 차트 데이터 계산 */
   const chartData = useMemo(() => {
     if (!portfolios || portfolios.length === 0 || selectedIds.size === 0)
       return [];
@@ -367,7 +379,7 @@ export function PortfolioDashboard({
     });
   }, [portfolios, selectedIds, globalCapitalUsd, globalCurrency, exchangeRate]);
 
-  /** 레이더 차트 및 지표 데이터 계산 [REQ-PRT-06.5, 06.7] */
+  /** 레이더 차트 및 지표 데이터 계산 */
   const { radarData, metrics } = useMemo(() => {
     const selectedPortfolios = portfolios.filter((p) => selectedIds.has(p.id));
     if (selectedPortfolios.length === 0) return { radarData: [], metrics: [] };
@@ -394,12 +406,8 @@ export function PortfolioDashboard({
 
     // 2. Metrics (Comparison Matrix)
     const comparisonMetrics = selectedPortfolios.map((p) => {
-      const totalYield =
-        p.items?.reduce(
-          (s, i) => s + (i.dividend_yield || 0) * ((i.weight || 0) / 100),
-          0,
-        ) || 0;
-      const totalTR = totalYield + paRate;
+      const totalYield = getDY(p);
+      const totalTR = getTR(p);
       const capital = globalCapitalUsd ?? (p.total_capital || 0);
       const annualIncome = capital * (totalYield / 100);
 
@@ -416,7 +424,7 @@ export function PortfolioDashboard({
     });
 
     return { radarData: radar, metrics: comparisonMetrics };
-  }, [portfolios, selectedIds, globalCapitalUsd, paRate]);
+  }, [portfolios, selectedIds, globalCapitalUsd, paRates, getDY, getTR]);
 
   /** 선택 핸들러 */
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -433,7 +441,7 @@ export function PortfolioDashboard({
     onLoad(p);
   };
 
-  /** 삭제 핸들러 (의존성 체크 반영) [REQ-PRT-08.3] */
+  /** 삭제 핸들러 */
   const handleDelete = async (
     e: React.MouseEvent,
     id: string,
@@ -475,7 +483,7 @@ export function PortfolioDashboard({
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-20">
-      {/* 0. Master Strategy Section [REQ-PRT-09] */}
+      {/* 0. Master Strategy Section */}
       <section className="space-y-6">
         <div className="flex items-center gap-3 px-4">
           <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -566,18 +574,9 @@ export function PortfolioDashboard({
                 const c_p = portfolios.find((p) => p.id === m.corp_id);
                 const p_p = portfolios.find((p) => p.id === m.pension_id);
 
-                const c_dy = getDY(c_p);
-                const p_dy = getDY(p_p);
-                const c_cap = c_p?.total_capital || 0;
-                const p_cap = p_p?.total_capital || 0;
-                const total_cap = c_cap + p_cap;
-
-                const avg_dy =
-                  total_cap > 0
-                    ? (c_dy * c_cap + p_dy * p_cap) / total_cap
-                    : c_dy || p_dy || 0;
-
-                const avg_tr = avg_dy + paRate;
+                // [REQ-GLB-13] 백엔드에서 미리 계산해 준 값을 우선 사용하거나 프론트에서 가중 평균 계산
+                const avg_dy = m.combined_yield ?? 0;
+                const avg_tr = m.combined_tr ?? 0;
 
                 return (
                   <div
@@ -645,9 +644,8 @@ export function PortfolioDashboard({
                             className="text-emerald-600 cursor-help"
                           />
                           <div className="absolute right-0 bottom-full mb-2 w-52 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-200 font-bold hidden group-hover/tip-tr:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                            배당률({avg_dy.toFixed(2)}%)에 설정된 자산 성장률(
-                            {paRate.toFixed(1)}%)을 더한 총수익률입니다. 은퇴
-                            시뮬레이션의 기초 엔진 수익률로 사용됩니다.
+                            배당수익률({avg_dy.toFixed(2)}%)에 자산군별
+                            기대주가상승률을 합산한 가중 평균 총수익률입니다.
                           </div>
                         </div>
                         <p className="text-2xl font-black text-emerald-400 tabular-nums">
@@ -774,7 +772,7 @@ export function PortfolioDashboard({
         </div>
       </div>
 
-      {/* 2. Advanced Analysis Cluster [REQ-PRT-06.4, 06.5, 06.7] */}
+      {/* 2. Advanced Analysis Cluster */}
       {selectedIds.size > 0 && (
         <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
           {/* 2.1 Monthly Dividend Bar Chart */}
@@ -872,7 +870,7 @@ export function PortfolioDashboard({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 2.2 Asset Mix Radar Chart [REQ-PRT-06.5] */}
+            {/* 2.2 Asset Mix Radar Chart */}
             <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
               <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
                 <PieChart size={18} className="text-blue-400" />{" "}
@@ -938,7 +936,7 @@ export function PortfolioDashboard({
               </div>
             </div>
 
-            {/* 2.3 Metrics Comparison Matrix [REQ-PRT-06.7] */}
+            {/* 2.3 Metrics Comparison Matrix */}
             <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
               <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
                 <Layout size={18} className="text-emerald-400" />{" "}
@@ -1183,15 +1181,15 @@ export function PortfolioDashboard({
                   <div className="text-right">
                     <div className="flex items-center justify-end gap-1.5 mb-1 group/ytip-card relative">
                       <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                        Expected TR
+                        {copy.expectedTr}
                       </p>
                       <Info
                         size={10}
                         className="text-emerald-600 cursor-help"
                       />
                       <div className="absolute right-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/ytip-card:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                        가중 평균 배당률(Yield)과 설정된 자산 성장률(
-                        {paRate.toFixed(1)}%)을 합산한 총수익률입니다.
+                        가중 평균 배당수익률과 자산군별 설정된 기대주가상승률을
+                        합산한 총수익률입니다.
                       </div>
                     </div>
                     <p className="text-2xl font-black text-emerald-400 tabular-nums">
@@ -1235,7 +1233,7 @@ export function PortfolioDashboard({
                 </div>
               </div>
 
-              {/* 4. Detailed View [REQ-PRT-06.2] */}
+              {/* 4. Detailed View */}
               <div
                 className={cn(
                   "portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40",
