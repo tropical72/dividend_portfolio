@@ -5,6 +5,7 @@
 export const TYPES_VERSION = "1.0.0";
 
 export type AccountType = "Corporate" | "Pension";
+export type UiLanguage = "ko" | "en";
 export type CorporateStrategyCategory =
   | "SGOV Buffer"
   | "High Income"
@@ -25,6 +26,7 @@ export interface AppSettings {
   gemini_api_key: string;
   default_capital: number;
   default_currency: "USD" | "KRW";
+  ui_language: UiLanguage;
   current_exchange_rate?: number;
   price_appreciation_rate?: number;
 }

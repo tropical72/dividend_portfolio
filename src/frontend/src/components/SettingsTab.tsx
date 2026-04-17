@@ -21,11 +21,13 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useI18n } from "../i18n";
 import type {
   RetirementConfig,
   AppSettings,
   PlannedCashflow,
   StrategyRules,
+  UiLanguage,
 } from "../types";
 
 interface SettingsTabProps {
@@ -85,11 +87,15 @@ function SectionTitle({
   color: string;
   tooltip: string;
 }) {
+  const { isKorean } = useI18n();
   return (
     <div className="flex items-center justify-between mb-6">
       <h3
         className={cn(
-          "text-xs font-black uppercase tracking-widest flex items-center gap-3",
+          "flex items-center gap-3",
+          isKorean
+            ? "text-sm font-bold tracking-normal"
+            : "text-xs font-black uppercase tracking-widest",
           color,
         )}
       >
@@ -110,11 +116,13 @@ export function SettingsTab({
   globalSettings,
   globalRetireConfig,
 }: SettingsTabProps) {
+  const { isKorean, setLanguage, t } = useI18n();
   const [settings, setSettings] = useState({
     dart_api_key: "",
     gemini_api_key: "",
     default_capital: 10000,
     default_currency: "USD",
+    ui_language: "ko" as UiLanguage,
     price_appreciation_rate: 3.0,
   });
 
@@ -135,6 +143,7 @@ export function SettingsTab({
         gemini_api_key: globalSettings.gemini_api_key || "",
         default_capital: globalSettings.default_capital ?? 10000,
         default_currency: globalSettings.default_currency || "USD",
+        ui_language: globalSettings.ui_language || "ko",
         price_appreciation_rate: globalSettings.price_appreciation_rate ?? 3.0,
       });
     }
@@ -217,11 +226,11 @@ export function SettingsTab({
       });
       setStatus({
         type: "success",
-        message: "모든 전략 설정이 저장되었습니다.",
+        message: t("settings.saveSuccess"),
       });
       onSettingsUpdate();
     } catch {
-      setStatus({ type: "error", message: "통신 중 오류가 발생했습니다." });
+      setStatus({ type: "error", message: t("settings.saveError") });
     } finally {
       setLoading(false);
     }
@@ -237,7 +246,7 @@ export function SettingsTab({
       currency: "USD",
       year: 2030,
       month: 1,
-      description: "자산 유입/지출 상세",
+      description: t("settings.descriptionPlaceholder"),
     };
     setRetireConfig({
       ...retireConfig,
@@ -272,7 +281,7 @@ export function SettingsTab({
   if (!retireConfig || !retireConfig.user_profile)
     return (
       <div className="p-20 text-center animate-pulse text-sm font-black uppercase text-slate-500">
-        Loading Strategy Center...
+        {t("settings.loading")}
       </div>
     );
 
@@ -281,18 +290,17 @@ export function SettingsTab({
       <div className="border-b border-slate-800 pb-8 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-slate-50 flex items-center gap-4 tracking-tight">
-            <Calculator className="text-emerald-400" size={32} /> Strategy
-            Center
+            <Calculator className="text-emerald-400" size={32} />
+            <span data-testid="settings-title">{t("settings.title")}</span>
           </h2>
           <p className="text-sm text-slate-400 mt-2 font-medium">
-            은퇴 자산 시뮬레이션의 마스터 변수와 미래 이벤트를 제어하세요.
+            {t("settings.subtitle")}
           </p>
         </div>
         <div className="group relative">
           <Info size={20} className="text-slate-600 cursor-help" />
           <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 p-4 rounded-2xl text-[11px] text-slate-200 font-bold hidden group-hover:block z-[60] border border-slate-700 shadow-2xl leading-relaxed text-left animate-in fade-in slide-in-from-top-2">
-            은퇴 자산 시뮬레이션의 중앙 제어 센터입니다. 여기서 설정한 값들은
-            모든 탭의 계산 및 그래프에 즉시 반영됩니다.
+            {t("settings.tooltip")}
           </div>
         </div>
       </div>
@@ -303,15 +311,15 @@ export function SettingsTab({
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
               <SectionTitle
                 icon={User}
-                title="User Profile"
+                title={t("settings.userProfile")}
                 color="text-blue-400"
-                tooltip="사용자의 연령 및 연금 수령 시작 시점을 설정하여 생애 주기를 정의합니다."
+                tooltip={t("settings.userProfileTooltip")}
               />
               <div className="grid grid-cols-2 gap-4">
                 <InputGroup
-                  label="Birth Year"
-                  unit="Year"
-                  tooltip="출생 연도를 입력하세요. 만 나이 계산의 기준이 됩니다."
+                  label={t("settings.birthYear")}
+                  unit={t("settings.year")}
+                  tooltip={t("settings.birthYearTooltip")}
                   value={retireConfig.user_profile.birth_year}
                   onChange={(v) =>
                     setRetireConfig({
@@ -324,9 +332,9 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label="Birth Month"
-                  unit="Month"
-                  tooltip="출생 월을 입력하세요. 연금 수령 개시 월을 정밀하게 산출합니다."
+                  label={t("settings.birthMonth")}
+                  unit={t("settings.month")}
+                  tooltip={t("settings.birthMonthTooltip")}
                   value={retireConfig.user_profile.birth_month}
                   onChange={(v) => {
                     let val = Math.floor(parseInt(v) || 1);
@@ -343,9 +351,9 @@ export function SettingsTab({
               </div>
               <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
                 <InputGroup
-                  label="Private Pension"
-                  unit="Age"
-                  tooltip="개인연금(IRP, 연금저축 등) 수령을 시작할 나이를 설정합니다."
+                  label={t("settings.privatePension")}
+                  unit={t("settings.year")}
+                  tooltip={t("settings.privatePensionTooltip")}
                   value={retireConfig.user_profile.private_pension_start_age}
                   onChange={(v) =>
                     setRetireConfig({
@@ -358,9 +366,9 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label="National Pension"
-                  unit="Age"
-                  tooltip="국민연금 수령이 시작되는 나이입니다. (보통 65세)"
+                  label={t("settings.nationalPension")}
+                  unit={t("settings.year")}
+                  tooltip={t("settings.nationalPensionTooltip")}
                   value={retireConfig.user_profile.national_pension_start_age}
                   onChange={(v) =>
                     setRetireConfig({
@@ -380,16 +388,16 @@ export function SettingsTab({
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
               <SectionTitle
                 icon={Wallet2}
-                title="Pension Assets"
+                title={t("settings.pensionAssets")}
                 color="text-amber-400"
-                tooltip="개인연금, 퇴직금 등 노후 자산의 현황과 인출 목표를 관리합니다."
+                tooltip={t("settings.pensionAssetsTooltip")}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputGroup
-                  label="Initial Capital"
+                  label={t("settings.initialCapital")}
                   value={retireConfig.pension_params.initial_investment}
                   isCurrency
-                  tooltip="현재 연금 계좌에 들어있는 현금 및 주식의 총합입니다."
+                  tooltip={t("settings.initialCapitalTooltip")}
                   onChange={(v) =>
                     setRetireConfig({
                       ...retireConfig,
@@ -401,10 +409,10 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label="Withdrawal"
+                  label={t("settings.withdrawal")}
                   value={retireConfig.pension_params.monthly_withdrawal_target}
                   isCurrency
-                  tooltip="연금 수령기에 매달 연금 계좌에서 인출하여 사용할 목표 금액입니다."
+                  tooltip={t("settings.withdrawalTooltip")}
                   onChange={(v) =>
                     setRetireConfig({
                       ...retireConfig,
@@ -418,10 +426,10 @@ export function SettingsTab({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <InputGroup
-                  label="Severance"
+                  label={t("settings.severance")}
                   value={retireConfig.pension_params.severance_reserve}
                   isCurrency
-                  tooltip="퇴직 시 연금 계좌로 유입될 예상 퇴직금 총액입니다."
+                  tooltip={t("settings.severanceTooltip")}
                   onChange={(v) =>
                     setRetireConfig({
                       ...retireConfig,
@@ -433,10 +441,10 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label="Other"
+                  label={t("settings.other")}
                   value={retireConfig.pension_params.other_reserve}
                   isCurrency
-                  tooltip="연금 외에 은퇴 자금으로 활용할 기타 예비 자산입니다."
+                  tooltip={t("settings.otherTooltip")}
                   onChange={(v) =>
                     setRetireConfig({
                       ...retireConfig,
@@ -454,15 +462,15 @@ export function SettingsTab({
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={Building2}
-              title="Corporate Setup"
+              title={t("settings.corporateSetup")}
               color="text-emerald-400"
-              tooltip="법인 자산의 초기 투자금과 운영 비용, 절세를 위한 주주대여금 상태를 설정합니다."
+              tooltip={t("settings.corporateSetupTooltip")}
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <InputGroup
-                label="Total Inv."
+                label={t("settings.totalInv")}
                 isCurrency
-                tooltip="법인 계좌에서 운용 중인 총 투자 자산 규모입니다."
+                tooltip={t("settings.totalInvTooltip")}
                 value={retireConfig.corp_params.initial_investment}
                 onChange={(v) =>
                   setRetireConfig({
@@ -475,9 +483,9 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label="Capital"
+                label={t("settings.capital")}
                 isCurrency
-                tooltip="법인 설립 시 납입한 자본금입니다."
+                tooltip={t("settings.capitalTooltip")}
                 value={retireConfig.corp_params.capital_stock}
                 onChange={(v) =>
                   setRetireConfig({
@@ -490,9 +498,9 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label="Loan"
+                label={t("settings.loan")}
                 isCurrency
-                tooltip="법인에 빌려준 주주대여금 잔액입니다. 비과세 인출의 핵심 재원입니다."
+                tooltip={t("settings.loanTooltip")}
                 value={retireConfig.corp_params.initial_shareholder_loan}
                 onChange={(v) =>
                   setRetireConfig({
@@ -507,9 +515,9 @@ export function SettingsTab({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-800 pt-6">
               <InputGroup
-                label="Salary"
+                label={t("settings.salary")}
                 isCurrency
-                tooltip="본인에게 지급할 세전 월 급여입니다. 건강보험 및 국민연금 산정 기준이 됩니다."
+                tooltip={t("settings.salaryTooltip")}
                 value={retireConfig.corp_params.monthly_salary}
                 onChange={(v) =>
                   setRetireConfig({
@@ -522,9 +530,9 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label="Fixed Cost"
+                label={t("settings.fixedCost")}
                 isCurrency
-                tooltip="임대료, 기장료 등 법인 유지를 위해 매달 지출되는 고정 비용입니다."
+                tooltip={t("settings.fixedCostTooltip")}
                 value={retireConfig.corp_params.monthly_fixed_cost}
                 onChange={(v) =>
                   setRetireConfig({
@@ -537,9 +545,9 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label="Employees"
+                label={t("settings.employees")}
                 unit="Count"
-                tooltip="4대보험을 납부하는 총 직원 수입니다. 법인 부담금 계산에 쓰입니다."
+                tooltip={t("settings.employeesTooltip")}
                 value={retireConfig.corp_params.employee_count}
                 onChange={(v) =>
                   setRetireConfig({
@@ -561,9 +569,9 @@ export function SettingsTab({
             <div className="flex items-center justify-between gap-4">
               <SectionTitle
                 icon={Settings2}
-                title="Strategy Rules"
+                title={t("settings.strategyRules")}
                 color="text-violet-400"
-                tooltip="stock-plan 기본 전략을 사용자 설정값으로 노출합니다. 계좌별 버퍼, 하한선, 연 1회 실행 정책을 조정합니다."
+                tooltip={t("settings.strategyRulesTooltip")}
               />
               <button
                 onClick={resetAllStrategyRules}
@@ -571,14 +579,20 @@ export function SettingsTab({
                 data-testid="reset-strategy-rules"
               >
                 <RotateCcw size={14} />
-                Reset All
+                {t("settings.resetAll")}
               </button>
             </div>
 
             <div className="bg-slate-950/40 rounded-[2rem] border border-slate-800 p-6 space-y-5">
               <div className="flex items-center justify-between gap-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-sky-400">
-                  Execution Policy
+                <h4
+                  className={cn(
+                    isKorean
+                      ? "text-sm font-bold tracking-normal text-sky-300"
+                      : "text-xs font-black uppercase tracking-widest text-sky-400",
+                  )}
+                >
+                  {t("settings.executionPolicy")}
                 </h4>
                 <button
                   onClick={resetExecutionPolicy}
@@ -586,14 +600,15 @@ export function SettingsTab({
                   data-testid="reset-execution-policy"
                 >
                   <RotateCcw size={12} />
-                  Reset
+                  {t("settings.reset")}
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InputGroup
-                  label="Rebalance Month"
-                  unit="Month"
-                  tooltip="기계적 리밸런싱과 전략 매도를 실행할 기준 월입니다."
+                  label={t("settings.rebalanceMonth")}
+                  unit={t("settings.month")}
+                  tooltip={t("settings.rebalanceMonthTooltip")}
+                  testId="input-group-rebalance-month"
                   value={retireConfig.strategy_rules.rebalance_month}
                   onChange={(v) =>
                     updateStrategyRules({
@@ -605,9 +620,9 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label="Rebalance Week"
+                  label={t("settings.rebalanceWeek")}
                   unit="Week"
-                  tooltip="리밸런싱을 실행할 주차입니다. 기본값은 1월 둘째 주입니다."
+                  tooltip={t("settings.rebalanceWeekTooltip")}
                   value={retireConfig.strategy_rules.rebalance_week}
                   onChange={(v) =>
                     updateStrategyRules({
@@ -619,8 +634,9 @@ export function SettingsTab({
                   }
                 />
                 <BooleanRuleCard
-                  label="Bear Freeze"
-                  tooltip="하락장에서는 Dividend Growth와 Growth Engine 매도를 잠급니다."
+                  label={t("settings.bearFreeze")}
+                  tooltip={t("settings.bearFreezeTooltip")}
+                  testId="toggle-bear-freeze"
                   checked={
                     retireConfig.strategy_rules.bear_market_freeze_enabled
                   }
@@ -634,8 +650,14 @@ export function SettingsTab({
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <div className="bg-slate-950/40 rounded-[2rem] border border-slate-800 p-6 space-y-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">
-                    Corporate Rules
+                  <h4
+                    className={cn(
+                      isKorean
+                        ? "text-sm font-bold tracking-normal text-emerald-300"
+                        : "text-xs font-black uppercase tracking-widest text-emerald-400",
+                    )}
+                  >
+                    {t("settings.corporateRules")}
                   </h4>
                   <button
                     onClick={resetCorporateRules}
@@ -643,14 +665,15 @@ export function SettingsTab({
                     data-testid="reset-corporate-rules"
                   >
                     <RotateCcw size={12} />
-                    Reset
+                    {t("settings.reset")}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InputGroup
-                    label="Corp Target Buffer"
+                    label={t("settings.corpTargetBuffer")}
                     unit="Mo"
-                    tooltip="법인 SGOV Buffer 목표 개월수입니다."
+                    tooltip={t("settings.corpTargetBufferTooltip")}
+                    testId="input-group-corp-target-buffer"
                     value={
                       retireConfig.strategy_rules.corporate.sgov_target_months
                     }
@@ -663,9 +686,9 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
-                    label="Corp Warn Buffer"
+                    label={t("settings.corpWarnBuffer")}
                     unit="Mo"
-                    tooltip="법인 SGOV Buffer 경고 개월수입니다."
+                    tooltip={t("settings.corpWarnBufferTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate.sgov_warn_months
                     }
@@ -678,9 +701,9 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
-                    label="Corp Crisis Buffer"
+                    label={t("settings.corpCrisisBuffer")}
                     unit="Mo"
-                    tooltip="법인 Growth Engine 매도 예외를 판단하는 위기 개월수입니다."
+                    tooltip={t("settings.corpCrisisBufferTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate.sgov_crisis_months
                     }
@@ -693,9 +716,9 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
-                    label="Growth Sell Years"
+                    label={t("settings.growthSellYears")}
                     unit="Years"
-                    tooltip="법인 Growth Engine 매도를 허용할 남은 기대수명 임계값입니다."
+                    tooltip={t("settings.growthSellYearsTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate
                         .growth_sell_years_left_threshold
@@ -709,8 +732,8 @@ export function SettingsTab({
                     }
                   />
                   <PercentRuleInput
-                    label="High Income Min"
-                    tooltip="High Income 최소 비중입니다."
+                    label={t("settings.highIncomeMin")}
+                    tooltip={t("settings.highIncomeMinTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate
                         .high_income_min_ratio
@@ -724,8 +747,8 @@ export function SettingsTab({
                     }
                   />
                   <PercentRuleInput
-                    label="High Income Max"
-                    tooltip="High Income 최대 비중 가이드입니다."
+                    label={t("settings.highIncomeMax")}
+                    tooltip={t("settings.highIncomeMaxTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate
                         .high_income_max_ratio
@@ -743,8 +766,14 @@ export function SettingsTab({
 
               <div className="bg-slate-950/40 rounded-[2rem] border border-slate-800 p-6 space-y-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-400">
-                    Pension Rules
+                  <h4
+                    className={cn(
+                      isKorean
+                        ? "text-sm font-bold tracking-normal text-amber-300"
+                        : "text-xs font-black uppercase tracking-widest text-amber-400",
+                    )}
+                  >
+                    {t("settings.pensionRules")}
                   </h4>
                   <button
                     onClick={resetPensionRules}
@@ -752,14 +781,14 @@ export function SettingsTab({
                     data-testid="reset-pension-rules"
                   >
                     <RotateCcw size={12} />
-                    Reset
+                    {t("settings.reset")}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InputGroup
-                    label="Pension SGOV Min"
+                    label={t("settings.pensionSgovMin")}
                     unit="Years"
-                    tooltip="연금 SGOV Buffer 최소 유지 연수입니다."
+                    tooltip={t("settings.pensionSgovMinTooltip")}
                     value={retireConfig.strategy_rules.pension.sgov_min_years}
                     onChange={(v) =>
                       updateStrategyRules({
@@ -770,9 +799,9 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
-                    label="Bond Min Years"
+                    label={t("settings.bondMinYears")}
                     unit="Years"
-                    tooltip="연금 Bond Buffer 최소 유지 연수입니다."
+                    tooltip={t("settings.bondMinYearsTooltip")}
                     value={retireConfig.strategy_rules.pension.bond_min_years}
                     onChange={(v) =>
                       updateStrategyRules({
@@ -783,8 +812,9 @@ export function SettingsTab({
                     }
                   />
                   <PercentRuleInput
-                    label="Bond Min Ratio"
-                    tooltip="연금 Bond Buffer 최소 총자산 비중입니다."
+                    label={t("settings.bondMinRatio")}
+                    tooltip={t("settings.bondMinRatioTooltip")}
+                    testId="input-group-bond-min-ratio"
                     value={
                       retireConfig.strategy_rules.pension.bond_min_total_ratio
                     }
@@ -797,8 +827,8 @@ export function SettingsTab({
                     }
                   />
                   <PercentRuleInput
-                    label="Dividend Min Ratio"
-                    tooltip="연금 Dividend Growth 최소 총자산 비중입니다."
+                    label={t("settings.dividendMinRatio")}
+                    tooltip={t("settings.dividendMinRatioTooltip")}
                     value={
                       retireConfig.strategy_rules.pension.dividend_min_ratio
                     }
@@ -817,22 +847,28 @@ export function SettingsTab({
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-3">
-                <Activity size={18} /> Cashflow Events
+              <h3
+                className={cn(
+                  "flex items-center gap-3 text-rose-400",
+                  isKorean
+                    ? "text-sm font-bold tracking-normal"
+                    : "text-xs font-black uppercase tracking-widest",
+                )}
+              >
+                <Activity size={18} /> {t("settings.cashflowEvents")}
               </h3>
               <div className="flex items-center gap-4">
                 <div className="group relative">
                   <Info size={14} className="text-slate-600 cursor-help" />
                   <div className="absolute right-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                    미래에 발생할 일시적인 자산 유입(부동산 매도 등)이나 큰
-                    지출을 등록합니다.
+                    {t("settings.cashflowEventsTooltip")}
                   </div>
                 </div>
                 <button
                   onClick={addCashflow}
                   className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black rounded-xl border border-slate-700 transition-all uppercase tracking-widest"
                 >
-                  <Plus size={16} /> Add Event
+                  <Plus size={16} /> {t("settings.addEvent")}
                 </button>
               </div>
             </div>
@@ -840,7 +876,7 @@ export function SettingsTab({
               {!retireConfig.planned_cashflows ||
               retireConfig.planned_cashflows.length === 0 ? (
                 <p className="text-center py-10 text-slate-600 text-[11px] font-black uppercase border border-dashed border-slate-800 rounded-2xl">
-                  No events planned
+                  {t("settings.noEvents")}
                 </p>
               ) : (
                 retireConfig.planned_cashflows.map((ev) => (
@@ -850,8 +886,15 @@ export function SettingsTab({
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                       <div className="md:col-span-3 flex flex-col gap-2">
-                        <label className="text-[11px] font-black text-slate-500 uppercase ml-1">
-                          Type & Target
+                        <label
+                          className={cn(
+                            "ml-1",
+                            isKorean
+                              ? "text-xs font-bold text-slate-400 tracking-normal"
+                              : "text-[11px] font-black text-slate-500 uppercase",
+                          )}
+                        >
+                          {t("settings.typeTarget")}
                         </label>
                         <div className="flex gap-2">
                           <select
@@ -863,8 +906,12 @@ export function SettingsTab({
                             }
                             className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2 text-[11px] font-black uppercase text-slate-300 outline-none"
                           >
-                            <option value="INFLOW">In (+) </option>
-                            <option value="OUTFLOW">Out (-)</option>
+                            <option value="INFLOW">
+                              {t("settings.inflow")}
+                            </option>
+                            <option value="OUTFLOW">
+                              {t("settings.outflow")}
+                            </option>
                           </select>
                           <select
                             value={ev.entity}
@@ -876,14 +923,25 @@ export function SettingsTab({
                             }
                             className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-2 text-[11px] font-black uppercase text-slate-300 outline-none"
                           >
-                            <option value="CORP">Corp</option>
-                            <option value="PENSION">Pen</option>
+                            <option value="CORP">
+                              {t("settings.corpShort")}
+                            </option>
+                            <option value="PENSION">
+                              {t("settings.penShort")}
+                            </option>
                           </select>
                         </div>
                       </div>
                       <div className="md:col-span-5 flex flex-col gap-2">
-                        <label className="text-[11px] font-black text-slate-500 uppercase ml-1">
-                          Amount
+                        <label
+                          className={cn(
+                            "ml-1",
+                            isKorean
+                              ? "text-xs font-bold text-slate-400 tracking-normal"
+                              : "text-[11px] font-black text-slate-500 uppercase",
+                          )}
+                        >
+                          {t("settings.amount")}
                         </label>
                         <div className="flex items-center gap-2">
                           <select
@@ -912,8 +970,15 @@ export function SettingsTab({
                         </div>
                       </div>
                       <div className="md:col-span-2 flex flex-col gap-2">
-                        <label className="text-[11px] font-black text-slate-500 uppercase ml-1">
-                          Year
+                        <label
+                          className={cn(
+                            "ml-1",
+                            isKorean
+                              ? "text-xs font-bold text-slate-400 tracking-normal"
+                              : "text-[11px] font-black text-slate-500 uppercase",
+                          )}
+                        >
+                          {t("settings.year")}
                         </label>
                         <input
                           type="number"
@@ -927,8 +992,15 @@ export function SettingsTab({
                         />
                       </div>
                       <div className="md:col-span-2 flex flex-col gap-2">
-                        <label className="text-[11px] font-black text-slate-500 uppercase ml-1">
-                          Month
+                        <label
+                          className={cn(
+                            "ml-1",
+                            isKorean
+                              ? "text-xs font-bold text-slate-400 tracking-normal"
+                              : "text-[11px] font-black text-slate-500 uppercase",
+                          )}
+                        >
+                          {t("settings.month")}
                         </label>
                         <input
                           type="number"
@@ -943,8 +1015,15 @@ export function SettingsTab({
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 pt-4 border-t border-slate-900">
-                      <label className="text-[11px] font-black text-slate-500 uppercase ml-1">
-                        Description
+                      <label
+                        className={cn(
+                          "ml-1",
+                          isKorean
+                            ? "text-xs font-bold text-slate-400 tracking-normal"
+                            : "text-[11px] font-black text-slate-500 uppercase",
+                        )}
+                      >
+                        {t("settings.description")}
                       </label>
                       <div className="flex items-center gap-4">
                         <input
@@ -957,7 +1036,7 @@ export function SettingsTab({
                             })
                           }
                           className="flex-1 bg-slate-900/50 border border-slate-800/50 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 placeholder:text-slate-700 outline-none focus:border-slate-600 focus:bg-slate-900"
-                          placeholder="상세 내용을 입력하세요"
+                          placeholder={t("settings.descriptionPlaceholder")}
                         />
                         <button
                           onClick={() => removeCashflow(ev.id)}
@@ -978,15 +1057,16 @@ export function SettingsTab({
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={Clock}
-              title="Sim Control"
+              title={t("settings.simControl")}
               color="text-slate-400"
-              tooltip="월 필요 생활비와 시뮬레이션 총 기간을 설정합니다."
+              tooltip={t("settings.simControlTooltip")}
             />
             <div className="grid grid-cols-1 gap-4">
               <InputGroup
-                label="Monthly Living Cost"
+                label={t("settings.monthlyLivingCost")}
                 isCurrency
-                tooltip="법인과 연금 자산에서 매달 충당해야 할 총 생활비 목표입니다. 월 1,000만원이면 10,000,000으로 입력합니다."
+                tooltip={t("settings.monthlyLivingCostTooltip")}
+                testId="input-group-monthly-living-cost"
                 value={retireConfig.simulation_params.target_monthly_cashflow}
                 onChange={(v) =>
                   setRetireConfig({
@@ -999,9 +1079,10 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label="Duration"
+                label={t("settings.duration")}
                 unit="Years"
-                tooltip="은퇴 후 시뮬레이션을 지속할 총 연수입니다. 보통 30년을 기본으로 합니다."
+                tooltip={t("settings.durationTooltip")}
+                testId="input-group-duration"
                 value={retireConfig.simulation_params.simulation_years}
                 onChange={(v) =>
                   setRetireConfig({
@@ -1019,22 +1100,62 @@ export function SettingsTab({
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={Settings2}
-              title="Basic Constants"
+              title={t("settings.basicConstants")}
               color="text-slate-400"
-              tooltip="건강보험료 점수 단가 및 자산 성장률 등 계산 엔진의 기초 상수를 정의합니다."
+              tooltip={t("settings.basicConstantsTooltip")}
             />
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5 ml-1">
-                  <label className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">
-                    Price Appreciation
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.uiLanguage")}
                   </label>
                   <div className="group relative">
                     <Info size={12} className="text-slate-600 cursor-help" />
                     <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                      포트폴리오 전체에 일괄 적용되는 연간 주가 상승률입니다.
-                      은퇴 시뮬레이션 시 '배당률 + 성장률'로 총수익률이
-                      계산됩니다.
+                      {t("settings.uiLanguageTooltip")}
+                    </div>
+                  </div>
+                </div>
+                <select
+                  data-testid="ui-language-select"
+                  value={settings.ui_language}
+                  onChange={(e) => {
+                    const nextLanguage = e.target.value as UiLanguage;
+                    setSettings({
+                      ...settings,
+                      ui_language: nextLanguage,
+                    });
+                    setLanguage(nextLanguage);
+                  }}
+                  className="h-11 w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+                >
+                  <option value="ko">{t("settings.korean")}</option>
+                  <option value="en">{t("settings.english")}</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-emerald-300 tracking-normal"
+                        : "text-[11px] font-black text-emerald-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.priceAppreciation")}
+                  </label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      {t("settings.priceAppreciationTooltip")}
                     </div>
                   </div>
                 </div>
@@ -1054,21 +1175,26 @@ export function SettingsTab({
                     className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-emerald-500"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
-                    % / Year
+                    {t("settings.perYear")}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2 pt-4 border-t border-slate-800/50">
                 <div className="flex items-center gap-1.5 ml-1">
-                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                    Health Unit Price
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.healthUnitPrice")}
                   </label>
                   <div className="group relative">
                     <Info size={12} className="text-slate-600 cursor-help" />
                     <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                      지역가입자 건강보험료 산정을 위한 점수당 단가입니다.
-                      (2024년 기준 208.4원)
+                      {t("settings.healthUnitPriceTooltip")}
                     </div>
                   </div>
                 </div>
@@ -1096,9 +1222,9 @@ export function SettingsTab({
                 </div>
               </div>
               <InputGroup
-                label="SGOV Buffer"
+                label={t("settings.sgovBuffer")}
                 unit="Mo"
-                tooltip="법인 운영비 및 지출을 위해 안전 자산(SGOV 등)으로 확보해둘 목표 개월수입니다."
+                tooltip={t("settings.sgovBufferTooltip")}
                 value={
                   retireConfig.trigger_thresholds?.target_buffer_months || 24
                 }
@@ -1118,9 +1244,9 @@ export function SettingsTab({
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={ShieldCheck}
-              title="Assumptions"
+              title={t("settings.assumptions")}
               color="text-slate-400"
-              tooltip="시장 수익률과 인플레이션에 대한 미래 시나리오를 정의합니다."
+              tooltip={t("settings.assumptionsTooltip")}
             />
             <div className="space-y-4">
               {getVisibleAssumptions(retireConfig).map(([id, item]) => (
@@ -1129,26 +1255,36 @@ export function SettingsTab({
                   className="bg-slate-950/50 p-5 rounded-3xl border border-slate-800 space-y-4"
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                      {item.name || id}
+                    <h4
+                      className={cn(
+                        isKorean
+                          ? "text-xs font-bold text-slate-400 tracking-normal"
+                          : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                      )}
+                    >
+                      {id === "v1"
+                        ? t("retirement.assumption.standard")
+                        : t("retirement.assumption.conservative")}
                     </h4>
                     <div className="group relative">
                       <Info size={12} className="text-slate-700 cursor-help" />
                       <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
                         {id === "v1"
-                          ? "표준적인 시장 상황을 가정한 시나리오입니다."
-                          : "보수적이고 방어적인 시장 상황을 가정한 시나리오입니다."}
+                          ? t("settings.assumptionStandardTooltip")
+                          : t("settings.assumptionConservativeTooltip")}
                       </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <EditableInput
-                      label="Expected Return"
+                      label={t("settings.expectedReturn")}
                       unit="%"
                       initialValue={
                         (item.master_return || item.expected_return) * 100
                       }
                       systemDefault={id === "v1" ? 0.0485 : 0.035}
+                      tooltip={t("settings.expectedReturnTooltip")}
+                      resetTitle={t("settings.restoreSystemDefault")}
                       onCommit={(v) =>
                         setRetireConfig({
                           ...retireConfig,
@@ -1164,12 +1300,14 @@ export function SettingsTab({
                       }
                     />
                     <EditableInput
-                      label="Inflation Rate"
+                      label={t("settings.inflationRate")}
                       unit="%"
                       initialValue={
                         (item.master_inflation || item.inflation_rate) * 100
                       }
                       systemDefault={id === "v1" ? 0.025 : 0.035}
+                      tooltip={t("settings.inflationRateTooltip")}
+                      resetTitle={t("settings.restoreSystemDefault")}
                       onCommit={(v) =>
                         setRetireConfig({
                           ...retireConfig,
@@ -1196,13 +1334,19 @@ export function SettingsTab({
               className="w-full p-8 flex items-center justify-between hover:bg-slate-800/20 transition-all group rounded-[2.5rem]"
               data-testid="advanced-settings-toggle"
             >
-              <div className="flex items-center gap-3 text-xs font-black text-amber-500 uppercase tracking-widest">
-                <Gauge size={18} /> Advanced Engine
+              <div
+                className={cn(
+                  "flex items-center gap-3 text-amber-500",
+                  isKorean
+                    ? "text-sm font-bold tracking-normal"
+                    : "text-xs font-black uppercase tracking-widest",
+                )}
+              >
+                <Gauge size={18} /> {t("settings.advancedEngine")}
                 <div className="group relative ml-2">
                   <Info size={14} className="text-slate-700 cursor-help" />
                   <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-200 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                    계산 엔진의 세부 동작 파라미터를 제어합니다. 전문가용
-                    설정입니다.
+                    {t("settings.advancedEngineTooltip")}
                   </div>
                 </div>
               </div>
@@ -1219,9 +1363,9 @@ export function SettingsTab({
               >
                 <div className="space-y-6 border-t border-slate-800 pt-6">
                   <InputGroup
-                    label="High Income Cap"
+                    label={t("settings.highIncomeCap")}
                     unit="%"
-                    tooltip="고소득(건보료 상한 등) 시 자산 인출을 제한하는 수익률 임계치입니다."
+                    tooltip={t("settings.highIncomeCapTooltip")}
                     value={
                       retireConfig.trigger_thresholds.high_income_cap_rate * 100
                     }
@@ -1237,8 +1381,14 @@ export function SettingsTab({
                   />
                   <div className="space-y-4 pt-4 border-t border-slate-800/50">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                        Yield Multipliers
+                      <h4
+                        className={cn(
+                          isKorean
+                            ? "text-xs font-bold text-slate-400 tracking-normal"
+                            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                        )}
+                      >
+                        {t("settings.yieldMultipliers")}
                       </h4>
                       <div className="group relative">
                         <Info
@@ -1246,15 +1396,16 @@ export function SettingsTab({
                           className="text-slate-700 cursor-help"
                         />
                         <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                          자산군별로 시장 수익률 대비 가중치를 설정합니다.
+                          {t("settings.yieldMultipliersTooltip")}
                         </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <InputGroup
-                        label="Equity Mult"
+                        label={t("settings.equityMult")}
                         unit="x"
-                        tooltip="주식형(VOO 등) 수익률 가중치입니다. (기본 1.2배)"
+                        tooltip={t("settings.equityMultTooltip")}
+                        testId="input-group-equity-mult"
                         value={
                           retireConfig.trigger_thresholds
                             .equity_yield_multiplier * 100
@@ -1270,9 +1421,10 @@ export function SettingsTab({
                         }
                       />
                       <InputGroup
-                        label="Debt Mult"
+                        label={t("settings.debtMult")}
                         unit="x"
-                        tooltip="채권형(BND 등) 수익률 가중치입니다. (기본 0.6배)"
+                        tooltip={t("settings.debtMultTooltip")}
+                        testId="input-group-debt-mult"
                         tooltipAlign="right"
                         value={
                           retireConfig.trigger_thresholds
@@ -1292,8 +1444,14 @@ export function SettingsTab({
                   </div>
                   <div className="space-y-4 pt-4 border-t border-slate-800/50">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                        Trigger Thresholds
+                      <h4
+                        className={cn(
+                          isKorean
+                            ? "text-xs font-bold text-slate-400 tracking-normal"
+                            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                        )}
+                      >
+                        {t("settings.triggerThresholds")}
                       </h4>
                       <div className="group relative">
                         <Info
@@ -1301,14 +1459,14 @@ export function SettingsTab({
                           className="text-slate-700 cursor-help"
                         />
                         <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                          리밸런싱이나 인출 전략이 변경되는 임계점 설정입니다.
+                          {t("settings.triggerThresholdsTooltip")}
                         </div>
                       </div>
                     </div>
                     <InputGroup
-                      label="Market Panic"
+                      label={t("settings.marketPanic")}
                       unit="%"
-                      tooltip="포트폴리오 리밸런싱을 중단하는 하락장 임계치입니다."
+                      tooltip={t("settings.marketPanicTooltip")}
                       value={
                         retireConfig.trigger_thresholds.market_panic_threshold *
                         100
@@ -1353,13 +1511,19 @@ export function SettingsTab({
             )}
             {!status && (
               <div className="flex items-center gap-2 px-2">
-                <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest">
-                  Commit strategy changes to server.
+                <p
+                  className={cn(
+                    isKorean
+                      ? "text-xs font-bold text-slate-400 tracking-normal"
+                      : "text-slate-500 text-[11px] font-black uppercase tracking-widest",
+                  )}
+                >
+                  {t("settings.commitHint")}
                 </p>
                 <div className="group relative">
                   <Info size={12} className="text-slate-700 cursor-help" />
                   <div className="absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                    현재 수정된 모든 설정값을 서버에 영구적으로 저장합니다.
+                    {t("settings.commitTooltip")}
                   </div>
                 </div>
               </div>
@@ -1368,6 +1532,7 @@ export function SettingsTab({
           <button
             onClick={handleSave}
             disabled={loading}
+            data-testid="apply-settings-button"
             className="flex items-center gap-3 px-10 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-800 text-slate-950 font-black rounded-xl transition-all shadow-lg text-xs"
           >
             {loading ? (
@@ -1375,7 +1540,7 @@ export function SettingsTab({
             ) : (
               <Save size={18} />
             )}
-            {loading ? "Syncing..." : "Apply All Changes"}
+            {loading ? t("settings.syncing") : t("settings.applyAllChanges")}
           </button>
         </div>
       </div>
@@ -1391,6 +1556,7 @@ function InputGroup({
   unit,
   tooltip,
   tooltipAlign = "left",
+  testId,
 }: {
   label: string;
   value: number;
@@ -1399,7 +1565,9 @@ function InputGroup({
   unit?: string;
   tooltip?: string;
   tooltipAlign?: "left" | "right";
+  testId?: string;
 }) {
+  const { isKorean } = useI18n();
   const numericValue = Math.floor(value || 0);
   const displayValue = isCurrency
     ? numericValue.toLocaleString()
@@ -1407,10 +1575,18 @@ function InputGroup({
   return (
     <div
       className="space-y-1.5"
-      data-testid={`input-group-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      data-testid={
+        testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`
+      }
     >
       <div className="flex items-center gap-1.5 ml-1">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+        <label
+          className={cn(
+            isKorean
+              ? "text-xs font-bold text-slate-400 tracking-normal"
+              : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+          )}
+        >
           {label}
         </label>
         {tooltip && (
@@ -1442,7 +1618,14 @@ function InputGroup({
           className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
         />
         {(isCurrency || unit) && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
+          <span
+            className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2",
+              isKorean
+                ? "text-xs font-bold text-slate-500"
+                : "text-[11px] font-black text-slate-600",
+            )}
+          >
             {isCurrency ? "KRW" : unit}
           </span>
         )}
@@ -1457,6 +1640,8 @@ function EditableInput({
   unit,
   initialValue,
   systemDefault,
+  tooltip,
+  resetTitle,
   onCommit,
 }: {
   id?: string;
@@ -1464,8 +1649,11 @@ function EditableInput({
   unit?: string;
   initialValue: number;
   systemDefault: number;
+  tooltip: string;
+  resetTitle: string;
   onCommit: (val: number) => void;
 }) {
+  const { isKorean } = useI18n();
   const [value, setValue] = useState(initialValue.toFixed(2));
   useEffect(() => {
     setValue(initialValue.toFixed(2));
@@ -1482,15 +1670,19 @@ function EditableInput({
   return (
     <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-1.5 ml-1">
-        <label className="text-[11px] font-black text-slate-500 uppercase">
+        <label
+          className={cn(
+            isKorean
+              ? "text-xs font-bold text-slate-400 tracking-normal"
+              : "text-[11px] font-black text-slate-500 uppercase",
+          )}
+        >
           {label}
         </label>
         <div className="group relative">
           <Info size={10} className="text-slate-700 cursor-help" />
           <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-            {label === "Expected Return"
-              ? "미래 예상 수익률을 % 단위로 입력하세요."
-              : "미래 예상 인플레이션율을 % 단위로 입력하세요."}
+            {tooltip}
           </div>
         </div>
       </div>
@@ -1509,7 +1701,14 @@ function EditableInput({
             }
           />
           {unit && (
-            <span className="absolute right-4 text-[11px] font-black text-slate-600">
+            <span
+              className={cn(
+                "absolute right-4",
+                isKorean
+                  ? "text-xs font-bold text-slate-500"
+                  : "text-[11px] font-black text-slate-600",
+              )}
+            >
               {unit}
             </span>
           )}
@@ -1521,7 +1720,7 @@ function EditableInput({
               onCommit(systemDefault * 100);
             }}
             className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl text-blue-400 transition-all flex-shrink-0"
-            title="시스템 기본값으로 복구"
+            title={resetTitle}
           >
             <RotateCcw size={14} />
           </button>
@@ -1536,19 +1735,30 @@ function PercentRuleInput({
   tooltip,
   value,
   onChange,
+  testId,
 }: {
   label: string;
   tooltip: string;
   value: number;
   onChange: (value: number) => void;
+  testId?: string;
 }) {
+  const { isKorean } = useI18n();
   return (
     <div
       className="space-y-1.5"
-      data-testid={`input-group-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      data-testid={
+        testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`
+      }
     >
       <div className="flex items-center gap-1.5 ml-1">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+        <label
+          className={cn(
+            isKorean
+              ? "text-xs font-bold text-slate-400 tracking-normal"
+              : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+          )}
+        >
           {label}
         </label>
         <div className="group relative">
@@ -1570,7 +1780,14 @@ function PercentRuleInput({
           onChange={(e) => onChange((parseFloat(e.target.value) || 0) / 100)}
           className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
         />
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
+        <span
+          className={cn(
+            "absolute right-4 top-1/2 -translate-y-1/2",
+            isKorean
+              ? "text-xs font-bold text-slate-500"
+              : "text-[11px] font-black text-slate-600",
+          )}
+        >
           %
         </span>
       </div>
@@ -1583,19 +1800,30 @@ function BooleanRuleCard({
   tooltip,
   checked,
   onChange,
+  testId,
 }: {
   label: string;
   tooltip: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  testId?: string;
 }) {
+  const { isKorean, t } = useI18n();
   return (
     <div
       className="space-y-3 border border-slate-800 rounded-2xl bg-slate-950/40 p-4"
-      data-testid={`toggle-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      data-testid={
+        testId ?? `toggle-${label.toLowerCase().replace(/\s+/g, "-")}`
+      }
     >
       <div className="flex items-center gap-1.5">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+        <label
+          className={cn(
+            isKorean
+              ? "text-xs font-bold text-slate-400 tracking-normal"
+              : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+          )}
+        >
           {label}
         </label>
         <div className="group relative">
@@ -1609,13 +1837,16 @@ function BooleanRuleCard({
         type="button"
         onClick={() => onChange(!checked)}
         className={cn(
-          "w-full h-11 rounded-xl border text-sm font-black uppercase tracking-widest transition-all",
+          "w-full h-11 rounded-xl border text-sm transition-all",
+          isKorean
+            ? "font-bold tracking-normal"
+            : "font-black uppercase tracking-widest",
           checked
             ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
             : "bg-slate-900 border-slate-800 text-slate-400",
         )}
       >
-        {checked ? "Enabled" : "Disabled"}
+        {checked ? t("settings.enabled") : t("settings.disabled")}
       </button>
     </div>
   );

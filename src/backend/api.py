@@ -1167,6 +1167,7 @@ class DividendBackend:
         self.settings.setdefault("gemini_api_key", "")
         self.settings.setdefault("default_capital", 10000.0)
         self.settings.setdefault("default_currency", "USD")
+        self.settings.setdefault("ui_language", "ko")
         self.settings.setdefault("price_appreciation_rate", 3.0)
         return cast(Dict[str, Any], self.settings)
 

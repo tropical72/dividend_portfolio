@@ -45,6 +45,7 @@ class SettingsRequest(BaseModel):
     default_investment_goal: Optional[str] = None
     default_capital: Optional[float] = 10000.0
     default_currency: Optional[str] = "USD"
+    ui_language: Optional[str] = "ko"
     price_appreciation_rate: Optional[float] = None
 
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import {
   ListTodo,
   Wallet,
@@ -11,12 +12,14 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
 import { RetirementTab } from "./components/RetirementTab";
+import { I18nProvider, useI18n } from "./i18n";
 import type {
   AccountType,
   PortfolioItem,
   Stock,
   AppSettings,
   RetirementConfig,
+  UiLanguage,
 } from "./types";
 
 /**
@@ -26,6 +29,7 @@ function App() {
   const [activeTab, setActiveTab] = useState("retirement");
   const [health, setHealth] = useState<string>("checking...");
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [language, setLanguage] = useState<UiLanguage>("ko");
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(
     null,
   );
@@ -63,12 +67,19 @@ function App() {
     fetchSettings();
   }, []);
 
+  useEffect(() => {
+    if (settings?.ui_language) {
+      setLanguage(settings.ui_language);
+    }
+  }, [settings?.ui_language]);
+
   // [UI 안정성] 설정이 로드되지 않았을 때의 기본값 보정
   const safeSettings: AppSettings = settings || {
     dart_api_key: "",
     gemini_api_key: "",
     default_capital: 10000,
     default_currency: "USD",
+    ui_language: "ko",
   };
 
   /** Watchlist에서 종목들을 포트폴리오로 이관하는 핸들러 [REQ-PRT-02.1] */
@@ -96,6 +107,55 @@ function App() {
   };
 
   return (
+    <I18nProvider language={language} setLanguage={setLanguage}>
+      <AppShell
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        health={health}
+        safeSettings={safeSettings}
+        retireConfig={retireConfig}
+        fetchSettings={fetchSettings}
+        designItems={designItems}
+        setDesignItems={setDesignItems}
+        designAccountType={designAccountType}
+        setDesignAccountType={setDesignAccountType}
+        handleAddToPortfolio={handleAddToPortfolio}
+      />
+    </I18nProvider>
+  );
+}
+
+function AppShell({
+  activeTab,
+  setActiveTab,
+  health,
+  safeSettings,
+  retireConfig,
+  fetchSettings,
+  designItems,
+  setDesignItems,
+  designAccountType,
+  setDesignAccountType,
+  handleAddToPortfolio,
+}: {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  health: string;
+  safeSettings: AppSettings;
+  retireConfig: RetirementConfig | null;
+  fetchSettings: () => void;
+  designItems: PortfolioItem[];
+  setDesignItems: Dispatch<SetStateAction<PortfolioItem[]>>;
+  designAccountType: AccountType;
+  setDesignAccountType: Dispatch<SetStateAction<AccountType>>;
+  handleAddToPortfolio: (
+    newStocks: Stock[],
+    category: PortfolioItem["category"],
+  ) => void;
+}) {
+  const { t } = useI18n();
+
+  return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* 사이드바: RAMS 계층 구조 반영 */}
       <nav className="w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-800 p-6 flex flex-col gap-2">
@@ -107,45 +167,49 @@ function App() {
         </div>
 
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-3">
-          Main Dashboard
+          {t("app.mainDashboard")}
         </div>
         <NavButton
           active={activeTab === "retirement"}
           icon={<ShieldCheck />}
-          label="Retirement"
+          label={t("app.retirement")}
+          testId="nav-retirement"
           onClick={() => setActiveTab("retirement")}
         />
 
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">
-          Asset Manager
+          {t("app.assetManager")}
         </div>
         <NavButton
           active={activeTab === "assets"}
           icon={<Wallet />}
-          label="Portfolio Manager"
+          label={t("app.portfolioManager")}
+          testId="nav-asset-setup"
           onClick={() => setActiveTab("assets")}
         />
         <NavButton
           active={activeTab === "watchlist"}
           icon={<ListTodo />}
-          label="Watchlist"
+          label={t("app.watchlist")}
+          testId="nav-watchlist"
           onClick={() => setActiveTab("watchlist")}
         />
 
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">
-          System
+          {t("app.system")}
         </div>
         <NavButton
           active={activeTab === "strategy"}
           icon={<Settings />}
-          label="Strategy Settings"
+          label={t("app.strategySettings")}
+          testId="nav-strategy-settings"
           onClick={() => setActiveTab("strategy")}
         />
 
         <div className="mt-auto p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">
-              Engine Status
+              {t("app.engineStatus")}
             </span>
             <span
               className={cn(
@@ -197,18 +261,20 @@ function NavButton({
   active,
   icon,
   label,
+  testId,
   onClick,
 }: {
   active: boolean;
   icon: React.ReactNode;
   label: string;
+  testId: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={`${label} Tab`}
-      data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      data-testid={testId}
       className={cn(
         "flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group",
         active

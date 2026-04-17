@@ -7,7 +7,13 @@ from src.backend.api import DividendBackend
 def test_export_and_restore_test_state_round_trip(tmp_path):
     backend = DividendBackend(data_dir=str(tmp_path))
 
-    backend.update_settings({"default_currency": "KRW", "price_appreciation_rate": 4.2})
+    backend.update_settings(
+        {
+            "default_currency": "KRW",
+            "price_appreciation_rate": 4.2,
+            "ui_language": "ko",
+        }
+    )
     corp = backend.add_portfolio(
         name="Corp Seed",
         account_type="Corporate",
@@ -34,13 +40,20 @@ def test_export_and_restore_test_state_round_trip(tmp_path):
             }
         }
     )
-    backend.update_settings({"default_currency": "USD", "price_appreciation_rate": 1.5})
+    backend.update_settings(
+        {
+            "default_currency": "USD",
+            "price_appreciation_rate": 1.5,
+            "ui_language": "en",
+        }
+    )
 
     restored = backend.restore_test_state(snapshot)
 
     assert restored["success"] is True
     assert backend.get_settings()["default_currency"] == "KRW"
     assert backend.get_settings()["price_appreciation_rate"] == 4.2
+    assert backend.get_settings()["ui_language"] == "ko"
     assert len(backend.get_portfolios()) == 1
     assert backend.get_portfolios()[0]["name"] == "Corp Seed"
     assert len(backend.get_master_portfolios()) == 1
@@ -55,7 +68,7 @@ def test_test_state_endpoint_round_trip(tmp_path, monkeypatch):
 
     baseline = client.get("/api/test/state").json()["data"]
 
-    backend.update_settings({"default_currency": "KRW"})
+    backend.update_settings({"default_currency": "KRW", "ui_language": "en"})
     backend.update_retirement_config({"simulation_params": {"target_monthly_cashflow": 1234}})
 
     restore_response = client.post("/api/test/state", json={"data": baseline})

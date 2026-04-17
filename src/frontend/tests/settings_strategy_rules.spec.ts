@@ -16,7 +16,7 @@ test.describe("Settings Strategy Rules", () => {
 
     await page.goto("http://localhost:5173");
     await page.getByTestId("nav-strategy-settings").click();
-    await page.waitForSelector("text=Strategy Center");
+    await expect(page.getByTestId("settings-title")).toBeVisible();
   });
 
   test.afterEach(async ({ request }) => {
@@ -31,9 +31,6 @@ test.describe("Settings Strategy Rules", () => {
 
   test("should render and persist strategy rules", async ({ page }) => {
     await expect(page.getByTestId("strategy-rules-section")).toBeVisible();
-    await expect(page.getByText("Execution Policy")).toBeVisible();
-    await expect(page.getByText("Corporate Rules")).toBeVisible();
-    await expect(page.getByText("Pension Rules")).toBeVisible();
 
     const rebalanceMonthInput = page
       .getByTestId("input-group-rebalance-month")
@@ -55,21 +52,25 @@ test.describe("Settings Strategy Rules", () => {
       .locator("input");
     await monthlyLivingCostInput.fill("10,000,000");
 
+    const uiLanguageSelect = page.getByTestId("ui-language-select");
+    await uiLanguageSelect.selectOption("en");
+
     await page.getByTestId("toggle-bear-freeze").getByRole("button").click();
-    await page.getByRole("button", { name: /Apply All Changes/i }).click();
+    await page.getByTestId("apply-settings-button").click();
 
     await expect(
-      page.getByText("모든 전략 설정이 저장되었습니다."),
+      page.getByText("All strategy settings were saved."),
     ).toBeVisible();
 
     await page.reload();
     await page.getByTestId("nav-strategy-settings").click();
-    await page.waitForSelector("text=Strategy Center");
+    await expect(page.getByTestId("settings-title")).toBeVisible();
 
     await expect(rebalanceMonthInput).toHaveValue("3");
     await expect(corpTargetInput).toHaveValue("40");
     await expect(bondMinRatioInput).toHaveValue("7.5");
     await expect(monthlyLivingCostInput).toHaveValue("10,000,000");
+    await expect(uiLanguageSelect).toHaveValue("en");
     await expect(page.getByTestId("toggle-bear-freeze")).toContainText(
       "Disabled",
     );

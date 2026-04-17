@@ -23,6 +23,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { cn } from "../lib/utils";
+import { useI18n } from "../i18n";
 import type {
   RetirementConfig,
   SimulationResult,
@@ -73,6 +74,7 @@ function normalizeVisibleAssumptionId(
 
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07] */
 export function RetirementTab() {
+  const { isKorean, t } = useI18n();
   const [config, setConfig] = useState<RetirementConfig | null>(null);
   const [simulationData, setSimulationData] = useState<SimulationResult | null>(
     null,
@@ -99,8 +101,9 @@ export function RetirementTab() {
       const configData = await configRes.json();
       const masterData = await masterRes.json();
 
-      if (!configData.success)
-        throw new Error(configData.message || "설정을 불러올 수 없습니다.");
+      if (!configData.success) {
+        throw new Error(configData.message || t("retirement.errorTitle"));
+      }
 
       const normalizedScenario = normalizeVisibleAssumptionId(
         configData.data,
@@ -126,7 +129,7 @@ export function RetirementTab() {
       if (simData.success) {
         setSimulationData(simData.data);
       } else {
-        throw new Error(simData.message || "시뮬레이션 실패");
+        throw new Error(simData.message || t("retirement.errorTitle"));
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -180,7 +183,7 @@ export function RetirementTab() {
   if (isLoading && !simulationData)
     return (
       <div className="p-20 text-center text-slate-500 font-bold uppercase tracking-[0.2em] animate-pulse">
-        Calculating Simulation...
+        {t("retirement.loading")}
       </div>
     );
   if (errorMessage)
@@ -189,13 +192,15 @@ export function RetirementTab() {
         <div className="flex justify-center">
           <AlertTriangle size={64} className="text-red-500" />
         </div>
-        <h2 className="text-2xl font-black text-slate-50">오류 발생</h2>
+        <h2 className="text-2xl font-black text-slate-50">
+          {t("retirement.errorTitle")}
+        </h2>
         <p>{errorMessage}</p>
         <button
           onClick={() => fetchData()}
           className="px-8 py-3 bg-slate-800 text-slate-200 rounded-xl"
         >
-          재시도
+          {t("retirement.retry")}
         </button>
       </div>
     );
@@ -213,25 +218,26 @@ export function RetirementTab() {
   const chartData = monthlyData.filter(
     (d) => d.index % 12 === 0 || d.index === 1,
   );
+  const largeCurrencyUnit = t("retirement.table.hundredMillion");
 
   const level = (() => {
     const years = summary.total_survival_years || 0;
     if (years > 40)
       return {
-        label: "Unshakable",
+        label: t("retirement.unshakable"),
         color: "text-emerald-400",
         bg: "bg-emerald-500/10",
         icon: <CheckCircle2 size={24} />,
       };
     if (years > 25)
       return {
-        label: "Solid",
+        label: t("retirement.solid"),
         color: "text-blue-400",
         bg: "bg-blue-500/10",
         icon: <ShieldCheck size={24} />,
       };
     return {
-      label: "Fragile",
+      label: t("retirement.fragile"),
       color: "text-amber-400",
       bg: "bg-amber-500/10",
       icon: <AlertTriangle size={24} />,
@@ -254,8 +260,16 @@ export function RetirementTab() {
             <div className="flex-1 space-y-1 relative">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-1 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
-                <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">
-                  Active Strategy
+                <p
+                  className={cn(
+                    "text-emerald-500",
+                    isKorean
+                      ? "text-xs font-bold tracking-[0.08em]"
+                      : "text-[11px] font-black uppercase tracking-[0.3em]",
+                  )}
+                  data-testid="active-strategy-title"
+                >
+                  {t("retirement.activeStrategy")}
                 </p>
               </div>
 
@@ -269,7 +283,7 @@ export function RetirementTab() {
               >
                 <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all flex items-center gap-3">
                   {simulationData.meta?.master_name ||
-                    "Custom Strategy Builder"}
+                    t("retirement.customStrategyBuilder")}
                 </h1>
                 <ChevronDown
                   className={cn(
@@ -285,7 +299,7 @@ export function RetirementTab() {
               >
                 <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5">
                   <span className="text-[10px] font-black text-emerald-500/70 uppercase">
-                    Master Yield
+                    {t("retirement.masterYield")}
                   </span>
                   <span className="ml-1.5 text-sm font-black text-emerald-300">
                     {((simulationData.meta?.combined_dy || 0) * 100).toFixed(2)}
@@ -294,7 +308,7 @@ export function RetirementTab() {
                 </div>
                 <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5">
                   <span className="text-[10px] font-black text-blue-500/70 uppercase">
-                    Master TR
+                    {t("retirement.masterTr")}
                   </span>
                   <span className="ml-1.5 text-sm font-black text-blue-300">
                     {((simulationData.meta?.master_yield || 0) * 100).toFixed(
@@ -310,8 +324,15 @@ export function RetirementTab() {
                   className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10"
                   data-testid="master-switcher-menu"
                 >
-                  <p className="px-6 py-1.5 text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800/50 mb-2">
-                    Change Plan
+                  <p
+                    className={cn(
+                      "px-6 py-1.5 border-b border-slate-800/50 mb-2",
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("retirement.changePlan")}
                   </p>
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     {masterPortfolios.map((m) => (
@@ -344,7 +365,7 @@ export function RetirementTab() {
                               )}
                             {m.broken_reference && (
                               <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
-                                Broken
+                                {t("retirement.broken")}
                               </span>
                             )}
                           </div>
@@ -383,25 +404,43 @@ export function RetirementTab() {
                 <Building2 className="text-emerald-500/50" size={18} />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                      Corporate
+                    <p
+                      className={cn(
+                        isKorean
+                          ? "text-xs font-bold text-slate-400 tracking-normal"
+                          : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                      )}
+                    >
+                      {t("retirement.corporate")}
                     </p>
                   </div>
                   <p className="text-sm font-black text-slate-200 tracking-tight truncate">
-                    {portfolioMeta?.corp?.name || "None"}
+                    {portfolioMeta?.corp?.name || t("retirement.none")}
                   </p>
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
-                      <span className="text-[10px] font-black text-emerald-500/70 uppercase">
-                        Yield
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-bold text-emerald-300/80 tracking-normal"
+                            : "text-[10px] font-black text-emerald-500/70 uppercase",
+                        )}
+                      >
+                        {t("retirement.return")}
                       </span>
                       <span className="ml-1 text-xs font-black text-emerald-300">
                         {portfolioMeta?.corp?.yield || "0.00%"}
                       </span>
                     </div>
                     <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
-                      <span className="text-[10px] font-black text-blue-500/70 uppercase">
-                        TR
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-bold text-blue-300/80 tracking-normal"
+                            : "text-[10px] font-black text-blue-500/70 uppercase",
+                        )}
+                      >
+                        {t("retirement.masterTr")}
                       </span>
                       <span className="ml-1 text-xs font-black text-blue-300">
                         {(
@@ -420,25 +459,43 @@ export function RetirementTab() {
                 <Wallet2 className="text-blue-500/50" size={18} />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                      Pension
+                    <p
+                      className={cn(
+                        isKorean
+                          ? "text-xs font-bold text-slate-400 tracking-normal"
+                          : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                      )}
+                    >
+                      {t("retirement.pension")}
                     </p>
                   </div>
                   <p className="text-sm font-black text-slate-200 tracking-tight truncate">
-                    {portfolioMeta?.pension?.name || "None"}
+                    {portfolioMeta?.pension?.name || t("retirement.none")}
                   </p>
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
-                      <span className="text-[10px] font-black text-blue-500/70 uppercase">
-                        Yield
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-bold text-blue-300/80 tracking-normal"
+                            : "text-[10px] font-black text-blue-500/70 uppercase",
+                        )}
+                      >
+                        {t("retirement.return")}
                       </span>
                       <span className="ml-1 text-xs font-black text-blue-300">
                         {portfolioMeta?.pension?.yield || "0.00%"}
                       </span>
                     </div>
                     <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1">
-                      <span className="text-[10px] font-black text-cyan-500/70 uppercase">
-                        TR
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-bold text-cyan-300/80 tracking-normal"
+                            : "text-[10px] font-black text-cyan-500/70 uppercase",
+                        )}
+                      >
+                        {t("retirement.masterTr")}
                       </span>
                       <span className="ml-1 text-xs font-black text-cyan-300">
                         {(
@@ -455,8 +512,15 @@ export function RetirementTab() {
                 data-testid="active-strategy-exchange-rate"
               >
                 <div className="text-right ml-auto">
-                  <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">
-                    Exchange Rate
+                  <p
+                    className={cn(
+                      "leading-none mb-1",
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-600 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("retirement.exchangeRate")}
                   </p>
                   <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
                     {exchangeRate.toLocaleString(undefined, {
@@ -482,11 +546,26 @@ export function RetirementTab() {
               <Settings2 size={20} className="text-slate-400" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">
-                Step 1. Set the Basis
+              <h3
+                className={cn(
+                  "text-slate-300",
+                  isKorean
+                    ? "text-lg font-bold tracking-normal"
+                    : "text-base font-black uppercase tracking-widest",
+                )}
+                data-testid="retirement-step-1-title"
+              >
+                {t("retirement.step1Title")}
               </h3>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                미래 시장에 대한 본인만의 가정을 선택하세요
+              <p
+                className={cn(
+                  "mt-0.5 font-bold",
+                  isKorean
+                    ? "text-xs text-slate-400 tracking-normal"
+                    : "text-[11px] text-slate-500 uppercase tracking-widest",
+                )}
+              >
+                {t("retirement.step1Subtitle")}
               </p>
             </div>
           </div>
@@ -511,7 +590,9 @@ export function RetirementTab() {
                     activeId === id ? "text-emerald-400" : "text-slate-400",
                   )}
                 >
-                  {item.name}
+                  {id === "v1"
+                    ? t("retirement.assumption.standard")
+                    : t("retirement.assumption.conservative")}
                 </h4>
                 {activeId === id && (
                   <CheckCircle2
@@ -522,8 +603,14 @@ export function RetirementTab() {
               </div>
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <p className="text-[11px] font-black text-slate-500 uppercase">
-                    Return
+                  <p
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase",
+                    )}
+                  >
+                    {t("retirement.return")}
                   </p>
                   <EditableInput
                     id={`return-${id}`}
@@ -557,8 +644,14 @@ export function RetirementTab() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[11px] font-black text-slate-500 uppercase">
-                    Inflation
+                  <p
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase",
+                    )}
+                  >
+                    {t("retirement.inflation")}
                   </p>
                   <EditableInput
                     id={`inflation-${id}`}
@@ -600,8 +693,16 @@ export function RetirementTab() {
             <Activity size={20} className="text-slate-400" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">
-              Step 2. Projection Result
+            <h3
+              className={cn(
+                "text-slate-300",
+                isKorean
+                  ? "text-lg font-bold tracking-normal"
+                  : "text-base font-black uppercase tracking-widest",
+              )}
+              data-testid="retirement-step-2-title"
+            >
+              {t("retirement.step2Title")}
             </h3>
           </div>
         </div>
@@ -622,27 +723,26 @@ export function RetirementTab() {
                     level.color,
                   )}
                 >
-                  {level.icon} {level.label} Status
+                  {level.icon} {level.label} {t("retirement.status")}
                 </div>
                 {summary.total_survival_years >=
                 (config.simulation_params.simulation_years || 30) ? (
                   <h2 className="text-3xl font-black text-slate-50 leading-tight">
-                    혁님은 원하는 모습으로 <br />
                     <span className="text-emerald-400">
-                      은퇴할 수 있습니다.
+                      {t("retirement.canRetire")}
                     </span>
                   </h2>
                 ) : (
                   <h2 className="text-3xl font-black text-slate-50 leading-tight">
-                    혁님의 현재 전략으로는 <br />
                     <span className="text-amber-400">
-                      자산 보강이 필요합니다.
+                      {t("retirement.needMoreAssets")}
                     </span>
                   </h2>
                 )}
                 <p className="text-base text-slate-400 font-medium">
-                  자산은 향후{" "}
+                  {t("retirement.yearsSustainable")}{" "}
                   <span
+                    data-testid="survival-years"
                     className={cn(
                       "font-black",
                       (summary.total_survival_years || 0) >= 25
@@ -652,19 +752,19 @@ export function RetirementTab() {
                   >
                     {summary.total_survival_years || 0}년
                   </span>{" "}
-                  동안 지속 가능합니다.
+                  {t("retirement.yearsSuffix")}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <MetricCard
-                  label="Final NW"
-                  value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length - 1].total_net_worth / 100000000 : 0).toFixed(1)}억`}
-                  tooltip="시뮬레이션 종료 시점의 예상 순자산"
+                  label={t("retirement.finalNw")}
+                  value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length - 1].total_net_worth / 100000000 : 0).toFixed(1)}${largeCurrencyUnit}`}
+                  tooltip={t("retirement.finalNwTooltip")}
                 />
                 <MetricCard
-                  label="Cash Exhaust"
+                  label={t("retirement.cashExhaust")}
                   value={summary.sgov_exhaustion_date || "-"}
-                  tooltip="현금성 자산이 0원이 되는 시점"
+                  tooltip={t("retirement.cashExhaustTooltip")}
                 />
               </div>
               {strategyRulesSummary && (
@@ -674,33 +774,39 @@ export function RetirementTab() {
                 >
                   <div className="flex items-center gap-2">
                     <Info size={16} className="text-violet-400" />
-                    <p className="text-[11px] font-black text-violet-400 uppercase tracking-widest">
-                      Applied Rules
+                    <p
+                      className={cn(
+                        isKorean
+                          ? "text-xs font-bold text-violet-300 tracking-normal"
+                          : "text-[11px] font-black text-violet-400 uppercase tracking-widest",
+                      )}
+                    >
+                      {t("retirement.appliedRules")}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <RuleBadge
-                      label="Rebalance"
+                      label={t("retirement.rebalance")}
                       value={`${strategyRulesSummary.rebalance_month}M / ${strategyRulesSummary.rebalance_week}W`}
                     />
                     <RuleBadge
-                      label="Corp SGOV"
+                      label={t("retirement.corpSgov")}
                       value={`${strategyRulesSummary.corporate_sgov_target_months} Mo`}
                     />
                     <RuleBadge
-                      label="Pension SGOV"
+                      label={t("retirement.pensionSgov")}
                       value={`${strategyRulesSummary.pension_sgov_min_years} Yr`}
                     />
                     <RuleBadge
-                      label="Bear Freeze"
+                      label={t("retirement.bearFreeze")}
                       value={
                         strategyRulesSummary.bear_market_freeze_enabled
-                          ? "Enabled"
-                          : "Disabled"
+                          ? t("retirement.enabled")
+                          : t("retirement.disabled")
                       }
                     />
                     <RuleBadge
-                      label="Monthly Cost"
+                      label={t("retirement.monthlyCost")}
                       value={`₩${(
                         config.simulation_params.target_monthly_cashflow || 0
                       ).toLocaleString()}`}
@@ -739,14 +845,18 @@ export function RetirementTab() {
                     dataKey="index"
                     type="number"
                     domain={[0, 360]}
-                    tickFormatter={(v) => `${Math.floor(v / 12)}Y`}
+                    tickFormatter={(v) =>
+                      `${Math.floor(v / 12)}${t("retirement.chart.yearTick")}`
+                    }
                     stroke="#475569"
                     fontSize={10}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tickFormatter={(v) => `${(v / 100000000).toFixed(0)}억`}
+                    tickFormatter={(v) =>
+                      `${(v / 100000000).toFixed(0)}${largeCurrencyUnit}`
+                    }
                     stroke="#475569"
                     fontSize={10}
                     axisLine={false}
@@ -760,18 +870,18 @@ export function RetirementTab() {
                       fontSize: "12px",
                     }}
                     labelFormatter={(l) =>
-                      `${Math.floor(Number(l) / 12)}년차 (${l}개월)`
+                      `${Math.floor(Number(l) / 12)} ${t("retirement.chart.yearLabel")} (${l}${t("retirement.chart.monthLabel")})`
                     }
                     formatter={(
                       v: number | string | undefined,
                       name: string | undefined,
                     ) => [
-                      `${(Number(v || 0) / 100000000).toFixed(1)}억`,
+                      `${(Number(v || 0) / 100000000).toFixed(1)}${largeCurrencyUnit}`,
                       name === "total_net_worth"
-                        ? "합산 자산"
+                        ? t("retirement.chart.totalAssets")
                         : name === "corp_balance"
-                          ? "법인 자산"
-                          : "연금 자산",
+                          ? t("retirement.chart.corpAssets")
+                          : t("retirement.chart.pensionAssets"),
                     ]}
                   />
                   <Legend
@@ -821,8 +931,15 @@ export function RetirementTab() {
             <Coins size={20} className="text-slate-400" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">
-              Step 5. Detailed Math Log
+            <h3
+              className={cn(
+                "text-slate-300",
+                isKorean
+                  ? "text-lg font-bold tracking-normal"
+                  : "text-base font-black uppercase tracking-widest",
+              )}
+            >
+              {t("retirement.step5Title")}
             </h3>
           </div>
         </div>
@@ -831,25 +948,27 @@ export function RetirementTab() {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
                 <tr className="border-b border-slate-800">
-                  <th className="px-6 py-5 text-center">Date (Age)</th>
-                  <th className="px-6 py-5">Phase</th>
+                  <th className="px-6 py-5 text-center">
+                    {t("retirement.table.dateAge")}
+                  </th>
+                  <th className="px-6 py-5">{t("retirement.table.phase")}</th>
                   <th className="px-6 py-5 text-right text-rose-500/70">
-                    Target CF
+                    {t("retirement.table.targetCf")}
                   </th>
                   <th className="px-6 py-5 text-right text-emerald-500/70">
-                    Total Draw
+                    {t("retirement.table.totalDraw")}
                   </th>
                   <th className="px-6 py-5 text-right text-blue-400/70 border-l border-slate-800/50">
-                    Corp Bal
+                    {t("retirement.table.corpBal")}
                   </th>
                   <th className="px-6 py-5 text-right text-blue-400/70">
-                    Pen Bal
+                    {t("retirement.table.penBal")}
                   </th>
                   <th className="px-6 py-5 text-right text-slate-200 border-l border-slate-800/50">
-                    Net Worth
+                    {t("retirement.table.netWorth")}
                   </th>
                   <th className="px-6 py-5 text-right text-emerald-400/50">
-                    Loan Bal
+                    {t("retirement.table.loanBal")}
                   </th>
                 </tr>
               </thead>
@@ -863,7 +982,8 @@ export function RetirementTab() {
                     )}
                   >
                     <td className="px-6 py-4 text-xs font-bold text-slate-400 text-center">
-                      {m.year}-{String(m.month).padStart(2, "0")} ({m.age}세)
+                      {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
+                      {t("retirement.table.ageSuffix")})
                     </td>
                     <td className="px-6 py-4 text-left">
                       <span
@@ -882,7 +1002,7 @@ export function RetirementTab() {
                     <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">
                       {(m.target_cashflow / 10000).toFixed(0)}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        만
+                        {t("retirement.table.tenThousand")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">
@@ -890,31 +1010,31 @@ export function RetirementTab() {
                         0,
                       )}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        만
+                        {t("retirement.table.tenThousand")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">
                       {(m.corp_balance / 100000000).toFixed(2)}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        억
+                        {t("retirement.table.hundredMillion")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">
                       {(m.pension_balance / 100000000).toFixed(2)}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        억
+                        {t("retirement.table.hundredMillion")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">
                       {(m.total_net_worth / 100000000).toFixed(2)}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        억
+                        {t("retirement.table.hundredMillion")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">
                       {(m.loan_balance / 100000000).toFixed(2)}
                       <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        억
+                        {t("retirement.table.hundredMillion")}
                       </span>
                     </td>
                   </tr>
@@ -937,10 +1057,17 @@ function MetricCard({
   value: string;
   tooltip: string;
 }) {
+  const { isKorean } = useI18n();
   return (
     <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 group relative">
       <div className="flex items-center gap-2 mb-2">
-        <p className="text-[11px] text-slate-500 uppercase font-black tracking-widest">
+        <p
+          className={cn(
+            isKorean
+              ? "text-xs font-bold text-slate-400 tracking-normal"
+              : "text-[11px] text-slate-500 uppercase font-black tracking-widest",
+          )}
+        >
           {label}
         </p>
         <div className="group relative">
@@ -964,12 +1091,19 @@ function RuleBadge({
   value: string;
   testId?: string;
 }) {
+  const { isKorean } = useI18n();
   return (
     <div
       className="rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3"
       data-testid={testId}
     >
-      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+      <p
+        className={cn(
+          isKorean
+            ? "text-xs font-bold text-slate-400 tracking-normal"
+            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+        )}
+      >
         {label}:
       </p>
       <p className="text-sm font-black text-slate-200 mt-1">{value}</p>
@@ -988,6 +1122,7 @@ function EditableInput({
   masterValue: number;
   onCommit: (val: number) => void;
 }) {
+  const { isKorean, t } = useI18n();
   const [value, setValue] = useState(initialValue.toFixed(1));
   useEffect(() => {
     setValue(initialValue.toFixed(1));
@@ -1013,7 +1148,14 @@ function EditableInput({
             e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()
           }
         />
-        <span className="absolute right-4 text-xs font-black text-slate-500">
+        <span
+          className={cn(
+            "absolute right-4",
+            isKorean
+              ? "text-[11px] font-bold text-slate-400"
+              : "text-xs font-black text-slate-500",
+          )}
+        >
           %
         </span>
       </div>
@@ -1026,7 +1168,15 @@ function EditableInput({
           className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"
         >
           <RotateCcw size={16} strokeWidth={3} />
-          <span className="text-[11px] font-black uppercase">Reset</span>
+          <span
+            className={cn(
+              isKorean
+                ? "text-xs font-bold tracking-normal"
+                : "text-[11px] font-black uppercase",
+            )}
+          >
+            {t("retirement.reset")}
+          </span>
         </button>
       )}
     </div>
