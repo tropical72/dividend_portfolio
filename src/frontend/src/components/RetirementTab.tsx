@@ -877,13 +877,14 @@ export function RetirementTab() {
                     formatter={(
                       v: number | string | undefined,
                       name: string | undefined,
+                      entry,
                     ) => [
                       `${(Number(v || 0) / 100000000).toFixed(1)}${largeCurrencyUnit}`,
-                      name === "total_net_worth"
+                      entry?.dataKey === "total_net_worth"
                         ? t("retirement.chart.totalAssets")
-                        : name === "corp_balance"
+                        : entry?.dataKey === "corp_balance"
                           ? t("retirement.chart.corpAssets")
-                          : t("retirement.chart.pensionAssets"),
+                          : name || t("retirement.chart.pensionAssets"),
                     ]}
                   />
                   <Legend
@@ -893,7 +894,7 @@ export function RetirementTab() {
                     iconType="circle"
                   />
                   <Area
-                    name="total_net_worth"
+                    name={t("retirement.chart.totalAssets")}
                     type="monotone"
                     dataKey="total_net_worth"
                     stroke="#f8fafc"
@@ -902,7 +903,7 @@ export function RetirementTab() {
                     isAnimationActive={true}
                   />
                   <Area
-                    name="corp_balance"
+                    name={t("retirement.chart.corpAssets")}
                     type="monotone"
                     dataKey="corp_balance"
                     stroke="#10b981"
@@ -911,7 +912,7 @@ export function RetirementTab() {
                     isAnimationActive={true}
                   />
                   <Area
-                    name="pension_balance"
+                    name={t("retirement.chart.pensionAssets")}
                     type="monotone"
                     dataKey="pension_balance"
                     stroke="#3b82f6"
