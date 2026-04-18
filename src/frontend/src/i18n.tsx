@@ -209,6 +209,7 @@ const translations = {
     "settings.cashflowEventsTooltip":
       "Register future one-time inflows or large expenses.",
     "settings.addEvent": "Add Event",
+    "settings.deleteEvent": "Delete",
     "settings.noEvents": "No events planned",
     "settings.typeTarget": "Type & Target",
     "settings.amount": "Amount",
@@ -472,6 +473,7 @@ const translations = {
     "settings.cashflowEventsTooltip":
       "미래의 일회성 자산 유입이나 큰 지출을 등록합니다.",
     "settings.addEvent": "이벤트 추가",
+    "settings.deleteEvent": "삭제",
     "settings.noEvents": "등록된 이벤트가 없습니다",
     "settings.typeTarget": "유형 및 대상",
     "settings.amount": "금액",

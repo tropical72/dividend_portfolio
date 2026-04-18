@@ -75,4 +75,36 @@ test.describe("Settings Strategy Rules", () => {
       "Disabled",
     );
   });
+
+  test("should delete a cashflow event and persist the removal", async ({
+    page,
+  }) => {
+    const events = page.locator('[data-testid^="cashflow-event-"]');
+    const initialCount = await events.count();
+
+    await page.getByRole("button", { name: /Add Event|이벤트 추가/ }).click();
+
+    const deleteButton = page
+      .locator('[data-testid^="delete-cashflow-"]')
+      .first();
+    const eventCard = page.locator('[data-testid^="cashflow-event-"]').first();
+
+    await expect(eventCard).toBeVisible();
+    await deleteButton.click();
+    await expect(events).toHaveCount(initialCount);
+
+    await page.getByTestId("apply-settings-button").click();
+    await expect(
+      page.getByText(
+        /All strategy settings were saved.|모든 전략 설정이 저장되었습니다./,
+      ),
+    ).toBeVisible();
+
+    await page.reload();
+    await page.getByTestId("nav-strategy-settings").click();
+    await expect(page.getByTestId("settings-title")).toBeVisible();
+    await expect(page.locator('[data-testid^="cashflow-event-"]')).toHaveCount(
+      initialCount,
+    );
+  });
 });

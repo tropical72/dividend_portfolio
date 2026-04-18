@@ -922,6 +922,7 @@ export function SettingsTab({
                 retireConfig.planned_cashflows.map((ev) => (
                   <div
                     key={ev.id}
+                    data-testid={`cashflow-event-${ev.id}`}
                     className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 space-y-6 group relative"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
@@ -1080,9 +1081,21 @@ export function SettingsTab({
                         />
                         <button
                           onClick={() => removeCashflow(ev.id)}
-                          className="p-3 text-slate-600 hover:text-rose-500 bg-slate-900 hover:bg-rose-500/10 rounded-xl transition-all border border-slate-800"
+                          type="button"
+                          aria-label={t("settings.deleteEvent")}
+                          data-testid={`delete-cashflow-${ev.id}`}
+                          className="inline-flex items-center gap-2 px-4 py-3 text-slate-500 hover:text-rose-400 bg-slate-900 hover:bg-rose-500/10 rounded-xl transition-all border border-slate-800"
                         >
                           <Trash2 size={20} />
+                          <span
+                            className={cn(
+                              isKorean
+                                ? "text-xs font-bold tracking-normal"
+                                : "text-[11px] font-black uppercase tracking-widest",
+                            )}
+                          >
+                            {t("settings.deleteEvent")}
+                          </span>
                         </button>
                       </div>
                     </div>
