@@ -3,6 +3,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
@@ -62,6 +63,39 @@ function formatKrw(value: number) {
 
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(2)}%`;
+}
+
+function buildWaterfallSeries(
+  revenue: number,
+  tax: number,
+  health: number,
+  disposable: number,
+) {
+  const afterTax = revenue - tax;
+  const afterHealth = afterTax - health;
+
+  return [
+    {
+      step: "revenue",
+      base: 0,
+      delta: revenue,
+    },
+    {
+      step: "tax",
+      base: afterTax,
+      delta: tax,
+    },
+    {
+      step: "health",
+      base: afterHealth,
+      delta: health,
+    },
+    {
+      step: "disposable",
+      base: 0,
+      delta: disposable,
+    },
+  ];
 }
 
 export function CostComparisonTab() {
@@ -515,6 +549,88 @@ export function CostComparisonTab() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          <div
+            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+            data-testid="cc-waterfall-chart"
+          >
+            <div className="mb-4 text-lg font-bold text-slate-100">
+              {t("costComparison.waterfallTitle")}
+            </div>
+            <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-slate-300">
+              <div
+                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                data-testid="cc-waterfall-step-revenue"
+              >
+                {t("costComparison.revenue")}
+              </div>
+              <div
+                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                data-testid="cc-waterfall-step-tax"
+              >
+                {t("costComparison.tax")}
+              </div>
+              <div
+                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                data-testid="cc-waterfall-step-health"
+              >
+                {t("costComparison.healthInsurance")}
+              </div>
+              <div
+                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                data-testid="cc-waterfall-step-disposable"
+              >
+                {t("costComparison.disposableCash")}
+              </div>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <WaterfallScenarioChart
+                title={t("costComparison.personal")}
+                revenue={
+                  result.personal.kpis.annual_total_cost +
+                  result.personal.kpis.after_tax_net_growth
+                }
+                tax={result.personal.breakdown.tax}
+                health={result.personal.breakdown.health_insurance}
+                disposable={
+                  result.personal.kpis.monthly_disposable_cashflow * 12
+                }
+                positiveColor="#e2e8f0"
+              />
+              <WaterfallScenarioChart
+                title={t("costComparison.corporate")}
+                revenue={
+                  result.corporate.kpis.annual_total_cost +
+                  result.corporate.kpis.after_tax_net_growth
+                }
+                tax={result.corporate.breakdown.tax}
+                health={result.corporate.breakdown.health_insurance}
+                disposable={
+                  result.corporate.kpis.monthly_disposable_cashflow * 12
+                }
+                positiveColor="#10b981"
+              />
+            </div>
+          </div>
+
+          {result.warnings.length > 0 ? (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
+              <div className="mb-3 text-lg font-bold text-amber-200">
+                {t("costComparison.warningTitle")}
+              </div>
+              <div className="space-y-3">
+                {result.warnings.map((warning, index) => (
+                  <div
+                    className="rounded-xl border border-amber-500/20 bg-slate-950/40 px-4 py-3 text-sm text-amber-100"
+                    data-testid={`cc-warning-${index}`}
+                    key={`${warning}-${index}`}
+                  >
+                    {warning}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -619,6 +735,100 @@ function Metric({ label, value }: { label: string; value: string }) {
         {label}
       </div>
       <div className="mt-2 text-lg font-semibold text-slate-100">{value}</div>
+    </div>
+  );
+}
+
+function WaterfallScenarioChart({
+  title,
+  revenue,
+  tax,
+  health,
+  disposable,
+  positiveColor,
+}: {
+  title: string;
+  revenue: number;
+  tax: number;
+  health: number;
+  disposable: number;
+  positiveColor: string;
+}) {
+  const { t } = useI18n();
+  const data = buildWaterfallSeries(revenue, tax, health, disposable).map(
+    (item) => ({
+      ...item,
+      label:
+        item.step === "revenue"
+          ? t("costComparison.revenue")
+          : item.step === "tax"
+            ? t("costComparison.tax")
+            : item.step === "health"
+              ? t("costComparison.healthInsurance")
+              : t("costComparison.disposableCash"),
+    }),
+  );
+
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+      <div className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-300">
+        {title}
+      </div>
+      <div className="h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#1e293b"
+              vertical={false}
+            />
+            <XAxis dataKey="label" stroke="#64748b" fontSize={11} />
+            <YAxis
+              stroke="#64748b"
+              tickFormatter={(value) =>
+                `${Math.round(Number(value) / 1000000)}M`
+              }
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#0f172a",
+                border: "1px solid #334155",
+                borderRadius: "1rem",
+              }}
+              formatter={(value: number | string | undefined, _name, entry) => {
+                const numericValue = Number(value || 0);
+                const step = String(entry?.payload?.step || "");
+                const sign = step === "tax" || step === "health" ? "-" : "";
+                return [
+                  `${sign}${formatKrw(numericValue)}`,
+                  entry?.payload?.label,
+                ];
+              }}
+            />
+            <Bar dataKey="base" stackId="flow" fill="transparent" />
+            <Bar
+              dataKey="delta"
+              stackId="flow"
+              name={title}
+              fill={positiveColor}
+              radius={[8, 8, 0, 0]}
+            >
+              {data.map((entry) => (
+                <Cell
+                  key={`${title}-${entry.step}`}
+                  fill={
+                    entry.step === "tax"
+                      ? "#f97316"
+                      : entry.step === "health"
+                        ? "#eab308"
+                        : positiveColor
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

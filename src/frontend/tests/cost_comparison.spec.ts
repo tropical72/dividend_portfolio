@@ -30,7 +30,7 @@ test.describe("Cost Comparison Simulator", () => {
   });
 
   test("should persist config and render KPI cards", async ({ page }) => {
-    await page.getByTestId("cc-investment-assets").fill("1600000000");
+    await page.getByTestId("cc-investment-assets").fill("3000000000");
     await page.getByTestId("cc-pension-assets").fill("700000000");
     await page.getByTestId("cc-real-estate-value").fill("650000000");
     await page.getByTestId("cc-real-estate-ratio").fill("0.5");
@@ -49,7 +49,7 @@ test.describe("Cost Comparison Simulator", () => {
     await page.reload();
     await page.getByTestId("nav-cost-comparison").click();
     await expect(page.getByTestId("cc-investment-assets")).toHaveValue(
-      "1600000000",
+      "3000000000",
     );
     await expect(page.getByTestId("cc-simulation-years")).toHaveValue("5");
     await expect(page.getByTestId("cc-salary-0")).toHaveValue("3000000");
@@ -64,5 +64,15 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-driver-0")).toBeVisible();
     await expect(page.getByTestId("cc-breakdown-chart")).toBeVisible();
     await expect(page.getByTestId("cc-cumulative-chart")).toBeVisible();
+    await expect(page.getByTestId("cc-waterfall-chart")).toBeVisible();
+    await expect(page.getByTestId("cc-waterfall-step-revenue")).toBeVisible();
+    await expect(page.getByTestId("cc-waterfall-step-tax")).toBeVisible();
+    await expect(page.getByTestId("cc-waterfall-step-health")).toBeVisible();
+    await expect(
+      page.getByTestId("cc-waterfall-step-disposable"),
+    ).toBeVisible();
+    await expect(page.getByTestId("cc-warning-0")).toContainText(
+      /보수 외 소득월액보험료|outside income/i,
+    );
   });
 });

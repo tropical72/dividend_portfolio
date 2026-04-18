@@ -75,30 +75,30 @@
 
 | 요구사항 ID | 상세 작업 명세 | 태스크 ID | 테스트 ID | 상태 | Git Commit | 완료 일시 |
 |:---|:---|:---|:---|:---|:---|:---|
-| REQ-CCS-1 | 개인운용 vs 법인운용 비교 공정성 및 동일 TR 강제 | T-CCS-1.2 | TEST-CCS-13 | Planned | - | - |
-| REQ-CCS-3 | 사용자 설정 기간 기반 단년/누적 비교 | T-CCS-3.4 | TEST-CCS-45 | Planned | - | - |
-| REQ-CCS-10 | 가구 프로필 입력 모델 | T-CCS-2.2.1 | TEST-CCS-01 | Planned | - | - |
-| REQ-CCS-12 | 부동산을 건보료용 재산으로만 반영 | T-CCS-2.2.2 | TEST-CCS-21 | Planned | - | - |
-| REQ-CCS-14 | 개인연금 자산 별도 고정자산 처리 | T-CCS-2.2.2 | TEST-CCS-23 | Planned | - | - |
-| REQ-CCS-20 | 활성 master portfolio 기반 기준 포트폴리오 | T-CCS-3.1.1 | TEST-CCS-10 | Planned | - | - |
-| REQ-CCS-23 | `TR = DY + PA` 계산 및 표시 | T-CCS-3.1.2 | TEST-CCS-12 | Planned | - | - |
-| REQ-CCS-30 | 개인운용 100% 시나리오 계산 | T-CCS-3.2 | TEST-CCS-20 | Planned | - | - |
-| REQ-CCS-32 | 개인운용 지역건보료 계산 | T-CCS-3.2.2 | TEST-CCS-21 | Planned | - | - |
-| REQ-CCS-40 | 법인운용 100% 시나리오 계산 | T-CCS-3.3 | TEST-CCS-30 | Planned | - | - |
-| REQ-CCS-42 | 급여 수령자 최대 4명 설정 | T-CCS-2.2.3 | TEST-CCS-31 | Planned | - | - |
-| REQ-CCS-43 | 직장건강보험료 총가구 비용 반영 | T-CCS-3.3.2 | TEST-CCS-32 | Planned | - | - |
-| REQ-CCS-46 | 주주대여금 상환 모델 | T-CCS-3.3.4 | TEST-CCS-35 | Planned | - | - |
-| REQ-CCS-50 | 핵심 KPI 비교 카드 | T-CCS-6.1 | TEST-CCS-40 | Planned | - | - |
-| REQ-CCS-54 | 비용/차이 항목 분해 | T-CCS-3.5.2 | TEST-CCS-43 | Planned | - | - |
-| REQ-CCS-60 | 독립 탭 제공 | T-CCS-5.1 | TEST-CCS-50 | Planned | - | - |
-| REQ-CCS-63 | 비용 분해 차트 | T-CCS-6.2 | TEST-CCS-53 | Planned | - | - |
-| REQ-CCS-64 | 순현금흐름 워터폴 | T-CCS-6.3 | TEST-CCS-54 | Planned | - | - |
-| REQ-CCS-65 | 기간 누적 비교 그래프 | T-CCS-6.4 | TEST-CCS-55 | Planned | - | - |
-| REQ-CCS-70 | 비교 시뮬레이터 설정 영속성 | T-CCS-4.1 | TEST-CCS-01 | Planned | - | - |
-| REQ-CCS-72 | 테스트 상태 격리 | T-CCS-7.3.4 | TEST-CCS-04 | Planned | - | - |
+| REQ-CCS-1 | 개인운용 vs 법인운용 비교 공정성 및 동일 TR 강제 | T-CCS-1.2 | TEST-CCS-13 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-3 | 사용자 설정 기간 기반 단년/누적 비교 | T-CCS-3.4 | TEST-CCS-45 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-10 | 가구 프로필 입력 모델 | T-CCS-2.2.1 | TEST-CCS-01 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-12 | 부동산을 건보료용 재산으로만 반영 | T-CCS-2.2.2 | TEST-CCS-21 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-14 | 개인연금 자산 별도 고정자산 처리 | T-CCS-2.2.2 | TEST-CCS-23 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-20 | 활성 master portfolio 기반 기준 포트폴리오 | T-CCS-3.1.1 | TEST-CCS-10 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-23 | `TR = DY + PA` 계산 및 표시 | T-CCS-3.1.2 | TEST-CCS-12 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-30 | 개인운용 100% 시나리오 계산 | T-CCS-3.2 | TEST-CCS-20 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-32 | 개인운용 지역건보료 계산 | T-CCS-3.2.2 | TEST-CCS-21 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-40 | 법인운용 100% 시나리오 계산 | T-CCS-3.3 | TEST-CCS-30 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-42 | 급여 수령자 최대 4명 설정 | T-CCS-2.2.3 | TEST-CCS-31 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-43 | 직장건강보험료 총가구 비용 반영 | T-CCS-3.3.2 | TEST-CCS-32 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-46 | 주주대여금 상환 모델 | T-CCS-3.3.4 | TEST-CCS-35 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-50 | 핵심 KPI 비교 카드 | T-CCS-6.1 | TEST-CCS-40 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-54 | 비용/차이 항목 분해 | T-CCS-3.5.2 | TEST-CCS-43 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-60 | 독립 탭 제공 | T-CCS-5.1 | TEST-CCS-50 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-63 | 비용 분해 차트 | T-CCS-6.2 | TEST-CCS-53 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-64 | 순현금흐름 워터폴 | T-CCS-6.3 | TEST-CCS-54 | In Progress | - | - |
+| REQ-CCS-65 | 기간 누적 비교 그래프 | T-CCS-6.4 | TEST-CCS-55 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-70 | 비교 시뮬레이터 설정 영속성 | T-CCS-4.1 | TEST-CCS-01 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-72 | 테스트 상태 격리 | T-CCS-7.3.4 | TEST-CCS-04 | Done | 533b578 | 2026.04.18-00.55 |
 | REQ-CCS-80 | 정책 수치 출처 명시 | T-CCS-4.3.2 | TEST-CCS-61 | Planned | - | - |
-| REQ-CCS-81 | 기준 연도 노출 | T-CCS-4.3.1 | TEST-CCS-60 | Planned | - | - |
-| REQ-CCS-82 | 추정치 경고 노출 | T-CCS-6.5.3 | TEST-CCS-62 | Planned | - | - |
+| REQ-CCS-81 | 기준 연도 노출 | T-CCS-4.3.1 | TEST-CCS-60 | Done | 533b578 | 2026.04.18-00.55 |
+| REQ-CCS-82 | 추정치 경고 노출 | T-CCS-6.5.3 | TEST-CCS-62 | In Progress | - | - |
 
 ---
-*마지막 업데이트: 2026-04-18 00:20:00*
+*마지막 업데이트: 2026-04-18 01:35:00*
