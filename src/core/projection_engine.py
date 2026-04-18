@@ -102,6 +102,18 @@ class ProjectionEngine:
         m_ret_rate = float(p("market_return_rate", 0.07))
         m_infl = (1 + infl_rate) ** (1 / 12) - 1
 
+        def get_account_growth_rate(account_prefix: str) -> float:
+            account_stats = c_stats if account_prefix == "corp" else p_stats
+            dividend_yield = float(account_stats.get("dividend_yield", 0.0))
+            baseline_total_return = float(account_stats.get("expected_return", dividend_yield))
+            baseline_growth = baseline_total_return - dividend_yield
+            target_growth = m_ret_rate - dividend_yield
+
+            # 가시 설정(TR) 변경이 실제 그래프에 반영되도록 계좌 성장률을 동적으로 보정한다.
+            if abs(baseline_growth) < 1e-9:
+                return target_growth
+            return baseline_growth * (target_growth / baseline_growth)
+
         # 월간 시장 수익률 (단리 변환)
         cur_y, cur_m = int(p("simulation_start_year", 2026)), int(p("simulation_start_month", 3))
 
@@ -139,13 +151,16 @@ class ProjectionEngine:
                 if bal <= 0:
                     continue
 
+                account_prefix = "corp" if asset.startswith("corp") else "pen"
+                account_growth_rate = get_account_growth_rate(account_prefix)
+
                 # [NEW] 자산군별 기대주가상승률(PA) 적용
                 if "growth" in asset:
-                    growth = a_rates.get("growth_stocks", 0.095) / 12
+                    growth = account_growth_rate / 12
                 elif "dividend" in asset:
-                    growth = a_rates.get("dividend_stocks", 0.055) / 12
+                    growth = account_growth_rate / 12
                 elif "high_income" in asset or "bond" in asset:
-                    growth = a_rates.get("fixed_income", 0.025) / 12
+                    growth = account_growth_rate / 12
                 elif "cash" in asset:
                     growth = a_rates.get("cash_sgov", 0.001) / 12
                 else:

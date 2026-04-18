@@ -113,3 +113,73 @@ def test_portfolio_integration_yield_mapping(client):
     finally:
         backend.portfolios = original_portfolios
         backend.master_portfolios = original_master_portfolios
+
+
+def test_retirement_simulation_changes_when_expected_return_changes(client):
+    """
+    Retirement 탭에서 변경한 기대수익률(TR)이 그래프 원본 데이터에 반영되는지 검증합니다.
+    """
+    original_config = backend.get_retirement_config()
+
+    try:
+        backend.update_retirement_config(
+            {
+                "simulation_params": {
+                    "target_monthly_cashflow": 2000000,
+                    "simulation_start_year": 2026,
+                    "simulation_start_month": 1,
+                    "national_pension_amount": 0,
+                    "simulation_years": 5,
+                },
+                "corp_params": {
+                    "initial_investment": 500000000,
+                    "monthly_salary": 0,
+                    "monthly_fixed_cost": 0,
+                    "employee_count": 0,
+                    "initial_shareholder_loan": 0,
+                },
+                "pension_params": {
+                    "initial_investment": 500000000,
+                    "monthly_withdrawal_target": 0,
+                },
+                "user_profile": {
+                    "birth_year": 1980,
+                    "birth_month": 1,
+                    "private_pension_start_age": 80,
+                    "national_pension_start_age": 90,
+                },
+                "assumptions": {
+                    "v1": {
+                        "expected_return": 0.05,
+                        "inflation_rate": 0.0,
+                    }
+                },
+                "active_assumption_id": "v1",
+            }
+        )
+        low_response = client.get("/api/retirement/simulate")
+        assert low_response.status_code == 200
+        low_data = low_response.json()
+        assert low_data["success"] is True
+        low_final_net_worth = low_data["data"]["monthly_data"][-1]["total_net_worth"]
+
+        backend.update_retirement_config(
+            {
+                "assumptions": {
+                    "v1": {
+                        "expected_return": 0.15,
+                        "inflation_rate": 0.0,
+                    }
+                }
+            }
+        )
+        high_response = client.get("/api/retirement/simulate")
+        assert high_response.status_code == 200
+        high_data = high_response.json()
+        assert high_data["success"] is True
+        high_final_net_worth = high_data["data"]["monthly_data"][-1]["total_net_worth"]
+
+        assert high_final_net_worth > low_final_net_worth
+    finally:
+        backend.retirement_config = original_config
+        backend.storage.save_json(backend.retirement_config_file, backend.retirement_config)
