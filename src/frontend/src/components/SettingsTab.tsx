@@ -377,10 +377,22 @@ export function SettingsTab({
                     })
                   }
                 />
+              </div>
+            </section>
+
+            <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
+              <SectionTitle
+                icon={ShieldCheck}
+                title={t("settings.retirementIncome")}
+                color="text-cyan-400"
+                tooltip={t("settings.retirementIncomeTooltip")}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputGroup
                   label={t("settings.nationalPension")}
                   unit={t("settings.year")}
                   tooltip={t("settings.nationalPensionTooltip")}
+                  testId="input-group-national-pension-start-age"
                   value={retireConfig.user_profile.national_pension_start_age}
                   onChange={(v) =>
                     setRetireConfig({
@@ -390,6 +402,22 @@ export function SettingsTab({
                         national_pension_start_age: Math.floor(
                           parseInt(v) || 0,
                         ),
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={t("settings.nationalPensionAmount")}
+                  isCurrency
+                  tooltip={t("settings.nationalPensionAmountTooltip")}
+                  testId="input-group-national-pension-amount"
+                  value={retireConfig.simulation_params.national_pension_amount}
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      simulation_params: {
+                        ...retireConfig.simulation_params,
+                        national_pension_amount: parseInt(v) || 0,
                       },
                     })
                   }

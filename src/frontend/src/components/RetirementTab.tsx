@@ -810,7 +810,10 @@ export function RetirementTab() {
                 </div>
               )}
             </div>
-            <div className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative">
+            <div
+              className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative"
+              data-testid="retirement-projection-chart"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}

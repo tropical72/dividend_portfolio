@@ -255,6 +255,79 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     assert month1["corp_balance"] == 120000
 
 
+def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():
+    """국민연금 개시 연령과 월 수령액이 Phase 3 현금흐름에 반영되어야 한다."""
+    client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1961,
+                "birth_month": 1,
+                "private_pension_start_age": 65,
+                "national_pension_start_age": 65,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 12000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_fixed_cost": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 1000,
+                "national_pension_amount": 1000,
+                "simulation_years": 1,
+            },
+        },
+    )
+
+    original_get_active_master_portfolio = backend.get_active_master_portfolio
+    original_get_portfolio_by_id = backend.get_portfolio_by_id
+    original_portfolios = backend.portfolios
+    original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
+
+    try:
+        backend.get_active_master_portfolio = lambda: None
+        backend.get_portfolio_by_id = lambda _portfolio_id: None
+        backend.portfolios = []
+        backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
+            "dividend_yield": 0.0,
+            "expected_return": 0.0,
+            "weights": {"Growth": 1.0},
+        }
+
+        response = client.get("/api/retirement/simulate")
+    finally:
+        backend.get_active_master_portfolio = original_get_active_master_portfolio
+        backend.get_portfolio_by_id = original_get_portfolio_by_id
+        backend.portfolios = original_portfolios
+        backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    month1 = payload["data"]["monthly_data"][0]
+    assert month1["month"] == 1
+    assert month1["corp_balance"] == 12000
+
+
 def test_run_retirement_simulation_rejects_broken_active_master_reference():
     """활성 마스터 전략의 포트폴리오 참조가 깨지면 시뮬레이션은 실패해야 한다."""
     original_master_portfolios = backend.master_portfolios

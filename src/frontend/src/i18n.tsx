@@ -115,6 +115,12 @@ const translations = {
     "settings.nationalPension": "National Pension",
     "settings.nationalPensionTooltip":
       "Age when the national pension begins. Usually age 65.",
+    "settings.retirementIncome": "Retirement Income",
+    "settings.retirementIncomeTooltip":
+      "Configure when national pension starts and how much monthly income it adds to Phase 3.",
+    "settings.nationalPensionAmount": "National Pension Income",
+    "settings.nationalPensionAmountTooltip":
+      "Expected monthly amount received from the national pension after the start age.",
     "settings.pensionAssets": "Pension Assets",
     "settings.pensionAssetsTooltip":
       "Manage the current state of pension assets and withdrawal targets.",
@@ -380,6 +386,12 @@ const translations = {
     "settings.nationalPension": "국민연금",
     "settings.nationalPensionTooltip":
       "국민연금 수령이 시작되는 나이입니다. 보통 65세입니다.",
+    "settings.retirementIncome": "은퇴 수입(국민연금)",
+    "settings.retirementIncomeTooltip":
+      "국민연금 개시 시점과 월 예상 수령액을 설정해 Phase 3 시뮬레이션에 반영합니다.",
+    "settings.nationalPensionAmount": "월 예상 수령액",
+    "settings.nationalPensionAmountTooltip":
+      "국민연금 개시 연령 이후 매달 유입되는 예상 국민연금 수령액입니다.",
     "settings.pensionAssets": "연금 자산",
     "settings.pensionAssetsTooltip":
       "연금 자산 현황과 월 인출 목표를 관리합니다.",
