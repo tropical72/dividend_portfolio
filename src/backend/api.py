@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from src.backend.data_provider import StockDataProvider
 from src.backend.storage import StorageManager
+from src.core.tax_engine import TaxEngine
 
 
 class DividendBackend:
@@ -25,6 +26,7 @@ class DividendBackend:
         self.settings_file = "settings.json"
         self.portfolios_file = "portfolios.json"
         self.retirement_config_file = "retirement_config.json"
+        self.cost_comparison_config_file = "cost_comparison_config.json"
 
         self.settings = self.storage.load_json(self.settings_file, {})
         dart_key = self.settings.get("dart_api_key")
@@ -36,9 +38,11 @@ class DividendBackend:
             self.master_portfolios_file, []
         )
         self.retirement_config = self.storage.load_json(self.retirement_config_file, {})
+        self.cost_comparison_config = self.storage.load_json(self.cost_comparison_config_file, {})
         self.snapshot_file = "retirement_snapshot.json"
         self._normalize_all_portfolios()
         self._ensure_retirement_config_defaults()
+        self._ensure_cost_comparison_config_defaults()
         if ensure_default_master_bundle:
             self._ensure_default_master_bundle()
             self._ensure_default_watchlist()
@@ -604,6 +608,374 @@ class DividendBackend:
 
         return None
 
+    def _get_default_cost_comparison_config(self) -> Dict[str, Any]:
+        default_pa = float(self.settings.get("price_appreciation_rate", 3.0))
+        return {
+            "household": {"members": []},
+            "personal_assets": {
+                "investment_assets": 0.0,
+                "personal_pension_assets": 0.0,
+            },
+            "real_estate": {
+                "official_price": 0.0,
+                "ownership_ratio": 1.0,
+            },
+            "assumptions": {
+                "price_appreciation_rate": default_pa,
+                "simulation_years": 10,
+            },
+            "corporate": {
+                "salary_recipients": [],
+                "monthly_fixed_cost": 0.0,
+                "initial_shareholder_loan": 0.0,
+                "annual_shareholder_loan_repayment": 0.0,
+            },
+            "policy_meta": {
+                "base_year": 2026,
+            },
+        }
+
+    def _ensure_cost_comparison_config_defaults(self) -> None:
+        self.cost_comparison_config = self._deep_merge_dict(
+            self._get_default_cost_comparison_config(),
+            self.cost_comparison_config,
+        )
+
+    def _validate_cost_comparison_config(self, config: Dict[str, Any]) -> Optional[str]:
+        corporate = cast(Dict[str, Any], config.get("corporate", {}))
+        salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
+        if len(salary_recipients) > 4:
+            return "corporate.salary_recipients는 최대 4명까지만 설정할 수 있습니다."
+
+        for recipient in salary_recipients:
+            if float(recipient.get("monthly_salary") or 0.0) < 0:
+                return "corporate.salary_recipients.monthly_salary는 음수일 수 없습니다."
+
+        assumptions = cast(Dict[str, Any], config.get("assumptions", {}))
+        if int(assumptions.get("simulation_years") or 0) <= 0:
+            return "assumptions.simulation_years는 1 이상이어야 합니다."
+
+        if float(assumptions.get("price_appreciation_rate") or 0.0) < 0:
+            return "assumptions.price_appreciation_rate는 음수일 수 없습니다."
+
+        real_estate = cast(Dict[str, Any], config.get("real_estate", {}))
+        ownership_ratio = float(real_estate.get("ownership_ratio") or 0.0)
+        if ownership_ratio < 0 or ownership_ratio > 1:
+            return "real_estate.ownership_ratio는 0과 1 사이여야 합니다."
+
+        return None
+
+    def get_cost_comparison_config(self) -> Dict[str, Any]:
+        self._ensure_cost_comparison_config_defaults()
+        return cast(Dict[str, Any], self.cost_comparison_config)
+
+    def update_cost_comparison_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
+        self._ensure_cost_comparison_config_defaults()
+        candidate_config = self._deep_merge_dict(self.cost_comparison_config, new_config)
+        validation_error = self._validate_cost_comparison_config(candidate_config)
+        if validation_error:
+            return {
+                "success": False,
+                "message": validation_error,
+                "data": self.cost_comparison_config,
+            }
+
+        self.cost_comparison_config = candidate_config
+        self.storage.save_json(self.cost_comparison_config_file, self.cost_comparison_config)
+        return {
+            "success": True,
+            "message": "비교 시뮬레이터 설정이 저장되었습니다.",
+            "data": self.cost_comparison_config,
+        }
+
+    def _build_cost_comparison_assumptions(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        active_master = self.get_active_master_portfolio()
+        if not active_master:
+            return {
+                "success": False,
+                "message": "활성 master portfolio가 없어 비교 시뮬레이션을 실행할 수 없습니다.",
+            }
+
+        master_calc = self.calculate_master_portfolio_tr(active_master)
+        if not master_calc.get("success"):
+            return cast(Dict[str, Any], master_calc)
+
+        calc_data = cast(Dict[str, Any], master_calc["data"])
+        pa_rate = float(
+            cast(Dict[str, Any], config.get("assumptions", {})).get("price_appreciation_rate", 0)
+        )
+        dy = float(calc_data.get("combined_yield") or 0.0)
+        tr = dy + (pa_rate / 100.0)
+
+        return {
+            "success": True,
+            "data": {
+                "portfolio_name": active_master.get("name", "Active Master"),
+                "dy": dy,
+                "pa": pa_rate / 100.0,
+                "tr": tr,
+                "simulation_years": int(
+                    cast(Dict[str, Any], config.get("assumptions", {})).get("simulation_years", 10)
+                ),
+                "base_year": int(
+                    cast(Dict[str, Any], config.get("policy_meta", {})).get("base_year", 2026)
+                ),
+            },
+        }
+
+    def _simulate_personal_cost_scenario(
+        self,
+        tax_engine: TaxEngine,
+        assumptions: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        personal_assets = cast(Dict[str, Any], config.get("personal_assets", {}))
+        real_estate = cast(Dict[str, Any], config.get("real_estate", {}))
+        asset_base = float(personal_assets.get("investment_assets") or 0.0)
+        property_value = float(real_estate.get("official_price") or 0.0) * float(
+            real_estate.get("ownership_ratio") or 0.0
+        )
+        tr = float(assumptions["tr"])
+        simulation_years = int(assumptions["simulation_years"])
+
+        series: List[Dict[str, Any]] = []
+        annual_revenue = 0.0
+        income_tax = 0.0
+        annual_health = 0.0
+        annual_disposable = 0.0
+        annual_net_growth = 0.0
+        for year in range(1, simulation_years + 1):
+            annual_revenue = asset_base * tr
+            personal_profit = tax_engine.calculate_personal_profitability(
+                asset_base, tr, property_value
+            )
+            income_tax = float(personal_profit["income_tax"])
+            annual_health = float(personal_profit["annual_health_premium"])
+            annual_disposable = float(personal_profit["household_income"]) * 12
+            annual_net_growth = annual_revenue - income_tax - annual_health
+            asset_base = max(0.0, asset_base + annual_net_growth)
+            series.append(
+                {
+                    "year": year,
+                    "net_worth": asset_base,
+                    "disposable_cash": annual_disposable,
+                }
+            )
+
+        return {
+            "kpis": {
+                "monthly_disposable_cashflow": annual_disposable / 12,
+                "annual_total_cost": income_tax + annual_health,
+                "annual_health_insurance": annual_health,
+                "after_tax_net_growth": annual_net_growth,
+            },
+            "breakdown": {
+                "tax": income_tax,
+                "health_insurance": annual_health,
+                "social_insurance": 0.0,
+                "fixed_cost": 0.0,
+                "shareholder_loan_repayment": 0.0,
+                "retained_earnings": annual_net_growth,
+            },
+            "series": series,
+        }
+
+    def _simulate_corporate_cost_scenario(
+        self,
+        tax_engine: TaxEngine,
+        assumptions: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        personal_assets = cast(Dict[str, Any], config.get("personal_assets", {}))
+        corporate = cast(Dict[str, Any], config.get("corporate", {}))
+        salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
+        asset_base = float(personal_assets.get("investment_assets") or 0.0)
+        tr = float(assumptions["tr"])
+        simulation_years = int(assumptions["simulation_years"])
+        monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
+        loan_remaining = float(corporate.get("initial_shareholder_loan") or 0.0)
+        annual_loan_target = float(corporate.get("annual_shareholder_loan_repayment") or 0.0)
+
+        company_health_component = 0.0
+        employee_health_component = 0.0
+        social_insurance = 0.0
+        net_salary_annual = 0.0
+        gross_salary_annual = 0.0
+        annual_revenue = 0.0
+        corp_tax = 0.0
+        fixed_cost_annual = 0.0
+        annual_disposable = 0.0
+        retained_earnings = 0.0
+        actual_loan_repayment = 0.0
+        cumulative_loan_repayment = 0.0
+        series: List[Dict[str, Any]] = []
+
+        for year in range(1, simulation_years + 1):
+            annual_revenue = asset_base * tr
+            gross_salary_annual = 0.0
+            net_salary_annual = 0.0
+            company_health_component = 0.0
+            employee_health_component = 0.0
+            social_insurance = 0.0
+
+            for recipient in salary_recipients:
+                monthly_salary = float(recipient.get("monthly_salary") or 0.0)
+                salary_info = tax_engine.calculate_income_tax(monthly_salary)
+                gross_salary_annual += monthly_salary * 12
+                net_salary_annual += float(salary_info["net_salary"]) * 12
+                employee_health_component += float(salary_info["health"]) * 12
+                company_health_component += monthly_salary * tax_engine.health_rate * 12
+                social_insurance += (
+                    float(salary_info["pension"]) + (monthly_salary * tax_engine.employment_rate)
+                ) * 12
+                social_insurance += (
+                    monthly_salary * (tax_engine.pension_rate + tax_engine.employment_rate) * 12
+                )
+
+            fixed_cost_annual = monthly_fixed_cost * 12
+            company_insurance_total = gross_salary_annual * (
+                tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
+            )
+            tax_base = max(
+                0.0,
+                annual_revenue - gross_salary_annual - fixed_cost_annual - company_insurance_total,
+            )
+            corp_tax = tax_engine.calculate_corp_tax(tax_base)
+            post_tax_profit = (
+                annual_revenue
+                - gross_salary_annual
+                - fixed_cost_annual
+                - company_insurance_total
+                - corp_tax
+            )
+            actual_loan_repayment = min(
+                max(0.0, post_tax_profit), loan_remaining, annual_loan_target
+            )
+            loan_remaining = max(0.0, loan_remaining - actual_loan_repayment)
+            cumulative_loan_repayment += actual_loan_repayment
+            annual_disposable = net_salary_annual + actual_loan_repayment
+            retained_earnings = post_tax_profit - actual_loan_repayment
+            asset_base = max(0.0, asset_base + retained_earnings)
+            series.append(
+                {
+                    "year": year,
+                    "net_worth": asset_base + cumulative_loan_repayment,
+                    "disposable_cash": annual_disposable,
+                }
+            )
+
+        annual_health = (company_health_component + employee_health_component) * (
+            1 + tax_engine.ltc_rate
+        )
+        return {
+            "kpis": {
+                "monthly_disposable_cashflow": annual_disposable / 12,
+                "annual_total_cost": corp_tax
+                + annual_health
+                + social_insurance
+                + fixed_cost_annual,
+                "annual_health_insurance": annual_health,
+                "after_tax_net_growth": retained_earnings,
+            },
+            "breakdown": {
+                "tax": corp_tax,
+                "health_insurance": annual_health,
+                "social_insurance": social_insurance,
+                "fixed_cost": fixed_cost_annual,
+                "shareholder_loan_repayment": actual_loan_repayment,
+                "retained_earnings": retained_earnings,
+            },
+            "series": series,
+        }
+
+    def _build_cost_comparison_summary(
+        self, personal: Dict[str, Any], corporate: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        annual_personal_value = float(personal["kpis"]["monthly_disposable_cashflow"]) * 12 + float(
+            personal["kpis"]["after_tax_net_growth"]
+        )
+        annual_corporate_value = float(
+            corporate["kpis"]["monthly_disposable_cashflow"]
+        ) * 12 + float(corporate["kpis"]["after_tax_net_growth"])
+        cumulative_personal = float(cast(List[Dict[str, Any]], personal["series"])[-1]["net_worth"])
+        cumulative_corporate = float(
+            cast(List[Dict[str, Any]], corporate["series"])[-1]["net_worth"]
+        )
+
+        driver_map = {
+            "건강보험료": float(personal["breakdown"]["health_insurance"])
+            - float(corporate["breakdown"]["health_insurance"]),
+            "세금": float(personal["breakdown"]["tax"]) - float(corporate["breakdown"]["tax"]),
+            "고정 운영비": float(personal["breakdown"]["fixed_cost"])
+            - float(corporate["breakdown"]["fixed_cost"]),
+            "사회보험": float(personal["breakdown"]["social_insurance"])
+            - float(corporate["breakdown"]["social_insurance"]),
+            "주주대여금 상환": float(corporate["breakdown"]["shareholder_loan_repayment"])
+            - float(personal["breakdown"]["shareholder_loan_repayment"]),
+        }
+        sorted_drivers = sorted(driver_map.items(), key=lambda item: abs(item[1]), reverse=True)
+        top_drivers = [{"label": label, "amount": amount} for label, amount in sorted_drivers[:3]]
+        while len(top_drivers) < 3:
+            top_drivers.append({"label": "-", "amount": 0.0})
+
+        return {
+            "winner": (
+                "corporate" if annual_corporate_value >= annual_personal_value else "personal"
+            ),
+            "annual_advantage": annual_corporate_value - annual_personal_value,
+            "cumulative_advantage": cumulative_corporate - cumulative_personal,
+            "top_drivers": top_drivers,
+        }
+
+    def run_cost_comparison(
+        self, config_override: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        self._ensure_cost_comparison_config_defaults()
+        effective_config = self.cost_comparison_config
+        if config_override:
+            effective_config = self._deep_merge_dict(self.cost_comparison_config, config_override)
+
+        validation_error = self._validate_cost_comparison_config(effective_config)
+        if validation_error:
+            return {"success": False, "message": validation_error}
+
+        assumptions_result = self._build_cost_comparison_assumptions(effective_config)
+        if not assumptions_result.get("success"):
+            return cast(Dict[str, Any], assumptions_result)
+
+        assumptions = cast(Dict[str, Any], assumptions_result["data"])
+        tax_engine = TaxEngine(config=self.retirement_config.get("tax_and_insurance", {}))
+        personal = self._simulate_personal_cost_scenario(tax_engine, assumptions, effective_config)
+        corporate = self._simulate_corporate_cost_scenario(
+            tax_engine, assumptions, effective_config
+        )
+        warnings: List[str] = []
+        personal_annual_revenue = float(
+            effective_config.get("personal_assets", {}).get("investment_assets", 0.0)
+        ) * float(assumptions["tr"])
+        if not cast(
+            List[Dict[str, Any]], effective_config.get("corporate", {}).get("salary_recipients", [])
+        ):
+            warnings.append(
+                "법인운용 시나리오에 급여 수령자가 없어 "
+                "직장건보 절감 효과가 과소/과대 추정될 수 있습니다."
+            )
+        elif personal_annual_revenue > 20000000:
+            warnings.append(
+                "개인 명의 보수 외 소득이 커서 보수 외 소득월액보험료가 " "추가 부과될 수 있습니다."
+            )
+
+        return {
+            "success": True,
+            "data": {
+                "assumptions": assumptions,
+                "personal": personal,
+                "corporate": corporate,
+                "comparison": self._build_cost_comparison_summary(personal, corporate),
+                "warnings": warnings,
+            },
+        }
+
     def _normalize_portfolio_category(self, account_type: str, category: str) -> str:
         """계좌 타입 기준 전략 카테고리 이름을 정규화합니다."""
         normalized_account = account_type or "Corporate"
@@ -849,6 +1221,7 @@ class DividendBackend:
             "portfolios": deepcopy(self.portfolios),
             "master_portfolios": deepcopy(self.master_portfolios),
             "retirement_config": deepcopy(self.retirement_config),
+            "cost_comparison_config": deepcopy(self.cost_comparison_config),
             "retirement_snapshot": deepcopy(self.get_retirement_snapshot()),
         }
 
@@ -863,15 +1236,20 @@ class DividendBackend:
         self.portfolios = cast(List[Dict[str, Any]], restored.get("portfolios", []))
         self.master_portfolios = cast(List[Dict[str, Any]], restored.get("master_portfolios", []))
         self.retirement_config = cast(Dict[str, Any], restored.get("retirement_config", {}))
+        self.cost_comparison_config = cast(
+            Dict[str, Any], restored.get("cost_comparison_config", {})
+        )
 
         self._normalize_all_portfolios()
         self._ensure_retirement_config_defaults()
+        self._ensure_cost_comparison_config_defaults()
 
         self.storage.save_json(self.settings_file, self.settings)
         self.storage.save_json(self.watchlist_file, self.watchlist)
         self.storage.save_json(self.portfolios_file, self.portfolios)
         self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
         self.storage.save_json(self.retirement_config_file, self.retirement_config)
+        self.storage.save_json(self.cost_comparison_config_file, self.cost_comparison_config)
         self.storage.save_json(
             self.snapshot_file, cast(Dict[str, Any], restored.get("retirement_snapshot", {}))
         )

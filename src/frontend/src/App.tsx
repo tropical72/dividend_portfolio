@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import {
+  Scale,
   ListTodo,
   Wallet,
   Settings,
@@ -12,6 +13,7 @@ import { WatchlistTab } from "./components/WatchlistTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { PortfolioTab } from "./components/PortfolioTab";
 import { RetirementTab } from "./components/RetirementTab";
+import { CostComparisonTab } from "./components/CostComparisonTab";
 import { I18nProvider, useI18n } from "./i18n";
 import type {
   AccountType,
@@ -176,6 +178,13 @@ function AppShell({
           testId="nav-retirement"
           onClick={() => setActiveTab("retirement")}
         />
+        <NavButton
+          active={activeTab === "cost-comparison"}
+          icon={<Scale />}
+          label={t("app.costComparison")}
+          testId="nav-cost-comparison"
+          onClick={() => setActiveTab("cost-comparison")}
+        />
 
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">
           {t("app.assetManager")}
@@ -227,6 +236,7 @@ function AppShell({
       <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
         <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-800 p-10 shadow-sm min-h-full">
           {activeTab === "retirement" && <RetirementTab />}
+          {activeTab === "cost-comparison" && <CostComparisonTab />}
           {activeTab === "assets" && (
             <PortfolioTab
               items={designItems}

@@ -72,6 +72,15 @@ class RetirementConfigRequest(BaseModel):
     strategy_rules: Optional[Dict[str, Any]] = None
 
 
+class CostComparisonConfigRequest(BaseModel):
+    household: Optional[Dict[str, Any]] = None
+    personal_assets: Optional[Dict[str, Any]] = None
+    real_estate: Optional[Dict[str, Any]] = None
+    assumptions: Optional[Dict[str, Any]] = None
+    corporate: Optional[Dict[str, Any]] = None
+    policy_meta: Optional[Dict[str, Any]] = None
+
+
 class MasterPortfolioRequest(BaseModel):
     name: str
     corp_id: Optional[str] = None
@@ -195,6 +204,23 @@ async def get_retirement_config():
 async def update_retirement_config(req: RetirementConfigRequest):
     config_dict = req.model_dump(exclude_none=True)
     return backend.update_retirement_config(config_dict)
+
+
+@app.get("/api/cost-comparison/config")
+async def get_cost_comparison_config():
+    return {"success": True, "data": backend.get_cost_comparison_config()}
+
+
+@app.post("/api/cost-comparison/config")
+async def update_cost_comparison_config(req: CostComparisonConfigRequest):
+    config_dict = req.model_dump(exclude_none=True)
+    return backend.update_cost_comparison_config(config_dict)
+
+
+@app.post("/api/cost-comparison/run")
+async def run_cost_comparison(req: Optional[CostComparisonConfigRequest] = None):
+    config_override = req.model_dump(exclude_none=True) if req else {}
+    return backend.run_cost_comparison(config_override)
 
 
 @app.get("/api/retirement/simulate")

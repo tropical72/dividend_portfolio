@@ -239,3 +239,93 @@ export interface SimulationResult {
     };
   };
 }
+
+export interface CostComparisonHouseholdMember {
+  id: string;
+  relationship: string;
+  birth_year: number;
+  birth_month: number;
+  is_financially_dependent: boolean;
+  has_income: boolean;
+  notes: string;
+}
+
+export interface CostComparisonSalaryRecipient {
+  id: string;
+  name: string;
+  relationship: string;
+  monthly_salary: number;
+  is_employee_insured: boolean;
+}
+
+export interface CostComparisonConfig {
+  household: {
+    members: CostComparisonHouseholdMember[];
+  };
+  personal_assets: {
+    investment_assets: number;
+    personal_pension_assets: number;
+  };
+  real_estate: {
+    official_price: number;
+    ownership_ratio: number;
+  };
+  assumptions: {
+    price_appreciation_rate: number;
+    simulation_years: number;
+  };
+  corporate: {
+    salary_recipients: CostComparisonSalaryRecipient[];
+    monthly_fixed_cost: number;
+    initial_shareholder_loan: number;
+    annual_shareholder_loan_repayment: number;
+  };
+  policy_meta: {
+    base_year: number;
+  };
+}
+
+export interface CostComparisonScenarioResult {
+  kpis: {
+    monthly_disposable_cashflow: number;
+    annual_total_cost: number;
+    annual_health_insurance: number;
+    after_tax_net_growth: number;
+  };
+  breakdown: {
+    tax: number;
+    health_insurance: number;
+    social_insurance: number;
+    fixed_cost: number;
+    shareholder_loan_repayment: number;
+    retained_earnings: number;
+  };
+  series: Array<{
+    year: number;
+    net_worth: number;
+    disposable_cash: number;
+  }>;
+}
+
+export interface CostComparisonResult {
+  assumptions: {
+    portfolio_name: string;
+    dy: number;
+    pa: number;
+    tr: number;
+    simulation_years: number;
+    base_year: number;
+  };
+  personal: CostComparisonScenarioResult;
+  corporate: CostComparisonScenarioResult;
+  comparison: {
+    winner: "personal" | "corporate";
+    annual_advantage: number;
+    cumulative_advantage: number;
+    top_drivers: Array<{
+      label: string;
+      amount: number;
+    }>;
+  };
+  warnings: string[];
+}
