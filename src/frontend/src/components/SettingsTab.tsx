@@ -364,7 +364,7 @@ export function SettingsTab({
               <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
                 <InputGroup
                   label={t("settings.privatePension")}
-                  unit={t("settings.year")}
+                  unit={t("settings.age")}
                   tooltip={t("settings.privatePensionTooltip")}
                   value={retireConfig.user_profile.private_pension_start_age}
                   onChange={(v) =>
@@ -390,7 +390,7 @@ export function SettingsTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputGroup
                   label={t("settings.nationalPension")}
-                  unit={t("settings.year")}
+                  unit={t("settings.age")}
                   tooltip={t("settings.nationalPensionTooltip")}
                   testId="input-group-national-pension-start-age"
                   value={retireConfig.user_profile.national_pension_start_age}
@@ -1368,9 +1368,14 @@ export function SettingsTab({
                       initialValue={
                         (item.master_return || item.expected_return) * 100
                       }
-                      systemDefault={id === "v1" ? 0.0485 : 0.035}
+                      systemDefault={
+                        (id === "v1"
+                          ? item.master_return || item.expected_return
+                          : 0.035) * 100
+                      }
                       tooltip={t("settings.trTooltip")}
                       resetTitle={t("settings.restoreSystemDefault")}
+                      readOnly={id === "v1"}
                       onCommit={(v) =>
                         setRetireConfig({
                           ...retireConfig,
@@ -1378,8 +1383,10 @@ export function SettingsTab({
                             ...retireConfig.assumptions,
                             [id]: {
                               ...item,
-                              master_return: v / 100,
-                              expected_return: v / 100,
+                              master_return:
+                                id === "v1" ? item.master_return : v / 100,
+                              expected_return:
+                                id === "v1" ? item.expected_return : v / 100,
                             },
                           },
                         })
@@ -1728,6 +1735,7 @@ function EditableInput({
   systemDefault,
   tooltip,
   resetTitle,
+  readOnly = false,
   onCommit,
 }: {
   id?: string;
@@ -1737,6 +1745,7 @@ function EditableInput({
   systemDefault: number;
   tooltip: string;
   resetTitle: string;
+  readOnly?: boolean;
   onCommit: (val: number) => void;
 }) {
   const { isKorean } = useI18n();
@@ -1745,6 +1754,10 @@ function EditableInput({
     setValue(initialValue.toFixed(2));
   }, [initialValue]);
   const handleBlur = () => {
+    if (readOnly) {
+      setValue(initialValue.toFixed(2));
+      return;
+    }
     const num = parseFloat(value);
     if (!isNaN(num)) {
       onCommit(num);
@@ -1778,7 +1791,13 @@ function EditableInput({
             id={id}
             data-testid={id}
             type="text"
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-emerald-400 outline-none focus:border-blue-500/50 pr-10"
+            readOnly={readOnly}
+            className={cn(
+              "w-full border rounded-xl h-11 px-4 text-sm font-black outline-none pr-10",
+              readOnly
+                ? "bg-slate-950 text-slate-300 border-slate-800 cursor-default"
+                : "bg-slate-900 text-emerald-400 border-slate-800 focus:border-blue-500/50",
+            )}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onBlur={handleBlur}
@@ -1799,11 +1818,11 @@ function EditableInput({
             </span>
           )}
         </div>
-        {Math.abs(initialValue - systemDefault * 100) > 0.01 && (
+        {!readOnly && Math.abs(initialValue - systemDefault) > 0.01 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onCommit(systemDefault * 100);
+              onCommit(systemDefault);
             }}
             className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl text-blue-400 transition-all flex-shrink-0"
             title={resetTitle}

@@ -327,7 +327,11 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         },
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "inflation_rate": assumption["inflation_rate"],
-        "market_return_rate": assumption["expected_return"],
+        "market_return_rate": (
+            backend.get_standard_profile_return()
+            if active_id == "v1"
+            else assumption["expected_return"]
+        ),
         "birth_year": user_profile["birth_year"],
         "birth_month": user_profile["birth_month"],
         "private_pension_start_age": user_profile["private_pension_start_age"],

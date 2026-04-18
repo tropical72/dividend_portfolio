@@ -100,7 +100,7 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     );
 
     await page.goto("http://localhost:5173");
-    await page.getByRole("button", { name: "Retirement" }).click();
+    await page.getByTestId("nav-retirement").click();
     await expect(page.getByTestId("master-switcher-trigger")).toContainText(
       `Switch-A-${suffix}`,
     );
@@ -124,7 +124,15 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     const secondDividendYield = 9;
 
     await request.post("http://127.0.0.1:8000/api/settings", {
-      data: { price_appreciation_rate: paRate },
+      data: {
+        price_appreciation_rate: paRate,
+        appreciation_rates: {
+          cash_sgov: 0.1,
+          fixed_income: paRate,
+          dividend_stocks: paRate,
+          growth_stocks: paRate,
+        },
+      },
     });
 
     const firstCorpId = await createPortfolio(
@@ -169,7 +177,7 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     );
 
     await page.goto("http://localhost:5173");
-    await page.getByRole("button", { name: "Retirement" }).click();
+    await page.getByTestId("nav-retirement").click();
 
     const standardReturnInput = page.getByTestId("return-v1");
     await expect(standardReturnInput).toHaveValue(
@@ -214,8 +222,8 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     );
 
     await page.goto("http://localhost:5173");
-    await page.getByRole("button", { name: "Portfolio" }).click();
-    await page.getByRole("button", { name: "Manage & Compare" }).click();
+    await page.getByTestId("nav-asset-setup").click();
+    await page.getByTestId("portfolio-subtab-manage").click();
 
     const deleteButton = page.getByTestId(`delete-master-${activeMaster.id}`);
     await expect(deleteButton).toBeDisabled();

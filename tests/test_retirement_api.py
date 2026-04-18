@@ -228,11 +228,13 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     original_get_portfolio_by_id = backend.get_portfolio_by_id
     original_portfolios = backend.portfolios
     original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
+    original_get_standard_profile_return = backend.get_standard_profile_return
 
     try:
         backend.get_active_master_portfolio = lambda: None
         backend.get_portfolio_by_id = lambda _portfolio_id: None
         backend.portfolios = []
+        backend.get_standard_profile_return = lambda: 0.0
         backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
             "dividend_yield": 0.0,
             "expected_return": 0.0,
@@ -244,6 +246,7 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
         backend.get_active_master_portfolio = original_get_active_master_portfolio
         backend.get_portfolio_by_id = original_get_portfolio_by_id
         backend.portfolios = original_portfolios
+        backend.get_standard_profile_return = original_get_standard_profile_return
         backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
 
     assert response.status_code == 200
@@ -301,11 +304,13 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
     original_get_portfolio_by_id = backend.get_portfolio_by_id
     original_portfolios = backend.portfolios
     original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
+    original_get_standard_profile_return = backend.get_standard_profile_return
 
     try:
         backend.get_active_master_portfolio = lambda: None
         backend.get_portfolio_by_id = lambda _portfolio_id: None
         backend.portfolios = []
+        backend.get_standard_profile_return = lambda: 0.0
         backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
             "dividend_yield": 0.0,
             "expected_return": 0.0,
@@ -317,6 +322,7 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
         backend.get_active_master_portfolio = original_get_active_master_portfolio
         backend.get_portfolio_by_id = original_get_portfolio_by_id
         backend.portfolios = original_portfolios
+        backend.get_standard_profile_return = original_get_standard_profile_return
         backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
 
     assert response.status_code == 200

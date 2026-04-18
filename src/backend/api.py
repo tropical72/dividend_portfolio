@@ -16,6 +16,7 @@ class DividendBackend:
     DEFAULT_CORP_PORTFOLIO_ID = "8fd43042-687c-4b87-9f4f-a95499220b10"
     DEFAULT_PENSION_PORTFOLIO_ID = "4203df7d-6708-448b-ab72-4cb05b2b2f9e"
     DEFAULT_MASTER_PORTFOLIO_ID = "5a4f0ac9-c3b3-4561-a813-74a6e653d0d3"
+    DEFAULT_STANDARD_PROFILE_RETURN = 0.0485
 
     def __init__(self, data_dir: str = ".", ensure_default_master_bundle: bool = False) -> None:
         self.storage = StorageManager(data_dir=data_dir)
@@ -435,13 +436,14 @@ class DividendBackend:
 
     def _get_default_assumptions(self) -> Dict[str, Any]:
         """사용자 화면에 노출되는 기본 가정 프로필 스키마를 반환합니다."""
+        standard_return = self.get_standard_profile_return()
         return {
             "v1": {
                 "name": "Standard Profile",
-                "expected_return": 0.0485,
+                "expected_return": standard_return,
                 "expected_growth": 0.02,
                 "inflation_rate": 0.025,
-                "master_return": 0.0485,
+                "master_return": standard_return,
                 "master_inflation": 0.025,
             },
             "conservative": {
@@ -452,6 +454,90 @@ class DividendBackend:
                 "master_return": 0.035,
                 "master_inflation": 0.035,
             },
+        }
+
+    def get_standard_profile_return(self) -> float:
+        """표준 프로필은 현재 활성 마스터 전략의 TR을 기본값으로 사용한다."""
+        active_master = self.get_active_master_portfolio()
+        if active_master:
+            master_calc = self.calculate_master_portfolio_tr(active_master)
+            if master_calc.get("success"):
+                combined_tr = cast(Dict[str, Any], master_calc["data"]).get("combined_tr")
+                if combined_tr is not None:
+                    return float(combined_tr)
+
+        default_master = next(
+            (m for m in self.master_portfolios if m.get("id") == self.DEFAULT_MASTER_PORTFOLIO_ID),
+            None,
+        )
+        if default_master:
+            master_calc = self.calculate_master_portfolio_tr(default_master)
+            if master_calc.get("success"):
+                combined_tr = cast(Dict[str, Any], master_calc["data"]).get("combined_tr")
+                if combined_tr is not None:
+                    return float(combined_tr)
+
+        return self.DEFAULT_STANDARD_PROFILE_RETURN
+
+    def _get_default_retirement_config(self) -> Dict[str, Any]:
+        """은퇴 설정의 기본 초기값을 반환합니다."""
+        return {
+            "active_assumption_id": "v1",
+            "assumptions": self._get_default_assumptions(),
+            "strategy_rules": self._get_default_strategy_rules(),
+            "user_profile": {
+                "birth_year": 1972,
+                "birth_month": 8,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 65,
+            },
+            "simulation_params": {
+                "target_monthly_cashflow": 11000000,
+                "inflation_rate": 0.025,
+                "expected_market_growth": 0.0485,
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "national_pension_amount": 2000000,
+                "simulation_years": 40,
+            },
+            "corp_params": {
+                "initial_investment": 1600000000,
+                "capital_stock": 50000000,
+                "initial_shareholder_loan": 1550000000,
+                "monthly_salary": 2500000,
+                "monthly_fixed_cost": 500000,
+                "employee_count": 1,
+            },
+            "pension_params": {
+                "initial_investment": 600000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 2500000,
+            },
+            "personal_params": {
+                "real_estate_price": 620000000,
+                "other_assets": 0,
+            },
+            "tax_and_insurance": {
+                "point_unit_price": 211.5,
+                "ltc_rate": 0.12,
+                "corp_tax_threshold": 200000000,
+                "corp_tax_low_rate": 0.1,
+                "corp_tax_high_rate": 0.2,
+                "pension_rate": 0.045,
+                "health_rate": 0.035,
+                "employment_rate": 0.009,
+                "income_tax_estimate_rate": 0.15,
+            },
+            "trigger_thresholds": {
+                "tax_threshold": 200000000,
+                "target_buffer_months": 30,
+                "high_income_cap_rate": 0.4,
+                "market_panic_threshold": -0.2,
+                "equity_yield_multiplier": 1.2,
+                "debt_yield_multiplier": 0.6,
+            },
+            "planned_cashflows": [],
         }
 
     def _sanitize_retirement_assumptions(self) -> None:
@@ -467,6 +553,10 @@ class DividendBackend:
             sanitized_assumptions[assumption_id] = self._deep_merge_dict(
                 default_value, current_value
             )
+
+        standard_return = self.get_standard_profile_return()
+        sanitized_assumptions["v1"]["expected_return"] = standard_return
+        sanitized_assumptions["v1"]["master_return"] = standard_return
 
         active_assumption_id = self.retirement_config.get("active_assumption_id")
         if active_assumption_id not in sanitized_assumptions:
@@ -488,11 +578,7 @@ class DividendBackend:
     def _ensure_retirement_config_defaults(self) -> None:
         """은퇴 설정에 필요한 기본 스키마를 보강합니다."""
         self.retirement_config = self._deep_merge_dict(
-            {
-                "active_assumption_id": "v1",
-                "assumptions": self._get_default_assumptions(),
-                "strategy_rules": self._get_default_strategy_rules(),
-            },
+            self._get_default_retirement_config(),
             self.retirement_config,
         )
         self._sanitize_retirement_assumptions()
@@ -1021,7 +1107,7 @@ class DividendBackend:
         return {"success": True, "data": new_m}
 
     def activate_master_portfolio(self, m_id: str) -> Dict[str, Any]:
-        """특정 마스터 전략을 활성화하고, 해당 수익률을 Standard Profile(v1)에 자동 반영합니다."""
+        """특정 마스터 전략을 활성화합니다."""
         found_m = next((m for m in self.master_portfolios if m["id"] == m_id), None)
         if not found_m:
             return {"success": False, "message": "전략을 찾을 수 없습니다."}
@@ -1039,20 +1125,10 @@ class DividendBackend:
 
         combined_tr = cast(Dict[str, Any], master_calc["data"])["combined_tr"]
 
-        # [NEW] retirement_config.json의 v1(Standard) 수익률 자동 업데이트
-        if (
-            combined_tr is not None
-            and "assumptions" in self.retirement_config
-            and "v1" in self.retirement_config["assumptions"]
-        ):
-            self.retirement_config["assumptions"]["v1"]["expected_return"] = combined_tr
-            self.retirement_config["assumptions"]["v1"]["master_return"] = combined_tr
-            self.storage.save_json(self.retirement_config_file, self.retirement_config)
-
         self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
         return {
             "success": True,
-            "message": "전략이 활성화되었으며 Standard Profile에 반영되었습니다.",
+            "message": "전략이 활성화되었습니다.",
             "yield": combined_tr,
         }
 

@@ -106,6 +106,7 @@ const translations = {
     "settings.birthYear": "Birth Year",
     "settings.birthYearTooltip":
       "Enter the birth year. It is used as the base for age calculations.",
+    "settings.age": "Age",
     "settings.birthMonth": "Birth Month",
     "settings.birthMonthTooltip":
       "Enter the birth month. It is used to calculate pension start timing precisely.",
@@ -249,12 +250,12 @@ const translations = {
     "settings.assumptionsTooltip":
       "Define future scenarios for market return and inflation.",
     "settings.assumptionStandardTooltip":
-      "Scenario assuming standard market conditions.",
+      "Standard Profile TR is derived from the currently active master portfolio.",
     "settings.assumptionConservativeTooltip":
       "Scenario assuming conservative and defensive market conditions.",
     "settings.tr": "TR",
     "settings.trTooltip":
-      "Enter the expected Total Return in percentage terms.",
+      "For Standard Profile, TR is derived from the active master portfolio. Other scenarios can be edited directly.",
     "settings.dy": "Dividend Yield",
     "settings.dyTooltip": "Dividend yield from historical data.",
     "settings.inflationRate": "Inflation Rate",
@@ -377,6 +378,7 @@ const translations = {
     "settings.birthYear": "출생 연도",
     "settings.birthYearTooltip":
       "만 나이 계산의 기준이 되는 출생 연도를 입력합니다.",
+    "settings.age": "세",
     "settings.birthMonth": "출생 월",
     "settings.birthMonthTooltip":
       "연금 시작 시점을 정밀하게 계산하기 위한 출생 월입니다.",
@@ -510,11 +512,12 @@ const translations = {
     "settings.assumptionsTooltip":
       "시장 수익률과 인플레이션에 대한 미래 시나리오를 정의합니다.",
     "settings.assumptionStandardTooltip":
-      "표준적인 시장 상황을 가정한 시나리오입니다.",
+      "표준 프로필 TR은 현재 활성 마스터 포트폴리오의 계산 TR을 사용합니다.",
     "settings.assumptionConservativeTooltip":
       "보수적이고 방어적인 시장 상황을 가정한 시나리오입니다.",
     "settings.tr": "TR",
-    "settings.trTooltip": "미래 예상 TR(총수익률)을 % 단위로 입력합니다.",
+    "settings.trTooltip":
+      "표준 프로필 TR은 활성 마스터 포트폴리오 기준으로 계산되며, 다른 시나리오는 직접 수정할 수 있습니다.",
     "settings.dy": "배당수익률",
     "settings.dyTooltip": "과거 데이터 기반 배당수익률입니다.",
     "settings.inflationRate": "인플레이션율",

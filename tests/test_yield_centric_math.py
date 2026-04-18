@@ -12,7 +12,16 @@ def temp_backend(tmp_path):
     data_dir.mkdir()
 
     # 기본 설정 파일 생성 (PA 포함)
-    settings = {"price_appreciation_rate": 3.5, "current_exchange_rate": 1400.0}
+    settings = {
+        "price_appreciation_rate": 3.5,
+        "current_exchange_rate": 1400.0,
+        "appreciation_rates": {
+            "cash_sgov": 0.1,
+            "fixed_income": 2.5,
+            "dividend_stocks": 3.5,
+            "growth_stocks": 3.5,
+        },
+    }
     with open(data_dir / "settings.json", "w") as f:
         json.dump(settings, f)
 
@@ -60,14 +69,13 @@ def test_master_portfolio_combined_tr_logic(temp_backend):
     master_list = temp_backend.get_master_portfolios()
     master = master_list[0]
 
-    # combined_yield 필드(실제로는 TR)가 7.5%여야 함
-    assert master["combined_yield"] == pytest.approx(0.075)
-    assert master["combined_tr"] == pytest.approx(0.075)
+    assert master["combined_yield"] == pytest.approx(4.0)
+    assert master["combined_tr"] == pytest.approx(7.5)
     assert master["broken_reference"] is False
 
 
-def test_activate_master_portfolio_syncs_standard_profile_to_master_tr(temp_backend):
-    """마스터 전략 활성화 시 Standard Profile의 표시/적용 수익률이 모두 TR로 동기화되어야 한다."""
+def test_activate_master_portfolio_exposes_master_tr_as_standard_profile_default(temp_backend):
+    """표준 프로필의 기본 TR은 활성 마스터 전략의 계산 TR을 따라야 한다."""
     created = temp_backend.add_master_portfolio("Master Strategy", corp_id="test-p-1")
     master_id = created["data"]["id"]
 
@@ -75,12 +83,10 @@ def test_activate_master_portfolio_syncs_standard_profile_to_master_tr(temp_back
 
     assert result["success"] is True
     assert result["yield"] == pytest.approx(0.075)
-    assert temp_backend.retirement_config["assumptions"]["v1"]["expected_return"] == pytest.approx(
-        0.075
-    )
-    assert temp_backend.retirement_config["assumptions"]["v1"]["master_return"] == pytest.approx(
-        0.075
-    )
+
+    config = temp_backend.get_retirement_config()
+    assert config["assumptions"]["v1"]["expected_return"] == pytest.approx(0.075)
+    assert config["assumptions"]["v1"]["master_return"] == pytest.approx(0.075)
 
 
 def test_broken_master_reference_does_not_fallback_to_default_tr(temp_backend):

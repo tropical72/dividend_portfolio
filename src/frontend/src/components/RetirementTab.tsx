@@ -614,13 +614,18 @@ export function RetirementTab() {
                         ? standardMasterReturn
                         : (item.master_return ?? 0.0485)) * 100
                     }
+                    readOnly={id === "v1"}
                     onCommit={async (v) => {
                       const nc = {
                         ...config,
                         active_assumption_id: id,
                         assumptions: {
                           ...config.assumptions,
-                          [id]: { ...item, expected_return: v / 100 },
+                          [id]: {
+                            ...item,
+                            expected_return:
+                              id === "v1" ? item.expected_return : v / 100,
+                          },
                         },
                       };
                       setConfig(nc);
@@ -1112,11 +1117,13 @@ function EditableInput({
   id,
   initialValue,
   masterValue,
+  readOnly = false,
   onCommit,
 }: {
   id: string;
   initialValue: number;
   masterValue: number;
+  readOnly?: boolean;
   onCommit: (val: number) => void;
 }) {
   const { isKorean, t } = useI18n();
@@ -1135,11 +1142,19 @@ function EditableInput({
           id={id}
           data-testid={id}
           type="text"
-          className="bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 w-28 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500 transition-all pr-10"
+          readOnly={readOnly}
+          className={cn(
+            "border rounded-xl px-4 py-2.5 w-28 text-lg font-black outline-none transition-all pr-10",
+            readOnly
+              ? "bg-slate-950 border-slate-800 text-slate-300 cursor-default"
+              : "bg-slate-950/80 border-slate-700 text-emerald-400 focus:border-emerald-500",
+          )}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={() =>
-            !isNaN(parseFloat(value)) && onCommit(parseFloat(value))
+            !readOnly &&
+            !isNaN(parseFloat(value)) &&
+            onCommit(parseFloat(value))
           }
           onKeyDown={(e) =>
             e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()
@@ -1156,7 +1171,7 @@ function EditableInput({
           %
         </span>
       </div>
-      {Math.abs(initialValue - masterValue) > 0.05 && (
+      {!readOnly && Math.abs(initialValue - masterValue) > 0.05 && (
         <button
           onClick={(e) => {
             e.stopPropagation();
