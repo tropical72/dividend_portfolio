@@ -25,7 +25,7 @@ test.describe("National Pension Graph Regression", () => {
 
     const seededState = JSON.parse(JSON.stringify(originalState)) as Record<
       string,
-      any
+      unknown
     >;
 
     seededState.settings = {

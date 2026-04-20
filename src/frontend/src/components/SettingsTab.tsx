@@ -1674,10 +1674,34 @@ function InputGroup({
   testId?: string;
 }) {
   const { isKorean } = useI18n();
-  const numericValue = value || 0;
-  const displayValue = isCurrency
-    ? Math.floor(numericValue).toLocaleString()
-    : numericValue.toString();
+  const formatDisplayValue = (nextValue: number | string) => {
+    const raw = String(nextValue ?? "");
+    if (raw === "") return "";
+
+    const normalized = raw.replace(/,/g, "");
+    const [integerPart = "", decimalPart] = normalized.split(".");
+    const formattedInteger =
+      integerPart === ""
+        ? ""
+        : Number(integerPart).toLocaleString("ko-KR", {
+            maximumFractionDigits: 0,
+          });
+
+    if (decimalPart !== undefined) {
+      return `${formattedInteger}.${decimalPart}`;
+    }
+
+    return formattedInteger;
+  };
+  const [inputValue, setInputValue] = useState(() => formatDisplayValue(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setInputValue(formatDisplayValue(value));
+    }
+  }, [isFocused, value]);
+
   return (
     <div
       className="space-y-1.5"
@@ -1716,15 +1740,29 @@ function InputGroup({
       <div className="relative">
         <input
           type="text"
-          value={displayValue}
+          value={inputValue}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => {
+            setIsFocused(false);
+            if (inputValue === "") {
+              setInputValue(formatDisplayValue(value));
+            }
+          }}
           onChange={(e) => {
-            const rawValue = e.target.value.replace(/,/g, "");
-            onChange(rawValue === "" ? "0" : rawValue);
+            const sanitized = e.target.value.replace(/[^\d.]/g, "");
+            const parts = sanitized.split(".");
+            const normalized =
+              parts.length > 1
+                ? `${parts[0]}.${parts.slice(1).join("")}`
+                : (parts[0] ?? "");
+            setInputValue(formatDisplayValue(normalized));
+            onChange(normalized);
           }}
           className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
         />
         {(isCurrency || unit) && (
           <span
+            data-testid={`${testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`}-unit`}
             className={cn(
               "absolute right-4 top-1/2 -translate-y-1/2",
               isKorean

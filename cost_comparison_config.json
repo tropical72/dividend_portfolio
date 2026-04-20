@@ -1,0 +1,31 @@
+{
+    "household": {
+        "members": []
+    },
+    "personal_assets": {
+        "investment_assets": 1600000000,
+        "personal_pension_assets": 700000000
+    },
+    "real_estate": {
+        "official_price": 650000000,
+        "ownership_ratio": 1
+    },
+    "assumptions": {
+        "price_appreciation_rate": 5.5,
+        "simulation_years": 10,
+        "target_monthly_household_cash_after_tax": 10000000
+    },
+    "corporate": {
+        "salary_recipients": [
+            {
+                "monthly_salary": 2500000
+            }
+        ],
+        "monthly_fixed_cost": 500000,
+        "initial_shareholder_loan": 1590000000,
+        "annual_shareholder_loan_repayment": 90000000
+    },
+    "policy_meta": {
+        "base_year": 2026
+    }
+}

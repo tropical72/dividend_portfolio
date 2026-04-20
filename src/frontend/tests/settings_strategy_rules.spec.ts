@@ -50,7 +50,13 @@ test.describe("Settings Strategy Rules", () => {
     const monthlyLivingCostInput = page
       .getByTestId("input-group-monthly-living-cost")
       .locator("input");
-    await monthlyLivingCostInput.fill("10,000,000");
+    await monthlyLivingCostInput.fill("");
+    await expect(monthlyLivingCostInput).toHaveValue("");
+    await monthlyLivingCostInput.type("10000000");
+    await expect(monthlyLivingCostInput).toHaveValue("10,000,000");
+    await expect(
+      page.getByTestId("input-group-monthly-living-cost-unit"),
+    ).toContainText(/KRW|원/i);
 
     const uiLanguageSelect = page.getByTestId("ui-language-select");
     await uiLanguageSelect.selectOption("en");

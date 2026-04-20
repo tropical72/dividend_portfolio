@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import type { UiLanguage } from "./types";
 
-type TranslationKey = keyof typeof translations.en;
+export type TranslationKey = keyof typeof translations.en;
 
 type I18nContextValue = {
   language: UiLanguage;
@@ -308,26 +308,140 @@ const translations = {
     "costComparison.realEstateRatio": "Ownership Ratio",
     "costComparison.paRate": "Price Appreciation",
     "costComparison.simulationYears": "Simulation Years",
+    "costComparison.targetMonthlyCash": "Target After-tax Monthly Cash",
     "costComparison.monthlyFixedCost": "Monthly Fixed Cost",
     "costComparison.initialLoan": "Initial Shareholder Loan",
     "costComparison.annualLoanRepayment": "Annual Loan Repayment",
     "costComparison.salary": "Monthly Salary",
+    "costComparison.ratioUnit": "ratio",
+    "costComparison.yearUnit": "years",
     "costComparison.assumptionPortfolio": "Active Portfolio",
     "costComparison.personal": "Personal",
     "costComparison.corporate": "Corporate",
-    "costComparison.monthlyCash": "Monthly Disposable Cash",
+    "costComparison.monthlyCash": "Target Monthly Cash",
     "costComparison.annualTotalCost": "Annual Total Cost",
     "costComparison.healthInsurance": "Health Insurance",
-    "costComparison.netGrowth": "After-tax Net Growth",
+    "costComparison.netGrowth": "Required Assets",
+    "costComparison.requiredRevenue": "Required Annual Revenue",
+    "costComparison.assetMargin": "Current Asset Margin",
     "costComparison.tax": "Tax",
     "costComparison.socialInsurance": "Social Insurance",
     "costComparison.fixedCost": "Fixed Cost",
+    "costComparison.payrollWithholding": "Payroll Withholding",
+    "costComparison.retainedEarnings": "Retained Earnings",
     "costComparison.breakdownTitle": "Cost Breakdown",
-    "costComparison.cumulativeTitle": "Cumulative Net Worth",
+    "costComparison.cumulativeTitle": "Required Assets Comparison",
+    "costComparison.householdCashTitle": "Current Asset Margin Comparison",
+    "costComparison.totalValueTitle": "Target Cash Composition",
+    "costComparison.sustainabilityTitle": "Current Asset Sustainability",
+    "costComparison.loanGapTitle": "Corporate Loan Gap",
+    "costComparison.loanGapRequired": "Required Loan Repayment",
+    "costComparison.loanGapConfigured": "Configured Loan Limit",
+    "costComparison.loanGap": "Gap",
+    "costComparison.assetFeasibility": "Asset Feasibility",
+    "costComparison.loanFeasibility": "Loan Capacity",
+    "costComparison.setupFeasibility": "Overall Setup",
+    "costComparison.feasible": "Feasible",
+    "costComparison.notFeasible": "Not Feasible",
     "costComparison.waterfallTitle": "Revenue to Disposable Cash",
+    "costComparison.waterfallBasis":
+      "Revenue is annual projected investment return, calculated as investment assets multiplied by TR. In the corporate case, retained earnings stay inside the company, so household disposable cash can be much lower than revenue.",
+    "costComparison.cumulativeNote":
+      "Lower is better. This chart compares how much investment asset base each structure needs to fund the same target after-tax monthly household cash.",
+    "costComparison.householdCashNote":
+      "Positive is better. This chart compares how much current investment asset cushion remains after meeting the required asset threshold.",
+    "costComparison.totalValueNote":
+      "This chart shows how the target monthly household cash is assembled in each structure.",
+    "costComparison.sustainabilityNote":
+      "Shows how many years the current asset base can keep funding the target monthly household cash under the current settings.",
+    "costComparison.waterfallNote":
+      "Read left to right. The chart starts with annual revenue, subtracts each cost bucket, and ends with annual disposable cash.",
     "costComparison.warningTitle": "Warnings",
     "costComparison.revenue": "Revenue",
     "costComparison.disposableCash": "Disposable Cash",
+    "costComparison.winnerBasis": "Winner Basis",
+    "costComparison.tooltip.investmentAssets":
+      "Personal taxable investment assets used in the personal scenario and mirrored as the corporate asset base for fair comparison.",
+    "costComparison.tooltip.pensionAssets":
+      "Personal pension assets are stored separately and excluded from the direct personal vs corporate operating asset comparison in v1.",
+    "costComparison.tooltip.realEstateValue":
+      "Officially assessed real estate value used only for health insurance property scoring in v1.",
+    "costComparison.tooltip.realEstateRatio":
+      "Your ownership share of the real estate value used in the local health insurance property base.",
+    "costComparison.tooltip.paRate":
+      "Expected annual price appreciation added to portfolio dividend yield to derive TR.",
+    "costComparison.tooltip.simulationYears":
+      "Number of years used for cumulative comparison and net worth projection.",
+    "costComparison.tooltip.targetMonthlyCash":
+      "Target after-tax monthly household cash that both scenarios must deliver.",
+    "costComparison.tooltip.monthlyFixedCost":
+      "Recurring monthly corporate operating expenses such as rent, bookkeeping, and administration.",
+    "costComparison.tooltip.initialLoan":
+      "Initial shareholder loan principal that can be repaid to the household without dividend taxation, subject to cash availability.",
+    "costComparison.tooltip.annualLoanRepayment":
+      "Planned annual shareholder loan repayment target. Actual repayment is capped by remaining loan balance and corporate cash generation.",
+    "costComparison.tooltip.salary":
+      "Gross monthly salary paid by the corporation to the selected household member.",
+    "costComparison.tooltip.assumptionPortfolio":
+      "Currently active master portfolio used as the common baseline for both scenarios.",
+    "costComparison.tooltip.dy":
+      "Weighted dividend yield from the active master portfolio.",
+    "costComparison.tooltip.pa":
+      "Price appreciation assumption entered in the comparison simulator.",
+    "costComparison.tooltip.tr":
+      "Total return applied equally to both scenarios. Calculated as DY + PA.",
+    "costComparison.tooltip.monthlyCash":
+      "Monthly disposable cash available to the household after taxes, insurance, and other modeled costs.",
+    "costComparison.tooltip.annualTotalCost":
+      "Annual total modeled cost burden including taxes, health insurance, social insurance, and fixed operating cost where applicable.",
+    "costComparison.tooltip.healthInsurance":
+      "Annual health insurance burden. Personal scenario uses local insurance, corporate scenario uses workplace insurance equivalents.",
+    "costComparison.tooltip.netGrowth":
+      "Required investment assets needed to deliver the target after-tax monthly household cash.",
+    "costComparison.tooltip.requiredRevenue":
+      "Required annual investment revenue needed to fund the target household cash and all modeled costs.",
+    "costComparison.tooltip.assetMargin":
+      "Current investment assets minus required assets. Positive means the current asset base can support the target more comfortably.",
+    "costComparison.tooltip.winner":
+      "The current winner is chosen by comparing annual total cost required to deliver the same target after-tax monthly household cash.",
+    "costComparison.tooltip.driver.tax":
+      "Difference created by tax burden between personal and corporate scenarios.",
+    "costComparison.tooltip.driver.health":
+      "Difference created by health insurance burden between local and workplace insurance structures.",
+    "costComparison.tooltip.driver.fixed":
+      "Difference created by fixed corporate operating expenses.",
+    "costComparison.tooltip.driver.social":
+      "Difference created by payroll-related social insurance costs.",
+    "costComparison.tooltip.driver.loan":
+      "Difference created by shareholder loan repayment flowing back to the household.",
+    "costComparison.tooltip.breakdown":
+      "Stacked comparison of annual cost components across the two scenarios. The summary chips above the chart show annual total cost for each side.",
+    "costComparison.tooltip.cumulative":
+      "Compares how much investment asset base each scenario needs to produce the same target after-tax monthly household cash.",
+    "costComparison.tooltip.householdCash":
+      "Compares the gap between current investment assets and required assets for each scenario.",
+    "costComparison.tooltip.totalValue":
+      "Shows how the target household cash is assembled in each scenario.",
+    "costComparison.tooltip.sustainability":
+      "Shows how many full years the current asset base can keep funding the target after-tax monthly household cash.",
+    "costComparison.tooltip.loanGap":
+      "Checks whether the current corporate setup can keep filling the household cash target with shareholder-loan repayment.",
+    "costComparison.tooltip.loanGapRequired":
+      "Annual shareholder-loan repayment required, after net salary, to reach the target after-tax household cash.",
+    "costComparison.tooltip.loanGapConfigured":
+      "Annual shareholder-loan repayment limit currently configured by the user.",
+    "costComparison.tooltip.loanGapGap":
+      "Shortfall between the repayment required and the repayment limit currently configured.",
+    "costComparison.tooltip.assetFeasibility":
+      "Checks whether current investment assets alone are large enough to support the target household cash.",
+    "costComparison.tooltip.loanFeasibility":
+      "Checks whether the initial shareholder-loan principal is large enough for the full simulation period.",
+    "costComparison.tooltip.setupFeasibility":
+      "Checks whether the full corporate setup can meet the target after combining current assets and loan capacity.",
+    "costComparison.tooltip.waterfall":
+      "Step-by-step cashflow bridge from annual revenue through tax, health insurance, social insurance, and fixed cost deductions to disposable cash.",
+    "costComparison.tooltip.warning":
+      "Important model caveats or threshold alerts that can materially affect the interpretation of results.",
     "costComparison.personalWins": "Personal operation is currently ahead.",
     "costComparison.corporateWins": "Corporate operation is currently ahead.",
   },
@@ -610,26 +724,139 @@ const translations = {
     "costComparison.realEstateRatio": "본인 지분율",
     "costComparison.paRate": "기대주가상승률",
     "costComparison.simulationYears": "시뮬레이션 기간",
+    "costComparison.targetMonthlyCash": "목표 세후 월현금",
     "costComparison.monthlyFixedCost": "월 고정비",
     "costComparison.initialLoan": "초기 주주대여금",
     "costComparison.annualLoanRepayment": "연간 주주대여금 상환",
     "costComparison.salary": "월 급여",
+    "costComparison.ratioUnit": "비율",
+    "costComparison.yearUnit": "년",
     "costComparison.assumptionPortfolio": "활성 포트폴리오",
     "costComparison.personal": "개인운용",
     "costComparison.corporate": "법인운용",
-    "costComparison.monthlyCash": "월 실수령액",
+    "costComparison.monthlyCash": "목표 월현금",
     "costComparison.annualTotalCost": "연 총비용",
     "costComparison.healthInsurance": "건보료",
-    "costComparison.netGrowth": "세후 순증가액",
+    "costComparison.netGrowth": "필요 자산",
+    "costComparison.requiredRevenue": "필요 연간 총수익",
+    "costComparison.assetMargin": "현재 자산 대비 여유",
     "costComparison.tax": "세금",
     "costComparison.socialInsurance": "사회보험",
     "costComparison.fixedCost": "고정비",
+    "costComparison.payrollWithholding": "원천징수세",
+    "costComparison.retainedEarnings": "유보이익",
     "costComparison.breakdownTitle": "비용 분해 비교",
-    "costComparison.cumulativeTitle": "누적 순자산 비교",
+    "costComparison.cumulativeTitle": "필요 자산 비교",
+    "costComparison.householdCashTitle": "현재 자산 대비 여유 비교",
+    "costComparison.totalValueTitle": "목표 현금 구성 비교",
+    "costComparison.sustainabilityTitle": "현재 자산 기준 지속가능성",
+    "costComparison.loanGapTitle": "법인 대여금 반환 갭",
+    "costComparison.loanGapRequired": "필요 대여금 반환액",
+    "costComparison.loanGapConfigured": "설정된 반환 한도",
+    "costComparison.loanGap": "부족분",
+    "costComparison.assetFeasibility": "현재 투자자산 기준",
+    "costComparison.loanFeasibility": "현재 주주대여금 기준",
+    "costComparison.setupFeasibility": "현재 전체 셋업 기준",
+    "costComparison.feasible": "충족",
+    "costComparison.notFeasible": "부족",
     "costComparison.waterfallTitle": "총수익 대비 실수령 비교",
+    "costComparison.waterfallBasis":
+      "여기서 총수익은 연간 예상 투자수익이며, `투자자산 x TR`로 계산합니다. 법인운용은 일부 이익이 유보이익으로 법인 안에 남기 때문에 가구 실수령이 총수익보다 훨씬 낮아질 수 있습니다.",
+    "costComparison.cumulativeNote":
+      "낮을수록 유리합니다. 같은 목표 세후 월현금을 만들기 위해 각 구조에서 필요한 투자자산 규모를 비교합니다.",
+    "costComparison.householdCashNote":
+      "높을수록 유리합니다. 현재 투자자산에서 필요 자산을 뺀 여유분을 비교합니다.",
+    "costComparison.totalValueNote":
+      "목표 월현금이 각 구조에서 어떤 항목으로 채워지는지 보여줍니다.",
+    "costComparison.sustainabilityNote":
+      "현재 자산 기준으로 지금 설정을 유지했을 때 목표 월현금을 몇 년 동안 충족할 수 있는지 보여줍니다.",
+    "costComparison.waterfallNote":
+      "왼쪽에서 오른쪽으로 읽으면 됩니다. 연간 총수익에서 비용 항목을 차감해 최종 실수령 현금으로 이어집니다.",
     "costComparison.warningTitle": "주의 사항",
     "costComparison.revenue": "총수익",
     "costComparison.disposableCash": "실수령",
+    "costComparison.winnerBasis": "우세 판정 기준",
+    "costComparison.tooltip.investmentAssets":
+      "개인 시나리오의 과세 투자자산이며, 공정 비교를 위해 법인 시나리오에도 같은 자산 규모를 기준으로 적용합니다.",
+    "costComparison.tooltip.pensionAssets":
+      "개인연금 자산은 별도 고정자산으로 저장되며, v1에서는 개인 vs 법인 직접 운용자산 비교에서 제외합니다.",
+    "costComparison.tooltip.realEstateValue":
+      "v1에서는 건강보험 재산 점수 계산에만 사용하는 부동산 공시지가입니다.",
+    "costComparison.tooltip.realEstateRatio":
+      "지역건보 재산 기준에 반영할 본인 지분율입니다.",
+    "costComparison.tooltip.paRate":
+      "활성 포트폴리오 DY에 더해 TR을 만드는 연간 기대주가상승률입니다.",
+    "costComparison.tooltip.simulationYears":
+      "누적 비교와 순자산 시계열을 계산할 총 기간입니다.",
+    "costComparison.tooltip.targetMonthlyCash":
+      "두 시나리오가 동일하게 만들어야 하는 가계 세후 월현금 목표입니다.",
+    "costComparison.tooltip.monthlyFixedCost":
+      "임차료, 기장료, 관리비 등 법인에서 반복적으로 나가는 월 고정 운영비입니다.",
+    "costComparison.tooltip.initialLoan":
+      "법인에 투입된 초기 주주대여금 원금입니다. 현금 여력이 있으면 비과세 상환 재원이 됩니다.",
+    "costComparison.tooltip.annualLoanRepayment":
+      "연간 목표 주주대여금 상환액입니다. 실제 상환은 남은 대여금과 법인 현금흐름 범위 내에서만 반영됩니다.",
+    "costComparison.tooltip.salary":
+      "법인이 가구 구성원에게 지급하는 세전 월 급여입니다.",
+    "costComparison.tooltip.assumptionPortfolio":
+      "개인과 법인 양쪽에 공통으로 적용하는 현재 활성 master portfolio입니다.",
+    "costComparison.tooltip.dy":
+      "활성 master portfolio에서 계산된 가중 평균 배당수익률입니다.",
+    "costComparison.tooltip.pa":
+      "비교 시뮬레이터에서 입력한 기대주가상승률입니다.",
+    "costComparison.tooltip.tr":
+      "두 시나리오에 동일하게 적용되는 총수익률입니다. DY + PA로 계산합니다.",
+    "costComparison.tooltip.monthlyCash":
+      "세금, 건강보험료, 기타 비용을 반영한 뒤 가구가 실제로 사용할 수 있는 월 기준 현금입니다.",
+    "costComparison.tooltip.annualTotalCost":
+      "세금, 건강보험료, 사회보험, 고정 운영비 등 연간 총비용 부담입니다.",
+    "costComparison.tooltip.healthInsurance":
+      "연간 건강보험료 부담입니다. 개인은 지역건보, 법인은 직장건보 기준 비용을 반영합니다.",
+    "costComparison.tooltip.netGrowth":
+      "입력한 목표 세후 월현금을 만들기 위해 필요한 투자자산 규모입니다.",
+    "costComparison.tooltip.requiredRevenue":
+      "목표 가계현금과 모든 비용을 충당하기 위해 필요한 연간 투자 총수익입니다.",
+    "costComparison.tooltip.assetMargin":
+      "현재 투자자산에서 필요한 자산을 뺀 값입니다. 양수면 현재 자산으로 목표를 더 여유 있게 감당할 수 있다는 뜻입니다.",
+    "costComparison.tooltip.winner":
+      "현재 우세 판정은 같은 목표 세후 월현금을 만들 때 연 총비용이 더 낮은 쪽을 기준으로 표시합니다.",
+    "costComparison.tooltip.driver.tax": "개인과 법인 간 세금 부담 차이입니다.",
+    "costComparison.tooltip.driver.health":
+      "지역건보와 직장건보 구조 차이에서 생기는 건강보험료 차이입니다.",
+    "costComparison.tooltip.driver.fixed":
+      "법인 운영을 위해 발생하는 고정 운영비 차이입니다.",
+    "costComparison.tooltip.driver.social":
+      "급여 지급에 따른 사회보험 비용 차이입니다.",
+    "costComparison.tooltip.driver.loan":
+      "주주대여금 상환으로 가구 현금흐름에 반영되는 차이입니다.",
+    "costComparison.tooltip.breakdown":
+      "개인/법인 두 시나리오의 연간 비용 구성을 누적 막대로 비교합니다. 위 요약칩에는 각 시나리오의 연 총비용을 같이 표시합니다.",
+    "costComparison.tooltip.cumulative":
+      "같은 목표 세후 월현금을 만들기 위해 각 구조에서 필요한 투자자산 규모를 비교합니다.",
+    "costComparison.tooltip.householdCash":
+      "현재 투자자산과 필요 자산의 차이를 비교합니다.",
+    "costComparison.tooltip.totalValue":
+      "목표 월현금이 개인은 세후 투자현금으로, 법인은 순급여와 주주대여금 반환으로 어떻게 구성되는지 보여줍니다.",
+    "costComparison.tooltip.sustainability":
+      "현재 자산으로 목표 세후 월현금을 몇 년 동안 온전히 충족할 수 있는지 보여줍니다.",
+    "costComparison.tooltip.loanGap":
+      "현재 법인 셋업에서 주주대여금 반환으로 가계 목표현금을 계속 채울 수 있는지 점검합니다.",
+    "costComparison.tooltip.loanGapRequired":
+      "순급여 외에 목표 가계현금을 맞추기 위해 연간 필요한 주주대여금 반환액입니다.",
+    "costComparison.tooltip.loanGapConfigured":
+      "사용자가 현재 설정한 연간 주주대여금 반환 한도입니다.",
+    "costComparison.tooltip.loanGapGap":
+      "필요 반환액과 현재 설정된 반환 한도 사이의 부족분입니다.",
+    "costComparison.tooltip.assetFeasibility":
+      "현재 투자자산만 놓고 봤을 때 목표 가계현금을 감당할 수 있는지 확인합니다.",
+    "costComparison.tooltip.loanFeasibility":
+      "초기 주주대여금 원금이 시뮬레이션 기간 전체에 충분한지 확인합니다.",
+    "costComparison.tooltip.setupFeasibility":
+      "현재 투자자산과 주주대여금 재원을 함께 봤을 때 전체 법인 셋업이 목표를 충족하는지 확인합니다.",
+    "costComparison.tooltip.waterfall":
+      "연간 총수익에서 세금, 건보료, 사회보험, 고정비를 차감해 실수령으로 이어지는 흐름을 단계별로 보여줍니다.",
+    "costComparison.tooltip.warning":
+      "결과 해석에 영향을 줄 수 있는 모델 경고나 제도상 유의사항입니다.",
     "costComparison.personalWins": "현재 입력 기준으로 개인운용이 우세합니다.",
     "costComparison.corporateWins": "현재 입력 기준으로 법인운용이 우세합니다.",
   },
