@@ -273,6 +273,7 @@ export interface CostComparisonConfig {
   assumptions: {
     price_appreciation_rate: number;
     simulation_years: number;
+    target_monthly_household_cash_after_tax: number;
   };
   corporate: {
     salary_recipients: CostComparisonSalaryRecipient[];
@@ -291,20 +292,48 @@ export interface CostComparisonScenarioResult {
     annual_total_cost: number;
     annual_health_insurance: number;
     after_tax_net_growth: number;
+    required_annual_revenue: number;
+    required_assets: number;
+    asset_margin_vs_current: number;
+    achieves_target_with_current_assets: boolean;
+    loan_capacity_sufficient?: boolean;
+    achieves_target_with_current_setup?: boolean;
   };
   breakdown: {
+    annual_revenue: number;
     tax: number;
     health_insurance: number;
     social_insurance: number;
     fixed_cost: number;
+    payroll_tax_withholding: number;
     shareholder_loan_repayment: number;
     retained_earnings: number;
+    net_salary: number;
+    target_household_cash: number;
+    configured_annual_loan_target?: number;
+    required_shareholder_loan_repayment?: number;
+    loan_repayment_gap?: number;
   };
   series: Array<{
     year: number;
     net_worth: number;
     disposable_cash: number;
+    cumulative_household_cash: number;
+    total_economic_value: number;
+    cumulative_loan_repayment?: number;
   }>;
+  sustainability_series: Array<{
+    year: number;
+    asset_balance: number;
+    household_cash: number;
+    cumulative_household_cash: number;
+    target_met: boolean;
+    loan_remaining?: number;
+  }>;
+  sustainability: {
+    years_fully_funded: number;
+    final_asset_balance: number;
+  };
 }
 
 export interface CostComparisonResult {
@@ -314,12 +343,15 @@ export interface CostComparisonResult {
     pa: number;
     tr: number;
     simulation_years: number;
+    target_monthly_household_cash_after_tax: number;
     base_year: number;
   };
   personal: CostComparisonScenarioResult;
   corporate: CostComparisonScenarioResult;
   comparison: {
     winner: "personal" | "corporate";
+    winner_basis: string;
+    winner_reason: string;
     annual_advantage: number;
     cumulative_advantage: number;
     top_drivers: Array<{

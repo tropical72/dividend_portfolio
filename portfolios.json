@@ -275,5 +275,14 @@
             }
         ],
         "created_at": "1776331808.613619"
+    },
+    {
+        "id": "cba8182e-8af2-4dd9-87b1-d9251858750a",
+        "name": "Corp-Delete-1776488272496",
+        "account_type": "Corporate",
+        "total_capital": 1000000,
+        "currency": "USD",
+        "items": [],
+        "created_at": "1776331808.613619"
     }
 ]
