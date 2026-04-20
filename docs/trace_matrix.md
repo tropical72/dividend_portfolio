@@ -92,13 +92,13 @@
 | REQ-CCS-54 | 비용/차이 항목 분해 | T-CCS-3.5.2 | TEST-CCS-43 | Done | 533b578 | 2026.04.18-00.55 |
 | REQ-CCS-60 | 독립 탭 제공 | T-CCS-5.1 | TEST-CCS-50 | Done | 533b578 | 2026.04.18-00.55 |
 | REQ-CCS-63 | 비용 분해 차트 | T-CCS-6.2 | TEST-CCS-53 | Done | 533b578 | 2026.04.18-00.55 |
-| REQ-CCS-64 | 순현금흐름 워터폴 | T-CCS-6.3 | TEST-CCS-54 | In Progress | - | - |
+| REQ-CCS-64 | 순현금흐름 워터폴 | T-CCS-6.3 | TEST-CCS-54 | Done | [ID] | 2026.04.20-15.45 |
 | REQ-CCS-65 | 기간 누적 비교 그래프 | T-CCS-6.4 | TEST-CCS-55 | Done | 533b578 | 2026.04.18-00.55 |
 | REQ-CCS-70 | 비교 시뮬레이터 설정 영속성 | T-CCS-4.1 | TEST-CCS-01 | Done | 533b578 | 2026.04.18-00.55 |
 | REQ-CCS-72 | 테스트 상태 격리 | T-CCS-7.3.4 | TEST-CCS-04 | Done | 533b578 | 2026.04.18-00.55 |
-| REQ-CCS-80 | 정책 수치 출처 명시 | T-CCS-4.3.2 | TEST-CCS-61 | Planned | - | - |
+| REQ-CCS-80 | 정책 수치 출처 명시 | T-CCS-4.3.2 | TEST-CCS-61 | Done | [ID] | 2026.04.20-15.45 |
 | REQ-CCS-81 | 기준 연도 노출 | T-CCS-4.3.1 | TEST-CCS-60 | Done | 533b578 | 2026.04.18-00.55 |
-| REQ-CCS-82 | 추정치 경고 노출 | T-CCS-6.5.3 | TEST-CCS-62 | In Progress | - | - |
+| REQ-CCS-82 | 추정치 경고 노출 | T-CCS-6.5.3 | TEST-CCS-62 | Done | [ID] | 2026.04.20-15.45 |
 
 ---
-*마지막 업데이트: 2026-04-18 01:35:00*
+*마지막 업데이트: 2026-04-20 15:45:00*
