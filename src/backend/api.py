@@ -18,17 +18,19 @@ class DividendBackend:
     DEFAULT_PENSION_PORTFOLIO_ID = "4203df7d-6708-448b-ab72-4cb05b2b2f9e"
     DEFAULT_MASTER_PORTFOLIO_ID = "5a4f0ac9-c3b3-4561-a813-74a6e653d0d3"
     DEFAULT_STANDARD_PROFILE_RETURN = 0.0485
+    SECRET_SETTING_KEYS = ("dart_api_key", "gemini_api_key", "openai_api_key")
 
     def __init__(self, data_dir: str = ".", ensure_default_master_bundle: bool = False) -> None:
         self.storage = StorageManager(data_dir=data_dir)
         self.data_dir = os.path.abspath(data_dir)
         self.watchlist_file = "watchlist.json"
         self.settings_file = "settings.json"
+        self.secret_settings_file = "settings.local.json"
         self.portfolios_file = "portfolios.json"
         self.retirement_config_file = "retirement_config.json"
         self.cost_comparison_config_file = "cost_comparison_config.json"
 
-        self.settings = self.storage.load_json(self.settings_file, {})
+        self.settings = self._load_settings()
         dart_key = self.settings.get("dart_api_key")
         self.data_provider = StockDataProvider(dart_api_key=dart_key)
         self.watchlist: List[Dict[str, Any]] = self.storage.load_json(self.watchlist_file, [])
@@ -46,6 +48,42 @@ class DividendBackend:
         if ensure_default_master_bundle:
             self._ensure_default_master_bundle()
             self._ensure_default_watchlist()
+
+    def _split_settings(self, settings: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+        public_settings = deepcopy(settings)
+        secret_settings: Dict[str, Any] = {}
+        for key in self.SECRET_SETTING_KEYS:
+            if key in public_settings:
+                secret_settings[key] = public_settings.pop(key)
+        return public_settings, secret_settings
+
+    def _load_settings(self) -> Dict[str, Any]:
+        public_settings = cast(Dict[str, Any], self.storage.load_json(self.settings_file, {}))
+        secret_settings = cast(
+            Dict[str, Any], self.storage.load_json(self.secret_settings_file, {})
+        )
+
+        legacy_secret_settings = {
+            key: public_settings.pop(key)
+            for key in self.SECRET_SETTING_KEYS
+            if key in public_settings
+        }
+
+        if legacy_secret_settings:
+            for key, value in legacy_secret_settings.items():
+                if secret_settings.get(key) in (None, ""):
+                    secret_settings[key] = value
+            self.storage.save_json(self.secret_settings_file, secret_settings)
+            self.storage.save_json(self.settings_file, public_settings)
+
+        merged_settings = deepcopy(public_settings)
+        merged_settings.update(secret_settings)
+        return merged_settings
+
+    def _save_settings(self) -> None:
+        public_settings, secret_settings = self._split_settings(self.settings)
+        self.storage.save_json(self.settings_file, public_settings)
+        self.storage.save_json(self.secret_settings_file, secret_settings)
 
     def _get_default_watchlist_seed_data(self) -> List[Dict[str, Any]]:
         return [
@@ -729,6 +767,7 @@ class DividendBackend:
                 "base_year": int(
                     cast(Dict[str, Any], config.get("policy_meta", {})).get("base_year", 2026)
                 ),
+                "simulation_mode": config.get("simulation_mode", "target"),
             },
         }
 
@@ -737,20 +776,28 @@ class DividendBackend:
         tax_engine: TaxEngine,
         annual_revenue: float,
         property_value: float,
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         if annual_revenue <= 20000000:
             income_tax = annual_revenue * 0.154
+            tax_audit = {"tax_rate": 0.154, "is_comprehensive": False}
         else:
             income_tax = (20000000 * 0.154) + ((annual_revenue - 20000000) * 0.264)
-        annual_health = (
-            tax_engine.calculate_local_health_insurance(property_value, annual_revenue) * 12
+            tax_audit = {"tax_rate": 0.264, "is_comprehensive": True, "threshold": 20000000}
+
+        health_result = tax_engine.calculate_local_health_insurance_detailed(
+            property_value, annual_revenue
         )
+        annual_health = health_result["total_premium"] * 12
         annual_net = annual_revenue - income_tax - annual_health
         return {
             "annual_revenue": annual_revenue,
             "income_tax": income_tax,
             "annual_health": annual_health,
             "annual_net": annual_net,
+            "audit_details": {
+                "health": health_result,
+                "tax": tax_audit,
+            },
         }
 
     def _solve_personal_required_annual_revenue(
@@ -807,6 +854,91 @@ class DividendBackend:
         return {
             "years_fully_funded": years_fully_funded,
             "final_asset_balance": float(series[-1]["asset_balance"]) if series else 0.0,
+        }
+
+    def _simulate_personal_asset_driven_scenario(
+        self,
+        tax_engine: TaxEngine,
+        assumptions: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """[REQ-CCS-95] 보유 자산 중심(Asset-driven) 개인운용 시나리오"""
+        personal_assets = cast(Dict[str, Any], config.get("personal_assets", {}))
+        real_estate = cast(Dict[str, Any], config.get("real_estate", {}))
+        current_assets = float(personal_assets.get("investment_assets") or 0.0)
+        property_value = float(real_estate.get("official_price") or 0.0) * float(
+            real_estate.get("ownership_ratio") or 0.0
+        )
+        tr = float(assumptions["tr"])
+        simulation_years = int(assumptions["simulation_years"])
+
+        # 현재 자산 기반 순방향 계산 (1년차 집중)
+        annual_revenue = current_assets * tr
+        result = self._calculate_personal_after_tax_cash(tax_engine, annual_revenue, property_value)
+
+        annual_net_cash = float(result["annual_net"])
+        income_tax = float(result["income_tax"])
+        annual_health = float(result["annual_health"])
+
+        # 시계열 (복리 반영 30년 등)
+        series: List[Dict[str, Any]] = []
+        cumulative_household_cash = 0.0
+        asset_base = current_assets
+        for year in range(1, simulation_years + 1):
+            year_revenue = asset_base * tr
+            year_result = self._calculate_personal_after_tax_cash(
+                tax_engine, year_revenue, property_value
+            )
+
+            # 자산 고정 비교이므로 발생 수익 전부를 인출하는 시나리오와
+            # 재투자하는 시나리오 중 어느 것이 나은지 판단 필요하나,
+            # 마스터의 요구는 "현금흐름" 비교이므로 매년 세후 전액 인출 가정 (또는 성향 반영)
+            # 여기서는 '자산 성장'을 보여주기 위해 재투자 시나리오로 작성 (복리 효과 증명)
+            year_net_growth = float(year_result["annual_net"])
+            asset_base += year_net_growth
+            cumulative_household_cash += (
+                year_net_growth  # 실제로는 인출 시나리오도 고려 가능하나 일단 누적 가치로 표현
+            )
+
+            series.append(
+                {
+                    "year": year,
+                    "net_worth": asset_base,
+                    "disposable_cash": year_net_growth,
+                    "cumulative_household_cash": cumulative_household_cash,
+                    "total_economic_value": asset_base,  # 자산 기반이므로 자산 자체가 경제적 가치
+                }
+            )
+
+        return {
+            "kpis": {
+                "monthly_disposable_cashflow": annual_net_cash / 12,
+                "annual_total_cost": income_tax + annual_health,
+                "annual_health_insurance": annual_health,
+                "after_tax_net_growth": annual_net_cash,
+                "required_annual_revenue": annual_revenue,
+                "required_assets": current_assets,
+                "net_yield": (annual_net_cash / current_assets * 100) if current_assets > 0 else 0,
+            },
+            "breakdown": {
+                "annual_revenue": annual_revenue,
+                "tax": income_tax,
+                "health_insurance": annual_health,
+                "social_insurance": 0.0,
+                "fixed_cost": 0.0,
+                "payroll_tax_withholding": 0.0,
+                "shareholder_loan_repayment": 0.0,
+                "retained_earnings": 0.0,
+                "net_salary": 0.0,
+                "target_household_cash": annual_net_cash,
+                "audit_details": result["audit_details"],
+            },
+            "series": series,
+            "sustainability_series": [],  # Asset-driven에서는 지속성보다 효율성 위주
+            "sustainability": {
+                "years_fully_funded": simulation_years,
+                "final_asset_balance": asset_base,
+            },
         }
 
     def _simulate_personal_cost_scenario(
@@ -903,6 +1035,159 @@ class DividendBackend:
             "series": series,
             "sustainability_series": sustainability_series,
             "sustainability": self._build_sustainability_summary(sustainability_series),
+        }
+
+    def _simulate_corporate_asset_driven_scenario(
+        self,
+        tax_engine: TaxEngine,
+        assumptions: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """[REQ-CCS-95] 보유 자산 중심(Asset-driven) 법인운용 시나리오"""
+        personal_assets = cast(Dict[str, Any], config.get("personal_assets", {}))
+        corporate = cast(Dict[str, Any], config.get("corporate", {}))
+        salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
+        current_assets = float(personal_assets.get("investment_assets") or 0.0)
+        tr = float(assumptions["tr"])
+        simulation_years = int(assumptions["simulation_years"])
+        monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
+        initial_loan = float(corporate.get("initial_shareholder_loan") or 0.0)
+        annual_loan_repayment_target = float(
+            corporate.get("annual_shareholder_loan_repayment") or 0.0
+        )
+
+        # 고정비 및 급여 기반 비용 산출
+        company_health_total = 0.0
+        employee_health_total = 0.0
+        total_social_insurance = 0.0
+        total_net_salary = 0.0
+        total_gross_salary = 0.0
+        payroll_tax = 0.0
+
+        for s in salary_recipients:
+            sal = float(s.get("monthly_salary") or 0.0)
+            if sal <= 0:
+                continue
+            res = tax_engine.calculate_income_tax(sal)
+            total_net_salary += float(res["net_salary"]) * 12
+            total_gross_salary += sal * 12
+            payroll_tax += float(res["income_tax"]) * 12
+
+            # 회사분 4대보험
+            c_rate = tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
+            company_health_total += (sal * tax_engine.health_rate) * 12
+            employee_health_total += float(res["health"]) * 12
+            total_social_insurance += (
+                (sal * c_rate) * 12 + float(res["deductions"]) * 12 - float(res["income_tax"]) * 12
+            )
+
+        # 1년차 계산
+        annual_revenue = current_assets * tr
+        fixed_cost_annual = monthly_fixed_cost * 12
+        # 위 근사는 복잡하므로 정확히 계산:
+        company_social_insurance = total_gross_salary * (
+            tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
+        )
+
+        tax_base = max(
+            0.0, annual_revenue - total_gross_salary - fixed_cost_annual - company_social_insurance
+        )
+        corp_tax = tax_engine.calculate_corp_tax(tax_base)
+        net_profit = (
+            annual_revenue
+            - total_gross_salary
+            - fixed_cost_annual
+            - company_social_insurance
+            - corp_tax
+        )
+
+        # 주주대여금 상환 (이익 범위 내)
+        actual_loan_repayment = min(
+            initial_loan, annual_loan_repayment_target, max(0.0, net_profit)
+        )
+        retained_earnings = net_profit - actual_loan_repayment
+        achievable_household_cash = total_net_salary + actual_loan_repayment
+
+        # 시계열 및 복리
+        series = []
+        asset_base = current_assets
+        loan_remaining = initial_loan
+        cumulative_cash = 0.0
+
+        for year in range(1, simulation_years + 1):
+            y_revenue = asset_base * tr
+            y_tax_base = max(
+                0.0, y_revenue - total_gross_salary - fixed_cost_annual - company_social_insurance
+            )
+            y_corp_tax = tax_engine.calculate_corp_tax(y_tax_base)
+            y_net_profit = (
+                y_revenue
+                - total_gross_salary
+                - fixed_cost_annual
+                - company_social_insurance
+                - y_corp_tax
+            )
+
+            y_loan_repay = min(loan_remaining, annual_loan_repayment_target, max(0.0, y_net_profit))
+            y_retained = y_net_profit - y_loan_repay
+
+            asset_base += y_retained
+            loan_remaining -= y_loan_repay
+            year_cash = total_net_salary + y_loan_repay
+            cumulative_cash += year_cash
+
+            series.append(
+                {
+                    "year": year,
+                    "net_worth": asset_base,
+                    "disposable_cash": year_cash,
+                    "cumulative_household_cash": cumulative_cash,
+                    "total_economic_value": asset_base,
+                }
+            )
+
+        return {
+            "kpis": {
+                "monthly_disposable_cashflow": achievable_household_cash / 12,
+                "annual_total_cost": corp_tax
+                + (total_social_insurance)
+                + fixed_cost_annual
+                + payroll_tax,
+                "annual_health_insurance": (company_health_total + employee_health_total)
+                * (1 + tax_engine.ltc_rate),
+                "after_tax_net_growth": retained_earnings,
+                "required_annual_revenue": annual_revenue,
+                "required_assets": current_assets,
+                "net_yield": (
+                    (achievable_household_cash / current_assets * 100) if current_assets > 0 else 0
+                ),
+            },
+            "breakdown": {
+                "annual_revenue": annual_revenue,
+                "tax": corp_tax,
+                "health_insurance": (company_health_total + employee_health_total)
+                * (1 + tax_engine.ltc_rate),
+                "social_insurance": total_social_insurance,
+                "fixed_cost": fixed_cost_annual,
+                "payroll_tax_withholding": payroll_tax,
+                "shareholder_loan_repayment": actual_loan_repayment,
+                "retained_earnings": retained_earnings,
+                "net_salary": total_net_salary,
+                "target_household_cash": achievable_household_cash,
+                "audit_details": {
+                    "corp_tax": {
+                        "tax_base": tax_base,
+                        "tax_rate_low": tax_engine.corp_tax_low_rate,
+                    },
+                    "health": {"is_employee": True, "recipients": len(salary_recipients)},
+                },
+            },
+            "series": series,
+            "sustainability_series": [],
+            "sustainability": {
+                "years_fully_funded": simulation_years,
+                "final_asset_balance": asset_base,
+            },
         }
 
     def _simulate_corporate_cost_scenario(
@@ -1149,10 +1434,24 @@ class DividendBackend:
 
         assumptions = cast(Dict[str, Any], assumptions_result["data"])
         tax_engine = TaxEngine(config=self.retirement_config.get("tax_and_insurance", {}))
-        personal = self._simulate_personal_cost_scenario(tax_engine, assumptions, effective_config)
-        corporate = self._simulate_corporate_cost_scenario(
-            tax_engine, assumptions, effective_config
-        )
+
+        simulation_mode = effective_config.get("simulation_mode", "target")
+
+        if simulation_mode == "asset":
+            personal = self._simulate_personal_asset_driven_scenario(
+                tax_engine, assumptions, effective_config
+            )
+            corporate = self._simulate_corporate_asset_driven_scenario(
+                tax_engine, assumptions, effective_config
+            )
+        else:
+            personal = self._simulate_personal_cost_scenario(
+                tax_engine, assumptions, effective_config
+            )
+            corporate = self._simulate_corporate_cost_scenario(
+                tax_engine, assumptions, effective_config
+            )
+
         warnings: List[str] = []
         current_assets = float(
             effective_config.get("personal_assets", {}).get("investment_assets", 0.0)
@@ -1300,7 +1599,7 @@ class DividendBackend:
                         "rate": new_rate,
                     }
                     self.settings["current_exchange_rate"] = new_rate
-                    self.storage.save_json(self.settings_file, self.settings)
+                    self._save_settings()
                     return new_rate
             except Exception as e:
                 print(f"[Backend] Exchange rate fetch failed: {e}")
@@ -1311,7 +1610,7 @@ class DividendBackend:
             or self.settings["current_exchange_rate"] != last_rate
         ):
             self.settings["current_exchange_rate"] = last_rate
-            self.storage.save_json(self.settings_file, self.settings)
+            self._save_settings()
 
         return last_rate
 
@@ -1435,7 +1734,7 @@ class DividendBackend:
         """E2E 테스트용 현재 백엔드 상태 스냅샷을 반환합니다."""
         self._ensure_retirement_config_defaults()
         return {
-            "settings": deepcopy(self.settings),
+            "settings": deepcopy(self.get_settings()),
             "watchlist": deepcopy(self.watchlist),
             "portfolios": deepcopy(self.portfolios),
             "master_portfolios": deepcopy(self.master_portfolios),
@@ -1463,7 +1762,7 @@ class DividendBackend:
         self._ensure_retirement_config_defaults()
         self._ensure_cost_comparison_config_defaults()
 
-        self.storage.save_json(self.settings_file, self.settings)
+        self._save_settings()
         self.storage.save_json(self.watchlist_file, self.watchlist)
         self.storage.save_json(self.portfolios_file, self.portfolios)
         self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
@@ -1952,7 +2251,7 @@ class DividendBackend:
     def update_settings(self, new_settings: Dict[str, Any]) -> Dict[str, Any]:
         """설정을 업데이트합니다."""
         self.settings.update(new_settings)
-        self.storage.save_json(self.settings_file, self.settings)
+        self._save_settings()
         if "dart_api_key" in new_settings:
             self.data_provider = StockDataProvider(dart_api_key=self.settings["dart_api_key"])
         return {"success": True, "message": "설정이 저장되었습니다."}

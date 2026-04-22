@@ -54,24 +54,36 @@ async def test_settings_persistence():
     from src.backend.main import app
 
     new_key = "secret_dart_key"
+    new_gemini_key = "secret_gemini_key"
     new_language = "en"
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # 1. 설정 저장
         await ac.post(
             "/api/settings",
-            json={"dart_api_key": new_key, "ui_language": new_language},
+            json={
+                "dart_api_key": new_key,
+                "gemini_api_key": new_gemini_key,
+                "ui_language": new_language,
+            },
         )
 
         # 2. 설정 로드 확인
         response = await ac.get("/api/settings")
 
     assert response.json()["data"]["dart_api_key"] == new_key
+    assert response.json()["data"]["gemini_api_key"] == new_gemini_key
     assert response.json()["data"]["ui_language"] == new_language
 
-    # 3. 파일 물리적 존재 확인
+    # 3. 공개 설정과 비밀 설정이 분리 저장되는지 확인
     data_dir = os.environ["APP_DATA_DIR"]
     with open(os.path.join(data_dir, "settings.json"), "r") as f:
         saved_data = json.load(f)
-        assert saved_data["dart_api_key"] == new_key
         assert saved_data["ui_language"] == new_language
+        assert "dart_api_key" not in saved_data
+        assert "gemini_api_key" not in saved_data
+
+    with open(os.path.join(data_dir, "settings.local.json"), "r") as f:
+        saved_secret_data = json.load(f)
+        assert saved_secret_data["dart_api_key"] == new_key
+        assert saved_secret_data["gemini_api_key"] == new_gemini_key
