@@ -23,6 +23,7 @@ class DividendBackend:
     def __init__(self, data_dir: str = ".", ensure_default_master_bundle: bool = False) -> None:
         self.storage = StorageManager(data_dir=data_dir)
         self.data_dir = os.path.abspath(data_dir)
+        self.ensure_default_master_bundle = ensure_default_master_bundle
         self.watchlist_file = "watchlist.json"
         self.settings_file = "settings.json"
         self.secret_settings_file = "settings.local.json"
@@ -45,9 +46,14 @@ class DividendBackend:
         self._normalize_all_portfolios()
         self._ensure_retirement_config_defaults()
         self._ensure_cost_comparison_config_defaults()
-        if ensure_default_master_bundle:
-            self._ensure_default_master_bundle()
-            self._ensure_default_watchlist()
+        self._ensure_seeded_defaults_if_enabled()
+
+    def _ensure_seeded_defaults_if_enabled(self) -> None:
+        """실앱 모드에서는 기본 watchlist/master bundle이 항상 존재하도록 보장한다."""
+        if not self.ensure_default_master_bundle:
+            return
+        self._ensure_default_master_bundle()
+        self._ensure_default_watchlist()
 
     def _split_settings(self, settings: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
         public_settings = deepcopy(settings)
@@ -1732,6 +1738,7 @@ class DividendBackend:
 
     def export_test_state(self) -> Dict[str, Any]:
         """E2E 테스트용 현재 백엔드 상태 스냅샷을 반환합니다."""
+        self._ensure_seeded_defaults_if_enabled()
         self._ensure_retirement_config_defaults()
         return {
             "settings": deepcopy(self.get_settings()),
@@ -1759,6 +1766,7 @@ class DividendBackend:
         )
 
         self._normalize_all_portfolios()
+        self._ensure_seeded_defaults_if_enabled()
         self._ensure_retirement_config_defaults()
         self._ensure_cost_comparison_config_defaults()
 
@@ -1780,6 +1788,7 @@ class DividendBackend:
 
     def get_watchlist(self) -> List[Dict[str, Any]]:
         """저장된 관심 종목 목록을 반환합니다. (필드 누락 방지 포함)"""
+        self._ensure_seeded_defaults_if_enabled()
         # 기존 데이터 호환성을 위해 필수 필드 기본값 보정
         for item in self.watchlist:
             item.setdefault("one_yr_return", 0.0)
@@ -1793,6 +1802,7 @@ class DividendBackend:
 
     def get_portfolios(self) -> List[Dict[str, Any]]:
         """저장된 모든 포트폴리오 목록을 반환합니다."""
+        self._ensure_seeded_defaults_if_enabled()
         self._normalize_all_portfolios()
         return self.portfolios
 
@@ -1941,6 +1951,7 @@ class DividendBackend:
 
     def get_master_portfolios(self) -> List[Dict[str, Any]]:
         """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
+        self._ensure_seeded_defaults_if_enabled()
         for m in self.master_portfolios:
             master_calc = self.calculate_master_portfolio_tr(m)
             if master_calc["success"]:
@@ -1976,6 +1987,7 @@ class DividendBackend:
 
     def get_portfolio_by_id(self, p_id: Optional[str]) -> Optional[Dict[str, Any]]:
         """ID로 개별 포트폴리오를 찾습니다."""
+        self._ensure_seeded_defaults_if_enabled()
         if not p_id:
             return None
         portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
@@ -2052,6 +2064,7 @@ class DividendBackend:
 
     def get_active_master_portfolio(self) -> Optional[Dict[str, Any]]:
         """현재 활성화된 마스터 포트폴리오를 반환합니다."""
+        self._ensure_seeded_defaults_if_enabled()
         return next((m for m in self.master_portfolios if m.get("is_active")), None)
 
     def update_portfolio(self, p_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:

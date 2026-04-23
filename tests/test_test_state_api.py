@@ -77,3 +77,43 @@ def test_test_state_endpoint_round_trip(tmp_path, monkeypatch):
     assert restore_response.json()["success"] is True
     assert restore_response.json()["data"] == backend.export_test_state()
     assert backend.get_retirement_config() == baseline["retirement_config"]
+
+
+def test_restore_test_state_reseeds_default_assets_in_app_mode(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+
+    restored = backend.restore_test_state(
+        {
+            "settings": {},
+            "watchlist": [],
+            "portfolios": [],
+            "master_portfolios": [],
+            "retirement_config": {},
+            "cost_comparison_config": {},
+            "retirement_snapshot": {},
+        }
+    )
+
+    assert restored["success"] is True
+    assert any(item["symbol"] == "SGOV" for item in backend.get_watchlist())
+    assert any(p["id"] == backend.DEFAULT_CORP_PORTFOLIO_ID for p in backend.get_portfolios())
+    assert any(
+        m["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID for m in backend.get_master_portfolios()
+    )
+
+
+def test_read_accessors_self_heal_missing_default_assets_in_app_mode(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+
+    backend.watchlist = []
+    backend.portfolios = []
+    backend.master_portfolios = []
+
+    watchlist = backend.get_watchlist()
+    portfolios = backend.get_portfolios()
+    masters = backend.get_master_portfolios()
+
+    assert any(item["symbol"] == "SGOV" for item in watchlist)
+    assert any(p["id"] == backend.DEFAULT_PENSION_PORTFOLIO_ID for p in portfolios)
+    assert any(m["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID for m in masters)
+    assert backend.get_active_master_portfolio()["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
