@@ -1,6 +1,7 @@
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
-from uuid import uuid4
 
 from src.backend.api import DividendBackend
 from src.backend.main import app
@@ -74,9 +75,7 @@ def test_master_portfolio_crud_and_dependency(client):
     )
     list_res2 = client.get("/api/master-portfolios")
     another_id = next(
-        m["id"]
-        for m in list_res2.json()["data"]
-        if m["name"] == f"Another Strategy {suffix}"
+        m["id"] for m in list_res2.json()["data"] if m["name"] == f"Another Strategy {suffix}"
     )
 
     # 다른 전략 활성화
@@ -98,27 +97,21 @@ def test_master_portfolio_crud_and_dependency(client):
 
 def test_default_master_bundle_is_seeded_on_app_boot(tmp_path):
     """실앱 부팅 모드에서는 기본 master/corp/pension 번들이 자동 생성되어야 한다."""
-    backend = DividendBackend(
-        data_dir=str(tmp_path), ensure_default_master_bundle=True
-    )
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
 
     portfolios = backend.get_portfolios()
     masters = backend.get_master_portfolios()
 
     assert any(p["id"] == backend.DEFAULT_CORP_PORTFOLIO_ID for p in portfolios)
     assert any(p["id"] == backend.DEFAULT_PENSION_PORTFOLIO_ID for p in portfolios)
-    default_master = next(
-        m for m in masters if m["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
-    )
+    default_master = next(m for m in masters if m["id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID)
     assert default_master["is_active"] is True
     assert default_master["is_system_default"] is True
 
 
 def test_default_master_bundle_cannot_be_deleted(tmp_path):
     """기본 master/corp/pension 번들은 삭제할 수 없어야 한다."""
-    backend = DividendBackend(
-        data_dir=str(tmp_path), ensure_default_master_bundle=True
-    )
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
 
     corp_delete = backend.remove_portfolio(backend.DEFAULT_CORP_PORTFOLIO_ID)
     pension_delete = backend.remove_portfolio(backend.DEFAULT_PENSION_PORTFOLIO_ID)

@@ -10,8 +10,6 @@ target-version = "py311"
 
 # 검사 대상 제외 설정 (레거시 및 디버그 스크립트 제외)
 exclude = [
-    "src/frontend_legacy",
-    "tests/debug_*.py",
     "venv",
     ".venv"
 ]
