@@ -40,7 +40,7 @@
 *   **`docs/{Domain}/requirement.md`:** 도메인별 상세 명세.
 *   **`docs/{Domain}/plan.md`:** 도메인별 Micro-Task 및 진척 관리.
 *   **`docs/{Domain}/test.md`:** 자동/수동 테스트 케이스.
-*   **`docs/00_System_Core/GLOBAL_STANDARD.md`:** 공통 UI/UX 및 데이터 표준.
+*   **`docs/00_RAMS_Global/GLOBAL_STANDARD.md`:** 공통 UI/UX 및 데이터 표준.
 
 ## 3. 기술 스택
 *   **Backend:** Python 3.11, FastAPI.
@@ -55,10 +55,17 @@
 │   ├── trace_matrix.md          # 전체 요구사항/태스크 추적 통합 마스터
 │   ├── 00_RAMS_Global/          # 시스템 전체 사양, 아키텍처, 공통 표준
 │   │   ├── requirement.md
-│   │   ├── architecture.md
+│   │   ├── plan.md
+│   │   ├── test.md
 │   │   └── GLOBAL_STANDARD.md
 │   ├── 01_Retirement_Engine/    # [핵심] 은퇴 자산 인출 및 세무 시뮬레이션
 │   │   ├── requirement.md
+│   │   ├── architecture.md
+│   │   ├── plan.md
+│   │   └── test.md
+│   ├── 02_Cost_Comparison_Simulator/ # 비용 비교 시뮬레이터
+│   │   ├── requirement.md
+│   │   ├── architecture.md
 │   │   ├── plan.md
 │   │   └── test.md
 │   └── 02_Portfolio_Manager/    # [지원] 포트폴리오 관리 도구군
