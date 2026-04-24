@@ -1501,7 +1501,8 @@ class DividendBackend:
             )
         elif float(personal["breakdown"]["annual_revenue"]) > 20000000:
             warnings.append(
-                "개인 명의 보수 외 소득이 커서 보수 외 소득월액보험료가 " "추가 부과될 수 있습니다."
+                "법인운용에서 급여를 받는 구조라도, 개인 명의 투자소득이 연 2,000만원을 넘으면 "
+                "보수 외 소득월액보험료가 추가될 수 있습니다."
             )
         if current_assets < float(personal["kpis"]["required_assets"]):
             warnings.append(
