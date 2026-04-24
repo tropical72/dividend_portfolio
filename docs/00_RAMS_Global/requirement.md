@@ -46,6 +46,6 @@
     - **Retirement Simulation:** 국민연금 수령 시작 연령(60~70세)과 월 예상 수령액 설정을 보강하여 Phase 3 시뮬레이션에 반영한다.
 
 ## Related Files
-- `src/backend/server.py` (FastAPI Entry Point)
+- `src/backend/main.py` (FastAPI Entry Point)
 - `src/frontend/src/` (React Source)
 - `tests/conftest.py` (Pytest/Playwright Setup)

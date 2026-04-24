@@ -20,5 +20,6 @@
 - **[REQ-SIM-04.2] 통화 병기 최적화:** 수입(월간/연간) 컬럼에서 원화와 달러를 두 줄로 표시하여 가독성 및 공간 효율성 확보 ([GS-UI-01] 준수).
 
 ## Related Files
-- `src/frontend/main.py` (그래프 레이아웃 및 콤보박스 UI)
+- `src/frontend/src/components/PortfolioTab.tsx` (그래프 진입 UI 및 탭 레이아웃)
+- `src/frontend/src/components/PortfolioDashboard.tsx` (그래프 렌더링 및 분석 대시보드)
 - `src/backend/api.py` (통합 계산 로직 및 데이터 처리)

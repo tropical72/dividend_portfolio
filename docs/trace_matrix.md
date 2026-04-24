@@ -99,6 +99,12 @@
 | REQ-CCS-80 | 정책 수치 출처 명시 | T-CCS-4.3.2 | TEST-CCS-61 | Done | 531a8fb | 2026.04.20-15.55 |
 | REQ-CCS-81 | 기준 연도 노출 | T-CCS-4.3.1 | TEST-CCS-60 | Done | 531a8fb | 2026.04.20-15.55 |
 | REQ-CCS-82 | 추정치 경고 노출 | T-CCS-6.5.3 | TEST-CCS-62 | Done | 531a8fb | 2026.04.20-15.55 |
+| REQ-CCS-4.1 | 비교 모드 스위처 (Target vs Asset) | T-CCS-9.3.1 | TEST-CCS-90 | Done | 3a4d33a | 2026.04.23-14.30 |
+| REQ-CCS-55 | 상세 비용 감사(Audit) 내역 패널 | T-CCS-9.3.2 | TEST-CCS-91 | Done | 3a4d33a | 2026.04.23-14.30 |
+| REQ-CCS-95 | Asset-driven 순방향 계산 모델 | T-CCS-9.1.1 | TEST-CCS-92 | Done | 3a4d33a | 2026.04.23-14.30 |
+| REQ-CCS-3.3 | 30년 장기 프로젝션 연동 | T-CCS-9.1.3 | TEST-CCS-93 | Done | 3a4d33a | 2026.04.23-14.30 |
+| D-CCS-9.3.3 | Asset-driven 모드 wiring 및 KPI 단위 표기 회귀 수정 | T-CCS-9.3.3 | TEST-CCS-94 | In Progress | - | 2026.04.24 |
+| D-CCS-9.3.4 | 개인 Asset-driven 장기 시계열 이중 계산 회귀 수정 | T-CCS-9.3.4 | TEST-CCS-95 | In Progress | - | 2026.04.24 |
 
 ---
-*마지막 업데이트: 2026-04-20 15:45:00*
+*마지막 업데이트: 2026-04-24 00:00:00*

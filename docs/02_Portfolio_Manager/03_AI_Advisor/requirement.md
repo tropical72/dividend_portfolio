@@ -24,6 +24,6 @@
 - **[REQ-ADV-04.3] 대화 초기화:** '새 분석 시작' 버튼 클릭 시 이전 기록 삭제 및 초기화.
 
 ## Related Files
-- `src/frontend/main.py` (AI Advisor 채팅 UI)
+- `src/frontend_legacy/main.py` (AI Advisor 채팅 UI)
 - `src/backend/api.py` (AI 서비스 연동 로직)
 - `src/backend/storage.py` (chat_history.json 관리)
