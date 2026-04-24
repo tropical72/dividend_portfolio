@@ -105,6 +105,9 @@
 | REQ-CCS-3.3 | 30년 장기 프로젝션 연동 | T-CCS-9.1.3 | TEST-CCS-93 | Done | 3a4d33a | 2026.04.23-14.30 |
 | D-CCS-9.3.3 | Asset-driven 모드 wiring 및 KPI 단위 표기 회귀 수정 | T-CCS-9.3.3 | TEST-CCS-94 | In Progress | - | 2026.04.24 |
 | D-CCS-9.3.4 | 개인 Asset-driven 장기 시계열 이중 계산 회귀 수정 | T-CCS-9.3.4 | TEST-CCS-95 | In Progress | - | 2026.04.24 |
+| D-CCS-9.3.5 | 비교 결과 우열 문구 명시성 강화 | T-CCS-9.3.5 | TEST-CCS-96 | In Progress | - | 2026.04.24 |
+| D-CCS-9.3.6 | 우열 판정 기준을 순현금흐름으로 재정렬하고 주주대여금 상환 driver 제거 | T-CCS-9.3.6 | TEST-CCS-97 | In Progress | - | 2026.04.24 |
+| D-CCS-9.3.7 | 목표/자산 기반 공통 비교 철학을 `개인 순현금 vs 법인 순현금 + 순급여`로 통일 | T-CCS-9.3.7 | TEST-CCS-98 | In Progress | - | 2026.04.24 |
 
 ---
-*마지막 업데이트: 2026-04-24 00:00:00*
+*마지막 업데이트: 2026-04-24 18:35:00*

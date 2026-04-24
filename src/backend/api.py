@@ -655,6 +655,7 @@ class DividendBackend:
     def _get_default_cost_comparison_config(self) -> Dict[str, Any]:
         default_pa = float(self.settings.get("price_appreciation_rate", 3.0))
         return {
+            "simulation_mode": "target",
             "household": {"members": []},
             "personal_assets": {
                 "investment_assets": 0.0,
@@ -680,13 +681,25 @@ class DividendBackend:
             },
         }
 
+    def _normalize_cost_comparison_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """비교 시뮬레이터 설정의 레거시 필드 위치를 정규화합니다."""
+        normalized = deepcopy(config)
+        assumptions = cast(Dict[str, Any], normalized.get("assumptions", {}))
+        if "simulation_mode" not in normalized and assumptions.get("simulation_mode"):
+            normalized["simulation_mode"] = assumptions.get("simulation_mode")
+        assumptions.pop("simulation_mode", None)
+        return normalized
+
     def _ensure_cost_comparison_config_defaults(self) -> None:
         self.cost_comparison_config = self._deep_merge_dict(
             self._get_default_cost_comparison_config(),
-            self.cost_comparison_config,
+            self._normalize_cost_comparison_config(self.cost_comparison_config),
         )
 
     def _validate_cost_comparison_config(self, config: Dict[str, Any]) -> Optional[str]:
+        if config.get("simulation_mode") not in {"target", "asset"}:
+            return "simulation_mode는 target 또는 asset 이어야 합니다."
+
         corporate = cast(Dict[str, Any], config.get("corporate", {}))
         salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
         if len(salary_recipients) > 4:
@@ -719,7 +732,9 @@ class DividendBackend:
 
     def update_cost_comparison_config(self, new_config: Dict[str, Any]) -> Dict[str, Any]:
         self._ensure_cost_comparison_config_defaults()
-        candidate_config = self._deep_merge_dict(self.cost_comparison_config, new_config)
+        candidate_config = self._deep_merge_dict(
+            self.cost_comparison_config, self._normalize_cost_comparison_config(new_config)
+        )
         validation_error = self._validate_cost_comparison_config(candidate_config)
         if validation_error:
             return {
@@ -888,37 +903,47 @@ class DividendBackend:
 
         # 시계열 (복리 반영 30년 등)
         series: List[Dict[str, Any]] = []
-        cumulative_household_cash = 0.0
+        sustainability_series: List[Dict[str, Any]] = []
         asset_base = current_assets
+        cumulative_net_cashflow = 0.0
+        target_monthly_cash = float(assumptions.get("target_monthly_household_cash_after_tax", 0))
+        target_annual_cash = target_monthly_cash * 12
+
         for year in range(1, simulation_years + 1):
             year_revenue = asset_base * tr
             year_result = self._calculate_personal_after_tax_cash(
                 tax_engine, year_revenue, property_value
             )
 
-            # 자산 고정 비교이므로 발생 수익 전부를 인출하는 시나리오와
-            # 재투자하는 시나리오 중 어느 것이 나은지 판단 필요하나,
-            # 마스터의 요구는 "현금흐름" 비교이므로 매년 세후 전액 인출 가정 (또는 성향 반영)
-            # 여기서는 '자산 성장'을 보여주기 위해 재투자 시나리오로 작성 (복리 효과 증명)
             year_net_growth = float(year_result["annual_net"])
+            cumulative_net_cashflow += year_net_growth
+            # 자산 성장을 보여주기 위해 세후 수익을 재투자한다고 가정 (복리)
             asset_base += year_net_growth
-            cumulative_household_cash += (
-                year_net_growth  # 실제로는 인출 시나리오도 고려 가능하나 일단 누적 가치로 표현
-            )
 
             series.append(
                 {
                     "year": year,
                     "net_worth": asset_base,
                     "disposable_cash": year_net_growth,
-                    "cumulative_household_cash": cumulative_household_cash,
-                    "total_economic_value": asset_base,  # 자산 기반이므로 자산 자체가 경제적 가치
+                    "cumulative_household_cash": 0.0,
+                    "total_economic_value": asset_base,
+                }
+            )
+            sustainability_series.append(
+                {
+                    "year": year,
+                    "asset_balance": asset_base,
+                    "household_cash": year_net_growth,
+                    "cumulative_household_cash": 0.0,
+                    "target_met": year_net_growth >= (target_annual_cash - 1.0),
                 }
             )
 
         return {
             "kpis": {
                 "monthly_disposable_cashflow": annual_net_cash / 12,
+                "annual_net_cashflow": annual_net_cash,
+                "cumulative_net_cashflow": cumulative_net_cashflow,
                 "annual_total_cost": income_tax + annual_health,
                 "annual_health_insurance": annual_health,
                 "after_tax_net_growth": annual_net_cash,
@@ -935,16 +960,14 @@ class DividendBackend:
                 "payroll_tax_withholding": 0.0,
                 "shareholder_loan_repayment": 0.0,
                 "retained_earnings": 0.0,
+                "net_corporate_cash": annual_net_cash,
                 "net_salary": 0.0,
                 "target_household_cash": annual_net_cash,
                 "audit_details": result["audit_details"],
             },
             "series": series,
-            "sustainability_series": [],  # Asset-driven에서는 지속성보다 효율성 위주
-            "sustainability": {
-                "years_fully_funded": simulation_years,
-                "final_asset_balance": asset_base,
-            },
+            "sustainability_series": sustainability_series,
+            "sustainability": self._build_sustainability_summary(sustainability_series),
         }
 
     def _simulate_personal_cost_scenario(
@@ -973,12 +996,14 @@ class DividendBackend:
         series: List[Dict[str, Any]] = []
         sustainability_series: List[Dict[str, Any]] = []
         cumulative_household_cash = 0.0
+        cumulative_net_cashflow = 0.0
         asset_base = current_assets
         annual_net_growth = 0.0
         for year in range(1, simulation_years + 1):
             annual_net_growth = max(0.0, (asset_base * tr) - income_tax - annual_health)
             asset_base = max(0.0, asset_base + annual_net_growth)
             cumulative_household_cash += annual_target_cash
+            cumulative_net_cashflow += annual_target_cash
             series.append(
                 {
                     "year": year,
@@ -1018,6 +1043,8 @@ class DividendBackend:
         return {
             "kpis": {
                 "monthly_disposable_cashflow": annual_target_cash / 12,
+                "annual_net_cashflow": annual_target_cash,
+                "cumulative_net_cashflow": cumulative_net_cashflow,
                 "annual_total_cost": income_tax + annual_health,
                 "annual_health_insurance": annual_health,
                 "after_tax_net_growth": asset_margin,
@@ -1035,6 +1062,7 @@ class DividendBackend:
                 "payroll_tax_withholding": 0.0,
                 "shareholder_loan_repayment": 0.0,
                 "retained_earnings": 0.0,
+                "net_corporate_cash": annual_target_cash,
                 "net_salary": 0.0,
                 "target_household_cash": annual_target_cash,
             },
@@ -1057,11 +1085,6 @@ class DividendBackend:
         tr = float(assumptions["tr"])
         simulation_years = int(assumptions["simulation_years"])
         monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
-        initial_loan = float(corporate.get("initial_shareholder_loan") or 0.0)
-        annual_loan_repayment_target = float(
-            corporate.get("annual_shareholder_loan_repayment") or 0.0
-        )
-
         # 고정비 및 급여 기반 비용 산출
         company_health_total = 0.0
         employee_health_total = 0.0
@@ -1107,18 +1130,17 @@ class DividendBackend:
             - corp_tax
         )
 
-        # 주주대여금 상환 (이익 범위 내)
-        actual_loan_repayment = min(
-            initial_loan, annual_loan_repayment_target, max(0.0, net_profit)
-        )
-        retained_earnings = net_profit - actual_loan_repayment
-        achievable_household_cash = total_net_salary + actual_loan_repayment
+        retained_earnings = net_profit
+        achievable_household_cash = total_net_salary + net_profit
 
         # 시계열 및 복리
         series = []
+        sustainability_series = []
         asset_base = current_assets
-        loan_remaining = initial_loan
         cumulative_cash = 0.0
+        cumulative_net_cashflow = 0.0
+        target_monthly_cash = float(assumptions.get("target_monthly_household_cash_after_tax", 0))
+        target_annual_cash = target_monthly_cash * 12
 
         for year in range(1, simulation_years + 1):
             y_revenue = asset_base * tr
@@ -1134,13 +1156,11 @@ class DividendBackend:
                 - y_corp_tax
             )
 
-            y_loan_repay = min(loan_remaining, annual_loan_repayment_target, max(0.0, y_net_profit))
-            y_retained = y_net_profit - y_loan_repay
-
+            y_retained = y_net_profit
             asset_base += y_retained
-            loan_remaining -= y_loan_repay
-            year_cash = total_net_salary + y_loan_repay
+            year_cash = total_net_salary + y_net_profit
             cumulative_cash += year_cash
+            cumulative_net_cashflow += year_cash
 
             series.append(
                 {
@@ -1151,10 +1171,21 @@ class DividendBackend:
                     "total_economic_value": asset_base,
                 }
             )
+            sustainability_series.append(
+                {
+                    "year": year,
+                    "asset_balance": asset_base,
+                    "household_cash": year_cash,
+                    "cumulative_household_cash": cumulative_cash,
+                    "target_met": year_cash >= (target_annual_cash - 1.0),
+                }
+            )
 
         return {
             "kpis": {
                 "monthly_disposable_cashflow": achievable_household_cash / 12,
+                "annual_net_cashflow": achievable_household_cash,
+                "cumulative_net_cashflow": cumulative_net_cashflow,
                 "annual_total_cost": corp_tax
                 + (total_social_insurance)
                 + fixed_cost_annual
@@ -1175,9 +1206,12 @@ class DividendBackend:
                 * (1 + tax_engine.ltc_rate),
                 "social_insurance": total_social_insurance,
                 "fixed_cost": fixed_cost_annual,
+                "gross_salary": total_gross_salary,
+                "company_insurance_cost": company_social_insurance,
                 "payroll_tax_withholding": payroll_tax,
-                "shareholder_loan_repayment": actual_loan_repayment,
+                "shareholder_loan_repayment": 0.0,
                 "retained_earnings": retained_earnings,
+                "net_corporate_cash": net_profit,
                 "net_salary": total_net_salary,
                 "target_household_cash": achievable_household_cash,
                 "audit_details": {
@@ -1189,11 +1223,8 @@ class DividendBackend:
                 },
             },
             "series": series,
-            "sustainability_series": [],
-            "sustainability": {
-                "years_fully_funded": simulation_years,
-                "final_asset_balance": asset_base,
-            },
+            "sustainability_series": sustainability_series,
+            "sustainability": self._build_sustainability_summary(sustainability_series),
         }
 
     def _simulate_corporate_cost_scenario(
@@ -1210,11 +1241,6 @@ class DividendBackend:
         simulation_years = int(assumptions["simulation_years"])
         annual_target_cash = float(assumptions["target_monthly_household_cash_after_tax"]) * 12
         monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
-        initial_loan = float(corporate.get("initial_shareholder_loan") or 0.0)
-        configured_annual_loan_target = float(
-            corporate.get("annual_shareholder_loan_repayment") or 0.0
-        )
-
         company_health_component = 0.0
         employee_health_component = 0.0
         social_insurance = 0.0
@@ -1224,8 +1250,6 @@ class DividendBackend:
         corp_tax = 0.0
         fixed_cost_annual = 0.0
         retained_earnings = 0.0
-        actual_loan_repayment = 0.0
-        cumulative_loan_repayment = 0.0
         payroll_tax_withholding = 0.0
         cumulative_household_cash = 0.0
         series: List[Dict[str, Any]] = []
@@ -1265,9 +1289,18 @@ class DividendBackend:
         )
         required_assets = annual_revenue / tr if tr > 0 else float("inf")
         asset_margin = current_assets - required_assets
-        actual_loan_repayment = required_loan_repayment
+        annual_net_corporate_cash = max(
+            0.0,
+            annual_revenue
+            - gross_salary_annual
+            - fixed_cost_annual
+            - company_insurance_total
+            - corp_tax,
+        )
+        annual_net_cashflow = annual_net_corporate_cash + net_salary_annual
 
         asset_base = current_assets
+        cumulative_net_cashflow = 0.0
         for year in range(1, simulation_years + 1):
             retained_earnings = max(
                 0.0,
@@ -1275,18 +1308,16 @@ class DividendBackend:
                 - gross_salary_annual
                 - fixed_cost_annual
                 - company_insurance_total
-                - corp_tax
-                - required_loan_repayment,
+                - corp_tax,
             )
             asset_base = max(0.0, asset_base + retained_earnings)
-            cumulative_loan_repayment += required_loan_repayment
             cumulative_household_cash += annual_target_cash
+            cumulative_net_cashflow += annual_target_cash
             series.append(
                 {
                     "year": year,
                     "net_worth": asset_base,
                     "disposable_cash": annual_target_cash,
-                    "cumulative_loan_repayment": cumulative_loan_repayment,
                     "cumulative_household_cash": cumulative_household_cash,
                     "total_economic_value": asset_base + cumulative_household_cash,
                 }
@@ -1294,7 +1325,6 @@ class DividendBackend:
 
         sustainability_series: List[Dict[str, Any]] = []
         sustainable_assets = current_assets
-        sustainable_loan_remaining = initial_loan
         cumulative_actual_cash = 0.0
         for year in range(1, simulation_years + 1):
             annual_revenue_current = sustainable_assets * tr
@@ -1313,20 +1343,8 @@ class DividendBackend:
                 - company_insurance_total
                 - corp_tax_current
             )
-            actual_loan_cap = min(
-                sustainable_loan_remaining,
-                configured_annual_loan_target,
-                max(0.0, sustainable_assets + post_tax_profit_current),
-            )
-            actual_household_cash = min(
-                annual_target_cash,
-                net_salary_annual + actual_loan_cap,
-            )
-            sustainable_assets = max(
-                0.0,
-                sustainable_assets + post_tax_profit_current - actual_loan_cap,
-            )
-            sustainable_loan_remaining = max(0.0, sustainable_loan_remaining - actual_loan_cap)
+            actual_household_cash = net_salary_annual + post_tax_profit_current
+            sustainable_assets = max(0.0, sustainable_assets + post_tax_profit_current)
             cumulative_actual_cash += actual_household_cash
             sustainability_series.append(
                 {
@@ -1335,18 +1353,17 @@ class DividendBackend:
                     "household_cash": actual_household_cash,
                     "cumulative_household_cash": cumulative_actual_cash,
                     "target_met": actual_household_cash >= annual_target_cash - 1.0,
-                    "loan_remaining": sustainable_loan_remaining,
                 }
             )
 
         annual_health = (company_health_component + employee_health_component) * (
             1 + tax_engine.ltc_rate
         )
-        loan_repayment_gap = max(0.0, required_loan_repayment - configured_annual_loan_target)
-        loan_capacity_sufficient = (required_loan_repayment * simulation_years) <= initial_loan
         return {
             "kpis": {
                 "monthly_disposable_cashflow": annual_target_cash / 12,
+                "annual_net_cashflow": annual_net_cashflow,
+                "cumulative_net_cashflow": cumulative_net_cashflow,
                 "annual_total_cost": corp_tax
                 + annual_health
                 + social_insurance
@@ -1358,9 +1375,6 @@ class DividendBackend:
                 "required_assets": required_assets,
                 "asset_margin_vs_current": asset_margin,
                 "achieves_target_with_current_assets": asset_margin >= 0,
-                "loan_capacity_sufficient": loan_capacity_sufficient,
-                "achieves_target_with_current_setup": asset_margin >= 0
-                and loan_capacity_sufficient,
             },
             "breakdown": {
                 "annual_revenue": annual_revenue,
@@ -1368,14 +1382,14 @@ class DividendBackend:
                 "health_insurance": annual_health,
                 "social_insurance": social_insurance,
                 "fixed_cost": fixed_cost_annual,
+                "gross_salary": gross_salary_annual,
+                "company_insurance_cost": company_insurance_total,
                 "payroll_tax_withholding": payroll_tax_withholding,
-                "shareholder_loan_repayment": actual_loan_repayment,
+                "shareholder_loan_repayment": 0.0,
                 "retained_earnings": retained_earnings,
+                "net_corporate_cash": annual_net_corporate_cash,
                 "net_salary": net_salary_annual,
                 "target_household_cash": annual_target_cash,
-                "configured_annual_loan_target": configured_annual_loan_target,
-                "required_shareholder_loan_repayment": required_loan_repayment,
-                "loan_repayment_gap": loan_repayment_gap,
             },
             "series": series,
             "sustainability_series": sustainability_series,
@@ -1385,21 +1399,27 @@ class DividendBackend:
     def _build_cost_comparison_summary(
         self, personal: Dict[str, Any], corporate: Dict[str, Any]
     ) -> Dict[str, Any]:
-        personal_cost = float(personal["kpis"]["annual_total_cost"])
-        corporate_cost = float(corporate["kpis"]["annual_total_cost"])
-        personal_required_assets = float(personal["kpis"]["required_assets"])
-        corporate_required_assets = float(corporate["kpis"]["required_assets"])
+        personal_net_cashflow = float(personal["kpis"]["annual_net_cashflow"])
+        corporate_net_cashflow = float(corporate["kpis"]["annual_net_cashflow"])
+        personal_cumulative_net_cashflow = float(personal["kpis"]["cumulative_net_cashflow"])
+        corporate_cumulative_net_cashflow = float(corporate["kpis"]["cumulative_net_cashflow"])
+        annual_advantage = corporate_net_cashflow - personal_net_cashflow
+        cumulative_advantage = corporate_cumulative_net_cashflow - personal_cumulative_net_cashflow
+        if abs(annual_advantage) < 1e-6:
+            winner = "tie"
+        else:
+            winner = "corporate" if annual_advantage > 0 else "personal"
 
         driver_map = {
             "건강보험료": float(personal["breakdown"]["health_insurance"])
             - float(corporate["breakdown"]["health_insurance"]),
             "세금": float(personal["breakdown"]["tax"]) - float(corporate["breakdown"]["tax"]),
+            "급여 비용": float(personal["breakdown"].get("gross_salary", 0.0))
+            - float(corporate["breakdown"].get("gross_salary", 0.0)),
             "고정 운영비": float(personal["breakdown"]["fixed_cost"])
             - float(corporate["breakdown"]["fixed_cost"]),
             "사회보험": float(personal["breakdown"]["social_insurance"])
             - float(corporate["breakdown"]["social_insurance"]),
-            "주주대여금 상환": float(corporate["breakdown"]["shareholder_loan_repayment"])
-            - float(personal["breakdown"]["shareholder_loan_repayment"]),
         }
         sorted_drivers = sorted(driver_map.items(), key=lambda item: abs(item[1]), reverse=True)
         top_drivers = [{"label": label, "amount": amount} for label, amount in sorted_drivers[:3]]
@@ -1407,18 +1427,19 @@ class DividendBackend:
             top_drivers.append({"label": "-", "amount": 0.0})
 
         return {
-            "winner": "corporate" if corporate_cost <= personal_cost else "personal",
-            "winner_basis": "annual_total_cost",
+            "winner": winner,
+            "winner_basis": "annual_net_cashflow",
             "winner_reason": (
-                "동일한 가계 세후 목표현금을 만들 때 연 총비용 기준으로 법인운용이 더 낮습니다."
-                if corporate_cost <= personal_cost
+                "연간 순현금흐름 기준으로 법인운용이 더 큽니다."
+                if winner == "corporate"
                 else (
-                    "동일한 가계 세후 목표현금을 만들 때 "
-                    "연 총비용 기준으로 개인운용이 더 낮습니다."
+                    "연간 순현금흐름 기준으로 개인운용이 더 큽니다."
+                    if winner == "personal"
+                    else "연간 순현금흐름 기준으로 두 구조의 결과가 같습니다."
                 )
             ),
-            "annual_advantage": personal_cost - corporate_cost,
-            "cumulative_advantage": personal_required_assets - corporate_required_assets,
+            "annual_advantage": annual_advantage,
+            "cumulative_advantage": cumulative_advantage,
             "top_drivers": top_drivers,
         }
 
@@ -1428,7 +1449,10 @@ class DividendBackend:
         self._ensure_cost_comparison_config_defaults()
         effective_config = self.cost_comparison_config
         if config_override:
-            effective_config = self._deep_merge_dict(self.cost_comparison_config, config_override)
+            effective_config = self._deep_merge_dict(
+                self.cost_comparison_config,
+                self._normalize_cost_comparison_config(config_override),
+            )
 
         validation_error = self._validate_cost_comparison_config(effective_config)
         if validation_error:
@@ -1482,13 +1506,6 @@ class DividendBackend:
             warnings.append(
                 "현재 투자자산만으로는 입력한 세후 월현금 목표를 법인운용으로 충족하기 어렵습니다."
             )
-        if float(corporate["breakdown"]["shareholder_loan_repayment"]) * float(
-            assumptions["simulation_years"]
-        ) > float(effective_config.get("corporate", {}).get("initial_shareholder_loan", 0.0)):
-            warnings.append(
-                "설정한 기간 동안 필요한 주주대여금 반환 총액이 현재 초기 주주대여금보다 큽니다."
-            )
-
         return {
             "success": True,
             "data": {

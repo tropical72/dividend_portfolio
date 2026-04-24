@@ -46,8 +46,6 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-simulation-years").fill("5");
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
     await page.getByTestId("cc-monthly-fixed-cost").fill("500000");
-    await page.getByTestId("cc-initial-loan").fill("500000000");
-    await page.getByTestId("cc-annual-loan-repayment").fill("108000000");
     await page.getByTestId("cc-salary-0").fill("3000000");
 
     await page.getByTestId("cc-save-button").click();
@@ -82,10 +80,22 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-kpi-personal")).toBeVisible();
     await expect(page.getByTestId("cc-kpi-corporate")).toBeVisible();
     await expect(page.getByTestId("cc-comparison-winner")).toContainText(
-      /우세합니다|ahead/i,
+      /우세합니다|ahead|우열이 같습니다|tied/i,
     );
+    await expect(page.getByTestId("cc-winner-summary-annual")).toContainText(
+      /연 순현금흐름 기준|annual net cashflow/i,
+    );
+    await expect(
+      page.getByTestId("cc-winner-summary-annual-delta"),
+    ).toContainText(/₩|원/);
+    await expect(
+      page.getByTestId("cc-winner-summary-cumulative"),
+    ).toContainText(/누적 순현금흐름|cumulative/i);
     await expect(page.getByTestId("cc-winner-basis")).toContainText(
-      /연 총비용|annual total cost/i,
+      /연 순현금흐름|annual net cashflow/i,
+    );
+    await expect(page.getByTestId("cc-winner-basis-formula")).toContainText(
+      /법인.*개인|corporate.*personal/i,
     );
     await expect(page.getByTestId("cc-driver-0")).toBeVisible();
     await expect(page.getByTestId("cc-breakdown-chart")).toBeVisible();
@@ -93,15 +103,20 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-household-cash-chart")).toBeVisible();
     await expect(page.getByTestId("cc-total-value-chart")).toBeVisible();
     await expect(page.getByTestId("cc-sustainability-chart")).toBeVisible();
-    await expect(page.getByTestId("cc-loan-gap-card")).toBeVisible();
     await expect(page.getByTestId("cc-waterfall-chart")).toBeVisible();
     await expect(page.getByTestId("cc-waterfall-step-revenue")).toBeVisible();
+    await expect(
+      page.getByTestId("cc-waterfall-step-gross-salary"),
+    ).toBeVisible();
     await expect(page.getByTestId("cc-waterfall-step-tax")).toBeVisible();
     await expect(page.getByTestId("cc-waterfall-step-health")).toBeVisible();
-    await expect(page.getByTestId("cc-waterfall-step-social")).toBeVisible();
+    await expect(
+      page.getByTestId("cc-waterfall-step-company-insurance"),
+    ).toBeVisible();
     await expect(page.getByTestId("cc-waterfall-step-fixed")).toBeVisible();
-    await expect(page.getByTestId("cc-waterfall-step-payroll")).toBeVisible();
-    await expect(page.getByTestId("cc-waterfall-step-retained")).toBeVisible();
+    await expect(
+      page.getByTestId("cc-waterfall-step-net-salary"),
+    ).toBeVisible();
     await expect(
       page.getByTestId("cc-waterfall-step-disposable"),
     ).toBeVisible();
@@ -136,7 +151,7 @@ test.describe("Cost Comparison Simulator", () => {
       /현재 투자자산|current investment asset/i,
     );
     await expect(page.getByTestId("cc-total-value-note")).toContainText(
-      /목표 월현금|target monthly household cash/i,
+      /연 순현금|annual net cash/i,
     );
     await expect(page.getByTestId("cc-sustainability-note")).toContainText(
       /몇 년|how many years/i,
@@ -146,19 +161,51 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(
       page.getByTestId("cc-tooltip-trigger-sustainability-content"),
     ).toContainText(/몇 년|how many full years/i);
-    await page.getByTestId("cc-tooltip-trigger-loan-gap").focus();
-    await expect(
-      page.getByTestId("cc-tooltip-trigger-loan-gap-content"),
-    ).toContainText(/주주대여금 반환|shareholder-loan repayment/i);
-    await page.getByTestId("cc-status-asset-feasibility-tooltip").focus();
-    await expect(
-      page.getByTestId("cc-status-asset-feasibility-tooltip-content"),
-    ).toContainText(/현재 투자자산|current investment assets/i);
     await expect(page.getByTestId("cc-waterfall-note")).toContainText(
       /왼쪽에서 오른쪽|left to right/i,
     );
     await expect(page.getByTestId("cc-waterfall-basis")).toContainText(
-      /투자자산 x TR|investment assets multiplied by TR/i,
+      /법인 순현금|net corporate cash|투자자산 x TR|investment assets multiplied by TR/i,
     );
+  });
+
+  test("should run asset-driven mode with monthly disposable cash labeling", async ({
+    page,
+  }) => {
+    await page.getByTestId("cc-investment-assets").fill("1000000000");
+    await page.getByTestId("cc-pa-rate").fill("5");
+    await page.getByTestId("cc-simulation-years").fill("2");
+    await page.getByTestId("cc-mode-asset").click();
+    await page.getByTestId("cc-save-button").click();
+    await expect(
+      page.getByTestId("cost-comparison-save-success"),
+    ).toBeVisible();
+
+    const runResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/cost-comparison/run") &&
+        response.request().method() === "POST" &&
+        response.ok(),
+    );
+
+    await page.getByTestId("cc-run-button").click();
+    const runResponse = await runResponsePromise;
+    const runPayload = await runResponse.json();
+
+    expect(runPayload.data.assumptions.simulation_mode).toBe("asset");
+    await expect(page.getByTestId("cc-kpi-personal-cash-label")).toContainText(
+      /최종 순현금|final net cash/i,
+    );
+    await expect(page.getByTestId("cc-kpi-corporate-cash-label")).toContainText(
+      /최종 순현금|final net cash/i,
+    );
+    await expect(
+      page.getByTestId("cc-kpi-personal-growth-label"),
+    ).toContainText(/세후 수익률|net yield/i);
+    await expect(
+      page.getByTestId("cc-kpi-corporate-growth-label"),
+    ).toContainText(/세후 수익률|net yield/i);
+    await expect(page.getByTestId("cc-cumulative-chart")).toHaveCount(0);
+    await expect(page.getByTestId("cc-household-cash-chart")).toHaveCount(0);
   });
 });

@@ -259,6 +259,7 @@ export interface CostComparisonSalaryRecipient {
 }
 
 export interface CostComparisonConfig {
+  simulation_mode?: "target" | "asset";
   household: {
     members: CostComparisonHouseholdMember[];
   };
@@ -289,15 +290,18 @@ export interface CostComparisonConfig {
 export interface CostComparisonScenarioResult {
   kpis: {
     monthly_disposable_cashflow: number;
+    annual_net_cashflow: number;
+    cumulative_net_cashflow: number;
     annual_total_cost: number;
     annual_health_insurance: number;
     after_tax_net_growth: number;
     required_annual_revenue: number;
     required_assets: number;
-    asset_margin_vs_current: number;
-    achieves_target_with_current_assets: boolean;
+    asset_margin_vs_current?: number;
+    achieves_target_with_current_assets?: boolean;
     loan_capacity_sufficient?: boolean;
     achieves_target_with_current_setup?: boolean;
+    net_yield?: number;
   };
   breakdown: {
     annual_revenue: number;
@@ -305,14 +309,39 @@ export interface CostComparisonScenarioResult {
     health_insurance: number;
     social_insurance: number;
     fixed_cost: number;
+    gross_salary?: number;
+    company_insurance_cost?: number;
     payroll_tax_withholding: number;
     shareholder_loan_repayment: number;
     retained_earnings: number;
+    net_corporate_cash?: number;
     net_salary: number;
     target_household_cash: number;
     configured_annual_loan_target?: number;
     required_shareholder_loan_repayment?: number;
     loan_repayment_gap?: number;
+    audit_details?: {
+      health?: {
+        property_points?: number;
+        income_points?: number;
+        total_points?: number;
+        point_unit_price?: number;
+        ltc_rate?: number;
+        base_premium?: number;
+        total_premium?: number;
+        is_employee?: boolean;
+        recipients?: number;
+      };
+      tax?: {
+        tax_rate?: number;
+        is_comprehensive?: boolean;
+        threshold?: number;
+      };
+      corp_tax?: {
+        tax_base?: number;
+        tax_rate_low?: number;
+      };
+    };
   };
   series: Array<{
     year: number;
@@ -345,11 +374,12 @@ export interface CostComparisonResult {
     simulation_years: number;
     target_monthly_household_cash_after_tax: number;
     base_year: number;
+    simulation_mode: "target" | "asset";
   };
   personal: CostComparisonScenarioResult;
   corporate: CostComparisonScenarioResult;
   comparison: {
-    winner: "personal" | "corporate";
+    winner: "personal" | "corporate" | "tie";
     winner_basis: string;
     winner_reason: string;
     annual_advantage: number;

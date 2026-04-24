@@ -327,12 +327,16 @@ const translations = {
     "costComparison.tax": "Tax",
     "costComparison.socialInsurance": "Social Insurance",
     "costComparison.fixedCost": "Fixed Cost",
+    "costComparison.grossSalary": "Gross Salary",
+    "costComparison.companyInsurance": "Company Insurance",
+    "costComparison.netSalary": "Net Salary",
+    "costComparison.netCorporateCash": "Net Corporate Cash",
     "costComparison.payrollWithholding": "Payroll Withholding",
     "costComparison.retainedEarnings": "Retained Earnings",
     "costComparison.breakdownTitle": "Cost Breakdown",
     "costComparison.cumulativeTitle": "Required Assets Comparison",
     "costComparison.householdCashTitle": "Current Asset Margin Comparison",
-    "costComparison.totalValueTitle": "Target Cash Composition",
+    "costComparison.totalValueTitle": "Net Cash Composition",
     "costComparison.sustainabilityTitle": "Current Asset Sustainability",
     "costComparison.loanGapTitle": "Corporate Loan Gap",
     "costComparison.loanGapRequired": "Required Loan Repayment",
@@ -343,23 +347,42 @@ const translations = {
     "costComparison.setupFeasibility": "Overall Setup",
     "costComparison.feasible": "Feasible",
     "costComparison.notFeasible": "Not Feasible",
-    "costComparison.waterfallTitle": "Revenue to Disposable Cash",
+    "costComparison.waterfallTitle": "Revenue to Net Cash",
     "costComparison.waterfallBasis":
-      "Revenue is annual projected investment return, calculated as investment assets multiplied by TR. In the corporate case, retained earnings stay inside the company, so household disposable cash can be much lower than revenue.",
+      "Revenue is annual projected investment return, calculated as investment assets multiplied by TR. Personal net cash equals revenue minus tax and health insurance. Corporate net cash equals net corporate cash plus net salary after corporate costs are deducted.",
     "costComparison.cumulativeNote":
       "Lower is better. This chart compares how much investment asset base each structure needs to fund the same target after-tax monthly household cash.",
     "costComparison.householdCashNote":
       "Positive is better. This chart compares how much current investment asset cushion remains after meeting the required asset threshold.",
     "costComparison.totalValueNote":
-      "This chart shows how the target monthly household cash is assembled in each structure.",
+      "This chart shows how annual net cash is composed in each structure. Personal uses after-tax investment cash, while corporate combines net corporate cash and net salary.",
     "costComparison.sustainabilityNote":
       "Shows how many years the current asset base can keep funding the target monthly household cash under the current settings.",
     "costComparison.waterfallNote":
-      "Read left to right. The chart starts with annual revenue, subtracts each cost bucket, and ends with annual disposable cash.",
+      "Read left to right. The chart starts with annual revenue, subtracts each cost bucket, then adds back net salary only for the corporate structure to arrive at annual net cash.",
     "costComparison.warningTitle": "Warnings",
     "costComparison.revenue": "Revenue",
-    "costComparison.disposableCash": "Disposable Cash",
+    "costComparison.disposableCash": "Final Net Cash",
+    "costComparison.annualNetCashflow": "Annual Net Cashflow",
+    "costComparison.cumulativeNetCashflow": "Cumulative Net Cashflow",
     "costComparison.winnerBasis": "Winner Basis",
+    "costComparison.winnerBasisFormulaNetCashflow":
+      "difference = corporate annual net cashflow - personal annual net cashflow",
+    "costComparison.winnerAnnualLabel": "Annual Net Cashflow Result",
+    "costComparison.winnerAnnualPrefix": "On annual net cashflow,",
+    "costComparison.winnerAnnualMiddle": " generates more pure cash than ",
+    "costComparison.winnerAnnualSuffix": ".",
+    "costComparison.winnerCumulativeLabel": "Cumulative Net Cashflow Result",
+    "costComparison.winnerCumulativePrefix": "On cumulative net cashflow,",
+    "costComparison.winnerCumulativeMiddle": " leaves more pure cash than ",
+    "costComparison.winnerCumulativeSuffix": ".",
+    "costComparison.tie": "Tie",
+    "costComparison.tieWins":
+      "Both structures are tied under the current inputs.",
+    "costComparison.tieAnnualSummary":
+      "On annual net cashflow, both structures generate the same amount.",
+    "costComparison.tieCumulativeSummary":
+      "On cumulative net cashflow, both structures leave the same amount.",
     "costComparison.tooltip.investmentAssets":
       "Personal taxable investment assets used in the personal scenario and mirrored as the corporate asset base for fair comparison.",
     "costComparison.tooltip.pensionAssets":
@@ -400,14 +423,18 @@ const translations = {
       "Required investment assets needed to deliver the target after-tax monthly household cash.",
     "costComparison.tooltip.requiredRevenue":
       "Required annual investment revenue needed to fund the target household cash and all modeled costs.",
+    "costComparison.tooltip.disposableCash":
+      "Monthly equivalent of final net cash available to the household under the current asset base after modeled taxes and insurance.",
     "costComparison.tooltip.assetMargin":
       "Current investment assets minus required assets. Positive means the current asset base can support the target more comfortably.",
     "costComparison.tooltip.winner":
-      "The current winner is chosen by comparing annual total cost required to deliver the same target after-tax monthly household cash.",
+      "The current winner is chosen by comparing pure net cashflow after all structure-specific costs are deducted. The displayed difference is calculated as corporate minus personal.",
     "costComparison.tooltip.driver.tax":
       "Difference created by tax burden between personal and corporate scenarios.",
     "costComparison.tooltip.driver.health":
       "Difference created by health insurance burden between local and workplace insurance structures.",
+    "costComparison.tooltip.driver.salary":
+      "Difference created by gross salary cost borne only in the corporate structure.",
     "costComparison.tooltip.driver.fixed":
       "Difference created by fixed corporate operating expenses.",
     "costComparison.tooltip.driver.social":
@@ -421,7 +448,7 @@ const translations = {
     "costComparison.tooltip.householdCash":
       "Compares the gap between current investment assets and required assets for each scenario.",
     "costComparison.tooltip.totalValue":
-      "Shows how the target household cash is assembled in each scenario.",
+      "Shows how annual net cash is composed in each scenario. Personal is after-tax investment cash, while corporate is net corporate cash plus net salary.",
     "costComparison.tooltip.sustainability":
       "Shows how many full years the current asset base can keep funding the target after-tax monthly household cash.",
     "costComparison.tooltip.loanGap":
@@ -439,9 +466,26 @@ const translations = {
     "costComparison.tooltip.setupFeasibility":
       "Checks whether the full corporate setup can meet the target after combining current assets and loan capacity.",
     "costComparison.tooltip.waterfall":
-      "Step-by-step cashflow bridge from annual revenue through tax, health insurance, social insurance, and fixed cost deductions to disposable cash.",
+      "Step-by-step bridge from annual revenue to annual net cash. The corporate view subtracts gross salary, company insurance, fixed costs, and corporate tax, then adds back net salary.",
+    "costComparison.waterfallTooltipChange": "Change",
+    "costComparison.waterfallTooltipRevenue": "Starting revenue",
+    "costComparison.waterfallTooltipDeduction": "Deduction",
+    "costComparison.waterfallTooltipAddition": "Addition",
+    "costComparison.waterfallTooltipFinal": "Final net cash",
+    "costComparison.waterfallTooltipBase": "Previous running amount",
+    "costComparison.waterfallTooltipAfter": "After this step",
     "costComparison.tooltip.warning":
       "Important model caveats or threshold alerts that can materially affect the interpretation of results.",
+    "costComparison.mode.target": "Target-driven",
+    "costComparison.mode.asset": "Asset-driven",
+    "costComparison.assetNetYield": "Asset Net Yield",
+    "costComparison.detailedAudit": "Detailed Audit",
+    "costComparison.propertyPoints": "Property Points",
+    "costComparison.incomePoints": "Income Points",
+    "costComparison.totalPoints": "Total Points",
+    "costComparison.unitPriceLtc": "Unit Price x LTC Rate",
+    "costComparison.appliedTaxRate": "Applied Tax Rate",
+    "costComparison.appliedCorpTaxRate": "Applied Corp Tax Rate",
     "costComparison.personalWins": "Personal operation is currently ahead.",
     "costComparison.corporateWins": "Corporate operation is currently ahead.",
   },
@@ -743,12 +787,16 @@ const translations = {
     "costComparison.tax": "세금",
     "costComparison.socialInsurance": "사회보험",
     "costComparison.fixedCost": "고정비",
+    "costComparison.grossSalary": "총급여",
+    "costComparison.companyInsurance": "회사부담보험",
+    "costComparison.netSalary": "순급여",
+    "costComparison.netCorporateCash": "법인 순현금",
     "costComparison.payrollWithholding": "원천징수세",
     "costComparison.retainedEarnings": "유보이익",
     "costComparison.breakdownTitle": "비용 분해 비교",
     "costComparison.cumulativeTitle": "필요 자산 비교",
     "costComparison.householdCashTitle": "현재 자산 대비 여유 비교",
-    "costComparison.totalValueTitle": "목표 현금 구성 비교",
+    "costComparison.totalValueTitle": "순현금 구성 비교",
     "costComparison.sustainabilityTitle": "현재 자산 기준 지속가능성",
     "costComparison.loanGapTitle": "법인 대여금 반환 갭",
     "costComparison.loanGapRequired": "필요 대여금 반환액",
@@ -759,23 +807,41 @@ const translations = {
     "costComparison.setupFeasibility": "현재 전체 셋업 기준",
     "costComparison.feasible": "충족",
     "costComparison.notFeasible": "부족",
-    "costComparison.waterfallTitle": "총수익 대비 실수령 비교",
+    "costComparison.waterfallTitle": "총수익 대비 순현금 비교",
     "costComparison.waterfallBasis":
-      "여기서 총수익은 연간 예상 투자수익이며, `투자자산 x TR`로 계산합니다. 법인운용은 일부 이익이 유보이익으로 법인 안에 남기 때문에 가구 실수령이 총수익보다 훨씬 낮아질 수 있습니다.",
+      "여기서 총수익은 연간 예상 투자수익이며, `투자자산 x TR`로 계산합니다. 개인은 총수익에서 세금과 건강보험료를 뺀 값이 순현금이고, 법인은 법인 순현금에 순급여를 더한 값이 순현금입니다.",
     "costComparison.cumulativeNote":
       "낮을수록 유리합니다. 같은 목표 세후 월현금을 만들기 위해 각 구조에서 필요한 투자자산 규모를 비교합니다.",
     "costComparison.householdCashNote":
       "높을수록 유리합니다. 현재 투자자산에서 필요 자산을 뺀 여유분을 비교합니다.",
     "costComparison.totalValueNote":
-      "목표 월현금이 각 구조에서 어떤 항목으로 채워지는지 보여줍니다.",
+      "각 구조의 연 순현금이 어떤 항목으로 구성되는지 보여줍니다. 개인은 세후 투자현금, 법인은 법인 순현금과 순급여로 분해합니다.",
     "costComparison.sustainabilityNote":
       "현재 자산 기준으로 지금 설정을 유지했을 때 목표 월현금을 몇 년 동안 충족할 수 있는지 보여줍니다.",
     "costComparison.waterfallNote":
-      "왼쪽에서 오른쪽으로 읽으면 됩니다. 연간 총수익에서 비용 항목을 차감해 최종 실수령 현금으로 이어집니다.",
+      "왼쪽에서 오른쪽으로 읽으면 됩니다. 연간 총수익에서 비용 항목을 차감하고, 법인만 순급여를 다시 더해 최종 연 순현금으로 이어집니다.",
     "costComparison.warningTitle": "주의 사항",
     "costComparison.revenue": "총수익",
-    "costComparison.disposableCash": "실수령",
+    "costComparison.disposableCash": "최종 순현금",
+    "costComparison.annualNetCashflow": "연 순현금흐름",
+    "costComparison.cumulativeNetCashflow": "누적 순현금흐름",
     "costComparison.winnerBasis": "우세 판정 기준",
+    "costComparison.winnerBasisFormulaNetCashflow":
+      "차이 계산식 = 법인 연 순현금흐름 - 개인 연 순현금흐름",
+    "costComparison.winnerAnnualLabel": "연 순현금흐름 기준 결론",
+    "costComparison.winnerAnnualPrefix": "연 순현금흐름 기준으로",
+    "costComparison.winnerAnnualMiddle": "이 ",
+    "costComparison.winnerAnnualSuffix": "보다 더 많은 순현금을 남깁니다.",
+    "costComparison.winnerCumulativeLabel": "누적 순현금흐름 기준 결론",
+    "costComparison.winnerCumulativePrefix": "누적 순현금흐름 기준으로",
+    "costComparison.winnerCumulativeMiddle": "이 ",
+    "costComparison.winnerCumulativeSuffix": "보다 더 많은 순현금을 남깁니다.",
+    "costComparison.tie": "동률",
+    "costComparison.tieWins": "현재 입력 기준으로 두 구조의 우열이 같습니다.",
+    "costComparison.tieAnnualSummary":
+      "연 순현금흐름 기준으로 두 구조가 남기는 순현금이 같습니다.",
+    "costComparison.tieCumulativeSummary":
+      "누적 순현금흐름 기준으로 두 구조가 남기는 순현금이 같습니다.",
     "costComparison.tooltip.investmentAssets":
       "개인 시나리오의 과세 투자자산이며, 공정 비교를 위해 법인 시나리오에도 같은 자산 규모를 기준으로 적용합니다.",
     "costComparison.tooltip.pensionAssets":
@@ -816,13 +882,17 @@ const translations = {
       "입력한 목표 세후 월현금을 만들기 위해 필요한 투자자산 규모입니다.",
     "costComparison.tooltip.requiredRevenue":
       "목표 가계현금과 모든 비용을 충당하기 위해 필요한 연간 투자 총수익입니다.",
+    "costComparison.tooltip.disposableCash":
+      "현재 투자자산 기준으로 세금과 보험료를 반영한 뒤 남는 최종 순현금의 월 환산값입니다.",
     "costComparison.tooltip.assetMargin":
       "현재 투자자산에서 필요한 자산을 뺀 값입니다. 양수면 현재 자산으로 목표를 더 여유 있게 감당할 수 있다는 뜻입니다.",
     "costComparison.tooltip.winner":
-      "현재 우세 판정은 같은 목표 세후 월현금을 만들 때 연 총비용이 더 낮은 쪽을 기준으로 표시합니다.",
+      "현재 우세 판정은 각 구조에서 발생한 수익에서 구조별 모든 비용을 뺀 뒤 남는 순현금흐름을 기준으로 표시합니다. 화면의 차액은 `법인 - 개인`으로 계산합니다.",
     "costComparison.tooltip.driver.tax": "개인과 법인 간 세금 부담 차이입니다.",
     "costComparison.tooltip.driver.health":
       "지역건보와 직장건보 구조 차이에서 생기는 건강보험료 차이입니다.",
+    "costComparison.tooltip.driver.salary":
+      "법인 구조에서만 발생하는 총급여 비용 차이입니다.",
     "costComparison.tooltip.driver.fixed":
       "법인 운영을 위해 발생하는 고정 운영비 차이입니다.",
     "costComparison.tooltip.driver.social":
@@ -836,7 +906,7 @@ const translations = {
     "costComparison.tooltip.householdCash":
       "현재 투자자산과 필요 자산의 차이를 비교합니다.",
     "costComparison.tooltip.totalValue":
-      "목표 월현금이 개인은 세후 투자현금으로, 법인은 순급여와 주주대여금 반환으로 어떻게 구성되는지 보여줍니다.",
+      "연 순현금이 어떤 항목으로 구성되는지 보여줍니다. 개인은 세후 투자현금이고, 법인은 법인 순현금과 순급여의 합입니다.",
     "costComparison.tooltip.sustainability":
       "현재 자산으로 목표 세후 월현금을 몇 년 동안 온전히 충족할 수 있는지 보여줍니다.",
     "costComparison.tooltip.loanGap":
@@ -854,9 +924,26 @@ const translations = {
     "costComparison.tooltip.setupFeasibility":
       "현재 투자자산과 주주대여금 재원을 함께 봤을 때 전체 법인 셋업이 목표를 충족하는지 확인합니다.",
     "costComparison.tooltip.waterfall":
-      "연간 총수익에서 세금, 건보료, 사회보험, 고정비를 차감해 실수령으로 이어지는 흐름을 단계별로 보여줍니다.",
+      "연간 총수익에서 비용을 차감해 연 순현금으로 이어지는 흐름을 단계별로 보여줍니다. 법인은 총급여와 회사부담보험을 먼저 차감한 뒤 순급여를 다시 더합니다.",
+    "costComparison.waterfallTooltipChange": "증감",
+    "costComparison.waterfallTooltipRevenue": "시작 총수익",
+    "costComparison.waterfallTooltipDeduction": "차감액",
+    "costComparison.waterfallTooltipAddition": "가산액",
+    "costComparison.waterfallTooltipFinal": "최종 순현금",
+    "costComparison.waterfallTooltipBase": "이전 누적값",
+    "costComparison.waterfallTooltipAfter": "단계 반영 후",
     "costComparison.tooltip.warning":
       "결과 해석에 영향을 줄 수 있는 모델 경고나 제도상 유의사항입니다.",
+    "costComparison.mode.target": "목표 수익 기반",
+    "costComparison.mode.asset": "보유 자산 기반",
+    "costComparison.assetNetYield": "자산 대비 세후 수익률",
+    "costComparison.detailedAudit": "상세 비용 감사",
+    "costComparison.propertyPoints": "재산 점수 (부동산 등)",
+    "costComparison.incomePoints": "소득 점수 (배당 등)",
+    "costComparison.totalPoints": "합계 점수",
+    "costComparison.unitPriceLtc": "점수당 단가 x 요양보험 요율",
+    "costComparison.appliedTaxRate": "적용 소득세율",
+    "costComparison.appliedCorpTaxRate": "적용 법인세율",
     "costComparison.personalWins": "현재 입력 기준으로 개인운용이 우세합니다.",
     "costComparison.corporateWins": "현재 입력 기준으로 법인운용이 우세합니다.",
   },

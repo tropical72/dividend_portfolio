@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 import src.backend.main as main_module
@@ -124,17 +125,20 @@ def test_cost_comparison_run_uses_active_master_and_returns_kpis(tmp_path, monke
     assert len(personal["series"]) == 5
     assert len(corporate["series"]) == 5
 
-    assert comparison["winner"] in {"personal", "corporate"}
-    assert comparison["winner_basis"] == "annual_total_cost"
+    assert comparison["winner"] in {"personal", "corporate", "tie"}
+    assert comparison["winner_basis"] == "annual_net_cashflow"
     assert len(comparison["top_drivers"]) == 3
+    assert all(driver["label"] != "주주대여금 상환" for driver in comparison["top_drivers"])
     assert (
         personal["kpis"]["annual_health_insurance"] != corporate["kpis"]["annual_health_insurance"]
     )
     assert personal["kpis"]["required_assets"] > 0
     assert corporate["kpis"]["required_assets"] > 0
+    assert "annual_net_cashflow" in personal["kpis"]
+    assert "annual_net_cashflow" in corporate["kpis"]
 
 
-def test_cost_comparison_winner_follows_lower_annual_total_cost(tmp_path, monkeypatch):
+def test_cost_comparison_winner_follows_higher_annual_net_cashflow(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     client = TestClient(main_module.app)
@@ -148,15 +152,48 @@ def test_cost_comparison_winner_follows_lower_annual_total_cost(tmp_path, monkey
     assert run_response.json()["success"] is True
 
     data = run_response.json()["data"]
-    personal_cost = data["personal"]["kpis"]["annual_total_cost"]
-    corporate_cost = data["corporate"]["kpis"]["annual_total_cost"]
+    personal_net_cash = data["personal"]["kpis"]["annual_net_cashflow"]
+    corporate_net_cash = data["corporate"]["kpis"]["annual_net_cashflow"]
     winner = data["comparison"]["winner"]
 
-    expected_winner = "corporate" if corporate_cost <= personal_cost else "personal"
+    expected_winner = (
+        "tie"
+        if corporate_net_cash == pytest.approx(personal_net_cash)
+        else ("corporate" if corporate_net_cash > personal_net_cash else "personal")
+    )
     assert winner == expected_winner
 
 
-def test_cost_comparison_corporate_feasibility_separates_assets_and_loan_capacity(
+def test_cost_comparison_winner_and_drivers_ignore_shareholder_loan_extraction_path(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    payload = _build_config_payload()
+    payload["corporate"]["annual_shareholder_loan_repayment"] = 0
+
+    save_response = client.post("/api/cost-comparison/config", json=payload)
+    assert save_response.status_code == 200
+    assert save_response.json()["success"] is True
+
+    run_response = client.post("/api/cost-comparison/run", json={})
+    assert run_response.status_code == 200
+    assert run_response.json()["success"] is True
+
+    data = run_response.json()["data"]
+    comparison = data["comparison"]
+    corporate = data["corporate"]
+
+    assert comparison["winner_basis"] == "annual_net_cashflow"
+    assert all(driver["label"] != "주주대여금 상환" for driver in comparison["top_drivers"])
+    assert corporate["kpis"]["annual_net_cashflow"] == pytest.approx(
+        corporate["breakdown"]["net_corporate_cash"] + corporate["breakdown"]["net_salary"]
+    )
+
+
+def test_cost_comparison_target_mode_corporate_net_cashflow_combines_company_cash_and_net_salary(
     tmp_path, monkeypatch
 ):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
@@ -180,8 +217,9 @@ def test_cost_comparison_corporate_feasibility_separates_assets_and_loan_capacit
 
     assert corporate["kpis"]["asset_margin_vs_current"] >= 0
     assert corporate["kpis"]["achieves_target_with_current_assets"] is True
-    assert corporate["kpis"]["loan_capacity_sufficient"] is False
-    assert corporate["kpis"]["achieves_target_with_current_setup"] is False
+    assert corporate["kpis"]["annual_net_cashflow"] == pytest.approx(
+        corporate["breakdown"]["net_corporate_cash"] + corporate["breakdown"]["net_salary"]
+    )
 
 
 def test_cost_comparison_run_compounds_net_worth_over_years(tmp_path, monkeypatch):
@@ -205,10 +243,9 @@ def test_cost_comparison_run_compounds_net_worth_over_years(tmp_path, monkeypatc
         personal_series[1]["cumulative_household_cash"]
         > personal_series[0]["cumulative_household_cash"]
     )
-    assert "cumulative_loan_repayment" in corporate_series[0]
     assert (
-        corporate_series[-1]["cumulative_loan_repayment"]
-        >= corporate_series[0]["cumulative_loan_repayment"]
+        corporate_series[1]["cumulative_household_cash"]
+        > corporate_series[0]["cumulative_household_cash"]
     )
     assert personal_series[-1]["total_economic_value"] >= personal_series[-1]["net_worth"]
     assert corporate_series[-1]["disposable_cash"] >= 0
@@ -303,15 +340,12 @@ def test_cost_comparison_run_returns_split_cumulative_value_series(tmp_path, mon
     assert personal_point["total_economic_value"] == (
         personal_point["net_worth"] + personal_point["cumulative_household_cash"]
     )
-    assert (
-        corporate_point["cumulative_household_cash"] >= corporate_point["cumulative_loan_repayment"]
-    )
     assert corporate_point["total_economic_value"] == (
         corporate_point["net_worth"] + corporate_point["cumulative_household_cash"]
     )
 
 
-def test_cost_comparison_run_returns_sustainability_series_and_loan_gap(tmp_path, monkeypatch):
+def test_cost_comparison_run_returns_sustainability_series(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     client = TestClient(main_module.app)
@@ -332,9 +366,50 @@ def test_cost_comparison_run_returns_sustainability_series_and_loan_gap(tmp_path
     assert len(corporate["sustainability_series"]) == 5
     assert "years_fully_funded" in personal["sustainability"]
     assert "years_fully_funded" in corporate["sustainability"]
-    required_loan = corporate["breakdown"]["required_shareholder_loan_repayment"]
-    configured_loan = corporate["breakdown"]["configured_annual_loan_target"]
-    gap = corporate["breakdown"]["loan_repayment_gap"]
+    assert corporate["sustainability_series"][0]["household_cash"] >= 0
+    assert corporate["sustainability"]["final_asset_balance"] >= 0
 
-    assert gap >= 0
-    assert gap == max(0, required_loan - configured_loan)
+
+def test_cost_comparison_run_honors_nested_asset_mode_override(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    payload = _build_config_payload()
+    payload["assumptions"]["simulation_mode"] = "asset"
+
+    save_response = client.post("/api/cost-comparison/config", json=payload)
+    assert save_response.status_code == 200
+    assert save_response.json()["success"] is True
+
+    run_response = client.post("/api/cost-comparison/run", json={})
+    assert run_response.status_code == 200
+    assert run_response.json()["success"] is True
+
+    data = run_response.json()["data"]
+    assert data["assumptions"]["simulation_mode"] == "asset"
+    assert data["personal"]["kpis"]["required_assets"] == (
+        payload["personal_assets"]["investment_assets"]
+    )
+
+
+def test_personal_asset_driven_series_does_not_double_count_household_cash(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    payload = _build_config_payload()
+    payload["assumptions"]["simulation_mode"] = "asset"
+    payload["assumptions"]["simulation_years"] = 2
+
+    save_response = client.post("/api/cost-comparison/config", json=payload)
+    assert save_response.status_code == 200
+    assert save_response.json()["success"] is True
+
+    run_response = client.post("/api/cost-comparison/run", json={})
+    assert run_response.status_code == 200
+    assert run_response.json()["success"] is True
+
+    personal_series = run_response.json()["data"]["personal"]["series"]
+    assert personal_series[0]["cumulative_household_cash"] == 0
+    assert personal_series[0]["total_economic_value"] == personal_series[0]["net_worth"]
