@@ -73,6 +73,7 @@ class RetirementConfigRequest(BaseModel):
 
 
 class CostComparisonConfigRequest(BaseModel):
+    simulation_mode: Optional[str] = None
     household: Optional[Dict[str, Any]] = None
     personal_assets: Optional[Dict[str, Any]] = None
     real_estate: Optional[Dict[str, Any]] = None

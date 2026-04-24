@@ -63,11 +63,30 @@ class TaxEngine:
             return 0
         return int(annual_income / 1000000 * 20)
 
-    def calculate_local_health_insurance(self, property_val: float, annual_income: float) -> float:
+    def calculate_local_health_insurance_detailed(
+        self, property_val: float, annual_income: float
+    ) -> Dict[str, Any]:
+        """[REQ-CCS-55] 건강보험료 점수 산출 내역 상세 반환"""
         p_points = self.get_property_points(property_val)
         i_points = self.get_income_points(annual_income)
-        base_premium = (p_points + i_points) * self.point_unit_price
-        return base_premium * (1 + self.ltc_rate)
+        total_points = p_points + i_points
+        base_premium = total_points * self.point_unit_price
+        total_premium = base_premium * (1 + self.ltc_rate)
+
+        return {
+            "property_points": p_points,
+            "income_points": i_points,
+            "total_points": total_points,
+            "point_unit_price": self.point_unit_price,
+            "ltc_rate": self.ltc_rate,
+            "base_premium": base_premium,
+            "total_premium": total_premium,
+        }
+
+    def calculate_local_health_insurance(self, property_val: float, annual_income: float) -> float:
+        """기존 인터페이스 유지"""
+        result = self.calculate_local_health_insurance_detailed(property_val, annual_income)
+        return result["total_premium"]
 
     def calculate_corp_profitability(
         self,
