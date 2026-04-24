@@ -82,5 +82,16 @@
     - [ ] **T-GLB-13.4.1** 자산군별 PA 차등 적용 시 시뮬레이션 결과의 합리적 차이(SGOV 정체 vs 성장주 우상향) 검증.
     - [ ] **T-GLB-13.4.2** 국민연금 입력값 변경 시 65세 이후 그래프 곡선 변화 확인.
 
+### [Phase 14] 공개 저장소용 기본값/로컬 데이터 분리 [NEW] - DONE
+- **T-GLB-14.1: [Backend] 저장소 기본값과 로컬 런타임 데이터 분리**
+    - [x] **T-GLB-14.1.1** `StorageManager`가 로컬 데이터 디렉터리 우선, `defaults/` fallback 구조를 지원하도록 확장한다.
+    - [x] **T-GLB-14.1.2** `main.py`의 기본 `APP_DATA_DIR`를 사용자 로컬 앱 데이터 디렉터리로 변경한다.
+- **T-GLB-14.2: [Repo] Git 추적 기본값 구조 재배치**
+    - [x] **T-GLB-14.2.1** 공개 가능한 기본 설정을 `defaults/settings.json`, `defaults/cost_comparison_config.json`, `defaults/retirement_config.json`으로 이동한다.
+    - [x] **T-GLB-14.2.2** 저장소 루트의 구 영속성 JSON 및 생성물 추적을 제거하고 `.gitignore`를 보강한다.
+- **T-GLB-14.3: [Validation] 기본값 fallback 및 로컬 저장 분리 검증**
+    - [x] **T-GLB-14.3.1** 로컬 설정 부재 시 `defaults/` 기본값이 로드되는지 테스트한다.
+    - [x] **T-GLB-14.3.2** 사용자 저장이 `APP_DATA_DIR` 하위 로컬 파일에만 기록되고 Git 기본값 파일은 오염되지 않는지 검증한다.
+
 ---
-*마지막 업데이트: 2026-04-17 17:15:00*
+*마지막 업데이트: 2026-04-25 13:20:00*

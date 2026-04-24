@@ -50,8 +50,15 @@ async def test_watchlist_persistence():
 
 
 @pytest.mark.asyncio
-async def test_settings_persistence():
+async def test_settings_persistence(monkeypatch):
+    from src.backend import api as api_module
     from src.backend.main import app
+
+    class DummyProvider:
+        def __init__(self, dart_api_key=None):
+            self.dart_api_key = dart_api_key
+
+    monkeypatch.setattr(api_module, "StockDataProvider", DummyProvider)
 
     new_key = "secret_dart_key"
     new_gemini_key = "secret_gemini_key"
@@ -87,3 +94,57 @@ async def test_settings_persistence():
         saved_secret_data = json.load(f)
         assert saved_secret_data["dart_api_key"] == new_key
         assert saved_secret_data["gemini_api_key"] == new_gemini_key
+
+
+def test_backend_loads_git_tracked_defaults_and_saves_only_to_local_data(tmp_path):
+    from src.backend.api import DividendBackend
+
+    data_dir = tmp_path / "appdata"
+    defaults_dir = tmp_path / "defaults"
+    data_dir.mkdir()
+    defaults_dir.mkdir()
+
+    default_settings = {
+        "default_capital": 12000.0,
+        "default_currency": "USD",
+        "ui_language": "ko",
+    }
+    default_cost_config = {
+        "simulation_mode": "target",
+        "assumptions": {"simulation_years": 20},
+    }
+    default_retirement_config = {
+        "simulation_params": {"target_monthly_cashflow": 3500000},
+    }
+
+    (defaults_dir / "settings.json").write_text(
+        json.dumps(default_settings, ensure_ascii=False, indent=4), encoding="utf-8"
+    )
+    (defaults_dir / "cost_comparison_config.json").write_text(
+        json.dumps(default_cost_config, ensure_ascii=False, indent=4), encoding="utf-8"
+    )
+    (defaults_dir / "retirement_config.json").write_text(
+        json.dumps(default_retirement_config, ensure_ascii=False, indent=4), encoding="utf-8"
+    )
+
+    backend = DividendBackend(
+        data_dir=str(data_dir),
+        defaults_dir=str(defaults_dir),
+        ensure_default_master_bundle=False,
+    )
+
+    assert backend.get_settings()["default_capital"] == 12000.0
+    assert backend.get_cost_comparison_config()["assumptions"]["simulation_years"] == 20
+    assert (
+        backend.get_retirement_config()["simulation_params"]["target_monthly_cashflow"] == 3500000
+    )
+    assert not (data_dir / "settings.json").exists()
+
+    backend.update_settings({"ui_language": "en"})
+
+    saved_settings = json.loads((data_dir / "settings.json").read_text(encoding="utf-8"))
+    assert saved_settings["ui_language"] == "en"
+    default_settings_after_save = json.loads(
+        (defaults_dir / "settings.json").read_text(encoding="utf-8")
+    )
+    assert default_settings_after_save == default_settings

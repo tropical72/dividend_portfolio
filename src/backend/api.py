@@ -20,9 +20,15 @@ class DividendBackend:
     DEFAULT_STANDARD_PROFILE_RETURN = 0.0485
     SECRET_SETTING_KEYS = ("dart_api_key", "gemini_api_key", "openai_api_key")
 
-    def __init__(self, data_dir: str = ".", ensure_default_master_bundle: bool = False) -> None:
-        self.storage = StorageManager(data_dir=data_dir)
+    def __init__(
+        self,
+        data_dir: str = ".",
+        defaults_dir: Optional[str] = None,
+        ensure_default_master_bundle: bool = False,
+    ) -> None:
+        self.storage = StorageManager(data_dir=data_dir, defaults_dir=defaults_dir)
         self.data_dir = os.path.abspath(data_dir)
+        self.defaults_dir = os.path.abspath(defaults_dir) if defaults_dir else None
         self.ensure_default_master_bundle = ensure_default_master_bundle
         self.watchlist_file = "watchlist.json"
         self.settings_file = "settings.json"

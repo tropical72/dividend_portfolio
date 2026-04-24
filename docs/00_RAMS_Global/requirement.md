@@ -16,6 +16,8 @@
 - **[REQ-SYS-03.2] API 키 보안:** 클라이언트(JS)에 키를 노출하지 않고 백엔드에서만 처리 및 관리.
 - **[REQ-SYS-03.3] Git 비추적 비밀 설정:** Gemini/OpenDart/OpenAI 등 비밀 키는 Git 추적 대상인 `settings.json`에 저장하지 않고, 로컬 전용 비밀 파일(예: `settings.local.json`) 또는 환경변수에만 저장되어야 한다.
 - **[REQ-SYS-03.4] 예시 설정 분리:** 저장소에는 실제 키 대신 구조만 담은 예시 파일만 포함하고, 실제 비밀값 파일은 `.gitignore`로 차단해야 한다.
+- **[REQ-SYS-03.5] 기본값/런타임 데이터 분리:** 공개 저장소에는 `defaults/*.json` 형태의 Git 추적 기본값만 포함하고, 사용자가 수정·저장한 런타임 데이터(`settings.json`, `cost_comparison_config.json`, `retirement_config.json` 등)는 `APP_DATA_DIR` 하위 로컬 파일로만 기록되어야 한다.
+- **[REQ-SYS-03.6] 클론 직후 실행 가능성:** 새 사용자는 로컬 저장 파일이 없어도 `defaults/`의 기본값과 시스템 시드 데이터만으로 앱을 실행할 수 있어야 한다.
 
 ## [REQ-SYS-04] API 키 및 사용자 설정 관리 UI
 - **[REQ-SYS-04.1] 설정 전용 탭:** 사용자가 API 키(OpenDart, Gemini 등)를 입력하고 수정할 수 있는 전용 UI 탭 제공.

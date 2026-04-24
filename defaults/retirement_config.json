@@ -1,0 +1,93 @@
+{
+    "active_assumption_id": "v1",
+    "assumptions": {
+        "v1": {
+            "name": "Standard Profile",
+            "expected_return": 0.08442909560160451,
+            "expected_growth": 0.02,
+            "inflation_rate": 0.025,
+            "master_return": 0.08442909560160451,
+            "master_inflation": 0.025
+        },
+        "conservative": {
+            "name": "Conservative Profile",
+            "expected_return": 0.035,
+            "expected_growth": 0.01,
+            "inflation_rate": 0.035,
+            "master_return": 0.035,
+            "master_inflation": 0.035
+        }
+    },
+    "strategy_rules": {
+        "rebalance_month": 2,
+        "rebalance_week": 2,
+        "bear_market_freeze_enabled": true,
+        "corporate": {
+            "sgov_target_months": 40,
+            "sgov_warn_months": 30,
+            "sgov_crisis_months": 24,
+            "high_income_min_ratio": 0.2,
+            "high_income_max_ratio": 0.35,
+            "growth_sell_years_left_threshold": 10
+        },
+        "pension": {
+            "sgov_min_years": 2,
+            "bond_min_years": 5,
+            "bond_min_total_ratio": 0.05,
+            "dividend_min_ratio": 0.1
+        }
+    },
+    "user_profile": {
+        "birth_year": 1970,
+        "birth_month": 1,
+        "private_pension_start_age": 55,
+        "national_pension_start_age": 65
+    },
+    "simulation_params": {
+        "target_monthly_cashflow": 3000000,
+        "inflation_rate": 0.025,
+        "expected_market_growth": 0.0485,
+        "simulation_start_year": 2026,
+        "simulation_start_month": 1,
+        "national_pension_amount": 1000000,
+        "simulation_years": 30
+    },
+    "corp_params": {
+        "initial_investment": 200000000,
+        "capital_stock": 5000000,
+        "initial_shareholder_loan": 100000000,
+        "monthly_salary": 2000000,
+        "monthly_fixed_cost": 500000,
+        "employee_count": 1
+    },
+    "pension_params": {
+        "initial_investment": 100000000,
+        "severance_reserve": 100000000,
+        "other_reserve": 0,
+        "monthly_withdrawal_target": 1000000
+    },
+    "personal_params": {
+        "real_estate_price": 620000000,
+        "other_assets": 0
+    },
+    "tax_and_insurance": {
+        "point_unit_price": 211.5,
+        "ltc_rate": 0.12,
+        "corp_tax_threshold": 200000000,
+        "corp_tax_low_rate": 0.1,
+        "corp_tax_high_rate": 0.2,
+        "pension_rate": 0.045,
+        "health_rate": 0.035,
+        "employment_rate": 0.009,
+        "income_tax_estimate_rate": 0.15
+    },
+    "trigger_thresholds": {
+        "tax_threshold": 200000000,
+        "target_buffer_months": 12,
+        "high_income_cap_rate": 0.4,
+        "market_panic_threshold": -0.2,
+        "equity_yield_multiplier": 1.2,
+        "debt_yield_multiplier": 0.6
+    },
+    "planned_cashflows": []
+}

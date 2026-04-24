@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -12,9 +13,23 @@ from src.core.stress_engine import StressTestEngine
 from src.core.tax_engine import TaxEngine
 from src.core.trigger_engine import TriggerEngine
 
-DATA_DIR = os.getenv("APP_DATA_DIR", ".")
+
+def _get_default_data_dir() -> str:
+    xdg_data_home = os.getenv("XDG_DATA_HOME")
+    if xdg_data_home:
+        return str(Path(xdg_data_home) / "dividend_portfolio")
+    return str(Path.home() / ".local" / "share" / "dividend_portfolio")
+
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+DEFAULTS_DIR = str(BACKEND_ROOT / "defaults")
+DATA_DIR = os.getenv("APP_DATA_DIR", _get_default_data_dir())
 app = FastAPI(title="Dividend Portfolio Manager API")
-backend = DividendBackend(data_dir=DATA_DIR, ensure_default_master_bundle=True)
+backend = DividendBackend(
+    data_dir=DATA_DIR,
+    defaults_dir=DEFAULTS_DIR,
+    ensure_default_master_bundle=True,
+)
 
 tax_engine = TaxEngine()
 trigger_engine = TriggerEngine()

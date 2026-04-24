@@ -8,7 +8,9 @@
 - **[TEST-SYS-1.2.1] API Mocking 격리**
     - 시나리오: 네트워크를 차단한 상태에서 `yfinance` 요청 시 Mock 데이터가 반환되는가?
 - **[TEST-SYS-1.3.1] 데이터 영속성 API**
-    - 시나리오: API를 통해 종목 추가 후, `test_watchlist.json` 파일에 물리적으로 기록되는가?
+    - 시나리오: API를 통해 종목 추가 후, `APP_DATA_DIR/watchlist.json` 파일에 물리적으로 기록되는가?
+- **[TEST-SYS-1.3.2] 기본값 fallback 로드**
+    - 시나리오: 로컬 `APP_DATA_DIR`에 설정 파일이 없을 때 `defaults/settings.json`, `defaults/cost_comparison_config.json`, `defaults/retirement_config.json` 값이 읽히는가?
 
 ### [Phase 2: Frontend]
 - **[TEST-SYS-2.1.1] 라우팅 및 레이아웃**
@@ -19,11 +21,11 @@
     - 시나리오: 실제 백엔드와 연결되는 E2E 시작 전에 `/api/test/state`로 상태 snapshot을 저장하고, 테스트 종료 후 restore 호출 시 포트폴리오/마스터 전략/설정/은퇴 설정이 원래 상태로 복구되는가?
 
 - **[TEST-SYS-2.3.1] 설정 UI 및 API 키 저장**
-    - 시나리오 1: 사용자가 설정 탭에서 OpenDart API 키 입력 후 'Save' 클릭 시 `settings.json`에 기록되는가?
+    - 시나리오 1: 사용자가 설정 탭에서 OpenDart API 키 입력 후 'Save' 클릭 시 `APP_DATA_DIR/settings.local.json`에 기록되고 공개 설정은 `APP_DATA_DIR/settings.json`에 분리 저장되는가?
     - 시나리오 2: 저장된 키가 UI에서 마스킹(`****`) 처리되어 표시되는가?
     - 시나리오 3: 잘못된 키 입력 시 API 유효성 검사 실패 메시지가 노출되는가?
 - **[TEST-SYS-I18N-01] 언어 설정 저장 및 재로드**
-    - 시나리오: 사용자가 `Settings`에서 UI 언어를 `English`로 변경 후 저장하면 `settings.json`에 `ui_language: "en"`이 기록되고, 새로고침/재실행 후에도 영어 UI가 유지되는가?
+    - 시나리오: 사용자가 `Settings`에서 UI 언어를 `English`로 변경 후 저장하면 `APP_DATA_DIR/settings.json`에 `ui_language: "en"`이 기록되고, 새로고침/재실행 후에도 영어 UI가 유지되는가?
 - **[TEST-SYS-I18N-02] 즉시 언어 전환**
     - 시나리오: 앱 실행 중 언어를 `한국어`와 `English` 사이에서 전환하면 현재 열려 있는 화면의 제목, 버튼, 레이블, 툴팁이 즉시 선택 언어로 바뀌는가?
 - **[TEST-SYS-I18N-03] 핵심 화면 혼용 방지**

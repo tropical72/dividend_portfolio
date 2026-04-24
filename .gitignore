@@ -12,6 +12,16 @@ env/
 # Data & Secrets (개인 사용자 정보 및 API 키 파일 절대 금지)
 data/*.json
 settings.local.json
+/settings.json
+/cost_comparison_config.json
+/retirement_config.json
+/watchlist.json
+/portfolios.json
+/master_portfolios.json
+/retirement_snapshot.json
+/dev_test.log
+/dev_test_final.log
+docs_cache/*.pkl
 .env
 .env.*
 !.env.example
@@ -23,6 +33,7 @@ dist-ssr
 *.local
 src/frontend/test-results/
 src/frontend/playwright-report/
+test-results/
 
 # IDE & OS
 .vscode/

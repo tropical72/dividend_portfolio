@@ -52,10 +52,13 @@
 
 ### 3.1 저장 파일
 - 제안 파일명: `cost_comparison_config.json`
-- 위치: 기존 백엔드 설정 저장 파일들과 동일한 저장 계층
+- 위치:
+  - Git 기본값: `defaults/cost_comparison_config.json`
+  - 사용자 런타임 저장: `APP_DATA_DIR/cost_comparison_config.json`
 - 목적:
   - 비교 시뮬레이터 전용 입력값 영속화
   - 기존 `retirement_config.json` 및 `settings.json`과 분리
+  - 공개 저장소 기본값과 사용자 로컬 수정값을 분리
 
 ### 3.2 루트 스키마 초안
 ```json
