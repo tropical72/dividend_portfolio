@@ -135,6 +135,8 @@ function buildWaterfallSeries(
       base: 0,
       delta: revenue,
       signedDelta: revenue,
+      runningBefore: 0,
+      runningAfter: revenue,
       after: revenue,
     },
     {
@@ -142,6 +144,8 @@ function buildWaterfallSeries(
       base: afterGrossSalary,
       delta: grossSalary,
       signedDelta: -grossSalary,
+      runningBefore: revenue,
+      runningAfter: afterGrossSalary,
       after: afterGrossSalary,
     },
     {
@@ -149,6 +153,8 @@ function buildWaterfallSeries(
       base: afterTax,
       delta: tax,
       signedDelta: -tax,
+      runningBefore: afterGrossSalary,
+      runningAfter: afterTax,
       after: afterTax,
     },
     {
@@ -156,6 +162,8 @@ function buildWaterfallSeries(
       base: afterHealth,
       delta: health,
       signedDelta: -health,
+      runningBefore: afterTax,
+      runningAfter: afterHealth,
       after: afterHealth,
     },
     {
@@ -163,6 +171,8 @@ function buildWaterfallSeries(
       base: afterCompanyInsurance,
       delta: companyInsurance,
       signedDelta: -companyInsurance,
+      runningBefore: afterHealth,
+      runningAfter: afterCompanyInsurance,
       after: afterCompanyInsurance,
     },
     {
@@ -170,6 +180,8 @@ function buildWaterfallSeries(
       base: afterFixed,
       delta: fixed,
       signedDelta: -fixed,
+      runningBefore: afterCompanyInsurance,
+      runningAfter: afterFixed,
       after: afterFixed,
     },
     {
@@ -177,6 +189,8 @@ function buildWaterfallSeries(
       base: afterFixed,
       delta: netSalary,
       signedDelta: netSalary,
+      runningBefore: afterFixed,
+      runningAfter: afterNetSalary,
       after: afterNetSalary,
     },
     {
@@ -184,6 +198,8 @@ function buildWaterfallSeries(
       base: 0,
       delta: disposable,
       signedDelta: disposable,
+      runningBefore: afterNetSalary,
+      runningAfter: disposable,
       after: disposable,
     },
   ];
@@ -1828,6 +1844,8 @@ function WaterfallTooltip({
       delta: number;
       signedDelta: number;
       after: number;
+      runningBefore: number;
+      runningAfter: number;
     };
   }>;
   label?: string | number;
@@ -1871,7 +1889,7 @@ function WaterfallTooltip({
             {t("costComparison.waterfallTooltipBase")}
           </span>
           <span className="font-semibold text-slate-100">
-            {formatKrw(point.base)}
+            {formatKrw(point.runningBefore)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -1879,7 +1897,7 @@ function WaterfallTooltip({
             {t("costComparison.waterfallTooltipAfter")}
           </span>
           <span className="font-semibold text-slate-100">
-            {formatKrw(point.after)}
+            {formatKrw(point.runningAfter)}
           </span>
         </div>
       </div>
