@@ -38,7 +38,7 @@
         }
     },
     "user_profile": {
-        "birth_year": 1970,
+        "birth_year": 1980,
         "birth_month": 1,
         "private_pension_start_age": 55,
         "national_pension_start_age": 65
@@ -53,21 +53,21 @@
         "simulation_years": 30
     },
     "corp_params": {
-        "initial_investment": 200000000,
+        "initial_investment": 150000000,
         "capital_stock": 5000000,
-        "initial_shareholder_loan": 100000000,
+        "initial_shareholder_loan": 50000000,
         "monthly_salary": 2000000,
         "monthly_fixed_cost": 500000,
         "employee_count": 1
     },
     "pension_params": {
-        "initial_investment": 100000000,
-        "severance_reserve": 100000000,
+        "initial_investment": 150000000,
+        "severance_reserve": 50000000,
         "other_reserve": 0,
         "monthly_withdrawal_target": 1000000
     },
     "personal_params": {
-        "real_estate_price": 620000000,
+        "real_estate_price": 500000000,
         "other_assets": 0
     },
     "tax_and_insurance": {
