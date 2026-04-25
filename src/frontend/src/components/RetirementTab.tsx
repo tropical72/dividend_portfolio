@@ -87,6 +87,7 @@ export function RetirementTab() {
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const visibleAssumptions = getVisibleAssumptions(config);
 
   const fetchData = useCallback(
@@ -222,6 +223,13 @@ export function RetirementTab() {
     (d) => d.index % 12 === 0 || d.index === 1,
   );
   const largeCurrencyUnit = t("retirement.table.hundredMillion");
+  const initialNetWorth = monthlyData[0]?.total_net_worth || 0;
+  const latestNetWorth =
+    monthlyData[monthlyData.length - 1]?.total_net_worth || 0;
+  const minimumNetWorth = monthlyData.reduce(
+    (min, item) => Math.min(min, item.total_net_worth || 0),
+    initialNetWorth || 0,
+  );
 
   const level = (() => {
     const years = summary.total_survival_years || 0;
@@ -564,6 +572,28 @@ export function RetirementTab() {
             </div>
           </div>
         </div>
+        <div className="rounded-[2rem] border border-slate-800 bg-slate-900/40 px-5 py-4">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                {t("retirement.inputGuideLabel")}
+              </p>
+              <p className="mt-2 text-sm font-bold text-slate-300">
+                {t("retirement.inputGuideBody")}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InlineHint
+                label={t("retirement.inputGuideLocked")}
+                value={t("retirement.inputGuideLockedBody")}
+              />
+              <InlineHint
+                label={t("retirement.inputGuideEditable")}
+                value={t("retirement.inputGuideEditableBody")}
+              />
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {visibleAssumptions.map(([id, item]) => (
             <div
@@ -578,16 +608,23 @@ export function RetirementTab() {
               )}
             >
               <div className="flex justify-between items-start mb-6">
-                <h4
-                  className={cn(
-                    "text-xl font-black",
-                    activeId === id ? "text-emerald-400" : "text-slate-400",
-                  )}
-                >
-                  {id === "v1"
-                    ? t("retirement.assumption.standard")
-                    : t("retirement.assumption.conservative")}
-                </h4>
+                <div className="space-y-2">
+                  <h4
+                    className={cn(
+                      "text-xl font-black",
+                      activeId === id ? "text-emerald-400" : "text-slate-400",
+                    )}
+                  >
+                    {id === "v1"
+                      ? t("retirement.assumption.standard")
+                      : t("retirement.assumption.conservative")}
+                  </h4>
+                  <p className="text-[11px] font-bold text-slate-500">
+                    {id === "v1"
+                      ? t("retirement.assumptionMasterLocked")
+                      : t("retirement.assumptionEditable")}
+                  </p>
+                </div>
                 {activeId === id && (
                   <CheckCircle2
                     size={24}
@@ -680,6 +717,11 @@ export function RetirementTab() {
                   />
                 </div>
               </div>
+              <p className="mt-6 text-[11px] font-bold text-slate-500">
+                {id === "v1"
+                  ? t("retirement.assumptionMasterHint")
+                  : t("retirement.assumptionEditableHint")}
+              </p>
             </div>
           ))}
         </div>
@@ -861,6 +903,30 @@ export function RetirementTab() {
               className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative"
               data-testid="retirement-projection-chart"
             >
+              <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                <ChartSummaryCard
+                  label={t("retirement.chartStartAssets")}
+                  value={`₩${(initialNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
+                />
+                <ChartSummaryCard
+                  label={t("retirement.chartLatestAssets")}
+                  value={`₩${(latestNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
+                />
+                <ChartSummaryCard
+                  label={t("retirement.chartMinimumAssets")}
+                  value={`₩${(minimumNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
+                />
+              </div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    {t("retirement.chartFocusLabel")}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-300">
+                    {t("retirement.chartFocusBody")}
+                  </p>
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={chartData}
@@ -971,124 +1037,182 @@ export function RetirementTab() {
 
       {/* Step 5. Detailed Log */}
       <section className="space-y-6 pb-20">
-        <div className="flex items-center gap-3 px-4">
-          <div className="p-2 bg-slate-800 rounded-lg">
-            <Coins size={20} className="text-slate-400" />
+        <div className="flex flex-col gap-4 px-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-800 rounded-lg">
+              <Coins size={20} className="text-slate-400" />
+            </div>
+            <div>
+              <h3
+                className={cn(
+                  "text-slate-300",
+                  isKorean
+                    ? "text-lg font-bold tracking-normal"
+                    : "text-base font-black uppercase tracking-widest",
+                )}
+              >
+                {t("retirement.step5Title")}
+              </h3>
+              <p className="mt-1 text-sm font-bold text-slate-500">
+                {t("retirement.detailLogHelper")}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3
+          <button
+            type="button"
+            onClick={() => setIsDetailOpen((prev) => !prev)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-300"
+            data-testid="retirement-detail-toggle"
+          >
+            <span>
+              {isDetailOpen
+                ? t("retirement.hideDetailLog")
+                : t("retirement.showDetailLog")}
+            </span>
+            <ChevronDown
+              size={16}
               className={cn(
-                "text-slate-300",
-                isKorean
-                  ? "text-lg font-bold tracking-normal"
-                  : "text-base font-black uppercase tracking-widest",
+                "transition-transform",
+                isDetailOpen && "rotate-180",
               )}
-            >
-              {t("retirement.step5Title")}
-            </h3>
-          </div>
+            />
+          </button>
         </div>
-        <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
-          <div className="max-h-[650px] overflow-y-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                <tr className="border-b border-slate-800">
-                  <th className="px-6 py-5 text-center">
-                    {t("retirement.table.dateAge")}
-                  </th>
-                  <th className="px-6 py-5">{t("retirement.table.phase")}</th>
-                  <th className="px-6 py-5 text-right text-rose-500/70">
-                    {t("retirement.table.targetCf")}
-                  </th>
-                  <th className="px-6 py-5 text-right text-emerald-500/70">
-                    {t("retirement.table.totalDraw")}
-                  </th>
-                  <th className="px-6 py-5 text-right text-blue-400/70 border-l border-slate-800/50">
-                    {t("retirement.table.corpBal")}
-                  </th>
-                  <th className="px-6 py-5 text-right text-blue-400/70">
-                    {t("retirement.table.penBal")}
-                  </th>
-                  <th className="px-6 py-5 text-right text-slate-200 border-l border-slate-800/50">
-                    {t("retirement.table.netWorth")}
-                  </th>
-                  <th className="px-6 py-5 text-right text-emerald-400/50">
-                    {t("retirement.table.loanBal")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/30">
-                {monthlyData.map((m, idx) => (
-                  <tr
-                    key={idx}
-                    className={cn(
-                      "hover:bg-slate-800/40 transition-colors group",
-                      m.event ? "bg-emerald-500/5" : "",
-                    )}
-                  >
-                    <td className="px-6 py-4 text-xs font-bold text-slate-400 text-center">
-                      {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
-                      {t("retirement.table.ageSuffix")})
-                    </td>
-                    <td className="px-6 py-4 text-left">
-                      <span
-                        className={cn(
-                          "px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-tighter shadow-sm",
-                          m.phase === "Phase 1"
-                            ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                            : m.phase === "Phase 2"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20",
-                        )}
-                      >
-                        {m.phase}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">
-                      {(m.target_cashflow / 10000).toFixed(0)}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.tenThousand")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">
-                      {((m.net_salary + (m.pension_draw || 0)) / 10000).toFixed(
-                        0,
-                      )}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.tenThousand")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">
-                      {(m.corp_balance / 100000000).toFixed(2)}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.hundredMillion")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">
-                      {(m.pension_balance / 100000000).toFixed(2)}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.hundredMillion")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">
-                      {(m.total_net_worth / 100000000).toFixed(2)}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.hundredMillion")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">
-                      {(m.loan_balance / 100000000).toFixed(2)}
-                      <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
-                        {t("retirement.table.hundredMillion")}
-                      </span>
-                    </td>
+        {isDetailOpen ? (
+          <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
+            <div className="max-h-[650px] overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                  <tr className="border-b border-slate-800">
+                    <th className="px-6 py-5 text-center">
+                      {t("retirement.table.dateAge")}
+                    </th>
+                    <th className="px-6 py-5">{t("retirement.table.phase")}</th>
+                    <th className="px-6 py-5 text-right text-rose-500/70">
+                      {t("retirement.table.targetCf")}
+                    </th>
+                    <th className="px-6 py-5 text-right text-emerald-500/70">
+                      {t("retirement.table.totalDraw")}
+                    </th>
+                    <th className="px-6 py-5 text-right text-blue-400/70 border-l border-slate-800/50">
+                      {t("retirement.table.corpBal")}
+                    </th>
+                    <th className="px-6 py-5 text-right text-blue-400/70">
+                      {t("retirement.table.penBal")}
+                    </th>
+                    <th className="px-6 py-5 text-right text-slate-200 border-l border-slate-800/50">
+                      {t("retirement.table.netWorth")}
+                    </th>
+                    <th className="px-6 py-5 text-right text-emerald-400/50">
+                      {t("retirement.table.loanBal")}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/30">
+                  {monthlyData.map((m, idx) => (
+                    <tr
+                      key={idx}
+                      className={cn(
+                        "hover:bg-slate-800/40 transition-colors group",
+                        m.event ? "bg-emerald-500/5" : "",
+                      )}
+                    >
+                      <td className="px-6 py-4 text-xs font-bold text-slate-400 text-center">
+                        {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
+                        {t("retirement.table.ageSuffix")})
+                      </td>
+                      <td className="px-6 py-4 text-left">
+                        <span
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-tighter shadow-sm",
+                            m.phase === "Phase 1"
+                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                              : m.phase === "Phase 2"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                          )}
+                        >
+                          {m.phase}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">
+                        {(m.target_cashflow / 10000).toFixed(0)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.tenThousand")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">
+                        {(
+                          (m.net_salary + (m.pension_draw || 0)) /
+                          10000
+                        ).toFixed(0)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.tenThousand")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">
+                        {(m.corp_balance / 100000000).toFixed(2)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.hundredMillion")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">
+                        {(m.pension_balance / 100000000).toFixed(2)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.hundredMillion")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">
+                        {(m.total_net_worth / 100000000).toFixed(2)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.hundredMillion")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">
+                        {(m.loan_balance / 100000000).toFixed(2)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.hundredMillion")}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className="rounded-[2.5rem] border border-dashed border-slate-700 bg-slate-900/20 px-6 py-8"
+            data-testid="retirement-detail-collapsed"
+          >
+            <p className="text-sm font-bold text-slate-400">
+              {t("retirement.detailLogCollapsed")}
+            </p>
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function InlineHint({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-bold text-slate-300">{value}</p>
+    </div>
+  );
+}
+
+function ChartSummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/35 px-4 py-3">
+      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-black text-slate-100">{value}</p>
     </div>
   );
 }

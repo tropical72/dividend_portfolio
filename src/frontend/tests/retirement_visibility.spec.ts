@@ -37,6 +37,7 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
   }) => {
     const cards = page.locator('[data-testid^="assumption-card-"]');
     await expect(cards).toHaveCount(2);
+    await expect(page.locator("text=입력 가이드")).toHaveCount(1);
     await expect(page.getByTestId("assumption-card-v1")).toContainText(
       /Standard Profile|표준 프로필/,
     );

@@ -56,4 +56,16 @@ test.describe("Retirement Tab UX", () => {
     await resetButton.click();
     expect(await returnInput.inputValue()).not.toBe("12.0");
   });
+
+  test("should keep detailed log collapsed until requested", async ({
+    page,
+  }) => {
+    const collapsedState = page.getByTestId("retirement-detail-collapsed");
+    const toggleButton = page.getByTestId("retirement-detail-toggle");
+
+    await expect(collapsedState).toBeVisible();
+    await toggleButton.click();
+    await expect(collapsedState).toHaveCount(0);
+    await expect(page.locator("table")).toBeVisible();
+  });
 });

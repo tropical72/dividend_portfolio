@@ -72,6 +72,33 @@ const translations = {
     "retirement.statusSection": "Outcome",
     "retirement.metricsSection": "Key Metrics",
     "retirement.ruleSection": "Applied Rules",
+    "retirement.inputGuideLabel": "Input Guide",
+    "retirement.inputGuideBody":
+      "Pick the scenario first, then adjust only the assumptions that need manual override.",
+    "retirement.inputGuideLocked": "Master-linked",
+    "retirement.inputGuideLockedBody":
+      "The standard scenario follows the active master return and cannot be edited directly.",
+    "retirement.inputGuideEditable": "Manual override",
+    "retirement.inputGuideEditableBody":
+      "The conservative scenario can be edited and reset back to the master baseline at any time.",
+    "retirement.assumptionMasterLocked": "Linked to active master baseline",
+    "retirement.assumptionEditable": "Editable override scenario",
+    "retirement.assumptionMasterHint":
+      "Use this scenario to see the current master portfolio assumptions without manual overrides.",
+    "retirement.assumptionEditableHint":
+      "Adjust this scenario when you want to test a stricter return or inflation assumption.",
+    "retirement.chartStartAssets": "Starting Net Worth",
+    "retirement.chartLatestAssets": "Latest Net Worth",
+    "retirement.chartMinimumAssets": "Minimum Net Worth",
+    "retirement.chartFocusLabel": "Chart Focus",
+    "retirement.chartFocusBody":
+      "Read the white line first for total net worth, then compare the corporate and pension balances below it.",
+    "retirement.detailLogHelper":
+      "Open the monthly ledger only when you need an audit-level trace.",
+    "retirement.showDetailLog": "Show Detailed Log",
+    "retirement.hideDetailLog": "Hide Detailed Log",
+    "retirement.detailLogCollapsed":
+      "The monthly ledger is folded by default. Open it only when you need a month-by-month audit trail.",
     "retirement.appliedRules": "Applied Rules",
     "retirement.rebalance": "Rebalance",
     "retirement.corpSgov": "Corp SGOV",
@@ -585,6 +612,33 @@ const translations = {
     "retirement.statusSection": "결과 판단",
     "retirement.metricsSection": "핵심 지표",
     "retirement.ruleSection": "적용 규칙",
+    "retirement.inputGuideLabel": "입력 가이드",
+    "retirement.inputGuideBody":
+      "먼저 시나리오를 고른 뒤, 직접 조정이 필요한 가정만 수정하면 됩니다.",
+    "retirement.inputGuideLocked": "마스터 연동",
+    "retirement.inputGuideLockedBody":
+      "기본 시나리오는 활성 마스터 수익률을 그대로 따르며 직접 수정하지 않습니다.",
+    "retirement.inputGuideEditable": "수동 조정",
+    "retirement.inputGuideEditableBody":
+      "보수 시나리오는 직접 수정할 수 있고, 언제든 마스터 기준값으로 되돌릴 수 있습니다.",
+    "retirement.assumptionMasterLocked": "활성 마스터 기준과 연동",
+    "retirement.assumptionEditable": "직접 조정 가능한 시나리오",
+    "retirement.assumptionMasterHint":
+      "현재 마스터 포트폴리오 기준 가정을 그대로 확인할 때 사용합니다.",
+    "retirement.assumptionEditableHint":
+      "더 보수적인 수익률이나 물가 가정을 시험할 때 이 시나리오를 조정하세요.",
+    "retirement.chartStartAssets": "시작 순자산",
+    "retirement.chartLatestAssets": "최신 순자산",
+    "retirement.chartMinimumAssets": "최저 순자산",
+    "retirement.chartFocusLabel": "차트 읽는 법",
+    "retirement.chartFocusBody":
+      "흰색 총 순자산 흐름을 먼저 보고, 그 아래 법인과 연금 잔고가 어떻게 나뉘는지 비교하면 됩니다.",
+    "retirement.detailLogHelper":
+      "월별 원장을 열면 결과를 감사 수준으로 추적할 수 있습니다.",
+    "retirement.showDetailLog": "상세 로그 보기",
+    "retirement.hideDetailLog": "상세 로그 숨기기",
+    "retirement.detailLogCollapsed":
+      "월별 원장은 기본으로 접혀 있습니다. 월 단위 근거가 필요할 때만 펼치면 됩니다.",
     "retirement.appliedRules": "적용 규칙",
     "retirement.rebalance": "리밸런싱",
     "retirement.corpSgov": "법인 SGOV",
