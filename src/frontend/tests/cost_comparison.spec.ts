@@ -150,7 +150,7 @@ test.describe("Cost Comparison Simulator", () => {
       page.getByTestId("cc-breakdown-total-corporate"),
     ).toBeVisible();
     await expect(page.getByTestId("cc-cumulative-note")).toContainText(
-      /필요 자산|investment asset base|required assets/i,
+      /필요 자산|필요한 투자자산|investment asset base|required assets/i,
     );
     await expect(page.getByTestId("cc-household-cash-note")).toContainText(
       /현재 투자자산|current investment asset/i,

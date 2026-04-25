@@ -309,6 +309,11 @@ const translations = {
       "Review the winner, net cash composition, and scenario differences after running the comparison.",
     "costComparison.resultSectionEmpty":
       "Run the comparison to populate the result cards and charts below.",
+    "costComparison.assumptionSection": "Baseline Assumptions",
+    "costComparison.assumptionMode": "Comparison Mode",
+    "costComparison.summarySection": "Key Takeaway",
+    "costComparison.scenarioSection": "Scenario Cards",
+    "costComparison.chartSection": "Visual Breakdown",
     "costComparison.save": "Save",
     "costComparison.saveSuccess": "Cost comparison settings were saved.",
     "costComparison.saveError": "Failed to save cost comparison settings.",
@@ -398,6 +403,18 @@ const translations = {
       "On cumulative net cashflow, both structures leave the same amount.",
     "costComparison.tooltip.investmentAssets":
       "Personal taxable investment assets used in the personal scenario and mirrored as the corporate asset base for fair comparison.",
+    "costComparison.tooltip.inputSection":
+      "This section controls the comparison mode and all input values used before running the simulation.",
+    "costComparison.tooltip.resultSection":
+      "This section summarizes the comparison output after execution, including winner, drivers, and charts.",
+    "costComparison.tooltip.assumptionSection":
+      "These badges show the core baseline assumptions that were applied to both personal and corporate calculations.",
+    "costComparison.tooltip.scenarioSection":
+      "These cards show the detailed KPI values for personal and corporate operation side by side.",
+    "costComparison.tooltip.summarySection":
+      "This block highlights the current winner, annual and cumulative advantage, and the main difference drivers.",
+    "costComparison.tooltip.chartSection":
+      "These charts break down how net cash, costs, and sustainability differ between the two structures.",
     "costComparison.tooltip.pensionAssets":
       "Personal pension assets are stored separately and excluded from the direct personal vs corporate operating asset comparison in v1.",
     "costComparison.tooltip.realEstateValue":
@@ -408,6 +425,8 @@ const translations = {
       "Expected annual price appreciation added to portfolio dividend yield to derive TR.",
     "costComparison.tooltip.simulationYears":
       "Number of years used for cumulative comparison and net worth projection.",
+    "costComparison.tooltip.assumptionMode":
+      "Shows whether the current result was calculated in target-driven mode or asset-driven mode.",
     "costComparison.tooltip.targetMonthlyCash":
       "Target after-tax monthly household cash that both scenarios must deliver.",
     "costComparison.tooltip.monthlyFixedCost":
@@ -782,6 +801,11 @@ const translations = {
       "비교 실행 후 우세 구조, 순현금 구성, 세부 차이를 아래에서 확인합니다.",
     "costComparison.resultSectionEmpty":
       "비교 실행을 누르면 이 아래에 비교 결과 카드와 그래프가 표시됩니다.",
+    "costComparison.assumptionSection": "기준 전제",
+    "costComparison.assumptionMode": "비교 방식",
+    "costComparison.summarySection": "핵심 결론",
+    "costComparison.scenarioSection": "구조별 세부값",
+    "costComparison.chartSection": "비교 차트",
     "costComparison.save": "저장",
     "costComparison.saveSuccess": "비교 시뮬레이터 설정이 저장되었습니다.",
     "costComparison.saveError": "비교 시뮬레이터 설정 저장에 실패했습니다.",
@@ -870,6 +894,18 @@ const translations = {
       "누적 순현금흐름 기준으로 두 구조가 남기는 순현금이 같습니다.",
     "costComparison.tooltip.investmentAssets":
       "개인 시나리오의 과세 투자자산이며, 공정 비교를 위해 법인 시나리오에도 같은 자산 규모를 기준으로 적용합니다.",
+    "costComparison.tooltip.inputSection":
+      "비교 실행 전에 사용할 비교 방식과 입력값을 설정하는 영역입니다.",
+    "costComparison.tooltip.resultSection":
+      "비교 실행 후 우열, 차이 원인, 차트 결과를 요약해서 보여주는 영역입니다.",
+    "costComparison.tooltip.assumptionSection":
+      "개인과 법인 계산에 공통으로 적용된 핵심 전제값을 보여줍니다.",
+    "costComparison.tooltip.scenarioSection":
+      "개인운용과 법인운용의 핵심 KPI를 나란히 비교하는 카드 영역입니다.",
+    "costComparison.tooltip.summarySection":
+      "현재 우세 구조, 연간/누적 차이, 주요 차이 유발 요인을 한 번에 보여줍니다.",
+    "costComparison.tooltip.chartSection":
+      "순현금 구성, 비용 구조, 지속가능성 등 비교 결과를 차트로 분해해서 보여줍니다.",
     "costComparison.tooltip.pensionAssets":
       "개인연금 자산은 별도 고정자산으로 저장되며, v1에서는 개인 vs 법인 직접 운용자산 비교에서 제외합니다.",
     "costComparison.tooltip.realEstateValue":
@@ -880,6 +916,8 @@ const translations = {
       "활성 포트폴리오 DY에 더해 TR을 만드는 연간 기대주가상승률입니다.",
     "costComparison.tooltip.simulationYears":
       "누적 비교와 순자산 시계열을 계산할 총 기간입니다.",
+    "costComparison.tooltip.assumptionMode":
+      "현재 결과가 목표 수익 기반인지, 보유 자산 기반인지 보여줍니다.",
     "costComparison.tooltip.targetMonthlyCash":
       "두 시나리오가 동일하게 만들어야 하는 가계 세후 월현금 목표입니다.",
     "costComparison.tooltip.monthlyFixedCost":
