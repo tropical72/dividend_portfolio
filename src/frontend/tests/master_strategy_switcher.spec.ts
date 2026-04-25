@@ -223,7 +223,7 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
 
     await page.goto("http://localhost:5173");
     await page.getByTestId("nav-asset-setup").click();
-    await page.getByTestId("portfolio-subtab-manage").click();
+    await page.getByTestId("portfolio-subtab-dashboard").click();
 
     const deleteButton = page.getByTestId(`delete-master-${activeMaster.id}`);
     await expect(deleteButton).toBeDisabled();

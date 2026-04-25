@@ -12,7 +12,7 @@ test.describe("Portfolio Tab UX and Visibility", () => {
     page,
   }) => {
     const designerBtn = page.getByTestId("portfolio-subtab-design");
-    const manageBtn = page.getByTestId("portfolio-subtab-manage");
+    const manageBtn = page.getByTestId("portfolio-subtab-dashboard");
 
     await expect(designerBtn).toBeVisible();
     await expect(manageBtn).toBeVisible();

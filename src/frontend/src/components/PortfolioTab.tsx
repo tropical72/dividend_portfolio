@@ -517,7 +517,10 @@ export function PortfolioTab({
 
       {/* 수동 추가 모달 [GS-UI-03] */}
       {manualAdd.category && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/18 p-6 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/18 p-6 backdrop-blur-sm animate-in fade-in duration-200"
+          data-testid="manual-add-modal"
+        >
           <div className="w-full max-w-md rounded-[2.5rem] border border-white/80 bg-white/95 p-10 shadow-xl animate-in zoom-in-95 duration-200">
             <h3 className="mb-2 text-xl font-bold text-slate-800">
               {copy.manualAddTitle}
@@ -608,7 +611,7 @@ export function PortfolioTab({
         </button>
         <button
           onClick={() => setActiveSubTab("manage")}
-          data-testid="portfolio-subtab-manage"
+          data-testid="portfolio-subtab-dashboard"
           className={cn(
             "flex items-center gap-3 rounded-xl px-10 py-4 text-sm font-semibold transition-all duration-300",
             activeSubTab === "manage"
@@ -636,6 +639,7 @@ export function PortfolioTab({
                     type="text"
                     value={portfolioName}
                     onChange={(e) => setPortfolioName(e.target.value)}
+                    data-testid="portfolio-name-input"
                     className="w-full rounded-2xl border border-white/80 bg-white/85 py-3 pl-12 pr-4 text-3xl font-bold tracking-tight text-slate-800 outline-none transition-all focus:border-emerald-300 focus:bg-white"
                     placeholder={copy.nameRequired}
                   />

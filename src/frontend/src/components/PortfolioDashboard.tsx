@@ -163,6 +163,7 @@ export function PortfolioDashboard({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [analysisChartsReady, setAnalysisChartsReady] = useState(false);
 
   // 마스터 전략 생성 폼 상태
   const [newMasterName, setNewMasterName] = useState("");
@@ -247,6 +248,22 @@ export function PortfolioDashboard({
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (selectedIds.size === 0) {
+      setAnalysisChartsReady(false);
+      return;
+    }
+
+    let frameId = 0;
+    frameId = window.requestAnimationFrame(() => {
+      setAnalysisChartsReady(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [selectedIds]);
 
   /** 투자금 입력 핸들러 */
   const handleGlobalUsdChange = (val: string) => {
@@ -717,6 +734,7 @@ export function PortfolioDashboard({
               <input
                 type="text"
                 placeholder={copy.globalUsdCapital}
+                data-testid="portfolio-global-usd-input"
                 value={
                   globalCapitalUsd
                     ? Math.round(globalCapitalUsd).toLocaleString()
@@ -738,6 +756,7 @@ export function PortfolioDashboard({
               <input
                 type="text"
                 placeholder={copy.globalKrwCapital}
+                data-testid="portfolio-global-krw-input"
                 value={
                   globalCapitalUsd
                     ? Math.round(
@@ -779,7 +798,10 @@ export function PortfolioDashboard({
           <div className="rounded-[2.5rem] border border-white/80 bg-white/82 p-10 shadow-sm">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-slate-800">
+                <h3
+                  className="flex items-center gap-3 text-xl font-bold tracking-tight text-slate-800"
+                  data-testid="portfolio-monthly-chart-title"
+                >
                   <BarChart3 className="text-emerald-700" size={24} />{" "}
                   {copy.monthlyDividendComparison} ({globalCurrency})
                 </h3>
@@ -794,124 +816,65 @@ export function PortfolioDashboard({
                 {copy.clearSelection}
               </button>
             </div>
-            <div className="h-[350px] w-full text-xs">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#d8e0e7"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12, fontWeight: 600 }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-                    tickFormatter={(val) =>
-                      globalCurrency === "USD"
-                        ? `$${val}`
-                        : `₩${(val / 10000).toFixed(0)}만`
-                    }
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#d9e6ee", opacity: 0.45 }}
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #d8e0e7",
-                      borderRadius: "16px",
-                      boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
-                    }}
-                    formatter={(val: number | string | undefined) => [
-                      globalCurrency === "USD"
-                        ? `$${Number(val || 0).toLocaleString()}`
-                        : `₩${Number(val || 0).toLocaleString()}`,
-                      copy.income,
-                    ]}
-                  />
-                  <Legend
-                    wrapperStyle={{ paddingTop: "30px" }}
-                    iconType="circle"
-                    formatter={(value) => (
-                      <span className="ml-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {value}
-                      </span>
-                    )}
-                  />
-                  {portfolios
-                    .filter((p) => selectedIds.has(p.id))
-                    .map((p, idx) => (
-                      <Bar
-                        key={p.id}
-                        dataKey={p.name}
-                        fill={
-                          [
-                            "#10b981",
-                            "#3b82f6",
-                            "#f59e0b",
-                            "#8b5cf6",
-                            "#ec4899",
-                          ][idx % 5]
-                        }
-                        radius={[6, 6, 0, 0]}
-                        barSize={selectedIds.size > 2 ? 15 : 30}
-                      />
-                    ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 2.2 Asset Mix Radar Chart */}
-            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm">
-              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
-                <PieChart size={18} className="text-blue-700" />{" "}
-                {copy.strategyCharacter} ({copy.assetMix})
-              </h4>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart
-                    cx="50%"
-                    cy="50%"
-                    outerRadius="80%"
-                    data={radarData}
+            <div className="min-w-0 w-full text-xs">
+              {analysisChartsReady ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    <PolarGrid stroke="#d8e0e7" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#d8e0e7"
+                      vertical={false}
                     />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 100]}
-                      tick={false}
+                    <XAxis
+                      dataKey="name"
                       axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#64748b", fontSize: 12, fontWeight: 600 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                      tickFormatter={(val) =>
+                        globalCurrency === "USD"
+                          ? `$${val}`
+                          : `₩${(val / 10000).toFixed(0)}만`
+                      }
+                    />
+                    <Tooltip
+                      cursor={{ fill: "#d9e6ee", opacity: 0.45 }}
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #d8e0e7",
+                        borderRadius: "16px",
+                        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+                      }}
+                      formatter={(val: number | string | undefined) => [
+                        globalCurrency === "USD"
+                          ? `$${Number(val || 0).toLocaleString()}`
+                          : `₩${Number(val || 0).toLocaleString()}`,
+                        copy.income,
+                      ]}
+                    />
+                    <Legend
+                      wrapperStyle={{ paddingTop: "30px" }}
+                      iconType="circle"
+                      formatter={(value) => (
+                        <span className="ml-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {value}
+                        </span>
+                      )}
                     />
                     {portfolios
                       .filter((p) => selectedIds.has(p.id))
                       .map((p, idx) => (
-                        <Radar
+                        <Bar
                           key={p.id}
-                          name={p.name}
                           dataKey={p.name}
-                          stroke={
-                            [
-                              "#10b981",
-                              "#3b82f6",
-                              "#f59e0b",
-                              "#8b5cf6",
-                              "#ec4899",
-                            ][idx % 5]
-                          }
                           fill={
                             [
                               "#10b981",
@@ -921,20 +884,91 @@ export function PortfolioDashboard({
                               "#ec4899",
                             ][idx % 5]
                           }
-                          fillOpacity={0.3}
+                          radius={[6, 6, 0, 0]}
+                          barSize={selectedIds.size > 2 ? 15 : 30}
                         />
                       ))}
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#ffffff",
-                        border: "1px solid #d8e0e7",
-                        borderRadius: "12px",
-                        fontSize: "11px",
-                        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
-                      }}
-                    />
-                  </RadarChart>
+                  </BarChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="h-[350px] w-full rounded-2xl bg-slate-50/70" />
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 2.2 Asset Mix Radar Chart */}
+            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm min-w-0">
+              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
+                <PieChart size={18} className="text-blue-700" />{" "}
+                {copy.strategyCharacter} ({copy.assetMix})
+              </h4>
+              <div className="min-w-0 w-full">
+                {analysisChartsReady ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart
+                      cx="50%"
+                      cy="50%"
+                      outerRadius="80%"
+                      data={radarData}
+                    >
+                      <PolarGrid stroke="#d8e0e7" />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{
+                          fill: "#64748b",
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      />
+                      <PolarRadiusAxis
+                        angle={30}
+                        domain={[0, 100]}
+                        tick={false}
+                        axisLine={false}
+                      />
+                      {portfolios
+                        .filter((p) => selectedIds.has(p.id))
+                        .map((p, idx) => (
+                          <Radar
+                            key={p.id}
+                            name={p.name}
+                            dataKey={p.name}
+                            stroke={
+                              [
+                                "#10b981",
+                                "#3b82f6",
+                                "#f59e0b",
+                                "#8b5cf6",
+                                "#ec4899",
+                              ][idx % 5]
+                            }
+                            fill={
+                              [
+                                "#10b981",
+                                "#3b82f6",
+                                "#f59e0b",
+                                "#8b5cf6",
+                                "#ec4899",
+                              ][idx % 5]
+                            }
+                            fillOpacity={0.3}
+                          />
+                        ))}
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#ffffff",
+                          border: "1px solid #d8e0e7",
+                          borderRadius: "12px",
+                          fontSize: "11px",
+                          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+                        }}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] w-full rounded-2xl bg-slate-50/70" />
+                )}
               </div>
             </div>
 
@@ -1039,7 +1073,10 @@ export function PortfolioDashboard({
 
       {/* 3. Portfolio List */}
       <div className="flex items-center justify-between mb-2">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-800">
+        <h2
+          className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-800"
+          data-testid="saved-portfolios-heading"
+        >
           <PieChart className="text-emerald-700" /> {copy.savedPortfolios}
         </h2>
         <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold tracking-[0.08em] text-slate-500 shadow-sm">
