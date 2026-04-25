@@ -1,5 +1,5 @@
 {
-    "simulation_mode": "target",
+    "simulation_mode": "asset",
     "household": {
         "members": []
     },

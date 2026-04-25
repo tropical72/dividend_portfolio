@@ -661,7 +661,7 @@ class DividendBackend:
     def _get_default_cost_comparison_config(self) -> Dict[str, Any]:
         default_pa = float(self.settings.get("price_appreciation_rate", 3.0))
         return {
-            "simulation_mode": "target",
+            "simulation_mode": "asset",
             "household": {"members": []},
             "personal_assets": {
                 "investment_assets": 0.0,
@@ -794,7 +794,7 @@ class DividendBackend:
                 "base_year": int(
                     cast(Dict[str, Any], config.get("policy_meta", {})).get("base_year", 2026)
                 ),
-                "simulation_mode": config.get("simulation_mode", "target"),
+                "simulation_mode": config.get("simulation_mode", "asset"),
             },
         }
 

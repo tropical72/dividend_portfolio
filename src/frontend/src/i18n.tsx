@@ -299,6 +299,16 @@ const translations = {
     "costComparison.title": "Personal vs Corporate Comparison",
     "costComparison.subtitle":
       "Compare household cashflow and total costs under the same portfolio and the same TR.",
+    "costComparison.inputSectionEyebrow": "Inputs",
+    "costComparison.inputSection": "Comparison Inputs",
+    "costComparison.inputSectionDescription":
+      "Choose the comparison mode and enter the values used before running the simulation.",
+    "costComparison.resultSectionEyebrow": "Results",
+    "costComparison.resultSection": "Comparison Results",
+    "costComparison.resultSectionDescription":
+      "Review the winner, net cash composition, and scenario differences after running the comparison.",
+    "costComparison.resultSectionEmpty":
+      "Run the comparison to populate the result cards and charts below.",
     "costComparison.save": "Save",
     "costComparison.saveSuccess": "Cost comparison settings were saved.",
     "costComparison.saveError": "Failed to save cost comparison settings.",
@@ -762,6 +772,16 @@ const translations = {
     "costComparison.title": "개인 vs 법인 비교",
     "costComparison.subtitle":
       "동일한 포트폴리오와 동일한 TR 기준에서 가구 총현금흐름과 총비용을 비교합니다.",
+    "costComparison.inputSectionEyebrow": "입력",
+    "costComparison.inputSection": "비교 입력",
+    "costComparison.inputSectionDescription":
+      "비교 방식과 계산에 사용할 값을 먼저 설정한 뒤 비교를 실행합니다.",
+    "costComparison.resultSectionEyebrow": "결과",
+    "costComparison.resultSection": "비교 결과",
+    "costComparison.resultSectionDescription":
+      "비교 실행 후 우세 구조, 순현금 구성, 세부 차이를 아래에서 확인합니다.",
+    "costComparison.resultSectionEmpty":
+      "비교 실행을 누르면 이 아래에 비교 결과 카드와 그래프가 표시됩니다.",
     "costComparison.save": "저장",
     "costComparison.saveSuccess": "비교 시뮬레이터 설정이 저장되었습니다.",
     "costComparison.saveError": "비교 시뮬레이터 설정 저장에 실패했습니다.",

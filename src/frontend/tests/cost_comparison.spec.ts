@@ -30,6 +30,9 @@ test.describe("Cost Comparison Simulator", () => {
   });
 
   test("should persist config and render KPI cards", async ({ page }) => {
+    await expect(page.getByTestId("cc-input-section")).toBeVisible();
+    await expect(page.getByTestId("cc-result-section")).toBeVisible();
+    await expect(page.getByTestId("cc-result-empty")).toBeVisible();
     await page.getByTestId("cc-investment-assets").fill("");
     await expect(page.getByTestId("cc-investment-assets")).toHaveValue("");
     await page.getByTestId("cc-investment-assets").type("3000000000");
@@ -47,6 +50,7 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
     await page.getByTestId("cc-monthly-fixed-cost").fill("500000");
     await page.getByTestId("cc-salary-0").fill("3000000");
+    await page.getByTestId("cc-mode-target").click();
 
     await page.getByTestId("cc-save-button").click();
     await expect(
@@ -58,6 +62,7 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-investment-assets")).toHaveValue(
       "3,000,000,000",
     );
+    await expect(page.getByTestId("cc-result-empty")).toBeVisible();
     await expect(page.getByTestId("cc-simulation-years")).toHaveValue("5");
     await expect(page.getByTestId("cc-target-monthly-cash")).toHaveValue(
       "10,000,000",
@@ -145,7 +150,7 @@ test.describe("Cost Comparison Simulator", () => {
       page.getByTestId("cc-breakdown-total-corporate"),
     ).toBeVisible();
     await expect(page.getByTestId("cc-cumulative-note")).toContainText(
-      /필요한 투자자산|required investment asset/i,
+      /필요 자산|investment asset base|required assets/i,
     );
     await expect(page.getByTestId("cc-household-cash-note")).toContainText(
       /현재 투자자산|current investment asset/i,

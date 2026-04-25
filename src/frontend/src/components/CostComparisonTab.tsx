@@ -33,7 +33,7 @@ type ConfigSectionKey =
   | "policy_meta";
 
 const defaultConfig: CostComparisonConfig = {
-  simulation_mode: "target",
+  simulation_mode: "asset",
   household: {
     members: [],
   },
@@ -223,7 +223,7 @@ export function CostComparisonTab() {
 
     return {
       ...raw,
-      simulation_mode: raw.simulation_mode || legacyMode || "target",
+      simulation_mode: raw.simulation_mode || legacyMode || "asset",
       assumptions: {
         ...raw.assumptions,
       },
@@ -355,7 +355,9 @@ export function CostComparisonTab() {
   const cumulativeDelta = result
     ? Math.abs(result.comparison.cumulative_advantage)
     : 0;
-  const isTargetMode = result?.assumptions.simulation_mode === "target";
+  const resultMode =
+    result?.assumptions.simulation_mode ?? config.simulation_mode;
+  const isTargetMode = resultMode === "target";
   const winnerBasisFormula = result
     ? result.comparison.winner_basis === "annual_net_cashflow"
       ? t("costComparison.winnerBasisFormulaNetCashflow")
@@ -376,24 +378,6 @@ export function CostComparisonTab() {
             {t("costComparison.subtitle")}
           </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200"
-            data-testid="cc-save-button"
-            onClick={() => void saveConfig()}
-            type="button"
-          >
-            {t("costComparison.save")}
-          </button>
-          <button
-            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950"
-            data-testid="cc-run-button"
-            onClick={() => void runSimulation()}
-            type="button"
-          >
-            {running ? t("costComparison.running") : t("costComparison.run")}
-          </button>
-        </div>
       </div>
 
       {saveMessage ? (
@@ -410,730 +394,803 @@ export function CostComparisonTab() {
         </div>
       ) : null}
 
-      <div className="flex gap-2 p-1 bg-slate-900/50 rounded-xl border border-slate-800 w-fit mb-4">
-        <button
-          onClick={() => updateSimulationMode("target")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            config.simulation_mode === "target"
-              ? "bg-indigo-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-slate-200"
-          }`}
-          data-testid="cc-mode-target"
-        >
-          {t("costComparison.mode.target")}
-        </button>
-        <button
-          onClick={() => updateSimulationMode("asset")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            config.simulation_mode === "asset"
-              ? "bg-indigo-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-slate-200"
-          }`}
-          data-testid="cc-mode-asset"
-        >
-          {t("costComparison.mode.asset")}
-        </button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <NumberField
-          label={t("costComparison.investmentAssets")}
-          testId="cc-investment-assets"
-          tooltip={t("costComparison.tooltip.investmentAssets")}
-          unit="KRW"
-          value={config.personal_assets.investment_assets}
-          onChange={(value) =>
-            updateConfig("personal_assets", "investment_assets", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.pensionAssets")}
-          testId="cc-pension-assets"
-          tooltip={t("costComparison.tooltip.pensionAssets")}
-          unit="KRW"
-          value={config.personal_assets.personal_pension_assets}
-          onChange={(value) =>
-            updateConfig("personal_assets", "personal_pension_assets", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.realEstateValue")}
-          testId="cc-real-estate-value"
-          tooltip={t("costComparison.tooltip.realEstateValue")}
-          unit="KRW"
-          value={config.real_estate.official_price}
-          onChange={(value) =>
-            updateConfig("real_estate", "official_price", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.realEstateRatio")}
-          testId="cc-real-estate-ratio"
-          step="0.1"
-          tooltip={t("costComparison.tooltip.realEstateRatio")}
-          unit={t("costComparison.ratioUnit")}
-          value={config.real_estate.ownership_ratio}
-          onChange={(value) =>
-            updateConfig("real_estate", "ownership_ratio", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.paRate")}
-          testId="cc-pa-rate"
-          step="0.1"
-          tooltip={t("costComparison.tooltip.paRate")}
-          unit="%"
-          value={config.assumptions.price_appreciation_rate}
-          onChange={(value) =>
-            updateConfig("assumptions", "price_appreciation_rate", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.simulationYears")}
-          testId="cc-simulation-years"
-          tooltip={t("costComparison.tooltip.simulationYears")}
-          unit={t("costComparison.yearUnit")}
-          value={config.assumptions.simulation_years}
-          onChange={(value) =>
-            updateConfig("assumptions", "simulation_years", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.targetMonthlyCash")}
-          testId="cc-target-monthly-cash"
-          tooltip={t("costComparison.tooltip.targetMonthlyCash")}
-          unit="KRW"
-          value={config.assumptions.target_monthly_household_cash_after_tax}
-          onChange={(value) =>
-            updateConfig(
-              "assumptions",
-              "target_monthly_household_cash_after_tax",
-              value,
-            )
-          }
-        />
-        <NumberField
-          label={t("costComparison.monthlyFixedCost")}
-          testId="cc-monthly-fixed-cost"
-          tooltip={t("costComparison.tooltip.monthlyFixedCost")}
-          unit="KRW"
-          value={config.corporate.monthly_fixed_cost}
-          onChange={(value) =>
-            updateConfig("corporate", "monthly_fixed_cost", value)
-          }
-        />
-        <NumberField
-          label={t("costComparison.salary")}
-          testId="cc-salary-0"
-          tooltip={t("costComparison.tooltip.salary")}
-          unit="KRW"
-          value={config.corporate.salary_recipients[0]?.monthly_salary ?? 0}
-          onChange={(value) => updateSalary(0, value)}
-        />
-      </div>
-
-      {result ? (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <AssumptionBadge
-              label={t("costComparison.assumptionPortfolio")}
-              testId="cc-assumption-portfolio"
-              tooltip={t("costComparison.tooltip.assumptionPortfolio")}
-              value={result.assumptions.portfolio_name}
-            />
-            <AssumptionBadge
-              label="DY"
-              testId="cc-assumption-dy"
-              tooltip={t("costComparison.tooltip.dy")}
-              value={formatPercent(result.assumptions.dy)}
-            />
-            <AssumptionBadge
-              label="PA"
-              testId="cc-assumption-pa"
-              tooltip={t("costComparison.tooltip.pa")}
-              value={formatPercent(result.assumptions.pa)}
-            />
-            <AssumptionBadge
-              label="TR"
-              testId="cc-assumption-tr"
-              tooltip={t("costComparison.tooltip.tr")}
-              value={formatPercent(result.assumptions.tr)}
-            />
+      <section
+        className="rounded-3xl border border-slate-800 bg-slate-950/50 p-5 md:p-6"
+        data-testid="cc-input-section"
+      >
+        <div className="flex flex-col gap-4 border-b border-slate-800/80 pb-5 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              {t("costComparison.inputSectionEyebrow")}
+            </div>
+            <h3 className="mt-2 text-xl font-bold text-slate-100">
+              {t("costComparison.inputSection")}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              {t("costComparison.inputSectionDescription")}
+            </p>
           </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ScenarioCard
-              monthlyCashLabel={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.disposableCash")
-                  : t("costComparison.requiredRevenue")
-              }
-              totalCostLabel={t("costComparison.annualTotalCost")}
-              healthLabel={t("costComparison.healthInsurance")}
-              growthLabel={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.assetNetYield")
-                  : t("costComparison.netGrowth")
-              }
-              title={t("costComparison.personal")}
-              testId="cc-kpi-personal"
-              testIdPrefix="cc-kpi-personal"
-              monthlyCashTooltip={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.tooltip.disposableCash")
-                  : t("costComparison.tooltip.requiredRevenue")
-              }
-              totalCostTooltip={t("costComparison.tooltip.annualTotalCost")}
-              healthTooltip={t("costComparison.tooltip.healthInsurance")}
-              growthTooltip={t("costComparison.tooltip.netGrowth")}
-              monthlyCash={
-                result.assumptions.simulation_mode === "asset"
-                  ? result.personal.kpis.monthly_disposable_cashflow
-                  : result.personal.kpis.required_annual_revenue
-              }
-              totalCost={result.personal.kpis.annual_total_cost}
-              health={result.personal.kpis.annual_health_insurance}
-              growth={result.personal.kpis.required_assets}
-              growthValue={
-                result.assumptions.simulation_mode === "asset"
-                  ? formatPercent((result.personal.kpis.net_yield || 0) / 100)
-                  : undefined
-              }
-              auditDetails={result.personal.breakdown.audit_details}
-            />
-            <ScenarioCard
-              monthlyCashLabel={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.disposableCash")
-                  : t("costComparison.requiredRevenue")
-              }
-              totalCostLabel={t("costComparison.annualTotalCost")}
-              healthLabel={t("costComparison.healthInsurance")}
-              growthLabel={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.assetNetYield")
-                  : t("costComparison.netGrowth")
-              }
-              title={t("costComparison.corporate")}
-              testId="cc-kpi-corporate"
-              testIdPrefix="cc-kpi-corporate"
-              monthlyCashTooltip={
-                result.assumptions.simulation_mode === "asset"
-                  ? t("costComparison.tooltip.disposableCash")
-                  : t("costComparison.tooltip.requiredRevenue")
-              }
-              totalCostTooltip={t("costComparison.tooltip.annualTotalCost")}
-              healthTooltip={t("costComparison.tooltip.healthInsurance")}
-              growthTooltip={t("costComparison.tooltip.netGrowth")}
-              monthlyCash={
-                result.assumptions.simulation_mode === "asset"
-                  ? result.corporate.kpis.monthly_disposable_cashflow
-                  : result.corporate.kpis.required_annual_revenue
-              }
-              totalCost={result.corporate.kpis.annual_total_cost}
-              health={result.corporate.kpis.annual_health_insurance}
-              growth={result.corporate.kpis.required_assets}
-              growthValue={
-                result.assumptions.simulation_mode === "asset"
-                  ? formatPercent((result.corporate.kpis.net_yield || 0) / 100)
-                  : undefined
-              }
-              auditDetails={result.corporate.breakdown.audit_details}
-            />
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200"
+              data-testid="cc-save-button"
+              onClick={() => void saveConfig()}
+              type="button"
+            >
+              {t("costComparison.save")}
+            </button>
+            <button
+              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950"
+              data-testid="cc-run-button"
+              onClick={() => void runSimulation()}
+              type="button"
+            >
+              {running ? t("costComparison.running") : t("costComparison.run")}
+            </button>
           </div>
+        </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <div
-              className="text-lg font-bold text-slate-100"
-              data-testid="cc-comparison-winner"
-            >
-              {result.comparison.winner === "corporate"
-                ? t("costComparison.corporateWins")
-                : result.comparison.winner === "personal"
-                  ? t("costComparison.personalWins")
-                  : t("costComparison.tieWins")}
-            </div>
-            <div
-              className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
-              data-testid="cc-winner-summary-annual"
-            >
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                {t("costComparison.winnerAnnualLabel")}
-              </div>
-              {result.comparison.winner === "tie" ? (
-                <div className="mt-1 text-sm text-slate-200">
-                  {t("costComparison.tieAnnualSummary")}
-                </div>
-              ) : (
-                <div className="mt-1 text-sm text-slate-200">
-                  {t("costComparison.winnerAnnualPrefix")}{" "}
-                  <span className="font-semibold text-white">
-                    {winnerLabel}
-                  </span>
-                  {t("costComparison.winnerAnnualMiddle")}
-                  <span className="font-semibold text-white">{loserLabel}</span>
-                  {t("costComparison.winnerAnnualSuffix")}
-                </div>
-              )}
-              <div
-                className="mt-2 text-2xl font-black text-emerald-300"
-                data-testid="cc-winner-summary-annual-delta"
-              >
-                {formatKrw(annualDelta)}
-              </div>
-            </div>
-            <div
-              className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
-              data-testid="cc-winner-summary-cumulative"
-            >
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                {t("costComparison.winnerCumulativeLabel")}
-              </div>
-              {result.comparison.winner === "tie" ? (
-                <div className="mt-1 text-sm text-slate-300">
-                  {t("costComparison.tieCumulativeSummary")}
-                </div>
-              ) : (
-                <div className="mt-1 text-sm text-slate-300">
-                  {t("costComparison.winnerCumulativePrefix")}{" "}
-                  <span className="font-semibold text-white">
-                    {winnerLabel}
-                  </span>
-                  {t("costComparison.winnerCumulativeMiddle")}
-                  <span className="font-semibold text-white">{loserLabel}</span>
-                  {t("costComparison.winnerCumulativeSuffix")}
-                </div>
-              )}
-              <div
-                className="mt-2 text-lg font-bold text-slate-100"
-                data-testid="cc-winner-summary-cumulative-delta"
-              >
-                {formatKrw(cumulativeDelta)}
-              </div>
-            </div>
-            <div
-              className="mt-2 flex items-center gap-2 text-sm text-slate-400"
-              data-testid="cc-winner-basis"
-            >
-              <span>{t("costComparison.winnerBasis")}:</span>
-              <span>{t("costComparison.annualNetCashflow")}</span>
-              <span
-                className="text-slate-500"
-                data-testid="cc-winner-basis-formula"
-              >
-                ({winnerBasisFormula})
-              </span>
-              <TooltipTrigger
-                testId="cc-tooltip-trigger-cc-winner-basis"
-                text={`${result.comparison.winner_reason} ${t("costComparison.tooltip.winner")}`}
-              />
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {result.comparison.top_drivers.map((driver, index) => (
-                <div
-                  className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
-                  data-testid={`cc-driver-${index}`}
-                  key={`${driver.label}-${index}`}
-                >
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
-                    <span>{driver.label}</span>
-                    <TooltipTrigger
-                      testId={`cc-tooltip-trigger-driver-${index}`}
-                      text={getDriverTooltip(driver.label, t)}
-                    />
-                  </div>
-                  <div className="mt-2 text-lg font-semibold text-slate-100">
-                    {formatKrw(driver.amount)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-            data-testid="cc-breakdown-chart"
+        <div className="mt-5 mb-5 flex w-fit gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-1">
+          <button
+            onClick={() => updateSimulationMode("target")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              config.simulation_mode === "target"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+            data-testid="cc-mode-target"
+            type="button"
           >
-            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
-              <span>{t("costComparison.breakdownTitle")}</span>
-              <TooltipTrigger
-                testId="cc-tooltip-trigger-breakdown"
-                text={t("costComparison.tooltip.breakdown")}
-              />
-            </div>
-            <div className="mb-4 grid gap-3 md:grid-cols-[88px_minmax(0,1fr)]">
-              <div />
-              <div className="grid gap-3 md:grid-cols-2">
-                <div
-                  className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
-                  data-testid="cc-breakdown-total-personal"
-                >
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                    <span>
-                      {t("costComparison.personal")} ·{" "}
-                      {t("costComparison.annualTotalCost")}
-                    </span>
-                    <TooltipTrigger
-                      testId="cc-tooltip-trigger-breakdown-total-personal"
-                      text={t("costComparison.tooltip.annualTotalCost")}
-                    />
-                  </div>
-                  <div className="mt-1 text-lg font-semibold text-slate-100">
-                    {formatKrw(result.personal.kpis.annual_total_cost)}
-                  </div>
-                </div>
-                <div
-                  className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
-                  data-testid="cc-breakdown-total-corporate"
-                >
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                    <span>
-                      {t("costComparison.corporate")} ·{" "}
-                      {t("costComparison.annualTotalCost")}
-                    </span>
-                    <TooltipTrigger
-                      testId="cc-tooltip-trigger-breakdown-total-corporate"
-                      text={t("costComparison.tooltip.annualTotalCost")}
-                    />
-                  </div>
-                  <div className="mt-1 text-lg font-semibold text-slate-100">
-                    {formatKrw(result.corporate.kpis.annual_total_cost)}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    {
-                      name: t("costComparison.personal"),
-                      tax: result.personal.breakdown.tax,
-                      health: result.personal.breakdown.health_insurance,
-                      social: result.personal.breakdown.social_insurance,
-                      fixed: result.personal.breakdown.fixed_cost,
-                    },
-                    {
-                      name: t("costComparison.corporate"),
-                      tax: result.corporate.breakdown.tax,
-                      health: result.corporate.breakdown.health_insurance,
-                      social: result.corporate.breakdown.social_insurance,
-                      fixed: result.corporate.breakdown.fixed_cost,
-                    },
-                  ]}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="name" stroke="#64748b" />
-                  <YAxis
-                    stroke="#64748b"
-                    width={88}
-                    tickFormatter={(value) => formatAxisKrw(Number(value || 0))}
-                  />
-                  <Tooltip
-                    content={
-                      <ChartTooltip
-                        formatter={(value) => formatKrw(Number(value || 0))}
-                      />
-                    }
-                    cursor={{ fill: "rgba(51, 65, 85, 0.18)" }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="tax"
-                    name={t("costComparison.tax")}
-                    stackId="a"
-                    fill="#f97316"
-                  />
-                  <Bar
-                    dataKey="health"
-                    name={t("costComparison.healthInsurance")}
-                    stackId="a"
-                    fill="#10b981"
-                  />
-                  <Bar
-                    dataKey="social"
-                    name={t("costComparison.socialInsurance")}
-                    stackId="a"
-                    fill="#3b82f6"
-                  />
-                  <Bar
-                    dataKey="fixed"
-                    name={t("costComparison.fixedCost")}
-                    stackId="a"
-                    fill="#a855f7"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {isTargetMode ? (
-            <div
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-              data-testid="cc-cumulative-chart"
-            >
-              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
-                <span>{t("costComparison.cumulativeTitle")}</span>
-                <TooltipTrigger
-                  testId="cc-tooltip-trigger-cumulative"
-                  text={t("costComparison.tooltip.cumulative")}
-                />
-              </div>
-              <div
-                className="mb-4 text-sm text-slate-400"
-                data-testid="cc-cumulative-note"
-              >
-                {t("costComparison.cumulativeNote")}
-              </div>
-              <div className="h-80">
-                <ComparisonBarChart
-                  data={[
-                    {
-                      name: t("costComparison.personal"),
-                      value: result.personal.kpis.required_assets,
-                    },
-                    {
-                      name: t("costComparison.corporate"),
-                      value: result.corporate.kpis.required_assets,
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-          ) : null}
-
-          {isTargetMode ? (
-            <div
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-              data-testid="cc-household-cash-chart"
-            >
-              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
-                <span>{t("costComparison.householdCashTitle")}</span>
-                <TooltipTrigger
-                  testId="cc-tooltip-trigger-household-cash"
-                  text={t("costComparison.tooltip.householdCash")}
-                />
-              </div>
-              <div
-                className="mb-4 text-sm text-slate-400"
-                data-testid="cc-household-cash-note"
-              >
-                {t("costComparison.householdCashNote")}
-              </div>
-              <div className="h-80">
-                <ComparisonBarChart
-                  minPointSize={6}
-                  data={[
-                    {
-                      name: t("costComparison.personal"),
-                      value: result.personal.kpis.asset_margin_vs_current || 0,
-                    },
-                    {
-                      name: t("costComparison.corporate"),
-                      value: result.corporate.kpis.asset_margin_vs_current || 0,
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-          ) : null}
-
-          <div
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-            data-testid="cc-total-value-chart"
+            {t("costComparison.mode.target")}
+          </button>
+          <button
+            onClick={() => updateSimulationMode("asset")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              config.simulation_mode === "asset"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+            data-testid="cc-mode-asset"
+            type="button"
           >
-            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
-              <span>{t("costComparison.totalValueTitle")}</span>
-              <TooltipTrigger
-                testId="cc-tooltip-trigger-total-value"
-                text={t("costComparison.tooltip.totalValue")}
-              />
-            </div>
-            <div
-              className="mb-4 text-sm text-slate-400"
-              data-testid="cc-total-value-note"
-            >
-              {t("costComparison.totalValueNote")}
-            </div>
-            <div className="h-80">
-              <CashCompositionChart
-                data={[
-                  {
-                    name: t("costComparison.personal"),
-                    investmentCash: result.personal.kpis.annual_net_cashflow,
-                    salary: 0,
-                    total: result.personal.kpis.annual_net_cashflow,
-                  },
-                  {
-                    name: t("costComparison.corporate"),
-                    investmentCash:
-                      result.corporate.breakdown.net_corporate_cash ?? 0,
-                    salary: result.corporate.breakdown.net_salary,
-                    total: result.corporate.kpis.annual_net_cashflow,
-                  },
-                ]}
-              />
-            </div>
-          </div>
+            {t("costComparison.mode.asset")}
+          </button>
+        </div>
 
-          <div
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-            data-testid="cc-sustainability-chart"
-          >
-            <div className="mb-4 text-lg font-bold text-slate-100">
-              <div className="flex items-center gap-2">
-                <span>{t("costComparison.sustainabilityTitle")}</span>
-                <TooltipTrigger
-                  testId="cc-tooltip-trigger-sustainability"
-                  text={t("costComparison.tooltip.sustainability")}
-                />
-              </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <NumberField
+            label={t("costComparison.investmentAssets")}
+            testId="cc-investment-assets"
+            tooltip={t("costComparison.tooltip.investmentAssets")}
+            unit="KRW"
+            value={config.personal_assets.investment_assets}
+            onChange={(value) =>
+              updateConfig("personal_assets", "investment_assets", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.pensionAssets")}
+            testId="cc-pension-assets"
+            tooltip={t("costComparison.tooltip.pensionAssets")}
+            unit="KRW"
+            value={config.personal_assets.personal_pension_assets}
+            onChange={(value) =>
+              updateConfig("personal_assets", "personal_pension_assets", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.realEstateValue")}
+            testId="cc-real-estate-value"
+            tooltip={t("costComparison.tooltip.realEstateValue")}
+            unit="KRW"
+            value={config.real_estate.official_price}
+            onChange={(value) =>
+              updateConfig("real_estate", "official_price", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.realEstateRatio")}
+            testId="cc-real-estate-ratio"
+            step="0.1"
+            tooltip={t("costComparison.tooltip.realEstateRatio")}
+            unit={t("costComparison.ratioUnit")}
+            value={config.real_estate.ownership_ratio}
+            onChange={(value) =>
+              updateConfig("real_estate", "ownership_ratio", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.paRate")}
+            testId="cc-pa-rate"
+            step="0.1"
+            tooltip={t("costComparison.tooltip.paRate")}
+            unit="%"
+            value={config.assumptions.price_appreciation_rate}
+            onChange={(value) =>
+              updateConfig("assumptions", "price_appreciation_rate", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.simulationYears")}
+            testId="cc-simulation-years"
+            tooltip={t("costComparison.tooltip.simulationYears")}
+            unit={t("costComparison.yearUnit")}
+            value={config.assumptions.simulation_years}
+            onChange={(value) =>
+              updateConfig("assumptions", "simulation_years", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.targetMonthlyCash")}
+            testId="cc-target-monthly-cash"
+            tooltip={t("costComparison.tooltip.targetMonthlyCash")}
+            unit="KRW"
+            value={config.assumptions.target_monthly_household_cash_after_tax}
+            onChange={(value) =>
+              updateConfig(
+                "assumptions",
+                "target_monthly_household_cash_after_tax",
+                value,
+              )
+            }
+          />
+          <NumberField
+            label={t("costComparison.monthlyFixedCost")}
+            testId="cc-monthly-fixed-cost"
+            tooltip={t("costComparison.tooltip.monthlyFixedCost")}
+            unit="KRW"
+            value={config.corporate.monthly_fixed_cost}
+            onChange={(value) =>
+              updateConfig("corporate", "monthly_fixed_cost", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.salary")}
+            testId="cc-salary-0"
+            tooltip={t("costComparison.tooltip.salary")}
+            unit="KRW"
+            value={config.corporate.salary_recipients[0]?.monthly_salary ?? 0}
+            onChange={(value) => updateSalary(0, value)}
+          />
+        </div>
+      </section>
+
+      <section
+        className="rounded-3xl border border-slate-800 bg-slate-950/40 p-5 md:p-6"
+        data-testid="cc-result-section"
+      >
+        <div className="border-b border-slate-800/80 pb-5">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            {t("costComparison.resultSectionEyebrow")}
+          </div>
+          <h3 className="mt-2 text-xl font-bold text-slate-100">
+            {t("costComparison.resultSection")}
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            {t("costComparison.resultSectionDescription")}
+          </p>
+        </div>
+
+        {result ? (
+          <div className="mt-6 space-y-6">
+            <div className="grid gap-4 md:grid-cols-4">
+              <AssumptionBadge
+                label={t("costComparison.assumptionPortfolio")}
+                testId="cc-assumption-portfolio"
+                tooltip={t("costComparison.tooltip.assumptionPortfolio")}
+                value={result.assumptions.portfolio_name}
+              />
+              <AssumptionBadge
+                label="DY"
+                testId="cc-assumption-dy"
+                tooltip={t("costComparison.tooltip.dy")}
+                value={formatPercent(result.assumptions.dy)}
+              />
+              <AssumptionBadge
+                label="PA"
+                testId="cc-assumption-pa"
+                tooltip={t("costComparison.tooltip.pa")}
+                value={formatPercent(result.assumptions.pa)}
+              />
+              <AssumptionBadge
+                label="TR"
+                testId="cc-assumption-tr"
+                tooltip={t("costComparison.tooltip.tr")}
+                value={formatPercent(result.assumptions.tr)}
+              />
             </div>
-            <div
-              className="mb-4 text-sm text-slate-400"
-              data-testid="cc-sustainability-note"
-            >
-              {t("costComparison.sustainabilityNote")}
-            </div>
-            <div className="h-80">
-              <SustainabilityLineChart
-                annualTargetCash={
-                  result.assumptions.target_monthly_household_cash_after_tax *
-                  12
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ScenarioCard
+                monthlyCashLabel={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.disposableCash")
+                    : t("costComparison.requiredRevenue")
                 }
-                personalSeries={result.personal.sustainability_series}
-                corporateSeries={result.corporate.sustainability_series}
-              />
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
-            data-testid="cc-waterfall-chart"
-          >
-            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
-              <span>{t("costComparison.waterfallTitle")}</span>
-              <TooltipTrigger
-                testId="cc-tooltip-trigger-waterfall"
-                text={t("costComparison.tooltip.waterfall")}
-              />
-            </div>
-            <div
-              className="mb-4 text-sm text-slate-400"
-              data-testid="cc-waterfall-note"
-            >
-              {t("costComparison.waterfallNote")}
-            </div>
-            <div
-              className="mb-4 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm text-slate-300"
-              data-testid="cc-waterfall-basis"
-            >
-              {t("costComparison.waterfallBasis")}
-            </div>
-            <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-slate-300">
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-revenue"
-              >
-                {t("costComparison.revenue")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-gross-salary"
-              >
-                {t("costComparison.grossSalary")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-tax"
-              >
-                {t("costComparison.tax")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-health"
-              >
-                {t("costComparison.healthInsurance")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-company-insurance"
-              >
-                {t("costComparison.companyInsurance")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-fixed"
-              >
-                {t("costComparison.fixedCost")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-net-salary"
-              >
-                {t("costComparison.netSalary")}
-              </div>
-              <div
-                className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
-                data-testid="cc-waterfall-step-disposable"
-              >
-                {t("costComparison.disposableCash")}
-              </div>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-2">
-              <WaterfallScenarioChart
+                totalCostLabel={t("costComparison.annualTotalCost")}
+                healthLabel={t("costComparison.healthInsurance")}
+                growthLabel={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.assetNetYield")
+                    : t("costComparison.netGrowth")
+                }
                 title={t("costComparison.personal")}
-                revenue={result.personal.breakdown.annual_revenue}
-                grossSalary={0}
-                tax={result.personal.breakdown.tax}
-                health={result.personal.breakdown.health_insurance}
-                companyInsurance={0}
-                fixed={result.personal.breakdown.fixed_cost}
-                netSalary={0}
-                disposable={result.personal.kpis.annual_net_cashflow}
-                positiveColor="#e2e8f0"
-              />
-              <WaterfallScenarioChart
-                title={t("costComparison.corporate")}
-                revenue={result.corporate.breakdown.annual_revenue}
-                grossSalary={result.corporate.breakdown.gross_salary ?? 0}
-                tax={result.corporate.breakdown.tax}
-                health={0}
-                companyInsurance={
-                  result.corporate.breakdown.company_insurance_cost ?? 0
+                testId="cc-kpi-personal"
+                testIdPrefix="cc-kpi-personal"
+                monthlyCashTooltip={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.tooltip.disposableCash")
+                    : t("costComparison.tooltip.requiredRevenue")
                 }
-                fixed={result.corporate.breakdown.fixed_cost}
-                netSalary={result.corporate.breakdown.net_salary}
-                disposable={result.corporate.kpis.annual_net_cashflow}
-                positiveColor="#10b981"
+                totalCostTooltip={t("costComparison.tooltip.annualTotalCost")}
+                healthTooltip={t("costComparison.tooltip.healthInsurance")}
+                growthTooltip={t("costComparison.tooltip.netGrowth")}
+                monthlyCash={
+                  result.assumptions.simulation_mode === "asset"
+                    ? result.personal.kpis.monthly_disposable_cashflow
+                    : result.personal.kpis.required_annual_revenue
+                }
+                totalCost={result.personal.kpis.annual_total_cost}
+                health={result.personal.kpis.annual_health_insurance}
+                growth={result.personal.kpis.required_assets}
+                growthValue={
+                  result.assumptions.simulation_mode === "asset"
+                    ? formatPercent((result.personal.kpis.net_yield || 0) / 100)
+                    : undefined
+                }
+                auditDetails={result.personal.breakdown.audit_details}
+              />
+              <ScenarioCard
+                monthlyCashLabel={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.disposableCash")
+                    : t("costComparison.requiredRevenue")
+                }
+                totalCostLabel={t("costComparison.annualTotalCost")}
+                healthLabel={t("costComparison.healthInsurance")}
+                growthLabel={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.assetNetYield")
+                    : t("costComparison.netGrowth")
+                }
+                title={t("costComparison.corporate")}
+                testId="cc-kpi-corporate"
+                testIdPrefix="cc-kpi-corporate"
+                monthlyCashTooltip={
+                  result.assumptions.simulation_mode === "asset"
+                    ? t("costComparison.tooltip.disposableCash")
+                    : t("costComparison.tooltip.requiredRevenue")
+                }
+                totalCostTooltip={t("costComparison.tooltip.annualTotalCost")}
+                healthTooltip={t("costComparison.tooltip.healthInsurance")}
+                growthTooltip={t("costComparison.tooltip.netGrowth")}
+                monthlyCash={
+                  result.assumptions.simulation_mode === "asset"
+                    ? result.corporate.kpis.monthly_disposable_cashflow
+                    : result.corporate.kpis.required_annual_revenue
+                }
+                totalCost={result.corporate.kpis.annual_total_cost}
+                health={result.corporate.kpis.annual_health_insurance}
+                growth={result.corporate.kpis.required_assets}
+                growthValue={
+                  result.assumptions.simulation_mode === "asset"
+                    ? formatPercent(
+                        (result.corporate.kpis.net_yield || 0) / 100,
+                      )
+                    : undefined
+                }
+                auditDetails={result.corporate.breakdown.audit_details}
               />
             </div>
-          </div>
 
-          {result.warnings.length > 0 ? (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
-              <div className="mb-3 flex items-center gap-2 text-lg font-bold text-amber-200">
-                <span>{t("costComparison.warningTitle")}</span>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <div
+                className="text-lg font-bold text-slate-100"
+                data-testid="cc-comparison-winner"
+              >
+                {result.comparison.winner === "corporate"
+                  ? t("costComparison.corporateWins")
+                  : result.comparison.winner === "personal"
+                    ? t("costComparison.personalWins")
+                    : t("costComparison.tieWins")}
+              </div>
+              <div
+                className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
+                data-testid="cc-winner-summary-annual"
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                  {t("costComparison.winnerAnnualLabel")}
+                </div>
+                {result.comparison.winner === "tie" ? (
+                  <div className="mt-1 text-sm text-slate-200">
+                    {t("costComparison.tieAnnualSummary")}
+                  </div>
+                ) : (
+                  <div className="mt-1 text-sm text-slate-200">
+                    {t("costComparison.winnerAnnualPrefix")}{" "}
+                    <span className="font-semibold text-white">
+                      {winnerLabel}
+                    </span>
+                    {t("costComparison.winnerAnnualMiddle")}
+                    <span className="font-semibold text-white">
+                      {loserLabel}
+                    </span>
+                    {t("costComparison.winnerAnnualSuffix")}
+                  </div>
+                )}
+                <div
+                  className="mt-2 text-2xl font-black text-emerald-300"
+                  data-testid="cc-winner-summary-annual-delta"
+                >
+                  {formatKrw(annualDelta)}
+                </div>
+              </div>
+              <div
+                className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
+                data-testid="cc-winner-summary-cumulative"
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  {t("costComparison.winnerCumulativeLabel")}
+                </div>
+                {result.comparison.winner === "tie" ? (
+                  <div className="mt-1 text-sm text-slate-300">
+                    {t("costComparison.tieCumulativeSummary")}
+                  </div>
+                ) : (
+                  <div className="mt-1 text-sm text-slate-300">
+                    {t("costComparison.winnerCumulativePrefix")}{" "}
+                    <span className="font-semibold text-white">
+                      {winnerLabel}
+                    </span>
+                    {t("costComparison.winnerCumulativeMiddle")}
+                    <span className="font-semibold text-white">
+                      {loserLabel}
+                    </span>
+                    {t("costComparison.winnerCumulativeSuffix")}
+                  </div>
+                )}
+                <div
+                  className="mt-2 text-lg font-bold text-slate-100"
+                  data-testid="cc-winner-summary-cumulative-delta"
+                >
+                  {formatKrw(cumulativeDelta)}
+                </div>
+              </div>
+              <div
+                className="mt-2 flex items-center gap-2 text-sm text-slate-400"
+                data-testid="cc-winner-basis"
+              >
+                <span>{t("costComparison.winnerBasis")}:</span>
+                <span>{t("costComparison.annualNetCashflow")}</span>
+                <span
+                  className="text-slate-500"
+                  data-testid="cc-winner-basis-formula"
+                >
+                  ({winnerBasisFormula})
+                </span>
                 <TooltipTrigger
-                  testId="cc-tooltip-trigger-warning"
-                  text={t("costComparison.tooltip.warning")}
+                  testId="cc-tooltip-trigger-cc-winner-basis"
+                  text={`${result.comparison.winner_reason} ${t("costComparison.tooltip.winner")}`}
                 />
               </div>
-              <div className="space-y-3">
-                {result.warnings.map((warning, index) => (
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {result.comparison.top_drivers.map((driver, index) => (
                   <div
-                    className="rounded-xl border border-amber-500/20 bg-slate-950/40 px-4 py-3 text-sm text-amber-100"
-                    data-testid={`cc-warning-${index}`}
-                    key={`${warning}-${index}`}
+                    className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
+                    data-testid={`cc-driver-${index}`}
+                    key={`${driver.label}-${index}`}
                   >
-                    {warning}
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                      <span>{driver.label}</span>
+                      <TooltipTrigger
+                        testId={`cc-tooltip-trigger-driver-${index}`}
+                        text={getDriverTooltip(driver.label, t)}
+                      />
+                    </div>
+                    <div className="mt-2 text-lg font-semibold text-slate-100">
+                      {formatKrw(driver.amount)}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          ) : null}
-        </div>
-      ) : null}
+
+            <div
+              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              data-testid="cc-breakdown-chart"
+            >
+              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <span>{t("costComparison.breakdownTitle")}</span>
+                <TooltipTrigger
+                  testId="cc-tooltip-trigger-breakdown"
+                  text={t("costComparison.tooltip.breakdown")}
+                />
+              </div>
+              <div className="mb-4 grid gap-3 md:grid-cols-[88px_minmax(0,1fr)]">
+                <div />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div
+                    className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
+                    data-testid="cc-breakdown-total-personal"
+                  >
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      <span>
+                        {t("costComparison.personal")} ·{" "}
+                        {t("costComparison.annualTotalCost")}
+                      </span>
+                      <TooltipTrigger
+                        testId="cc-tooltip-trigger-breakdown-total-personal"
+                        text={t("costComparison.tooltip.annualTotalCost")}
+                      />
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-100">
+                      {formatKrw(result.personal.kpis.annual_total_cost)}
+                    </div>
+                  </div>
+                  <div
+                    className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
+                    data-testid="cc-breakdown-total-corporate"
+                  >
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      <span>
+                        {t("costComparison.corporate")} ·{" "}
+                        {t("costComparison.annualTotalCost")}
+                      </span>
+                      <TooltipTrigger
+                        testId="cc-tooltip-trigger-breakdown-total-corporate"
+                        text={t("costComparison.tooltip.annualTotalCost")}
+                      />
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-100">
+                      {formatKrw(result.corporate.kpis.annual_total_cost)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      {
+                        name: t("costComparison.personal"),
+                        tax: result.personal.breakdown.tax,
+                        health: result.personal.breakdown.health_insurance,
+                        social: result.personal.breakdown.social_insurance,
+                        fixed: result.personal.breakdown.fixed_cost,
+                      },
+                      {
+                        name: t("costComparison.corporate"),
+                        tax: result.corporate.breakdown.tax,
+                        health: result.corporate.breakdown.health_insurance,
+                        social: result.corporate.breakdown.social_insurance,
+                        fixed: result.corporate.breakdown.fixed_cost,
+                      },
+                    ]}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="name" stroke="#64748b" />
+                    <YAxis
+                      stroke="#64748b"
+                      width={88}
+                      tickFormatter={(value) =>
+                        formatAxisKrw(Number(value || 0))
+                      }
+                    />
+                    <Tooltip
+                      content={
+                        <ChartTooltip
+                          formatter={(value) => formatKrw(Number(value || 0))}
+                        />
+                      }
+                      cursor={{ fill: "rgba(51, 65, 85, 0.18)" }}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="tax"
+                      name={t("costComparison.tax")}
+                      stackId="a"
+                      fill="#f97316"
+                    />
+                    <Bar
+                      dataKey="health"
+                      name={t("costComparison.healthInsurance")}
+                      stackId="a"
+                      fill="#10b981"
+                    />
+                    <Bar
+                      dataKey="social"
+                      name={t("costComparison.socialInsurance")}
+                      stackId="a"
+                      fill="#3b82f6"
+                    />
+                    <Bar
+                      dataKey="fixed"
+                      name={t("costComparison.fixedCost")}
+                      stackId="a"
+                      fill="#a855f7"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {isTargetMode ? (
+              <div
+                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                data-testid="cc-cumulative-chart"
+              >
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                  <span>{t("costComparison.cumulativeTitle")}</span>
+                  <TooltipTrigger
+                    testId="cc-tooltip-trigger-cumulative"
+                    text={t("costComparison.tooltip.cumulative")}
+                  />
+                </div>
+                <div
+                  className="mb-4 text-sm text-slate-400"
+                  data-testid="cc-cumulative-note"
+                >
+                  {t("costComparison.cumulativeNote")}
+                </div>
+                <div className="h-80">
+                  <ComparisonBarChart
+                    data={[
+                      {
+                        name: t("costComparison.personal"),
+                        value: result.personal.kpis.required_assets,
+                      },
+                      {
+                        name: t("costComparison.corporate"),
+                        value: result.corporate.kpis.required_assets,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {isTargetMode ? (
+              <div
+                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                data-testid="cc-household-cash-chart"
+              >
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                  <span>{t("costComparison.householdCashTitle")}</span>
+                  <TooltipTrigger
+                    testId="cc-tooltip-trigger-household-cash"
+                    text={t("costComparison.tooltip.householdCash")}
+                  />
+                </div>
+                <div
+                  className="mb-4 text-sm text-slate-400"
+                  data-testid="cc-household-cash-note"
+                >
+                  {t("costComparison.householdCashNote")}
+                </div>
+                <div className="h-80">
+                  <ComparisonBarChart
+                    minPointSize={6}
+                    data={[
+                      {
+                        name: t("costComparison.personal"),
+                        value:
+                          result.personal.kpis.asset_margin_vs_current || 0,
+                      },
+                      {
+                        name: t("costComparison.corporate"),
+                        value:
+                          result.corporate.kpis.asset_margin_vs_current || 0,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <div
+              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              data-testid="cc-total-value-chart"
+            >
+              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <span>{t("costComparison.totalValueTitle")}</span>
+                <TooltipTrigger
+                  testId="cc-tooltip-trigger-total-value"
+                  text={t("costComparison.tooltip.totalValue")}
+                />
+              </div>
+              <div
+                className="mb-4 text-sm text-slate-400"
+                data-testid="cc-total-value-note"
+              >
+                {t("costComparison.totalValueNote")}
+              </div>
+              <div className="h-80">
+                <CashCompositionChart
+                  data={[
+                    {
+                      name: t("costComparison.personal"),
+                      investmentCash: result.personal.kpis.annual_net_cashflow,
+                      salary: 0,
+                      total: result.personal.kpis.annual_net_cashflow,
+                    },
+                    {
+                      name: t("costComparison.corporate"),
+                      investmentCash:
+                        result.corporate.breakdown.net_corporate_cash ?? 0,
+                      salary: result.corporate.breakdown.net_salary,
+                      total: result.corporate.kpis.annual_net_cashflow,
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div
+              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              data-testid="cc-sustainability-chart"
+            >
+              <div className="mb-4 text-lg font-bold text-slate-100">
+                <div className="flex items-center gap-2">
+                  <span>{t("costComparison.sustainabilityTitle")}</span>
+                  <TooltipTrigger
+                    testId="cc-tooltip-trigger-sustainability"
+                    text={t("costComparison.tooltip.sustainability")}
+                  />
+                </div>
+              </div>
+              <div
+                className="mb-4 text-sm text-slate-400"
+                data-testid="cc-sustainability-note"
+              >
+                {t("costComparison.sustainabilityNote")}
+              </div>
+              <div className="h-80">
+                <SustainabilityLineChart
+                  annualTargetCash={
+                    result.assumptions.target_monthly_household_cash_after_tax *
+                    12
+                  }
+                  personalSeries={result.personal.sustainability_series}
+                  corporateSeries={result.corporate.sustainability_series}
+                />
+              </div>
+            </div>
+
+            <div
+              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              data-testid="cc-waterfall-chart"
+            >
+              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <span>{t("costComparison.waterfallTitle")}</span>
+                <TooltipTrigger
+                  testId="cc-tooltip-trigger-waterfall"
+                  text={t("costComparison.tooltip.waterfall")}
+                />
+              </div>
+              <div
+                className="mb-4 text-sm text-slate-400"
+                data-testid="cc-waterfall-note"
+              >
+                {t("costComparison.waterfallNote")}
+              </div>
+              <div
+                className="mb-4 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm text-slate-300"
+                data-testid="cc-waterfall-basis"
+              >
+                {t("costComparison.waterfallBasis")}
+              </div>
+              <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-bold text-slate-300">
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-revenue"
+                >
+                  {t("costComparison.revenue")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-gross-salary"
+                >
+                  {t("costComparison.grossSalary")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-tax"
+                >
+                  {t("costComparison.tax")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-health"
+                >
+                  {t("costComparison.healthInsurance")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-company-insurance"
+                >
+                  {t("costComparison.companyInsurance")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-fixed"
+                >
+                  {t("costComparison.fixedCost")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-net-salary"
+                >
+                  {t("costComparison.netSalary")}
+                </div>
+                <div
+                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  data-testid="cc-waterfall-step-disposable"
+                >
+                  {t("costComparison.disposableCash")}
+                </div>
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <WaterfallScenarioChart
+                  title={t("costComparison.personal")}
+                  revenue={result.personal.breakdown.annual_revenue}
+                  grossSalary={0}
+                  tax={result.personal.breakdown.tax}
+                  health={result.personal.breakdown.health_insurance}
+                  companyInsurance={0}
+                  fixed={result.personal.breakdown.fixed_cost}
+                  netSalary={0}
+                  disposable={result.personal.kpis.annual_net_cashflow}
+                  positiveColor="#e2e8f0"
+                />
+                <WaterfallScenarioChart
+                  title={t("costComparison.corporate")}
+                  revenue={result.corporate.breakdown.annual_revenue}
+                  grossSalary={result.corporate.breakdown.gross_salary ?? 0}
+                  tax={result.corporate.breakdown.tax}
+                  health={0}
+                  companyInsurance={
+                    result.corporate.breakdown.company_insurance_cost ?? 0
+                  }
+                  fixed={result.corporate.breakdown.fixed_cost}
+                  netSalary={result.corporate.breakdown.net_salary}
+                  disposable={result.corporate.kpis.annual_net_cashflow}
+                  positiveColor="#10b981"
+                />
+              </div>
+            </div>
+
+            {result.warnings.length > 0 ? (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
+                <div className="mb-3 flex items-center gap-2 text-lg font-bold text-amber-200">
+                  <span>{t("costComparison.warningTitle")}</span>
+                  <TooltipTrigger
+                    testId="cc-tooltip-trigger-warning"
+                    text={t("costComparison.tooltip.warning")}
+                  />
+                </div>
+                <div className="space-y-3">
+                  {result.warnings.map((warning, index) => (
+                    <div
+                      className="rounded-xl border border-amber-500/20 bg-slate-950/40 px-4 py-3 text-sm text-amber-100"
+                      data-testid={`cc-warning-${index}`}
+                      key={`${warning}-${index}`}
+                    >
+                      {warning}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div
+            className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 px-5 py-6 text-sm text-slate-400"
+            data-testid="cc-result-empty"
+          >
+            {t("costComparison.resultSectionEmpty")}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -1185,7 +1242,7 @@ function NumberField({
 
   return (
     <label className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
         <span data-testid={`${testId}-label`}>{label}</span>
         <TooltipTrigger
           testId={`cc-tooltip-trigger-${testId}`}
@@ -1221,7 +1278,7 @@ function NumberField({
         />
         {unit ? (
           <span
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500"
             data-testid={`${testId}-unit`}
           >
             {unit}
@@ -1248,7 +1305,7 @@ function AssumptionBadge({
       className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
       data-testid={testId}
     >
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
         <span data-testid={`${testId}-label`}>{label}</span>
         <TooltipTrigger
           testId={`cc-tooltip-trigger-${testId}`}
@@ -1334,7 +1391,7 @@ function ScenarioCard({
 
       {auditDetails && auditDetails.health && (
         <div className="mt-6 pt-4 border-t border-slate-800/50">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             {t("costComparison.detailedAudit")}
           </div>
           <div className="space-y-2">
@@ -1420,7 +1477,7 @@ function Metric({
 }) {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
         <span data-testid={`${testId}-label`}>{label}</span>
         <TooltipTrigger
           testId={`cc-tooltip-trigger-${testId}`}
@@ -1504,7 +1561,7 @@ function ChartTooltip({
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 text-sm text-slate-100 shadow-2xl">
       {label !== undefined ? (
-        <div className="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
           {label}
         </div>
       ) : null}
@@ -1873,7 +1930,7 @@ function WaterfallTooltip({
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 text-sm text-slate-100 shadow-2xl">
       {label !== undefined ? (
-        <div className="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
           {label}
         </div>
       ) : null}

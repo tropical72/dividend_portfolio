@@ -110,7 +110,7 @@ def test_backend_loads_git_tracked_defaults_and_saves_only_to_local_data(tmp_pat
         "ui_language": "ko",
     }
     default_cost_config = {
-        "simulation_mode": "target",
+        "simulation_mode": "asset",
         "assumptions": {"simulation_years": 20},
     }
     default_retirement_config = {
