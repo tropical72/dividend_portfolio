@@ -16,10 +16,10 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
     await expect(page.getByTestId("master-switcher-trigger")).toBeVisible();
     await expect(
       page.getByTestId("active-strategy-master-metrics"),
-    ).toContainText(/Master Yield|마스터 배당률/);
+    ).toContainText(/Master Yield|마스터 배당수익률/);
     await expect(
       page.getByTestId("active-strategy-master-metrics"),
-    ).toContainText(/Master TR|마스터 총수익률/);
+    ).toContainText(/TR|마스터 총수익률/);
     await expect(page.getByTestId("active-strategy-summary")).toHaveCount(1);
     await expect(page.getByTestId("active-strategy-corp-card")).toContainText(
       /Corporate|법인/,
@@ -68,8 +68,12 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
     page,
   }) => {
     const rulesSummary = page.getByTestId("strategy-rules-summary");
+    const resultSnapshot = page.getByTestId("retirement-result-snapshot");
+    const survivalMetric = page.getByTestId("retirement-metric-survival-years");
 
     await expect(page.getByTestId("retirement-step-2-title")).toBeVisible();
+    await expect(resultSnapshot).toHaveCount(1);
+    await expect(survivalMetric).toHaveCount(1);
     await expect(rulesSummary).toBeVisible();
     await expect(rulesSummary).toContainText(/Rebalance|리밸런싱/);
     await expect(rulesSummary).toContainText(/Corp SGOV|법인 SGOV/);

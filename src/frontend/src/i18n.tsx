@@ -62,6 +62,16 @@ const translations = {
     "retirement.cashExhaust": "Cash Exhaust",
     "retirement.cashExhaustTooltip":
       "Expected date when liquid safety assets reach zero.",
+    "retirement.yearsSustainableMetric": "Survival Horizon",
+    "retirement.yearsSustainableTooltip":
+      "How many full years the current strategy can sustain the retirement cashflow target.",
+    "retirement.snapshotAssumption": "Active Assumption",
+    "retirement.snapshotDuration": "Simulation Duration",
+    "retirement.snapshotMonthlyTarget": "Monthly Cash Target",
+    "retirement.snapshotMaster": "Active Master",
+    "retirement.statusSection": "Outcome",
+    "retirement.metricsSection": "Key Metrics",
+    "retirement.ruleSection": "Applied Rules",
     "retirement.appliedRules": "Applied Rules",
     "retirement.rebalance": "Rebalance",
     "retirement.corpSgov": "Corp SGOV",
@@ -565,6 +575,16 @@ const translations = {
     "retirement.cashExhaust": "현금 고갈 시점",
     "retirement.cashExhaustTooltip":
       "안전자산 잔고가 0이 되는 예상 시점입니다.",
+    "retirement.yearsSustainableMetric": "유지 가능 기간",
+    "retirement.yearsSustainableTooltip":
+      "현재 전략이 목표 생활비를 몇 년 동안 감당할 수 있는지 보여줍니다.",
+    "retirement.snapshotAssumption": "적용 시나리오",
+    "retirement.snapshotDuration": "시뮬레이션 기간",
+    "retirement.snapshotMonthlyTarget": "월 목표 생활비",
+    "retirement.snapshotMaster": "활성 마스터",
+    "retirement.statusSection": "결과 판단",
+    "retirement.metricsSection": "핵심 지표",
+    "retirement.ruleSection": "적용 규칙",
     "retirement.appliedRules": "적용 규칙",
     "retirement.rebalance": "리밸런싱",
     "retirement.corpSgov": "법인 SGOV",

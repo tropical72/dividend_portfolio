@@ -706,6 +706,36 @@ export function RetirementTab() {
           </div>
         </div>
         <div
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+          data-testid="retirement-result-snapshot"
+        >
+          <ResultSnapshotCard
+            label={t("retirement.snapshotAssumption")}
+            value={
+              activeId === "v1"
+                ? t("retirement.assumption.standard")
+                : t("retirement.assumption.conservative")
+            }
+          />
+          <ResultSnapshotCard
+            label={t("retirement.snapshotDuration")}
+            value={`${config.simulation_params.simulation_years || 30}${t("retirement.chart.yearTick")}`}
+          />
+          <ResultSnapshotCard
+            label={t("retirement.snapshotMonthlyTarget")}
+            value={`₩${(
+              config.simulation_params.target_monthly_cashflow || 0
+            ).toLocaleString()}`}
+          />
+          <ResultSnapshotCard
+            label={t("retirement.snapshotMaster")}
+            value={
+              simulationData.meta?.master_name ||
+              t("retirement.customStrategyBuilder")
+            }
+          />
+        </div>
+        <div
           className={cn(
             "p-12 rounded-[3.5rem] border shadow-2xl backdrop-blur-md relative overflow-hidden transition-all duration-1000",
             level.bg,
@@ -715,6 +745,9 @@ export function RetirementTab() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
             <div className="lg:col-span-5 flex flex-col justify-center space-y-10">
               <div className="space-y-6">
+                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  <span>{t("retirement.statusSection")}</span>
+                </div>
                 <div
                   className={cn(
                     "inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest",
@@ -738,79 +771,88 @@ export function RetirementTab() {
                     </span>
                   </h2>
                 )}
-                <p className="text-base text-slate-400 font-medium">
-                  {t("retirement.yearsSustainable")}{" "}
-                  <span
-                    data-testid="survival-years"
-                    className={cn(
-                      "font-black",
-                      (summary.total_survival_years || 0) >= 25
-                        ? "text-slate-100"
-                        : "text-red-400",
-                    )}
-                  >
-                    {summary.total_survival_years || 0}년
-                  </span>{" "}
-                  {t("retirement.yearsSuffix")}
-                </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <MetricCard
-                  label={t("retirement.finalNw")}
-                  value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length - 1].total_net_worth / 100000000 : 0).toFixed(1)}${largeCurrencyUnit}`}
-                  tooltip={t("retirement.finalNwTooltip")}
-                />
-                <MetricCard
-                  label={t("retirement.cashExhaust")}
-                  value={summary.sgov_exhaustion_date || "-"}
-                  tooltip={t("retirement.cashExhaustTooltip")}
-                />
+              <div>
+                <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  <span>{t("retirement.metricsSection")}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <MetricCard
+                    label={t("retirement.yearsSustainableMetric")}
+                    value={`${summary.total_survival_years || 0}${t("retirement.chart.yearTick")}`}
+                    tooltip={t("retirement.yearsSustainableTooltip")}
+                    testId="retirement-metric-survival-years"
+                    valueTestId="survival-years"
+                    valueClassName={cn(
+                      (summary.total_survival_years || 0) >= 25
+                        ? "text-slate-200"
+                        : "text-amber-400",
+                    )}
+                  />
+                  <MetricCard
+                    label={t("retirement.finalNw")}
+                    value={`₩${(summary.is_permanent ? monthlyData[monthlyData.length - 1].total_net_worth / 100000000 : 0).toFixed(1)}${largeCurrencyUnit}`}
+                    tooltip={t("retirement.finalNwTooltip")}
+                    testId="retirement-metric-final-nw"
+                  />
+                  <MetricCard
+                    label={t("retirement.cashExhaust")}
+                    value={summary.sgov_exhaustion_date || "-"}
+                    tooltip={t("retirement.cashExhaustTooltip")}
+                    testId="retirement-metric-cash-exhaust"
+                  />
+                </div>
               </div>
               {strategyRulesSummary && (
-                <div
-                  className="rounded-[2rem] border border-slate-800 bg-slate-950/40 p-5 space-y-4"
-                  data-testid="strategy-rules-summary"
-                >
-                  <div className="flex items-center gap-2">
-                    <Info size={16} className="text-violet-400" />
-                    <p
-                      className={cn(
-                        isKorean
-                          ? "text-xs font-bold text-violet-300 tracking-normal"
-                          : "text-[11px] font-black text-violet-400 uppercase tracking-widest",
-                      )}
-                    >
-                      {t("retirement.appliedRules")}
-                    </p>
+                <div>
+                  <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    <span>{t("retirement.ruleSection")}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <RuleBadge
-                      label={t("retirement.rebalance")}
-                      value={`${strategyRulesSummary.rebalance_month}M / ${strategyRulesSummary.rebalance_week}W`}
-                    />
-                    <RuleBadge
-                      label={t("retirement.corpSgov")}
-                      value={`${strategyRulesSummary.corporate_sgov_target_months} Mo`}
-                    />
-                    <RuleBadge
-                      label={t("retirement.pensionSgov")}
-                      value={`${strategyRulesSummary.pension_sgov_min_years} Yr`}
-                    />
-                    <RuleBadge
-                      label={t("retirement.bearFreeze")}
-                      value={
-                        strategyRulesSummary.bear_market_freeze_enabled
-                          ? t("retirement.enabled")
-                          : t("retirement.disabled")
-                      }
-                    />
-                    <RuleBadge
-                      label={t("retirement.monthlyCost")}
-                      value={`₩${(
-                        config.simulation_params.target_monthly_cashflow || 0
-                      ).toLocaleString()}`}
-                      testId="rule-badge-monthly-cost"
-                    />
+                  <div
+                    className="rounded-[2rem] border border-slate-800 bg-slate-950/40 p-5 space-y-4"
+                    data-testid="strategy-rules-summary"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Info size={16} className="text-violet-400" />
+                      <p
+                        className={cn(
+                          isKorean
+                            ? "text-xs font-bold text-violet-300 tracking-normal"
+                            : "text-[11px] font-black text-violet-400 uppercase tracking-widest",
+                        )}
+                      >
+                        {t("retirement.appliedRules")}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <RuleBadge
+                        label={t("retirement.rebalance")}
+                        value={`${strategyRulesSummary.rebalance_month}M / ${strategyRulesSummary.rebalance_week}W`}
+                      />
+                      <RuleBadge
+                        label={t("retirement.corpSgov")}
+                        value={`${strategyRulesSummary.corporate_sgov_target_months} Mo`}
+                      />
+                      <RuleBadge
+                        label={t("retirement.pensionSgov")}
+                        value={`${strategyRulesSummary.pension_sgov_min_years} Yr`}
+                      />
+                      <RuleBadge
+                        label={t("retirement.bearFreeze")}
+                        value={
+                          strategyRulesSummary.bear_market_freeze_enabled
+                            ? t("retirement.enabled")
+                            : t("retirement.disabled")
+                        }
+                      />
+                      <RuleBadge
+                        label={t("retirement.monthlyCost")}
+                        value={`₩${(
+                          config.simulation_params.target_monthly_cashflow || 0
+                        ).toLocaleString()}`}
+                        testId="rule-badge-monthly-cost"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -1055,14 +1097,23 @@ function MetricCard({
   label,
   value,
   tooltip,
+  testId,
+  valueTestId,
+  valueClassName,
 }: {
   label: string;
   value: string;
   tooltip: string;
+  testId?: string;
+  valueTestId?: string;
+  valueClassName?: string;
 }) {
   const { isKorean } = useI18n();
   return (
-    <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 group relative">
+    <div
+      className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 group relative"
+      data-testid={testId}
+    >
       <div className="flex items-center gap-2 mb-2">
         <p
           className={cn(
@@ -1080,7 +1131,38 @@ function MetricCard({
           </div>
         </div>
       </div>
-      <span className="text-base font-black text-slate-200">{value}</span>
+      <span
+        className={cn("text-base font-black text-slate-200", valueClassName)}
+        data-testid={valueTestId}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ResultSnapshotCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  const { isKorean } = useI18n();
+  return (
+    <div className="rounded-[1.75rem] border border-slate-800 bg-slate-900/50 px-5 py-4">
+      <p
+        className={cn(
+          isKorean
+            ? "text-[11px] font-bold text-slate-400 tracking-normal"
+            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+        )}
+      >
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-black text-slate-100 break-words">
+        {value}
+      </p>
     </div>
   );
 }
