@@ -225,6 +225,9 @@ const translations = {
     "settings.simControl": "Sim Control",
     "settings.simControlTooltip":
       "Set the monthly living cost target and total simulation duration.",
+    "settings.programSettings": "Program Settings",
+    "settings.programSettingsTooltip":
+      "Configure app-wide preferences that affect the entire interface rather than the calculation engine.",
     "settings.monthlyLivingCost": "Monthly Living Cost",
     "settings.monthlyLivingCostTooltip":
       "Total monthly living cost target that corporate and pension assets must fund.",
@@ -687,6 +690,9 @@ const translations = {
     "settings.simControl": "시뮬레이션 제어",
     "settings.simControlTooltip":
       "월 생활비 목표와 총 시뮬레이션 기간을 설정합니다.",
+    "settings.programSettings": "프로그램 설정",
+    "settings.programSettingsTooltip":
+      "계산 엔진이 아니라 프로그램 전체 인터페이스에 적용되는 공통 설정입니다.",
     "settings.monthlyLivingCost": "월 생활비",
     "settings.monthlyLivingCostTooltip":
       "법인과 연금 자산이 매달 충당해야 할 총 생활비 목표입니다.",

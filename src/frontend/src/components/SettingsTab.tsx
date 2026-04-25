@@ -317,8 +317,54 @@ export function SettingsTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-8">
+      <div className="grid grid-cols-1 gap-8">
+        <div className="space-y-8">
+          <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
+            <SectionTitle
+              icon={Settings2}
+              title={t("settings.programSettings")}
+              color="text-slate-300"
+              tooltip={t("settings.programSettingsTooltip")}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.uiLanguage")}
+                  </label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      {t("settings.uiLanguageTooltip")}
+                    </div>
+                  </div>
+                </div>
+                <select
+                  data-testid="ui-language-select"
+                  value={settings.ui_language}
+                  onChange={(e) => {
+                    const nextLanguage = e.target.value as UiLanguage;
+                    setSettings({
+                      ...settings,
+                      ui_language: nextLanguage,
+                    });
+                    setLanguage(nextLanguage);
+                  }}
+                  className="h-11 w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+                >
+                  <option value="ko">{t("settings.korean")}</option>
+                  <option value="en">{t("settings.english")}</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
               <SectionTitle
@@ -710,6 +756,24 @@ export function SettingsTab({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InputGroup
+                    label={t("settings.sgovBuffer")}
+                    unit="Mo"
+                    tooltip={t("settings.sgovBufferTooltip")}
+                    value={
+                      retireConfig.trigger_thresholds?.target_buffer_months ||
+                      24
+                    }
+                    onChange={(v) =>
+                      setRetireConfig({
+                        ...retireConfig,
+                        trigger_thresholds: {
+                          ...retireConfig.trigger_thresholds,
+                          target_buffer_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
                     label={t("settings.corpTargetBuffer")}
                     unit="Mo"
                     tooltip={t("settings.corpTargetBufferTooltip")}
@@ -973,7 +1037,7 @@ export function SettingsTab({
                           </select>
                         </div>
                       </div>
-                      <div className="md:col-span-5 flex flex-col gap-2">
+                      <div className="md:col-span-3 flex flex-col gap-2">
                         <label
                           className={cn(
                             "ml-1",
@@ -1006,7 +1070,7 @@ export function SettingsTab({
                                 parseInt(e.target.value.replace(/,/g, "")) || 0;
                               updateCashflow(ev.id, { amount: val });
                             }}
-                            className="h-11 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50"
+                            className="h-11 min-w-0 flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 text-base font-black text-emerald-400 outline-none focus:border-emerald-500/50"
                           />
                         </div>
                       </div>
@@ -1104,9 +1168,7 @@ export function SettingsTab({
               )}
             </div>
           </section>
-        </div>
 
-        <div className="lg:col-span-4 space-y-8">
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <SectionTitle
               icon={Clock}
@@ -1114,7 +1176,7 @@ export function SettingsTab({
               color="text-slate-400"
               tooltip={t("settings.simControlTooltip")}
             />
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <InputGroup
                 label={t("settings.monthlyLivingCost")}
                 isCurrency
@@ -1151,111 +1213,6 @@ export function SettingsTab({
           </section>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
-            <SectionTitle
-              icon={Settings2}
-              title={t("settings.basicConstants")}
-              color="text-slate-400"
-              tooltip={t("settings.basicConstantsTooltip")}
-            />
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 ml-1">
-                  <label
-                    className={cn(
-                      isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-                    )}
-                  >
-                    {t("settings.uiLanguage")}
-                  </label>
-                  <div className="group relative">
-                    <Info size={12} className="text-slate-600 cursor-help" />
-                    <div className="absolute left-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                      {t("settings.uiLanguageTooltip")}
-                    </div>
-                  </div>
-                </div>
-                <select
-                  data-testid="ui-language-select"
-                  value={settings.ui_language}
-                  onChange={(e) => {
-                    const nextLanguage = e.target.value as UiLanguage;
-                    setSettings({
-                      ...settings,
-                      ui_language: nextLanguage,
-                    });
-                    setLanguage(nextLanguage);
-                  }}
-                  className="h-11 w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
-                >
-                  <option value="ko">{t("settings.korean")}</option>
-                  <option value="en">{t("settings.english")}</option>
-                </select>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t border-slate-800/50">
-                <div className="flex items-center gap-1.5 ml-1">
-                  <label
-                    className={cn(
-                      isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-                    )}
-                  >
-                    {t("settings.healthUnitPrice")}
-                  </label>
-                  <div className="group relative">
-                    <Info size={12} className="text-slate-600 cursor-help" />
-                    <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                      {t("settings.healthUnitPriceTooltip")}
-                    </div>
-                  </div>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={
-                      retireConfig.tax_and_insurance?.point_unit_price || 208.4
-                    }
-                    onChange={(e) =>
-                      setRetireConfig({
-                        ...retireConfig,
-                        tax_and_insurance: {
-                          ...retireConfig.tax_and_insurance,
-                          point_unit_price: parseFloat(e.target.value),
-                        },
-                      })
-                    }
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
-                    KRW
-                  </span>
-                </div>
-              </div>
-              <InputGroup
-                label={t("settings.sgovBuffer")}
-                unit="Mo"
-                tooltip={t("settings.sgovBufferTooltip")}
-                value={
-                  retireConfig.trigger_thresholds?.target_buffer_months || 24
-                }
-                onChange={(v) =>
-                  setRetireConfig({
-                    ...retireConfig,
-                    trigger_thresholds: {
-                      ...retireConfig.trigger_thresholds,
-                      target_buffer_months: parseInt(v) || 0,
-                    },
-                  })
-                }
-              />
-            </div>
-          </section>
-
-          <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
             <div className="flex items-center justify-between">
               <SectionTitle
                 icon={Layers}
@@ -1276,67 +1233,63 @@ export function SettingsTab({
                 <RotateCcw size={14} />
               </button>
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-4">
-                <InputGroup
-                  label={t("settings.catCash")}
-                  unit="%"
-                  value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
-                  onChange={(v) =>
-                    setSettings({
-                      ...settings,
-                      appreciation_rates: {
-                        ...settings.appreciation_rates!,
-                        cash_sgov: parseFloat(v) || 0,
-                      },
-                    })
-                  }
-                />
-                <InputGroup
-                  label={t("settings.catFixed")}
-                  unit="%"
-                  value={(settings.appreciation_rates?.fixed_income || 0) * 1}
-                  onChange={(v) =>
-                    setSettings({
-                      ...settings,
-                      appreciation_rates: {
-                        ...settings.appreciation_rates!,
-                        fixed_income: parseFloat(v) || 0,
-                      },
-                    })
-                  }
-                />
-                <InputGroup
-                  label={t("settings.catDividend")}
-                  unit="%"
-                  value={
-                    (settings.appreciation_rates?.dividend_stocks || 0) * 1
-                  }
-                  onChange={(v) =>
-                    setSettings({
-                      ...settings,
-                      appreciation_rates: {
-                        ...settings.appreciation_rates!,
-                        dividend_stocks: parseFloat(v) || 0,
-                      },
-                    })
-                  }
-                />
-                <InputGroup
-                  label={t("settings.catGrowth")}
-                  unit="%"
-                  value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
-                  onChange={(v) =>
-                    setSettings({
-                      ...settings,
-                      appreciation_rates: {
-                        ...settings.appreciation_rates!,
-                        growth_stocks: parseFloat(v) || 0,
-                      },
-                    })
-                  }
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <InputGroup
+                label={t("settings.catCash")}
+                unit="%"
+                value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
+                onChange={(v) =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: {
+                      ...settings.appreciation_rates!,
+                      cash_sgov: parseFloat(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.catFixed")}
+                unit="%"
+                value={(settings.appreciation_rates?.fixed_income || 0) * 1}
+                onChange={(v) =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: {
+                      ...settings.appreciation_rates!,
+                      fixed_income: parseFloat(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.catDividend")}
+                unit="%"
+                value={(settings.appreciation_rates?.dividend_stocks || 0) * 1}
+                onChange={(v) =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: {
+                      ...settings.appreciation_rates!,
+                      dividend_stocks: parseFloat(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.catGrowth")}
+                unit="%"
+                value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
+                onChange={(v) =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: {
+                      ...settings.appreciation_rates!,
+                      growth_stocks: parseFloat(v) || 0,
+                    },
+                  })
+                }
+              />
             </div>
           </section>
 
@@ -1374,7 +1327,7 @@ export function SettingsTab({
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <EditableInput
                       label={t("settings.tr")}
                       unit="%"
@@ -1468,6 +1421,51 @@ export function SettingsTab({
                 data-testid="advanced-settings-content"
               >
                 <div className="space-y-6 border-t border-slate-800 pt-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 ml-1">
+                      <label
+                        className={cn(
+                          isKorean
+                            ? "text-xs font-bold text-slate-400 tracking-normal"
+                            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                        )}
+                      >
+                        {t("settings.healthUnitPrice")}
+                      </label>
+                      <div className="group relative">
+                        <Info
+                          size={12}
+                          className="text-slate-600 cursor-help"
+                        />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          {t("settings.healthUnitPriceTooltip")}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={
+                          retireConfig.tax_and_insurance?.point_unit_price ||
+                          208.4
+                        }
+                        onChange={(e) =>
+                          setRetireConfig({
+                            ...retireConfig,
+                            tax_and_insurance: {
+                              ...retireConfig.tax_and_insurance,
+                              point_unit_price: parseFloat(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
+                        KRW
+                      </span>
+                    </div>
+                  </div>
                   <InputGroup
                     label={t("settings.highIncomeCap")}
                     unit="%"
