@@ -158,17 +158,24 @@ function AppShell({
   const { t } = useI18n();
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="planner-shell flex min-h-screen bg-transparent text-slate-100 font-sans">
       {/* 사이드바: RAMS 계층 구조 반영 */}
-      <nav className="w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-800 p-6 flex flex-col gap-2">
+      <nav className="w-72 shrink-0 border-r border-slate-800/70 bg-white/60 p-6 backdrop-blur-xl flex flex-col gap-2">
         <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="p-2 bg-emerald-500 rounded-lg shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-            <TrendingUp className="text-slate-950 w-6 h-6" />
+          <div className="p-2.5 rounded-2xl bg-emerald-100 shadow-sm ring-1 ring-emerald-200/70">
+            <TrendingUp className="h-6 w-6 text-emerald-700" />
           </div>
-          <h1 className="text-xl font-black tracking-tighter">RAMS v1</h1>
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              RAMS v1
+            </h1>
+            <p className="text-sm font-medium text-slate-500">
+              Retirement planning studio
+            </p>
+          </div>
         </div>
 
-        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-3">
+        <div className="mb-2 ml-3 text-[11px] font-bold text-slate-500">
           {t("app.mainDashboard")}
         </div>
         <NavButton
@@ -186,7 +193,7 @@ function AppShell({
           onClick={() => setActiveTab("cost-comparison")}
         />
 
-        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">
+        <div className="mt-6 mb-2 ml-3 text-[11px] font-bold text-slate-500">
           {t("app.assetManager")}
         </div>
         <NavButton
@@ -204,7 +211,7 @@ function AppShell({
           onClick={() => setActiveTab("watchlist")}
         />
 
-        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-6 mb-2 ml-3">
+        <div className="mt-6 mb-2 ml-3 text-[11px] font-bold text-slate-500">
           {t("app.system")}
         </div>
         <NavButton
@@ -215,17 +222,17 @@ function AppShell({
           onClick={() => setActiveTab("strategy")}
         />
 
-        <div className="mt-auto p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 text-xs">
+        <div className="mt-auto rounded-[1.5rem] border border-white/70 bg-white/72 p-4 text-xs shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">
+            <span className="text-[10px] font-semibold text-slate-500">
               {t("app.engineStatus")}
             </span>
             <span
               className={cn(
-                "w-2 h-2 rounded-full",
+                "h-2.5 w-2.5 rounded-full",
                 health === "ok"
-                  ? "bg-emerald-500 shadow-[0_0_8px_#10b981]"
-                  : "bg-red-500 shadow-[0_0_8px_#ef4444]",
+                  ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]"
+                  : "bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]",
               )}
             />
           </div>
@@ -233,8 +240,8 @@ function AppShell({
       </nav>
 
       {/* 메인 컨텐츠 영역 */}
-      <main className="flex-1 p-8 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
-        <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-800 p-10 shadow-sm min-h-full">
+      <main className="soft-scrollbar flex-1 overflow-y-auto bg-transparent p-8">
+        <div className="mx-auto min-h-full max-w-[1600px] rounded-[2rem] border border-white/65 bg-white/42 p-8 shadow-sm backdrop-blur-md">
           {activeTab === "retirement" && <RetirementTab />}
           {activeTab === "cost-comparison" && <CostComparisonTab />}
           {activeTab === "assets" && (
@@ -286,18 +293,18 @@ function NavButton({
       aria-label={`${label} Tab`}
       data-testid={testId}
       className={cn(
-        "flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group",
+        "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200",
         active
-          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-          : "text-slate-400 hover:bg-slate-800 hover:text-slate-100",
+          ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
+          : "text-slate-500 hover:bg-white/70 hover:text-slate-800",
       )}
     >
       <span
         className={cn(
-          "w-5 h-5",
+          "h-5 w-5",
           active
-            ? "text-emerald-400"
-            : "text-slate-500 group-hover:text-slate-100",
+            ? "text-emerald-700"
+            : "text-slate-400 group-hover:text-slate-700",
         )}
       >
         {icon}

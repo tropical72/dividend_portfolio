@@ -476,7 +476,7 @@ export function PortfolioDashboard({
 
   if (isLoading)
     return (
-      <div className="p-10 text-center text-slate-500 font-bold uppercase tracking-[0.2em] animate-pulse">
+      <div className="p-10 text-center text-sm font-semibold tracking-[0.08em] text-slate-500 animate-pulse">
         {copy.syncData}
       </div>
     );
@@ -486,14 +486,14 @@ export function PortfolioDashboard({
       {/* 0. Master Strategy Section */}
       <section className="space-y-6">
         <div className="flex items-center gap-3 px-4">
-          <div className="p-2 bg-emerald-500/10 rounded-lg">
-            <TrendingUp size={20} className="text-emerald-400" />
+          <div className="rounded-2xl bg-emerald-50 p-3">
+            <TrendingUp size={20} className="text-emerald-700" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-300 uppercase tracking-widest">
+            <h3 className="text-base font-bold tracking-tight text-slate-800">
               {copy.masterStrategy}
             </h3>
-            <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">
+            <p className="text-xs font-medium text-slate-500">
               {copy.masterStrategySubtitle}
             </p>
           </div>
@@ -501,8 +501,8 @@ export function PortfolioDashboard({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 전략 생성 카드 */}
-          <div className="p-8 rounded-[2.5rem] bg-slate-900/40 border border-slate-800 space-y-6">
-            <h4 className="text-sm font-black text-slate-200 uppercase tracking-wider">
+          <div className="space-y-6 rounded-[2.5rem] border border-white/80 bg-white/80 p-8 shadow-sm backdrop-blur-sm">
+            <h4 className="text-sm font-semibold tracking-[0.08em] text-slate-500">
               {copy.newStrategy}
             </h4>
             <div className="space-y-4">
@@ -512,16 +512,16 @@ export function PortfolioDashboard({
                 value={newMasterName}
                 onChange={(e) => setNewMasterName(e.target.value)}
                 data-testid="master-strategy-name-input"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-200 focus:border-emerald-500/50 outline-none transition-all"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-emerald-300"
               />
               <div className="space-y-2">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
+                <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                   {copy.corpPortfolio}
                 </p>
                 <select
                   value={selectedCorpId}
                   onChange={(e) => setSelectedCorpId(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none"
+                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-300"
                 >
                   <option value="">{copy.none}</option>
                   {portfolios
@@ -534,13 +534,13 @@ export function PortfolioDashboard({
                 </select>
               </div>
               <div className="space-y-2">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-tighter">
+                <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                   {copy.pensionPortfolio}
                 </p>
                 <select
                   value={selectedPenId}
                   onChange={(e) => setSelectedPenId(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl px-5 py-3 text-sm font-bold text-slate-400 outline-none appearance-none"
+                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-300"
                 >
                   <option value="">{copy.none}</option>
                   {portfolios
@@ -556,7 +556,7 @@ export function PortfolioDashboard({
                 onClick={handleCreateMaster}
                 disabled={!newMasterName || (!selectedCorpId && !selectedPenId)}
                 data-testid="save-master-strategy-btn"
-                className="w-full py-4 bg-emerald-500 text-slate-950 rounded-[1.5rem] font-black text-sm hover:bg-emerald-400 transition-all disabled:opacity-20 flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-[1.5rem] bg-emerald-500 py-4 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-30"
               >
                 <PlusCircle size={18} /> {copy.saveStrategy}
               </button>
@@ -566,7 +566,7 @@ export function PortfolioDashboard({
           {/* 전략 리스트 */}
           <div className="lg:col-span-2 space-y-4">
             {masterPortfolios.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-800 rounded-[2.5rem] text-slate-600 font-bold italic">
+              <div className="flex h-full flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-slate-300 bg-white/60 p-12 text-sm font-medium italic text-slate-500">
                 {copy.noMasterStrategies}
               </div>
             ) : (
@@ -582,31 +582,31 @@ export function PortfolioDashboard({
                   <div
                     key={m.id}
                     className={cn(
-                      "p-8 rounded-[2rem] border transition-all duration-500 flex items-center justify-between group",
+                      "group flex items-center justify-between rounded-[2rem] border p-8 transition-all duration-500",
                       m.is_active
-                        ? "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.05)]"
-                        : "bg-slate-900/40 border-slate-800 hover:border-slate-700",
+                        ? "border-emerald-200 bg-emerald-50/90 shadow-sm"
+                        : "border-white/80 bg-white/78 shadow-sm hover:border-emerald-100",
                     )}
                   >
                     <div className="flex items-center gap-8">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <h4 className="text-xl font-black text-slate-100">
+                          <h4 className="text-xl font-bold tracking-tight text-slate-800">
                             {m.name}
                           </h4>
                           {m.is_active && (
-                            <div className="px-3 py-1 bg-emerald-500 text-slate-950 text-[11px] font-black rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                            <div className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-white shadow-sm">
                               {copy.active}
                             </div>
                           )}
                         </div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-3">
-                          <span className="text-emerald-500/80 font-black">
+                        <p className="flex items-center gap-3 text-[11px] font-medium tracking-[0.08em] text-slate-500">
+                          <span className="font-semibold text-emerald-700">
                             {copy.corpShort}:
                           </span>{" "}
                           {c_p?.name || "-"}
-                          <span className="text-slate-800 mx-1">/</span>
-                          <span className="text-blue-500/80 font-black">
+                          <span className="mx-1 text-slate-300">/</span>
+                          <span className="font-semibold text-blue-700">
                             {copy.penShort}:
                           </span>{" "}
                           {p_p?.name || "-"}
@@ -617,40 +617,40 @@ export function PortfolioDashboard({
                     <div className="flex items-center gap-12">
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip relative">
-                          <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                          <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                             {copy.dividendYield}
                           </p>
                           <Info
                             size={10}
-                            className="text-slate-600 cursor-help"
+                            className="text-slate-400 cursor-help"
                           />
-                          <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/tip:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          <div className="absolute right-0 bottom-full z-50 mb-2 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-medium leading-relaxed text-slate-600 shadow-lg group-hover/tip:block animate-in fade-in zoom-in-95">
                             포트폴리오 구성 종목들의 가중 평균 배당수익률입니다.
                             (세전 기준)
                           </div>
                         </div>
-                        <p className="text-xl font-black text-slate-400 tabular-nums">
+                        <p className="text-xl font-bold tabular-nums text-slate-700">
                           {avg_dy.toFixed(2)}
-                          <span className="text-xs text-slate-600 ml-1">%</span>
+                          <span className="ml-1 text-xs text-slate-400">%</span>
                         </p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5 mb-1 group/tip-tr relative">
-                          <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">
+                          <p className="text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
                             {copy.expectedTr}
                           </p>
                           <Info
                             size={10}
-                            className="text-emerald-600 cursor-help"
+                            className="text-emerald-500 cursor-help"
                           />
-                          <div className="absolute right-0 bottom-full mb-2 w-52 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-200 font-bold hidden group-hover/tip-tr:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                          <div className="absolute right-0 bottom-full z-50 mb-2 hidden w-52 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-medium leading-relaxed text-slate-600 shadow-lg group-hover/tip-tr:block animate-in fade-in zoom-in-95">
                             배당수익률({avg_dy.toFixed(2)}%)에 자산군별
                             기대주가상승률을 합산한 가중 평균 총수익률입니다.
                           </div>
                         </div>
-                        <p className="text-2xl font-black text-emerald-400 tabular-nums">
+                        <p className="text-2xl font-bold tabular-nums text-emerald-700">
                           {avg_tr.toFixed(2)}
-                          <span className="text-xs text-emerald-600 ml-1">
+                          <span className="ml-1 text-xs text-emerald-500">
                             %
                           </span>
                         </p>
@@ -659,7 +659,7 @@ export function PortfolioDashboard({
                         {!m.is_active && (
                           <button
                             onClick={() => handleActivateMaster(m.id)}
-                            className="p-4 bg-slate-950/50 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all border border-slate-800"
+                            className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-500 transition-all hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                             title={copy.activateStrategy}
                             data-testid={`activate-master-${m.id}`}
                           >
@@ -675,10 +675,10 @@ export function PortfolioDashboard({
                           disabled={m.is_active || m.is_system_default}
                           data-testid={`delete-master-${m.id}`}
                           className={cn(
-                            "p-4 rounded-2xl transition-all border border-slate-800",
+                            "rounded-2xl border p-4 transition-all",
                             m.is_active || m.is_system_default
-                              ? "bg-slate-950/30 text-slate-700 cursor-not-allowed opacity-50"
-                              : "bg-slate-950/50 text-slate-500 hover:text-red-400 hover:bg-red-500/10",
+                              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300 opacity-70"
+                              : "border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600",
                           )}
                           title={
                             m.is_system_default
@@ -701,14 +701,14 @@ export function PortfolioDashboard({
       </section>
 
       {/* 1. Global Simulator [REQ-PRT-06.3] */}
-      <div className="bg-slate-900/20 border border-slate-800 rounded-[2.5rem] p-8">
+      <div className="rounded-[2.5rem] border border-white/80 bg-white/78 p-8 shadow-sm">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex-1">
-            <h3 className="text-lg font-black text-slate-200 flex items-center gap-2 mb-1">
-              <TrendingUp className="text-emerald-400" size={20} />{" "}
+            <h3 className="mb-1 flex items-center gap-2 text-lg font-bold tracking-tight text-slate-800">
+              <TrendingUp className="text-emerald-700" size={20} />{" "}
               {copy.globalSimulator}
             </h3>
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+            <p className="text-xs font-medium text-slate-500">
               {copy.overrideCapital}
             </p>
           </div>
@@ -724,13 +724,13 @@ export function PortfolioDashboard({
                 }
                 onChange={(e) => handleGlobalUsdChange(e.target.value)}
                 className={cn(
-                  "w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all",
+                  "w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-semibold text-slate-800 outline-none transition-all group-hover:border-slate-300 focus:border-emerald-300",
                   globalCurrency === "USD" &&
                     globalCapitalUsd !== null &&
-                    "ring-2 ring-emerald-500/20 border-emerald-500/40",
+                    "border-emerald-300 ring-2 ring-emerald-100",
                 )}
               />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-semibold text-slate-400">
                 $
               </span>
             </div>
@@ -747,13 +747,13 @@ export function PortfolioDashboard({
                 }
                 onChange={(e) => handleGlobalKrwChange(e.target.value)}
                 className={cn(
-                  "w-full bg-slate-950/50 border border-slate-800 group-hover:border-slate-700 focus:border-emerald-500/50 rounded-2xl px-5 py-3 text-lg font-bold text-slate-100 outline-none transition-all",
+                  "w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-lg font-semibold text-slate-800 outline-none transition-all group-hover:border-slate-300 focus:border-emerald-300",
                   globalCurrency === "KRW" &&
                     globalCapitalUsd !== null &&
-                    "ring-2 ring-emerald-500/20 border-emerald-500/40",
+                    "border-emerald-300 ring-2 ring-emerald-100",
                 )}
               />
-              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-700 font-bold">
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-semibold text-slate-400">
                 ₩
               </span>
             </div>
@@ -763,7 +763,7 @@ export function PortfolioDashboard({
                   setGlobalCapitalUsd(null);
                   setGlobalCurrency("USD");
                 }}
-                className="p-3 text-slate-500 hover:text-emerald-400 transition-colors"
+                className="rounded-2xl p-3 text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-700"
               >
                 <RotateCcw size={20} />
               </button>
@@ -776,20 +776,20 @@ export function PortfolioDashboard({
       {selectedIds.size > 0 && (
         <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
           {/* 2.1 Monthly Dividend Bar Chart */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10 shadow-2xl">
+          <div className="rounded-[2.5rem] border border-white/80 bg-white/82 p-10 shadow-sm">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="text-xl font-black text-slate-50 flex items-center gap-3 tracking-tight">
-                  <BarChart3 className="text-emerald-400" size={24} />{" "}
+                <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-slate-800">
+                  <BarChart3 className="text-emerald-700" size={24} />{" "}
                   {copy.monthlyDividendComparison} ({globalCurrency})
                 </h3>
-                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1 ml-9">
+                <p className="ml-9 mt-1 text-xs font-medium text-slate-500">
                   {copy.aggregatedIncome}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-[11px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-widest bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700"
               >
                 {copy.clearSelection}
               </button>
@@ -802,20 +802,20 @@ export function PortfolioDashboard({
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#1e293b"
+                    stroke="#d8e0e7"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12, fontWeight: 700 }}
+                    tick={{ fill: "#64748b", fontSize: 12, fontWeight: 600 }}
                     dy={10}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
                     tickFormatter={(val) =>
                       globalCurrency === "USD"
                         ? `$${val}`
@@ -823,11 +823,12 @@ export function PortfolioDashboard({
                     }
                   />
                   <Tooltip
-                    cursor={{ fill: "#1e293b", opacity: 0.4 }}
+                    cursor={{ fill: "#d9e6ee", opacity: 0.45 }}
                     contentStyle={{
-                      backgroundColor: "#0f172a",
-                      border: "1px solid #334155",
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #d8e0e7",
                       borderRadius: "16px",
+                      boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
                     }}
                     formatter={(val: number | string | undefined) => [
                       globalCurrency === "USD"
@@ -840,7 +841,7 @@ export function PortfolioDashboard({
                     wrapperStyle={{ paddingTop: "30px" }}
                     iconType="circle"
                     formatter={(value) => (
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      <span className="ml-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {value}
                       </span>
                     )}
@@ -871,9 +872,9 @@ export function PortfolioDashboard({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 2.2 Asset Mix Radar Chart */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
-              <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <PieChart size={18} className="text-blue-400" />{" "}
+            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm">
+              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
+                <PieChart size={18} className="text-blue-700" />{" "}
                 {copy.strategyCharacter} ({copy.assetMix})
               </h4>
               <div className="h-[300px] w-full">
@@ -884,10 +885,10 @@ export function PortfolioDashboard({
                     outerRadius="80%"
                     data={radarData}
                   >
-                    <PolarGrid stroke="#1e293b" />
+                    <PolarGrid stroke="#d8e0e7" />
                     <PolarAngleAxis
                       dataKey="subject"
-                      tick={{ fill: "#64748b", fontSize: 10, fontWeight: 800 }}
+                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
                     />
                     <PolarRadiusAxis
                       angle={30}
@@ -925,10 +926,11 @@ export function PortfolioDashboard({
                       ))}
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        border: "1px solid #334155",
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #d8e0e7",
                         borderRadius: "12px",
-                        fontSize: "10px",
+                        fontSize: "11px",
+                        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
                       }}
                     />
                   </RadarChart>
@@ -937,63 +939,63 @@ export function PortfolioDashboard({
             </div>
 
             {/* 2.3 Metrics Comparison Matrix */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-10">
-              <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <Layout size={18} className="text-emerald-400" />{" "}
+            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm">
+              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
+                <Layout size={18} className="text-emerald-700" />{" "}
                 {copy.comparisonMatrix}
               </h4>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-slate-800/50">
-                      <th className="py-4 text-[11px] font-black text-slate-600 uppercase tracking-widest">
+                    <tr className="border-b border-slate-200">
+                      <th className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {copy.indicator}
                       </th>
                       {metrics.map((m) => (
                         <th
                           key={m.name}
-                          className="py-4 px-4 text-right text-[11px] font-black text-slate-300 uppercase truncate max-w-[100px]"
+                          className="max-w-[100px] truncate px-4 py-4 text-right text-[11px] font-semibold tracking-[0.08em] text-slate-600"
                         >
                           {m.name}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/30">
+                  <tbody className="divide-y divide-slate-200">
                     <tr>
-                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
+                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {copy.avgYield}
                       </td>
                       {metrics.map((m) => (
                         <td
                           key={m.name}
-                          className="py-4 px-4 text-right font-black text-slate-400"
+                          className="px-4 py-4 text-right font-semibold text-slate-700"
                         >
                           {m.yield.toFixed(2)}%
                         </td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[11px] font-black text-emerald-500/80 uppercase">
+                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
                         {copy.expectedTr}
                       </td>
                       {metrics.map((m) => (
                         <td
                           key={m.name}
-                          className="py-4 px-4 text-right font-black text-emerald-400"
+                          className="px-4 py-4 text-right font-semibold text-emerald-700"
                         >
                           {m.tr.toFixed(2)}%
                         </td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
+                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {copy.estimatedIncome} ({globalCurrency})
                       </td>
                       {metrics.map((m) => (
                         <td
                           key={m.name}
-                          className="py-4 px-4 text-right font-black text-slate-100"
+                          className="px-4 py-4 text-right font-semibold text-slate-800"
                         >
                           {globalCurrency === "USD"
                             ? `$${Math.round(m.annualIncome).toLocaleString()}`
@@ -1002,26 +1004,26 @@ export function PortfolioDashboard({
                       ))}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
+                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {copy.assetCount}
                       </td>
                       {metrics.map((m) => (
                         <td
                           key={m.name}
-                          className="py-4 px-4 text-right font-black text-slate-400"
+                          className="px-4 py-4 text-right font-semibold text-slate-700"
                         >
                           {m.assetCount}
                         </td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="py-4 text-[11px] font-black text-slate-500 uppercase">
+                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                         {copy.coreAsset}
                       </td>
                       {metrics.map((m) => (
                         <td
                           key={m.name}
-                          className="py-4 px-4 text-right font-black text-blue-400"
+                          className="px-4 py-4 text-right font-semibold text-blue-700"
                         >
                           {m.topAsset}
                         </td>
@@ -1037,10 +1039,10 @@ export function PortfolioDashboard({
 
       {/* 3. Portfolio List */}
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-2xl font-black text-slate-50 flex items-center gap-2">
-          <PieChart className="text-emerald-400" /> {copy.savedPortfolios}
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-800">
+          <PieChart className="text-emerald-700" /> {copy.savedPortfolios}
         </h2>
-        <span className="text-xs text-slate-500 font-bold uppercase tracking-widest bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700">
+        <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold tracking-[0.08em] text-slate-500 shadow-sm">
           {copy.totalSets} {portfolios.length} {copy.sets}
         </span>
       </div>
@@ -1057,13 +1059,13 @@ export function PortfolioDashboard({
             <div
               key={p.id}
               className={cn(
-                "portfolio-card group border transition-all duration-300 rounded-[2rem] overflow-hidden",
+                "portfolio-card group overflow-hidden rounded-[2rem] border transition-all duration-300",
                 isExpanded
-                  ? "bg-slate-900/60 border-emerald-500/30 shadow-2xl shadow-emerald-500/5"
-                  : "bg-slate-900/20 border-slate-800 hover:border-slate-700 hover:bg-slate-900/30 cursor-pointer",
+                  ? "border-emerald-200 bg-white shadow-md"
+                  : "cursor-pointer border-white/80 bg-white/74 shadow-sm hover:border-emerald-100 hover:bg-white/88",
                 isSelected &&
                   !isExpanded &&
-                  "border-emerald-500/40 bg-emerald-500/[0.02]",
+                  "border-emerald-200 bg-emerald-50/60",
               )}
               onClick={() => setExpandedId(isExpanded ? null : p.id)}
             >
@@ -1076,8 +1078,8 @@ export function PortfolioDashboard({
                     className={cn(
                       "p-2 rounded-xl transition-all",
                       isSelected
-                        ? "text-emerald-400 bg-emerald-500/10"
-                        : "text-slate-700 hover:text-slate-500",
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-600",
                     )}
                   >
                     {isSelected ? (
@@ -1100,24 +1102,24 @@ export function PortfolioDashboard({
                             onKeyDown={(e) =>
                               e.key === "Enter" && handleRename(p.id)
                             }
-                            className="bg-slate-950 border border-emerald-500/50 rounded-lg px-3 py-1 text-xl font-black text-slate-100 outline-none w-full max-w-[250px]"
+                            className="w-full max-w-[250px] rounded-lg border border-emerald-300 bg-white px-3 py-1 text-xl font-bold text-slate-800 outline-none"
                           />
                           <button
                             onClick={() => handleRename(p.id)}
-                            className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-slate-950 transition-all"
+                            className="rounded-lg bg-emerald-50 p-2 text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white"
                           >
                             <CheckSquare size={18} />
                           </button>
                           <button
                             onClick={() => setEditingId(null)}
-                            className="p-2 bg-slate-800 text-slate-400 rounded-lg hover:bg-slate-700 transition-all"
+                            className="rounded-lg bg-slate-100 p-2 text-slate-500 transition-all hover:bg-slate-200"
                           >
                             <X size={18} />
                           </button>
                         </div>
                       ) : (
                         <>
-                          <h3 className="text-xl font-black text-slate-50 tracking-tight truncate">
+                          <h3 className="truncate text-xl font-bold tracking-tight text-slate-800">
                             {p.name}
                           </h3>
                           <button
@@ -1126,7 +1128,7 @@ export function PortfolioDashboard({
                               setEditingId(p.id);
                               setEditingName(p.name);
                             }}
-                            className="opacity-0 group-hover/name:opacity-100 p-1 text-slate-500 hover:text-emerald-400 transition-all"
+                            className="p-1 text-slate-400 opacity-0 transition-all group-hover/name:opacity-100 hover:text-emerald-700"
                             title={copy.renameTitle}
                           >
                             <Edit3 size={14} />
@@ -1135,10 +1137,10 @@ export function PortfolioDashboard({
                       )}
                       <span
                         className={cn(
-                          "px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border transition-all duration-500",
+                          "rounded-lg border px-3 py-1 text-xs font-semibold tracking-[0.08em] transition-all duration-500",
                           p.account_type?.toLowerCase() === "pension"
-                            ? "bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
-                            : "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]",
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-blue-200 bg-blue-50 text-blue-700",
                         )}
                       >
                         {p.account_type === "Pension"
@@ -1146,24 +1148,24 @@ export function PortfolioDashboard({
                           : copy.corpPortfolio}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest mt-1.5">
+                    <div className="mt-1.5 flex items-center gap-4 text-xs font-semibold tracking-[0.08em]">
                       <span className="text-slate-500">
                         {items.length} {copy.assets}
                       </span>
-                      <div className="w-1 h-1 rounded-full bg-slate-700" />
+                      <div className="h-1 w-1 rounded-full bg-slate-300" />
                       <span
                         className={cn(
-                          "font-black",
+                          "font-semibold",
                           globalCapitalUsd !== null
-                            ? "text-emerald-400"
-                            : "text-slate-400",
+                            ? "text-emerald-700"
+                            : "text-slate-600",
                         )}
                       >
                         USD {Math.round(capitalUsd).toLocaleString()} / KRW{" "}
                         {Math.round(capitalKrw).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 mt-2 font-bold uppercase tracking-tighter opacity-60">
+                    <p className="mt-2 text-[11px] font-medium tracking-[0.08em] text-slate-400">
                       * Rate: 1 USD = {exchangeRate.toFixed(1)} KRW (Daily Sync)
                     </p>
                   </div>
@@ -1171,35 +1173,35 @@ export function PortfolioDashboard({
 
                 <div className="flex items-center gap-10">
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">
+                    <p className="mb-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                       {copy.yield}
                     </p>
-                    <p className="text-xl font-black text-slate-400 tabular-nums">
+                    <p className="text-xl font-bold tabular-nums text-slate-700">
                       {getDY(p).toFixed(2)}%
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center justify-end gap-1.5 mb-1 group/ytip-card relative">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
                         {copy.expectedTr}
                       </p>
                       <Info
                         size={10}
-                        className="text-emerald-600 cursor-help"
+                        className="text-emerald-500 cursor-help"
                       />
-                      <div className="absolute right-0 bottom-full mb-2 w-56 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover/ytip-card:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      <div className="absolute right-0 bottom-full z-50 mb-2 hidden w-56 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-medium leading-relaxed text-slate-600 shadow-lg group-hover/ytip-card:block animate-in fade-in zoom-in-95">
                         가중 평균 배당수익률과 자산군별 설정된 기대주가상승률을
                         합산한 총수익률입니다.
                       </div>
                     </div>
-                    <p className="text-2xl font-black text-emerald-400 tabular-nums">
+                    <p className="text-2xl font-bold tabular-nums text-emerald-700">
                       {getTR(p).toFixed(2)}%
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={(e) => handleLoad(e, p)}
-                      className="hidden md:flex items-center gap-2 px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 text-sm font-black rounded-2xl transition-all border border-emerald-500/20"
+                      className="hidden items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white md:flex"
                     >
                       <Edit3 size={16} /> {copy.loadIntoDesigner}
                     </button>
@@ -1209,10 +1211,10 @@ export function PortfolioDashboard({
                       }
                       disabled={p.is_system_default}
                       className={cn(
-                        "p-3 rounded-2xl transition-all",
+                        "rounded-2xl p-3 transition-all",
                         p.is_system_default
-                          ? "text-slate-700 cursor-not-allowed opacity-50"
-                          : "text-slate-700 hover:text-red-400 hover:bg-red-400/5",
+                          ? "cursor-not-allowed text-slate-300 opacity-70"
+                          : "text-slate-400 hover:bg-rose-50 hover:text-rose-600",
                       )}
                       title={
                         p.is_system_default
@@ -1222,7 +1224,7 @@ export function PortfolioDashboard({
                     >
                       <Trash2 size={20} />
                     </button>
-                    <div className="p-2 text-slate-600">
+                    <div className="p-2 text-slate-400">
                       {isExpanded ? (
                         <ChevronUp size={24} />
                       ) : (
@@ -1236,40 +1238,42 @@ export function PortfolioDashboard({
               {/* 4. Detailed View */}
               <div
                 className={cn(
-                  "portfolio-details overflow-hidden transition-all duration-500 ease-in-out border-t border-slate-800/50 bg-slate-950/40",
+                  "portfolio-details overflow-hidden border-t border-slate-200 bg-slate-50/70 transition-all duration-500 ease-in-out",
                   isExpanded
                     ? "max-h-[2000px] opacity-100 p-8"
                     : "max-h-0 opacity-0",
                 )}
               >
                 <div className="space-y-6">
-                  <h4 className="text-sm font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <h4 className="flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
                     <PieChart size={16} /> {copy.individualPerformance} (
                     {copy.basedOnCapital})
                   </h4>
-                  <div className="rounded-[2rem] border border-slate-800 overflow-hidden shadow-inner bg-slate-900/20">
+                  <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
                     <table className="w-full text-left text-sm border-collapse">
-                      <thead className="bg-slate-800/40 text-slate-500 font-black uppercase tracking-widest">
+                      <thead className="bg-slate-50 text-slate-500">
                         <tr>
-                          <th className="py-5 px-6">{copy.ticker}</th>
-                          <th className="py-5 px-4 text-right">
+                          <th className="px-6 py-5 text-[11px] font-semibold tracking-[0.08em]">
+                            {copy.ticker}
+                          </th>
+                          <th className="px-4 py-5 text-right text-[11px] font-semibold tracking-[0.08em]">
                             {copy.weight}
                           </th>
-                          <th className="py-5 px-4 text-right border-l border-slate-800/50 text-emerald-500/70">
+                          <th className="border-l border-slate-200 px-4 py-5 text-right text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
                             {copy.annualUsd}
                           </th>
-                          <th className="py-5 px-4 text-right text-emerald-500/70">
+                          <th className="px-4 py-5 text-right text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
                             {copy.annualKrw}
                           </th>
-                          <th className="py-5 px-4 text-right border-l border-slate-800/50 text-blue-400/70">
+                          <th className="border-l border-slate-200 px-4 py-5 text-right text-[11px] font-semibold tracking-[0.08em] text-blue-700">
                             {copy.monthlyUsd}
                           </th>
-                          <th className="py-5 px-6 text-right text-blue-400/70">
+                          <th className="px-6 py-5 text-right text-[11px] font-semibold tracking-[0.08em] text-blue-700">
                             {copy.monthlyKrw}
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/30">
+                      <tbody className="divide-y divide-slate-200">
                         {items.map((item, idx) => {
                           const itemWeight = item.weight || 0;
                           const itemAlloc = capitalUsd * (itemWeight / 100);
@@ -1285,39 +1289,39 @@ export function PortfolioDashboard({
                           return (
                             <tr
                               key={idx}
-                              className="hover:bg-slate-800/30 transition-colors group"
+                              className="group transition-colors hover:bg-slate-50"
                             >
-                              <td className="py-5 px-6 font-bold text-slate-200">
+                              <td className="px-6 py-5 font-semibold text-slate-700">
                                 <div className="flex flex-col">
-                                  <span className="text-emerald-400 font-black text-base">
+                                  <span className="text-base font-bold text-emerald-700">
                                     {item.symbol || "Unknown"}
                                   </span>
-                                  <span className="text-xs text-slate-500 truncate max-w-[150px]">
+                                  <span className="max-w-[150px] truncate text-xs text-slate-500">
                                     {item.name || "Untitled Asset"}
                                   </span>
                                 </div>
                               </td>
-                              <td className="py-5 px-4 text-right font-black text-slate-400 group-hover:text-slate-200">
+                              <td className="px-4 py-5 text-right font-semibold text-slate-600 group-hover:text-slate-700">
                                 {itemWeight.toFixed(1)}%
                               </td>
-                              <td className="py-5 px-4 text-right border-l border-slate-800/50 font-black text-slate-100">
+                              <td className="border-l border-slate-200 px-4 py-5 text-right font-semibold text-slate-800">
                                 $
                                 {annualUsd.toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
-                              <td className="py-5 px-4 text-right font-bold text-slate-300">
+                              <td className="px-4 py-5 text-right font-medium text-slate-600">
                                 ₩{Math.round(annualKrw).toLocaleString()}
                               </td>
-                              <td className="py-5 px-4 text-right border-l border-slate-800/50 font-black text-emerald-400">
+                              <td className="border-l border-slate-200 px-4 py-5 text-right font-semibold text-emerald-700">
                                 $
                                 {(annualUsd / 12).toLocaleString(undefined, {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
-                              <td className="py-5 px-6 text-right font-bold text-emerald-500">
+                              <td className="px-6 py-5 text-right font-medium text-emerald-700">
                                 ₩{Math.round(annualKrw / 12).toLocaleString()}
                               </td>
                             </tr>

@@ -262,19 +262,19 @@ export function RetirementTab() {
       onClick={() => isSwitcherOpen && setIsSwitcherOpen(false)}
     >
       <section className="animate-in fade-in slide-in-from-top-4 duration-700 relative z-50">
-        <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl backdrop-blur-md relative">
-          <div className="absolute left-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="relative rounded-[2rem] border border-white/70 bg-white/78 p-7 shadow-sm backdrop-blur-md">
+          <div className="pointer-events-none absolute left-0 top-0 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-200/50 blur-[55px]" />
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex-1 space-y-1 relative">
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-1 h-4 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+                <div className="h-4 w-1 rounded-full bg-emerald-500" />
                 <p
                   className={cn(
-                    "text-emerald-500",
+                    "text-emerald-700",
                     isKorean
-                      ? "text-xs font-bold tracking-[0.08em]"
-                      : "text-[11px] font-black uppercase tracking-[0.3em]",
+                      ? "text-xs font-semibold tracking-normal"
+                      : "text-[11px] font-semibold tracking-[0.08em]",
                   )}
                   data-testid="active-strategy-title"
                 >
@@ -290,13 +290,13 @@ export function RetirementTab() {
                   setIsSwitcherOpen(!isSwitcherOpen);
                 }}
               >
-                <h1 className="text-2xl font-black text-slate-100 tracking-tight group-hover/title:text-emerald-400 transition-all flex items-center gap-3">
+                <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-800 transition-all group-hover/title:text-emerald-700">
                   {simulationData.meta?.master_name ||
                     t("retirement.customStrategyBuilder")}
                 </h1>
                 <ChevronDown
                   className={cn(
-                    "text-slate-600 group-hover/title:text-emerald-400 transition-all",
+                    "text-slate-400 transition-all group-hover/title:text-emerald-700",
                     isSwitcherOpen && "rotate-180",
                   )}
                   size={20}
@@ -306,20 +306,20 @@ export function RetirementTab() {
                 className="mt-3 flex flex-wrap items-center gap-3"
                 data-testid="active-strategy-master-metrics"
               >
-                <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5">
-                  <span className="text-[10px] font-black text-emerald-500/70 uppercase">
+                <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+                  <span className="text-[10px] font-semibold text-emerald-700">
                     {t("retirement.masterYield")}
                   </span>
-                  <span className="ml-1.5 text-sm font-black text-emerald-300">
+                  <span className="ml-1.5 text-sm font-bold text-emerald-700">
                     {((simulationData.meta?.combined_dy || 0) * 100).toFixed(2)}
                     %
                   </span>
                 </div>
-                <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5">
-                  <span className="text-[10px] font-black text-blue-500/70 uppercase">
+                <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5">
+                  <span className="text-[10px] font-semibold text-sky-700">
                     {t("retirement.tr")}
                   </span>
-                  <span className="ml-1.5 text-sm font-black text-blue-300">
+                  <span className="ml-1.5 text-sm font-bold text-sky-700">
                     {((simulationData.meta?.combined_tr || 0) * 100).toFixed(2)}
                     %
                   </span>
@@ -328,15 +328,15 @@ export function RetirementTab() {
 
               {isSwitcherOpen && (
                 <div
-                  className="absolute top-full left-0 mt-3 w-[380px] bg-slate-900 border border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-3 z-[100] animate-in slide-in-from-top-1 duration-200 ring-1 ring-emerald-500/10"
+                  className="absolute top-full left-0 z-[100] mt-3 w-[380px] animate-in slide-in-from-top-1 rounded-[1.5rem] border border-white/80 bg-white/95 py-3 shadow-xl duration-200 ring-1 ring-emerald-100"
                   data-testid="master-switcher-menu"
                 >
                   <p
                     className={cn(
-                      "px-6 py-1.5 border-b border-slate-800/50 mb-2",
+                      "mb-2 border-b border-slate-200 px-6 py-1.5",
                       isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                        ? "text-xs font-semibold text-slate-500 tracking-normal"
+                        : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
                     )}
                   >
                     {t("retirement.changePlan")}
@@ -348,35 +348,35 @@ export function RetirementTab() {
                         onClick={() => handleSwitchMaster(m.id)}
                         data-testid={`master-switcher-item-${m.id}`}
                         className={cn(
-                          "mx-2 px-6 py-3.5 rounded-xl cursor-pointer transition-all flex items-center justify-between group/item mb-0.5",
+                          "group/item mx-2 mb-0.5 flex cursor-pointer items-center justify-between rounded-xl px-6 py-3.5 transition-all",
                           m.is_active
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-slate-100",
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800",
                         )}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-black tracking-tight truncate">
+                            <p className="truncate text-sm font-bold tracking-tight">
                               {m.name}
                             </p>
                             {m.combined_tr !== undefined &&
                               m.combined_tr !== null && (
-                                <span className="text-[11px] font-black text-emerald-500/80 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
+                                <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                                   {(m.combined_tr * 100).toFixed(2)}%
                                 </span>
                               )}
                             {m.broken_reference && (
-                              <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                              <span className="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-600">
                                 {t("retirement.broken")}
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] font-bold opacity-60 uppercase tracking-tight truncate mt-0.5 text-slate-400">
+                          <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
                             Corp: {m.corp_name || "-"} / Pen:{" "}
                             {m.pension_name || "-"}
                           </p>
                           {m.broken_reference && m.broken_reason && (
-                            <p className="text-[10px] font-bold text-rose-400/80 mt-1 line-clamp-2">
+                            <p className="mt-1 line-clamp-2 text-[10px] font-medium text-rose-500">
                               {m.broken_reason}
                             </p>
                           )}
@@ -400,51 +400,51 @@ export function RetirementTab() {
               data-testid="active-strategy-summary"
             >
               <div
-                className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-4 flex items-start gap-3"
+                className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-5 py-4 shadow-sm"
                 data-testid="active-strategy-corp-card"
               >
-                <Building2 className="text-emerald-500/50" size={18} />
+                <Building2 className="text-emerald-600/70" size={18} />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <p
                       className={cn(
                         isKorean
-                          ? "text-xs font-bold text-slate-400 tracking-normal"
-                          : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                          ? "text-xs font-semibold text-slate-500 tracking-normal"
+                          : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
                       )}
                     >
                       {t("retirement.corporate")}
                     </p>
                   </div>
-                  <p className="text-sm font-black text-slate-200 tracking-tight truncate">
+                  <p className="truncate text-sm font-bold tracking-tight text-slate-800">
                     {portfolioMeta?.corp?.name || t("retirement.none")}
                   </p>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1">
+                    <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
                       <span
                         className={cn(
                           isKorean
-                            ? "text-[11px] font-bold text-emerald-300/80 tracking-normal"
-                            : "text-[10px] font-black text-emerald-500/70 uppercase",
+                            ? "text-[11px] font-semibold text-emerald-700 tracking-normal"
+                            : "text-[10px] font-semibold text-emerald-700",
                         )}
                       >
                         {t("settings.dy")}
                       </span>
-                      <span className="ml-1 text-xs font-black text-emerald-300">
+                      <span className="ml-1 text-xs font-bold text-emerald-700">
                         {portfolioMeta?.corp?.yield || "0.00%"}
                       </span>
                     </div>
-                    <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
+                    <div className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1">
                       <span
                         className={cn(
                           isKorean
-                            ? "text-[11px] font-bold text-blue-300/80 tracking-normal"
-                            : "text-[10px] font-black text-blue-500/70 uppercase",
+                            ? "text-[11px] font-semibold text-sky-700 tracking-normal"
+                            : "text-[10px] font-semibold text-sky-700",
                         )}
                       >
                         {t("retirement.tr")}
                       </span>
-                      <span className="ml-1 text-xs font-black text-blue-300">
+                      <span className="ml-1 text-xs font-bold text-sky-700">
                         {(
                           (portfolioMeta?.corp?.expected_return || 0) * 100
                         ).toFixed(2)}
@@ -455,51 +455,51 @@ export function RetirementTab() {
                 </div>
               </div>
               <div
-                className="bg-slate-950/40 border border-slate-800 rounded-2xl px-5 py-4 flex items-start gap-3"
+                className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-5 py-4 shadow-sm"
                 data-testid="active-strategy-pension-card"
               >
-                <Wallet2 className="text-blue-500/50" size={18} />
+                <Wallet2 className="text-sky-600/70" size={18} />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <p
                       className={cn(
                         isKorean
-                          ? "text-xs font-bold text-slate-400 tracking-normal"
-                          : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                          ? "text-xs font-semibold text-slate-500 tracking-normal"
+                          : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
                       )}
                     >
                       {t("retirement.pension")}
                     </p>
                   </div>
-                  <p className="text-sm font-black text-slate-200 tracking-tight truncate">
+                  <p className="truncate text-sm font-bold tracking-tight text-slate-800">
                     {portfolioMeta?.pension?.name || t("retirement.none")}
                   </p>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1">
+                    <div className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1">
                       <span
                         className={cn(
                           isKorean
-                            ? "text-[11px] font-bold text-blue-300/80 tracking-normal"
-                            : "text-[10px] font-black text-blue-500/70 uppercase",
+                            ? "text-[11px] font-semibold text-sky-700 tracking-normal"
+                            : "text-[10px] font-semibold text-sky-700",
                         )}
                       >
                         {t("settings.dy")}
                       </span>
-                      <span className="ml-1 text-xs font-black text-blue-300">
+                      <span className="ml-1 text-xs font-bold text-sky-700">
                         {portfolioMeta?.pension?.yield || "0.00%"}
                       </span>
                     </div>
-                    <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1">
+                    <div className="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1">
                       <span
                         className={cn(
                           isKorean
-                            ? "text-[11px] font-bold text-cyan-300/80 tracking-normal"
-                            : "text-[10px] font-black text-cyan-500/70 uppercase",
+                            ? "text-[11px] font-semibold text-cyan-700 tracking-normal"
+                            : "text-[10px] font-semibold text-cyan-700",
                         )}
                       >
                         {t("retirement.tr")}
                       </span>
-                      <span className="ml-1 text-xs font-black text-cyan-300">
+                      <span className="ml-1 text-xs font-bold text-cyan-700">
                         {(
                           (portfolioMeta?.pension?.expected_return || 0) * 100
                         ).toFixed(2)}
@@ -510,7 +510,7 @@ export function RetirementTab() {
                 </div>
               </div>
               <div
-                className="flex items-center justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl px-6 py-4"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-white/80 bg-white/75 px-6 py-4 shadow-sm"
                 data-testid="active-strategy-exchange-rate"
               >
                 <div className="text-right ml-auto">
@@ -518,18 +518,18 @@ export function RetirementTab() {
                     className={cn(
                       "leading-none mb-1",
                       isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-600 uppercase tracking-widest",
+                        ? "text-xs font-semibold text-slate-500 tracking-normal"
+                        : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
                     )}
                   >
                     {t("retirement.exchangeRate")}
                   </p>
-                  <p className="text-lg font-black text-emerald-500/90 tabular-nums leading-none">
+                  <p className="text-lg font-bold leading-none text-emerald-700 tabular-nums">
                     {exchangeRate.toLocaleString(undefined, {
                       minimumFractionDigits: 1,
                       maximumFractionDigits: 1,
                     })}
-                    <span className="text-[11px] text-slate-600 ml-1 font-bold">
+                    <span className="ml-1 text-[11px] font-semibold text-slate-500">
                       KRW
                     </span>
                   </p>
@@ -544,16 +544,16 @@ export function RetirementTab() {
       <section className="space-y-6">
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-800 rounded-lg">
-              <Settings2 size={20} className="text-slate-400" />
+            <div className="rounded-xl bg-white/80 p-2 shadow-sm ring-1 ring-slate-200">
+              <Settings2 size={20} className="text-slate-500" />
             </div>
             <div>
               <h3
                 className={cn(
-                  "text-slate-300",
+                  "text-slate-700",
                   isKorean
                     ? "text-lg font-bold tracking-normal"
-                    : "text-base font-black uppercase tracking-widest",
+                    : "text-base font-bold tracking-tight",
                 )}
                 data-testid="retirement-step-1-title"
               >
@@ -563,8 +563,8 @@ export function RetirementTab() {
                 className={cn(
                   "mt-0.5 font-bold",
                   isKorean
-                    ? "text-xs text-slate-400 tracking-normal"
-                    : "text-[11px] text-slate-500 uppercase tracking-widest",
+                    ? "text-xs text-slate-500 tracking-normal"
+                    : "text-[11px] text-slate-500 tracking-[0.08em]",
                 )}
               >
                 {t("retirement.step1Subtitle")}
@@ -572,13 +572,13 @@ export function RetirementTab() {
             </div>
           </div>
         </div>
-        <div className="rounded-[2rem] border border-slate-800 bg-slate-900/40 px-5 py-4">
+        <div className="rounded-[1.75rem] border border-white/80 bg-white/72 px-5 py-4 shadow-sm">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                 {t("retirement.inputGuideLabel")}
               </p>
-              <p className="mt-2 text-sm font-bold text-slate-300">
+              <p className="mt-2 text-sm font-medium text-slate-600">
                 {t("retirement.inputGuideBody")}
               </p>
             </div>
@@ -601,10 +601,10 @@ export function RetirementTab() {
               data-testid={`assumption-card-${id}`}
               onClick={() => activeId !== id && handleSwitchVersion(id)}
               className={cn(
-                "p-8 rounded-[2rem] border transition-all duration-500 text-left group cursor-pointer",
+                "group cursor-pointer rounded-[1.75rem] border p-8 text-left transition-all duration-300 shadow-sm",
                 activeId === id
-                  ? "bg-emerald-500/10 border-emerald-500/30"
-                  : "bg-slate-900/40 border-slate-800",
+                  ? "border-emerald-200 bg-emerald-50/85"
+                  : "border-white/80 bg-white/72 hover:bg-white/86",
               )}
             >
               <div className="flex justify-between items-start mb-6">
@@ -612,24 +612,21 @@ export function RetirementTab() {
                   <h4
                     className={cn(
                       "text-xl font-black",
-                      activeId === id ? "text-emerald-400" : "text-slate-400",
+                      activeId === id ? "text-emerald-700" : "text-slate-700",
                     )}
                   >
                     {id === "v1"
                       ? t("retirement.assumption.standard")
                       : t("retirement.assumption.conservative")}
                   </h4>
-                  <p className="text-[11px] font-bold text-slate-500">
+                  <p className="text-[11px] font-medium text-slate-500">
                     {id === "v1"
                       ? t("retirement.assumptionMasterLocked")
                       : t("retirement.assumptionEditable")}
                   </p>
                 </div>
                 {activeId === id && (
-                  <CheckCircle2
-                    size={24}
-                    className="text-emerald-400 shadow-glow"
-                  />
+                  <CheckCircle2 size={24} className="text-emerald-600" />
                 )}
               </div>
               <div className="grid grid-cols-2 gap-8">
@@ -637,8 +634,8 @@ export function RetirementTab() {
                   <p
                     className={cn(
                       isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-500 uppercase",
+                        ? "text-xs font-semibold text-slate-500 tracking-normal"
+                        : "text-[11px] font-semibold text-slate-500",
                     )}
                   >
                     {t("retirement.tr")}
@@ -683,8 +680,8 @@ export function RetirementTab() {
                   <p
                     className={cn(
                       isKorean
-                        ? "text-xs font-bold text-slate-400 tracking-normal"
-                        : "text-[11px] font-black text-slate-50 uppercase",
+                        ? "text-xs font-semibold text-slate-500 tracking-normal"
+                        : "text-[11px] font-semibold text-slate-500",
                     )}
                   >
                     {t("retirement.inflation")}
@@ -717,7 +714,7 @@ export function RetirementTab() {
                   />
                 </div>
               </div>
-              <p className="mt-6 text-[11px] font-bold text-slate-500">
+              <p className="mt-6 text-[11px] font-medium text-slate-500">
                 {id === "v1"
                   ? t("retirement.assumptionMasterHint")
                   : t("retirement.assumptionEditableHint")}
@@ -730,16 +727,16 @@ export function RetirementTab() {
       {/* Step 2. Projection Result */}
       <section className="space-y-10 animate-in slide-in-from-bottom-4 duration-1000 delay-200">
         <div className="flex items-center gap-3 px-4">
-          <div className="p-2 bg-slate-800 rounded-lg">
-            <Activity size={20} className="text-slate-400" />
+          <div className="rounded-xl bg-white/80 p-2 shadow-sm ring-1 ring-slate-200">
+            <Activity size={20} className="text-slate-500" />
           </div>
           <div>
             <h3
               className={cn(
-                "text-slate-300",
+                "text-slate-700",
                 isKorean
                   ? "text-lg font-bold tracking-normal"
-                  : "text-base font-black uppercase tracking-widest",
+                  : "text-base font-bold tracking-tight",
               )}
               data-testid="retirement-step-2-title"
             >
@@ -779,20 +776,20 @@ export function RetirementTab() {
         </div>
         <div
           className={cn(
-            "p-12 rounded-[3.5rem] border shadow-2xl backdrop-blur-md relative overflow-hidden transition-all duration-1000",
+            "relative overflow-hidden rounded-[2.5rem] border p-10 shadow-sm backdrop-blur-md transition-all duration-700",
             level.bg,
-            "border-white/5",
+            "border-white/70",
           )}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
             <div className="lg:col-span-5 flex flex-col justify-center space-y-10">
               <div className="space-y-6">
-                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                   <span>{t("retirement.statusSection")}</span>
                 </div>
                 <div
                   className={cn(
-                    "inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest",
+                    "inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold",
                     level.bg,
                     level.color,
                   )}
@@ -801,21 +798,21 @@ export function RetirementTab() {
                 </div>
                 {summary.total_survival_years >=
                 (config.simulation_params.simulation_years || 30) ? (
-                  <h2 className="text-3xl font-black text-slate-50 leading-tight">
-                    <span className="text-emerald-400">
+                  <h2 className="text-3xl font-bold leading-tight text-slate-800">
+                    <span className="text-emerald-700">
                       {t("retirement.canRetire")}
                     </span>
                   </h2>
                 ) : (
-                  <h2 className="text-3xl font-black text-slate-50 leading-tight">
-                    <span className="text-amber-400">
+                  <h2 className="text-3xl font-bold leading-tight text-slate-800">
+                    <span className="text-amber-600">
                       {t("retirement.needMoreAssets")}
                     </span>
                   </h2>
                 )}
               </div>
               <div>
-                <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                   <span>{t("retirement.metricsSection")}</span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -847,20 +844,20 @@ export function RetirementTab() {
               </div>
               {strategyRulesSummary && (
                 <div>
-                  <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                     <span>{t("retirement.ruleSection")}</span>
                   </div>
                   <div
-                    className="rounded-[2rem] border border-slate-800 bg-slate-950/40 p-5 space-y-4"
+                    className="space-y-4 rounded-[1.75rem] border border-white/80 bg-white/74 p-5 shadow-sm"
                     data-testid="strategy-rules-summary"
                   >
                     <div className="flex items-center gap-2">
-                      <Info size={16} className="text-violet-400" />
+                      <Info size={16} className="text-violet-600" />
                       <p
                         className={cn(
                           isKorean
-                            ? "text-xs font-bold text-violet-300 tracking-normal"
-                            : "text-[11px] font-black text-violet-400 uppercase tracking-widest",
+                            ? "text-xs font-semibold text-violet-700 tracking-normal"
+                            : "text-[11px] font-semibold text-violet-700 tracking-[0.08em]",
                         )}
                       >
                         {t("retirement.appliedRules")}
@@ -900,7 +897,7 @@ export function RetirementTab() {
               )}
             </div>
             <div
-              className="lg:col-span-7 h-[400px] bg-slate-950/20 rounded-3xl p-6 relative"
+              className="relative flex h-[460px] flex-col rounded-[1.75rem] border border-white/80 bg-white/68 p-6 shadow-sm lg:col-span-7"
               data-testid="retirement-projection-chart"
             >
               <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -919,117 +916,156 @@ export function RetirementTab() {
               </div>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                  <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
                     {t("retirement.chartFocusLabel")}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-slate-300">
+                  <p className="mt-1 text-sm font-medium text-slate-600">
                     {t("retirement.chartFocusBody")}
                   </p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f8fafc" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#f8fafc" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorCorp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorPen" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#1e293b"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="index"
-                    type="number"
-                    domain={[0, 360]}
-                    tickFormatter={(v) =>
-                      `${Math.floor(v / 12)}${t("retirement.chart.yearTick")}`
-                    }
-                    stroke="#475569"
-                    fontSize={10}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={(v) =>
-                      `${(v / 100000000).toFixed(0)}${largeCurrencyUnit}`
-                    }
-                    stroke="#475569"
-                    fontSize={10}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0f172a",
-                      border: "1px solid #334155",
-                      borderRadius: "1rem",
-                      fontSize: "12px",
-                    }}
-                    labelFormatter={(l) =>
-                      `${Math.floor(Number(l) / 12)} ${t("retirement.chart.yearLabel")} (${l}${t("retirement.chart.monthLabel")})`
-                    }
-                    formatter={(
-                      v: number | string | undefined,
-                      name: string | undefined,
-                      entry,
-                    ) => [
-                      `${(Number(v || 0) / 100000000).toFixed(1)}${largeCurrencyUnit}`,
-                      entry?.dataKey === "total_net_worth"
-                        ? t("retirement.chart.totalAssets")
-                        : entry?.dataKey === "corp_balance"
-                          ? t("retirement.chart.corpAssets")
-                          : name || t("retirement.chart.pensionAssets"),
-                    ]}
-                  />
-                  <Legend
-                    verticalAlign="top"
-                    align="right"
-                    height={36}
-                    iconType="circle"
-                  />
-                  <Area
-                    name={t("retirement.chart.totalAssets")}
-                    type="monotone"
-                    dataKey="total_net_worth"
-                    stroke="#f8fafc"
-                    strokeWidth={4}
-                    fill="url(#colorTotal)"
-                    isAnimationActive={true}
-                  />
-                  <Area
-                    name={t("retirement.chart.corpAssets")}
-                    type="monotone"
-                    dataKey="corp_balance"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    fill="url(#colorCorp)"
-                    isAnimationActive={true}
-                  />
-                  <Area
-                    name={t("retirement.chart.pensionAssets")}
-                    type="monotone"
-                    dataKey="pension_balance"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    fill="url(#colorPen)"
-                    isAnimationActive={true}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="min-h-0 flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="colorTotal"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#f8fafc"
+                          stopOpacity={0.1}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#f8fafc"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                      <linearGradient
+                        id="colorCorp"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#10b981"
+                          stopOpacity={0.2}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#10b981"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                      <linearGradient id="colorPen" x1="0" y1="0" x2="0" y2="1">
+                        <stop
+                          offset="5%"
+                          stopColor="#3b82f6"
+                          stopOpacity={0.2}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#3b82f6"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#cbd5e1"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="index"
+                      type="number"
+                      domain={[0, 360]}
+                      tickFormatter={(v) =>
+                        `${Math.floor(v / 12)}${t("retirement.chart.yearTick")}`
+                      }
+                      stroke="#64748b"
+                      fontSize={10}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(v) =>
+                        `${(v / 100000000).toFixed(0)}${largeCurrencyUnit}`
+                      }
+                      stroke="#64748b"
+                      fontSize={10}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "rgba(255,255,255,0.96)",
+                        border: "1px solid rgba(138,157,150,0.32)",
+                        borderRadius: "1rem",
+                        fontSize: "12px",
+                        boxShadow: "0 14px 34px rgba(102,124,114,0.12)",
+                      }}
+                      labelFormatter={(l) =>
+                        `${Math.floor(Number(l) / 12)} ${t("retirement.chart.yearLabel")} (${l}${t("retirement.chart.monthLabel")})`
+                      }
+                      formatter={(
+                        v: number | string | undefined,
+                        name: string | undefined,
+                        entry,
+                      ) => [
+                        `${(Number(v || 0) / 100000000).toFixed(1)}${largeCurrencyUnit}`,
+                        entry?.dataKey === "total_net_worth"
+                          ? t("retirement.chart.totalAssets")
+                          : entry?.dataKey === "corp_balance"
+                            ? t("retirement.chart.corpAssets")
+                            : name || t("retirement.chart.pensionAssets"),
+                      ]}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      align="right"
+                      height={36}
+                      iconType="circle"
+                    />
+                    <Area
+                      name={t("retirement.chart.totalAssets")}
+                      type="monotone"
+                      dataKey="total_net_worth"
+                      stroke="#334155"
+                      strokeWidth={3}
+                      fill="url(#colorTotal)"
+                      isAnimationActive={true}
+                    />
+                    <Area
+                      name={t("retirement.chart.corpAssets")}
+                      type="monotone"
+                      dataKey="corp_balance"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fill="url(#colorCorp)"
+                      isAnimationActive={true}
+                    />
+                    <Area
+                      name={t("retirement.chart.pensionAssets")}
+                      type="monotone"
+                      dataKey="pension_balance"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      fill="url(#colorPen)"
+                      isAnimationActive={true}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
@@ -1039,16 +1075,16 @@ export function RetirementTab() {
       <section className="space-y-6 pb-20">
         <div className="flex flex-col gap-4 px-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-800 rounded-lg">
-              <Coins size={20} className="text-slate-400" />
+            <div className="rounded-xl bg-white/80 p-2 shadow-sm ring-1 ring-slate-200">
+              <Coins size={20} className="text-slate-500" />
             </div>
             <div>
               <h3
                 className={cn(
-                  "text-slate-300",
+                  "text-slate-700",
                   isKorean
                     ? "text-lg font-bold tracking-normal"
-                    : "text-base font-black uppercase tracking-widest",
+                    : "text-base font-bold tracking-tight",
                 )}
               >
                 {t("retirement.step5Title")}
@@ -1061,7 +1097,7 @@ export function RetirementTab() {
           <button
             type="button"
             onClick={() => setIsDetailOpen((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-300 transition hover:border-emerald-500/40 hover:text-emerald-300"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/80 bg-white/75 px-4 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"
             data-testid="retirement-detail-toggle"
           >
             <span>
@@ -1079,11 +1115,11 @@ export function RetirementTab() {
           </button>
         </div>
         {isDetailOpen ? (
-          <div className="bg-slate-900/40 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
-            <div className="max-h-[650px] overflow-y-auto custom-scrollbar">
+          <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/76 shadow-sm">
+            <div className="custom-scrollbar max-h-[650px] overflow-y-auto">
               <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  <tr className="border-b border-slate-800">
+                <thead className="sticky top-0 z-10 bg-white/95 text-[11px] font-semibold tracking-[0.08em] text-slate-500 backdrop-blur-md">
+                  <tr className="border-b border-slate-200">
                     <th className="px-6 py-5 text-center">
                       {t("retirement.table.dateAge")}
                     </th>
@@ -1094,13 +1130,13 @@ export function RetirementTab() {
                     <th className="px-6 py-5 text-right text-emerald-500/70">
                       {t("retirement.table.totalDraw")}
                     </th>
-                    <th className="px-6 py-5 text-right text-blue-400/70 border-l border-slate-800/50">
+                    <th className="border-l border-slate-200 px-6 py-5 text-right text-blue-400/70">
                       {t("retirement.table.corpBal")}
                     </th>
                     <th className="px-6 py-5 text-right text-blue-400/70">
                       {t("retirement.table.penBal")}
                     </th>
-                    <th className="px-6 py-5 text-right text-slate-200 border-l border-slate-800/50">
+                    <th className="border-l border-slate-200 px-6 py-5 text-right text-slate-200">
                       {t("retirement.table.netWorth")}
                     </th>
                     <th className="px-6 py-5 text-right text-emerald-400/50">
@@ -1108,23 +1144,23 @@ export function RetirementTab() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/30">
+                <tbody className="divide-y divide-slate-200/80">
                   {monthlyData.map((m, idx) => (
                     <tr
                       key={idx}
                       className={cn(
-                        "hover:bg-slate-800/40 transition-colors group",
-                        m.event ? "bg-emerald-500/5" : "",
+                        "group transition-colors hover:bg-slate-50",
+                        m.event ? "bg-emerald-50/60" : "",
                       )}
                     >
-                      <td className="px-6 py-4 text-xs font-bold text-slate-400 text-center">
+                      <td className="px-6 py-4 text-center text-xs font-medium text-slate-500">
                         {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
                         {t("retirement.table.ageSuffix")})
                       </td>
                       <td className="px-6 py-4 text-left">
                         <span
                           className={cn(
-                            "px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-tighter shadow-sm",
+                            "rounded-lg px-2.5 py-1 text-[11px] font-semibold shadow-sm",
                             m.phase === "Phase 1"
                               ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                               : m.phase === "Phase 2"
@@ -1135,13 +1171,13 @@ export function RetirementTab() {
                           {m.phase}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-black text-rose-400/80 text-right">
+                      <td className="px-6 py-4 text-right text-xs font-semibold text-rose-500">
                         {(m.target_cashflow / 10000).toFixed(0)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.tenThousand")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-black text-emerald-400/80 text-right">
+                      <td className="px-6 py-4 text-right text-xs font-semibold text-emerald-700">
                         {(
                           (m.net_salary + (m.pension_draw || 0)) /
                           10000
@@ -1150,25 +1186,25 @@ export function RetirementTab() {
                           {t("retirement.table.tenThousand")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right border-l border-slate-800/50">
+                      <td className="border-l border-slate-200 px-6 py-4 text-right text-xs font-medium text-slate-600">
                         {(m.corp_balance / 100000000).toFixed(2)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.hundredMillion")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-bold text-slate-300 text-right">
+                      <td className="px-6 py-4 text-right text-xs font-medium text-slate-600">
                         {(m.pension_balance / 100000000).toFixed(2)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.hundredMillion")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-black text-slate-50 text-right border-l border-slate-800/50 group-hover:text-emerald-400 transition-colors">
+                      <td className="border-l border-slate-200 px-6 py-4 text-right text-sm font-bold text-slate-800 transition-colors group-hover:text-emerald-700">
                         {(m.total_net_worth / 100000000).toFixed(2)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.hundredMillion")}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-bold text-emerald-400/60 text-right">
+                      <td className="px-6 py-4 text-right text-xs font-medium text-emerald-600">
                         {(m.loan_balance / 100000000).toFixed(2)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.hundredMillion")}
@@ -1182,10 +1218,10 @@ export function RetirementTab() {
           </div>
         ) : (
           <div
-            className="rounded-[2.5rem] border border-dashed border-slate-700 bg-slate-900/20 px-6 py-8"
+            className="rounded-[2rem] border border-dashed border-slate-300 bg-white/46 px-6 py-8"
             data-testid="retirement-detail-collapsed"
           >
-            <p className="text-sm font-bold text-slate-400">
+            <p className="text-sm font-medium text-slate-500">
               {t("retirement.detailLogCollapsed")}
             </p>
           </div>
@@ -1197,22 +1233,22 @@ export function RetirementTab() {
 
 function InlineHint({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
-      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+    <div className="rounded-2xl border border-white/80 bg-white/72 px-4 py-3 shadow-sm">
+      <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm font-bold text-slate-300">{value}</p>
+      <p className="mt-1 text-sm font-medium text-slate-600">{value}</p>
     </div>
   );
 }
 
 function ChartSummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/35 px-4 py-3">
-      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+    <div className="rounded-2xl border border-white/80 bg-white/74 px-4 py-3 shadow-sm">
+      <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm font-black text-slate-100">{value}</p>
+      <p className="mt-1 text-sm font-bold text-slate-800">{value}</p>
     </div>
   );
 }
@@ -1235,28 +1271,28 @@ function MetricCard({
   const { isKorean } = useI18n();
   return (
     <div
-      className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 group relative"
+      className="group relative rounded-[1.5rem] border border-white/80 bg-white/76 p-6 shadow-sm"
       data-testid={testId}
     >
       <div className="flex items-center gap-2 mb-2">
         <p
           className={cn(
             isKorean
-              ? "text-xs font-bold text-slate-400 tracking-normal"
-              : "text-[11px] text-slate-500 uppercase font-black tracking-widest",
+              ? "text-xs font-semibold text-slate-500 tracking-normal"
+              : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
           )}
         >
           {label}
         </p>
         <div className="group relative">
           <Info size={12} className="text-slate-600 cursor-help" />
-          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal">
+          <div className="absolute left-0 bottom-full z-50 mb-2 hidden w-48 rounded-xl border border-white/80 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 normal-case tracking-normal shadow-lg group-hover:block">
             {tooltip}
           </div>
         </div>
       </div>
       <span
-        className={cn("text-base font-black text-slate-200", valueClassName)}
+        className={cn("text-base font-bold text-slate-800", valueClassName)}
         data-testid={valueTestId}
       >
         {value}
@@ -1274,17 +1310,17 @@ function ResultSnapshotCard({
 }) {
   const { isKorean } = useI18n();
   return (
-    <div className="rounded-[1.75rem] border border-slate-800 bg-slate-900/50 px-5 py-4">
+    <div className="rounded-[1.5rem] border border-white/80 bg-white/76 px-5 py-4 shadow-sm">
       <p
         className={cn(
           isKorean
-            ? "text-[11px] font-bold text-slate-400 tracking-normal"
-            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+            ? "text-[11px] font-semibold text-slate-500 tracking-normal"
+            : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
         )}
       >
         {label}
       </p>
-      <p className="mt-2 text-sm font-black text-slate-100 break-words">
+      <p className="mt-2 break-words text-sm font-bold text-slate-800">
         {value}
       </p>
     </div>
@@ -1303,19 +1339,19 @@ function RuleBadge({
   const { isKorean } = useI18n();
   return (
     <div
-      className="rounded-2xl border border-slate-800 bg-slate-900/50 px-4 py-3"
+      className="rounded-2xl border border-white/80 bg-white/72 px-4 py-3 shadow-sm"
       data-testid={testId}
     >
       <p
         className={cn(
           isKorean
-            ? "text-xs font-bold text-slate-400 tracking-normal"
-            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+            ? "text-xs font-semibold text-slate-500 tracking-normal"
+            : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
         )}
       >
         {label}:
       </p>
-      <p className="text-sm font-black text-slate-200 mt-1">{value}</p>
+      <p className="mt-1 text-sm font-bold text-slate-800">{value}</p>
     </div>
   );
 }
@@ -1351,10 +1387,10 @@ function EditableInput({
           type="text"
           readOnly={readOnly}
           className={cn(
-            "border rounded-xl px-4 py-2.5 w-28 text-lg font-black outline-none transition-all pr-10",
+            "w-28 rounded-xl border px-4 py-2.5 pr-10 text-lg font-bold outline-none transition-all",
             readOnly
-              ? "bg-slate-950 border-slate-800 text-slate-300 cursor-default"
-              : "bg-slate-950/80 border-slate-700 text-emerald-400 focus:border-emerald-500",
+              ? "cursor-default border-slate-200 bg-slate-50 text-slate-500"
+              : "border-white/80 bg-white/90 text-emerald-700 focus:border-emerald-300",
           )}
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -1371,8 +1407,8 @@ function EditableInput({
           className={cn(
             "absolute right-4",
             isKorean
-              ? "text-[11px] font-bold text-slate-400"
-              : "text-xs font-black text-slate-500",
+              ? "text-[11px] font-semibold text-slate-500"
+              : "text-xs font-semibold text-slate-500",
           )}
         >
           %
@@ -1384,14 +1420,14 @@ function EditableInput({
             e.stopPropagation();
             onCommit(masterValue);
           }}
-          className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500 rounded-xl text-emerald-400 hover:text-slate-950 transition-all shadow-lg flex items-center gap-2"
+          className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-700 transition-all hover:bg-emerald-100"
         >
           <RotateCcw size={16} strokeWidth={3} />
           <span
             className={cn(
               isKorean
-                ? "text-xs font-bold tracking-normal"
-                : "text-[11px] font-black uppercase",
+                ? "text-xs font-semibold tracking-normal"
+                : "text-[11px] font-semibold",
             )}
           >
             {t("retirement.reset")}

@@ -39,6 +39,7 @@ test.describe("Retirement Tab UX", () => {
 
   test("should allow editing assumptions and resetting", async ({ page }) => {
     // 인풋 필드가 보일 때까지 대기
+    const assumptionCard = page.getByTestId("assumption-card-conservative");
     const returnInput = page.getByTestId("return-conservative");
     await returnInput.waitFor({ state: "visible", timeout: 15000 });
 
@@ -47,9 +48,10 @@ test.describe("Retirement Tab UX", () => {
     await returnInput.press("Enter");
 
     // 리셋 버튼 확인
-    const resetButton = page
+    const resetButton = assumptionCard
       .locator('button:has-text("Reset"), button:has-text("복구")')
       .first();
+    await resetButton.scrollIntoViewIfNeeded();
     await expect(resetButton).toBeVisible();
 
     // 리셋 클릭

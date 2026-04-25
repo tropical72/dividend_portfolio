@@ -3,9 +3,142 @@
 /* 전역 폰트 및 기본 스타일 설정 */
 :root {
   font-family: "Malgun Gothic", sans-serif;
+  color: #243140;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(205, 226, 220, 0.7),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(210, 225, 236, 0.8),
+      transparent 24%
+    ),
+    linear-gradient(180deg, #f4f6f2 0%, #eef2ef 42%, #e8eef0 100%);
+  color-scheme: light;
 }
 
 /* body 태그에 Tailwind 유틸리티 클래스 적용 */
 body {
-  @apply bg-slate-900 text-slate-100 min-h-screen;
+  @apply min-h-screen;
+  background: inherit;
+  color: inherit;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.planner-shell {
+  color: #243140;
+}
+
+.planner-shell [class*="bg-slate-800"],
+.planner-shell [class*="bg-slate-900"],
+.planner-shell [class*="bg-slate-950"],
+.planner-shell [class*="bg-slate-900/40"],
+.planner-shell [class*="bg-slate-900/50"],
+.planner-shell [class*="bg-slate-900/60"],
+.planner-shell [class*="bg-slate-900/80"],
+.planner-shell [class*="bg-slate-950/20"],
+.planner-shell [class*="bg-slate-950/40"],
+.planner-shell [class*="bg-slate-950/50"],
+.planner-shell [class*="bg-slate-950/60"] {
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.planner-shell [class*="hover:bg-slate-700"]:hover,
+.planner-shell [class*="hover:bg-slate-800"]:hover,
+.planner-shell [class*="hover:bg-slate-900"]:hover {
+  background-color: rgba(244, 248, 245, 0.94);
+}
+
+.planner-shell [class*="border-slate-800"],
+.planner-shell [class*="border-slate-700"] {
+  border-color: rgba(138, 157, 150, 0.28);
+}
+
+.planner-shell [class*="text-slate-50"],
+.planner-shell [class*="text-slate-100"],
+.planner-shell [class*="text-slate-200"] {
+  color: #1f2937;
+}
+
+.planner-shell [class*="text-slate-300"],
+.planner-shell [class*="text-slate-400"] {
+  color: #526173;
+}
+
+.planner-shell [class*="text-slate-500"],
+.planner-shell [class*="text-slate-600"],
+.planner-shell [class*="text-slate-700"] {
+  color: #728092;
+}
+
+.planner-shell input[class*="bg-slate"],
+.planner-shell select[class*="bg-slate"],
+.planner-shell textarea[class*="bg-slate"] {
+  background-color: rgba(255, 255, 255, 0.92);
+  color: #1f2937;
+}
+
+.planner-shell input::placeholder,
+.planner-shell textarea::placeholder {
+  color: #90a0af;
+}
+
+.planner-shell [class*="bg-slate"] [class*="text-slate-300"],
+.planner-shell [class*="bg-slate"] [class*="text-slate-400"],
+.planner-shell [class*="bg-slate"] [class*="text-slate-500"],
+.planner-shell [class*="bg-slate"] [class*="text-slate-600"] {
+  color: #5f6f80;
+}
+
+.planner-shell [class*="shadow-inner"] {
+  box-shadow: inset 0 1px 2px rgba(122, 140, 132, 0.08);
+}
+
+.planner-shell [class*="shadow-2xl"],
+.planner-shell [class*="shadow-xl"],
+.planner-shell [class*="shadow-lg"] {
+  box-shadow: 0 14px 34px rgba(102, 124, 114, 0.08);
+}
+
+.planner-shell [class*="uppercase tracking-widest"],
+.planner-shell [class*="uppercase tracking-[0.2em]"],
+.planner-shell [class*="uppercase tracking-[0.22em]"] {
+  letter-spacing: 0.1em;
+}
+
+.planner-shell ::selection {
+  background: rgba(132, 182, 162, 0.25);
+}
+
+.planner-shell .soft-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.planner-shell .soft-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(146, 162, 156, 0.38);
+  border-radius: 9999px;
+}
+
+.planner-shell .recharts-default-tooltip,
+.planner-shell .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(138, 157, 150, 0.32) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 14px 34px rgba(102, 124, 114, 0.12) !important;
+}
+
+.planner-shell .recharts-tooltip-wrapper,
+.planner-shell .recharts-tooltip-wrapper * {
+  color: #334155 !important;
 }

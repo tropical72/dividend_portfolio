@@ -342,7 +342,7 @@ export function CostComparisonTab() {
   };
 
   if (loading) {
-    return <div className="text-slate-300">{t("costComparison.loading")}</div>;
+    return <div className="text-slate-600">{t("costComparison.loading")}</div>;
   }
 
   const winnerLabel = result
@@ -369,12 +369,12 @@ export function CostComparisonTab() {
       <div className="flex items-start justify-between gap-6">
         <div>
           <h2
-            className="text-3xl font-black tracking-tight text-slate-50"
+            className="text-3xl font-bold tracking-tight text-slate-800"
             data-testid="cost-comparison-title"
           >
             {t("costComparison.title")}
           </h2>
-          <p className="mt-2 max-w-3xl text-sm text-slate-400">
+          <p className="mt-2 max-w-3xl text-sm text-slate-600">
             {t("costComparison.subtitle")}
           </p>
         </div>
@@ -382,23 +382,23 @@ export function CostComparisonTab() {
 
       {saveMessage ? (
         <div
-          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
           data-testid="cost-comparison-save-success"
         >
           {saveMessage}
         </div>
       ) : null}
       {errorMessage ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {errorMessage}
         </div>
       ) : null}
 
       <section
-        className="rounded-3xl border border-slate-800 bg-slate-950/50 p-5 md:p-6"
+        className="rounded-3xl border border-white/80 bg-white/76 p-5 shadow-sm md:p-6"
         data-testid="cc-input-section"
       >
-        <div className="flex flex-col gap-4 border-b border-slate-800/80 pb-5 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
               <span>{t("costComparison.inputSectionEyebrow")}</span>
@@ -408,7 +408,7 @@ export function CostComparisonTab() {
               />
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <h3 className="text-xl font-bold text-slate-100">
+              <h3 className="text-xl font-bold text-slate-800">
                 {t("costComparison.inputSection")}
               </h3>
               <TooltipTrigger
@@ -416,13 +416,13 @@ export function CostComparisonTab() {
                 text={t("costComparison.tooltip.inputSection")}
               />
             </div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">
               {t("costComparison.inputSectionDescription")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <button
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"
               data-testid="cc-save-button"
               onClick={() => void saveConfig()}
               type="button"
@@ -430,7 +430,7 @@ export function CostComparisonTab() {
               {t("costComparison.save")}
             </button>
             <button
-              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950"
+              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm"
               data-testid="cc-run-button"
               onClick={() => void runSimulation()}
               type="button"
@@ -440,13 +440,13 @@ export function CostComparisonTab() {
           </div>
         </div>
 
-        <div className="mt-5 mb-5 flex w-fit gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-1">
+        <div className="mt-5 mb-5 flex w-fit gap-2 rounded-xl border border-slate-200 bg-white/80 p-1 shadow-sm">
           <button
             onClick={() => updateSimulationMode("target")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               config.simulation_mode === "target"
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
             }`}
             data-testid="cc-mode-target"
             type="button"
@@ -457,8 +457,8 @@ export function CostComparisonTab() {
             onClick={() => updateSimulationMode("asset")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               config.simulation_mode === "asset"
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
             }`}
             data-testid="cc-mode-asset"
             type="button"
@@ -566,10 +566,10 @@ export function CostComparisonTab() {
       </section>
 
       <section
-        className="rounded-3xl border border-slate-800 bg-slate-950/40 p-5 md:p-6"
+        className="rounded-3xl border border-white/80 bg-white/74 p-5 shadow-sm md:p-6"
         data-testid="cc-result-section"
       >
-        <div className="border-b border-slate-800/80 pb-5">
+        <div className="border-b border-slate-200 pb-5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
             <span>{t("costComparison.resultSectionEyebrow")}</span>
             <TooltipTrigger
@@ -578,7 +578,7 @@ export function CostComparisonTab() {
             />
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <h3 className="text-xl font-bold text-slate-100">
+            <h3 className="text-xl font-bold text-slate-800">
               {t("costComparison.resultSection")}
             </h3>
             <TooltipTrigger
@@ -586,7 +586,7 @@ export function CostComparisonTab() {
               text={t("costComparison.tooltip.resultSection")}
             />
           </div>
-          <p className="mt-2 max-w-3xl text-sm text-slate-400">
+          <p className="mt-2 max-w-3xl text-sm text-slate-600">
             {t("costComparison.resultSectionDescription")}
           </p>
         </div>
@@ -747,9 +747,9 @@ export function CostComparisonTab() {
                   text={t("costComparison.tooltip.summarySection")}
                 />
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <div className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm">
                 <div
-                  className="text-lg font-bold text-slate-100"
+                  className="text-lg font-bold text-slate-800"
                   data-testid="cc-comparison-winner"
                 >
                   {result.comparison.winner === "corporate"
@@ -759,62 +759,62 @@ export function CostComparisonTab() {
                       : t("costComparison.tieWins")}
                 </div>
                 <div
-                  className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
+                  className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"
                   data-testid="cc-winner-summary-annual"
                 >
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
                     {t("costComparison.winnerAnnualLabel")}
                   </div>
                   {result.comparison.winner === "tie" ? (
-                    <div className="mt-1 text-sm text-slate-200">
+                    <div className="mt-1 text-sm text-slate-700">
                       {t("costComparison.tieAnnualSummary")}
                     </div>
                   ) : (
-                    <div className="mt-1 text-sm text-slate-200">
+                    <div className="mt-1 text-sm text-slate-700">
                       {t("costComparison.winnerAnnualPrefix")}{" "}
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-slate-900">
                         {winnerLabel}
                       </span>
                       {t("costComparison.winnerAnnualMiddle")}
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-slate-900">
                         {loserLabel}
                       </span>
                       {t("costComparison.winnerAnnualSuffix")}
                     </div>
                   )}
                   <div
-                    className="mt-2 text-2xl font-black text-emerald-300"
+                    className="mt-2 text-2xl font-black text-emerald-700"
                     data-testid="cc-winner-summary-annual-delta"
                   >
                     {formatKrw(annualDelta)}
                   </div>
                 </div>
                 <div
-                  className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
+                  className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
                   data-testid="cc-winner-summary-cumulative"
                 >
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     {t("costComparison.winnerCumulativeLabel")}
                   </div>
                   {result.comparison.winner === "tie" ? (
-                    <div className="mt-1 text-sm text-slate-300">
+                    <div className="mt-1 text-sm text-slate-600">
                       {t("costComparison.tieCumulativeSummary")}
                     </div>
                   ) : (
-                    <div className="mt-1 text-sm text-slate-300">
+                    <div className="mt-1 text-sm text-slate-600">
                       {t("costComparison.winnerCumulativePrefix")}{" "}
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-slate-900">
                         {winnerLabel}
                       </span>
                       {t("costComparison.winnerCumulativeMiddle")}
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-slate-900">
                         {loserLabel}
                       </span>
                       {t("costComparison.winnerCumulativeSuffix")}
                     </div>
                   )}
                   <div
-                    className="mt-2 text-lg font-bold text-slate-100"
+                    className="mt-2 text-lg font-bold text-slate-800"
                     data-testid="cc-winner-summary-cumulative-delta"
                   >
                     {formatKrw(cumulativeDelta)}
@@ -840,7 +840,7 @@ export function CostComparisonTab() {
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   {result.comparison.top_drivers.map((driver, index) => (
                     <div
-                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                       data-testid={`cc-driver-${index}`}
                       key={`${driver.label}-${index}`}
                     >
@@ -851,7 +851,7 @@ export function CostComparisonTab() {
                           text={getDriverTooltip(driver.label, t)}
                         />
                       </div>
-                      <div className="mt-2 text-lg font-semibold text-slate-100">
+                      <div className="mt-2 text-lg font-semibold text-slate-800">
                         {formatKrw(driver.amount)}
                       </div>
                     </div>
@@ -861,8 +861,8 @@ export function CostComparisonTab() {
             </div>
 
             {result.warnings.length > 0 ? (
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
-                <div className="mb-3 flex items-center gap-2 text-lg font-bold text-amber-200">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <div className="mb-3 flex items-center gap-2 text-lg font-bold text-amber-700">
                   <span>{t("costComparison.warningTitle")}</span>
                   <TooltipTrigger
                     testId="cc-tooltip-trigger-warning"
@@ -872,7 +872,7 @@ export function CostComparisonTab() {
                 <div className="space-y-3">
                   {result.warnings.map((warning, index) => (
                     <div
-                      className="rounded-xl border border-amber-500/20 bg-slate-950/40 px-4 py-3 text-sm text-amber-100"
+                      className="rounded-xl border border-amber-200 bg-white/90 px-4 py-3 text-sm text-amber-800"
                       data-testid={`cc-warning-${index}`}
                       key={`${warning}-${index}`}
                     >
@@ -892,10 +892,10 @@ export function CostComparisonTab() {
                 />
               </div>
               <div
-                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
                 data-testid="cc-total-value-chart"
               >
-                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
                   <span>{t("costComparison.totalValueTitle")}</span>
                   <TooltipTrigger
                     testId="cc-tooltip-trigger-total-value"
@@ -903,7 +903,7 @@ export function CostComparisonTab() {
                   />
                 </div>
                 <div
-                  className="mb-4 text-sm text-slate-400"
+                  className="mb-4 text-sm text-slate-600"
                   data-testid="cc-total-value-note"
                 >
                   {t("costComparison.totalValueNote")}
@@ -931,10 +931,10 @@ export function CostComparisonTab() {
               </div>
 
               <div
-                className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                className="mt-6 rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
                 data-testid="cc-breakdown-chart"
               >
-                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
                   <span>{t("costComparison.breakdownTitle")}</span>
                   <TooltipTrigger
                     testId="cc-tooltip-trigger-breakdown"
@@ -945,7 +945,7 @@ export function CostComparisonTab() {
                   <div />
                   <div className="grid gap-3 md:grid-cols-2">
                     <div
-                      className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
                       data-testid="cc-breakdown-total-personal"
                     >
                       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
@@ -958,12 +958,12 @@ export function CostComparisonTab() {
                           text={t("costComparison.tooltip.annualTotalCost")}
                         />
                       </div>
-                      <div className="mt-1 text-lg font-semibold text-slate-100">
+                      <div className="mt-1 text-lg font-semibold text-slate-800">
                         {formatKrw(result.personal.kpis.annual_total_cost)}
                       </div>
                     </div>
                     <div
-                      className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
                       data-testid="cc-breakdown-total-corporate"
                     >
                       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
@@ -976,7 +976,7 @@ export function CostComparisonTab() {
                           text={t("costComparison.tooltip.annualTotalCost")}
                         />
                       </div>
-                      <div className="mt-1 text-lg font-semibold text-slate-100">
+                      <div className="mt-1 text-lg font-semibold text-slate-800">
                         {formatKrw(result.corporate.kpis.annual_total_cost)}
                       </div>
                     </div>
@@ -1002,7 +1002,7 @@ export function CostComparisonTab() {
                         },
                       ]}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ea" />
                       <XAxis dataKey="name" stroke="#64748b" />
                       <YAxis
                         stroke="#64748b"
@@ -1017,7 +1017,7 @@ export function CostComparisonTab() {
                             formatter={(value) => formatKrw(Number(value || 0))}
                           />
                         }
-                        cursor={{ fill: "rgba(51, 65, 85, 0.18)" }}
+                        cursor={{ fill: "rgba(148, 163, 184, 0.12)" }}
                       />
                       <Legend />
                       <Bar
@@ -1052,10 +1052,10 @@ export function CostComparisonTab() {
 
             {isTargetMode ? (
               <div
-                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
                 data-testid="cc-cumulative-chart"
               >
-                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
                   <span>{t("costComparison.cumulativeTitle")}</span>
                   <TooltipTrigger
                     testId="cc-tooltip-trigger-cumulative"
@@ -1063,7 +1063,7 @@ export function CostComparisonTab() {
                   />
                 </div>
                 <div
-                  className="mb-4 text-sm text-slate-400"
+                  className="mb-4 text-sm text-slate-600"
                   data-testid="cc-cumulative-note"
                 >
                   {t("costComparison.cumulativeNote")}
@@ -1087,10 +1087,10 @@ export function CostComparisonTab() {
 
             {isTargetMode ? (
               <div
-                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
                 data-testid="cc-household-cash-chart"
               >
-                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+                <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
                   <span>{t("costComparison.householdCashTitle")}</span>
                   <TooltipTrigger
                     testId="cc-tooltip-trigger-household-cash"
@@ -1098,7 +1098,7 @@ export function CostComparisonTab() {
                   />
                 </div>
                 <div
-                  className="mb-4 text-sm text-slate-400"
+                  className="mb-4 text-sm text-slate-600"
                   data-testid="cc-household-cash-note"
                 >
                   {t("costComparison.householdCashNote")}
@@ -1124,10 +1124,10 @@ export function CostComparisonTab() {
             ) : null}
 
             <div
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
               data-testid="cc-sustainability-chart"
             >
-              <div className="mb-4 text-lg font-bold text-slate-100">
+              <div className="mb-4 text-lg font-bold text-slate-800">
                 <div className="flex items-center gap-2">
                   <span>{t("costComparison.sustainabilityTitle")}</span>
                   <TooltipTrigger
@@ -1137,7 +1137,7 @@ export function CostComparisonTab() {
                 </div>
               </div>
               <div
-                className="mb-4 text-sm text-slate-400"
+                className="mb-4 text-sm text-slate-600"
                 data-testid="cc-sustainability-note"
               >
                 {t("costComparison.sustainabilityNote")}
@@ -1155,10 +1155,10 @@ export function CostComparisonTab() {
             </div>
 
             <div
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+              className="rounded-2xl border border-white/80 bg-white/78 p-5 shadow-sm"
               data-testid="cc-waterfall-chart"
             >
-              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-100">
+              <div className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
                 <span>{t("costComparison.waterfallTitle")}</span>
                 <TooltipTrigger
                   testId="cc-tooltip-trigger-waterfall"
@@ -1166,62 +1166,62 @@ export function CostComparisonTab() {
                 />
               </div>
               <div
-                className="mb-4 text-sm text-slate-400"
+                className="mb-4 text-sm text-slate-600"
                 data-testid="cc-waterfall-note"
               >
                 {t("costComparison.waterfallNote")}
               </div>
               <div
-                className="mb-4 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm text-slate-300"
+                className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
                 data-testid="cc-waterfall-basis"
               >
                 {t("costComparison.waterfallBasis")}
               </div>
-              <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-bold text-slate-300">
+              <div className="mb-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600">
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-revenue"
                 >
                   {t("costComparison.revenue")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-gross-salary"
                 >
                   {t("costComparison.grossSalary")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-tax"
                 >
                   {t("costComparison.tax")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-health"
                 >
                   {t("costComparison.healthInsurance")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-company-insurance"
                 >
                   {t("costComparison.companyInsurance")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-fixed"
                 >
                   {t("costComparison.fixedCost")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-net-salary"
                 >
                   {t("costComparison.netSalary")}
                 </div>
                 <div
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1.5"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
                   data-testid="cc-waterfall-step-disposable"
                 >
                   {t("costComparison.disposableCash")}
@@ -1259,7 +1259,7 @@ export function CostComparisonTab() {
           </div>
         ) : (
           <div
-            className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 px-5 py-6 text-sm text-slate-400"
+            className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-sm text-slate-500"
             data-testid="cc-result-empty"
           >
             {t("costComparison.resultSectionEmpty")}
@@ -1316,7 +1316,7 @@ function NumberField({
   }, [isFocused, value]);
 
   return (
-    <label className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+    <label className="rounded-2xl border border-white/80 bg-white/82 p-4 shadow-sm">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
         <span data-testid={`${testId}-label`}>{label}</span>
         <TooltipTrigger
@@ -1327,7 +1327,7 @@ function NumberField({
 
       <div className="relative">
         <input
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-14 text-slate-100 outline-none"
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-14 text-slate-800 outline-none"
           data-testid={testId}
           onFocus={() => setIsFocused(true)}
           onBlur={() => {
@@ -1353,7 +1353,7 @@ function NumberField({
         />
         {unit ? (
           <span
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-500"
             data-testid={`${testId}-unit`}
           >
             {unit}
@@ -1377,7 +1377,7 @@ function AssumptionBadge({
 }) {
   return (
     <div
-      className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
+      className="rounded-2xl border border-white/80 bg-white/82 p-4 shadow-sm"
       data-testid={testId}
     >
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
@@ -1388,7 +1388,7 @@ function AssumptionBadge({
         />
       </div>
 
-      <div className="mt-2 text-lg font-semibold text-slate-100">{value}</div>
+      <div className="mt-2 text-lg font-semibold text-slate-800">{value}</div>
     </div>
   );
 }
@@ -1433,10 +1433,10 @@ function ScenarioCard({
   const { t } = useI18n();
   return (
     <div
-      className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+      className="rounded-2xl border border-white/80 bg-white/82 p-5 shadow-sm"
       data-testid={testId}
     >
-      <div className="text-lg font-bold text-slate-100">{title}</div>
+      <div className="text-lg font-bold text-slate-800">{title}</div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Metric
           label={monthlyCashLabel}
@@ -1465,7 +1465,7 @@ function ScenarioCard({
       </div>
 
       {auditDetails && auditDetails.health && (
-        <div className="mt-6 pt-4 border-t border-slate-800/50">
+        <div className="mt-6 border-t border-slate-200 pt-4">
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             {t("costComparison.detailedAudit")}
           </div>
@@ -1475,7 +1475,7 @@ function ScenarioCard({
                 <span className="text-slate-400">
                   {t("costComparison.propertyPoints")}
                 </span>
-                <span className="text-slate-200 font-mono">
+                <span className="font-mono text-slate-700">
                   {auditDetails.health.property_points.toLocaleString()} 점
                 </span>
               </div>
@@ -1485,14 +1485,14 @@ function ScenarioCard({
                 <span className="text-slate-400">
                   {t("costComparison.incomePoints")}
                 </span>
-                <span className="text-slate-200 font-mono">
+                <span className="font-mono text-slate-700">
                   {auditDetails.health.income_points.toLocaleString()} 점
                 </span>
               </div>
             )}
             {auditDetails.health.total_points !== undefined && (
-              <div className="flex justify-between text-[13px] font-bold border-t border-slate-800/30 pt-1 mt-1">
-                <span className="text-slate-300">
+              <div className="mt-1 flex justify-between border-t border-slate-200 pt-1 text-[13px] font-bold">
+                <span className="text-slate-700">
                   {t("costComparison.totalPoints")}
                 </span>
                 <span className="text-indigo-400 font-mono">
@@ -1511,7 +1511,7 @@ function ScenarioCard({
               </div>
             )}
             {auditDetails.tax && (
-              <div className="flex justify-between text-[13px] mt-2 pt-2 border-t border-slate-800/30">
+              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-[13px]">
                 <span className="text-slate-400">
                   {t("costComparison.appliedTaxRate")}
                 </span>
@@ -1522,7 +1522,7 @@ function ScenarioCard({
               </div>
             )}
             {auditDetails.corp_tax && (
-              <div className="flex justify-between text-[13px] mt-2 pt-2 border-t border-slate-800/30">
+              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-[13px]">
                 <span className="text-slate-400">
                   {t("costComparison.appliedCorpTaxRate")}
                 </span>
@@ -1551,7 +1551,7 @@ function Metric({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
         <span data-testid={`${testId}-label`}>{label}</span>
         <TooltipTrigger
@@ -1560,7 +1560,7 @@ function Metric({
         />
       </div>
 
-      <div className="mt-2 text-lg font-semibold text-slate-100">{value}</div>
+      <div className="mt-2 text-lg font-semibold text-slate-800">{value}</div>
     </div>
   );
 }
@@ -1577,7 +1577,7 @@ function TooltipTrigger({
   return (
     <div className="group relative inline-flex">
       <button
-        className="text-slate-500 transition hover:text-slate-200"
+        className="text-slate-500 transition hover:text-slate-700"
         data-testid={testId}
         title={text}
         aria-label={text}
@@ -1586,7 +1586,7 @@ function TooltipTrigger({
         <Info size={13} />
       </button>
       <div
-        className={`absolute bottom-full mb-2 hidden w-56 rounded-xl border border-slate-700 bg-slate-800 p-3 text-left text-[11px] font-bold leading-relaxed text-slate-300 shadow-2xl group-hover:block group-focus-within:block z-[70] ${align === "right" ? "right-0" : "left-0"}`}
+        className={`absolute bottom-full mb-2 hidden w-56 rounded-xl border border-slate-200 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 shadow-lg group-hover:block group-focus-within:block z-[70] ${align === "right" ? "right-0" : "left-0"}`}
         data-testid={`${testId}-content`}
       >
         {text}
@@ -1634,9 +1634,9 @@ function ChartTooltip({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 text-sm text-slate-100 shadow-2xl">
+    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-800 shadow-lg">
       {label !== undefined ? (
-        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
           {label}
         </div>
       ) : null}
@@ -1646,14 +1646,14 @@ function ChartTooltip({
             className="flex items-center justify-between gap-4"
             key={`${entry.name ?? "item"}-${index}`}
           >
-            <div className="flex items-center gap-2 text-slate-300">
+            <div className="flex items-center gap-2 text-slate-600">
               <span
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: entry.color ?? "#94a3b8" }}
               />
               <span>{entry.name}</span>
             </div>
-            <span className="font-semibold text-slate-100">
+            <span className="font-semibold text-slate-800">
               {formatter(entry.value, entry)}
             </span>
           </div>
@@ -1682,7 +1682,7 @@ function ComparisonBarChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ea" />
         <XAxis dataKey="name" stroke="#64748b" />
         <YAxis
           stroke="#64748b"
@@ -1695,7 +1695,7 @@ function ComparisonBarChart({
               formatter={(value) => valueFormatter(Number(value || 0))}
             />
           }
-          cursor={{ fill: "rgba(51, 65, 85, 0.18)" }}
+          cursor={{ fill: "rgba(148, 163, 184, 0.12)" }}
         />
         <Bar
           dataKey="value"
@@ -1741,7 +1741,7 @@ function SustainabilityLineChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#dbe4ea" />
         <XAxis dataKey="year" stroke="#64748b" />
         <YAxis
           stroke="#64748b"
@@ -1902,8 +1902,8 @@ function WaterfallScenarioChart({
   }));
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-      <div className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-300">
+    <div className="rounded-2xl border border-slate-200 bg-white/82 p-4 shadow-sm">
+      <div className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-700">
         {title}
       </div>
       <div className="h-72">
@@ -1911,7 +1911,7 @@ function WaterfallScenarioChart({
           <BarChart data={data}>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="#1e293b"
+              stroke="#dbe4ea"
               vertical={false}
             />
             <XAxis dataKey="label" stroke="#64748b" fontSize={11} />
@@ -1922,7 +1922,7 @@ function WaterfallScenarioChart({
             />
             <Tooltip
               content={<WaterfallTooltip />}
-              cursor={{ fill: "rgba(51, 65, 85, 0.18)" }}
+              cursor={{ fill: "rgba(148, 163, 184, 0.12)" }}
             />
             <Bar dataKey="base" stackId="flow" fill="transparent" />
             <Bar
@@ -2003,32 +2003,32 @@ function WaterfallTooltip({
           : t("costComparison.waterfallTooltipDeduction");
 
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 text-sm text-slate-100 shadow-2xl">
+    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 text-sm text-slate-800 shadow-lg">
       {label !== undefined ? (
-        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
           {label}
         </div>
       ) : null}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-slate-300">{amountLabel}</span>
-          <span className="font-semibold text-slate-100">
+          <span className="text-slate-600">{amountLabel}</span>
+          <span className="font-semibold text-slate-800">
             {formatKrw(point.signedDelta)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-slate-300">
+          <span className="text-slate-600">
             {t("costComparison.waterfallTooltipBase")}
           </span>
-          <span className="font-semibold text-slate-100">
+          <span className="font-semibold text-slate-800">
             {formatKrw(point.runningBefore)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-slate-300">
+          <span className="text-slate-600">
             {t("costComparison.waterfallTooltipAfter")}
           </span>
-          <span className="font-semibold text-slate-100">
+          <span className="font-semibold text-slate-800">
             {formatKrw(point.runningAfter)}
           </span>
         </div>
