@@ -326,123 +326,161 @@ export function RetirementTab() {
                 </p>
               </div>
 
-              <div
-                className="flex items-center gap-3 cursor-pointer group/title w-fit"
-                data-testid="master-switcher-trigger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsSwitcherOpen(!isSwitcherOpen);
-                }}
-              >
-                <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-800 transition-all group-hover/title:text-emerald-700">
-                  {simulationData.meta?.master_name ||
-                    t("retirement.customStrategyBuilder")}
-                </h1>
-                <ChevronDown
-                  className={cn(
-                    "text-slate-400 transition-all group-hover/title:text-emerald-700",
-                    isSwitcherOpen && "rotate-180",
-                  )}
-                  size={20}
-                />
-              </div>
-              <div
-                className="mt-3 flex flex-wrap items-center gap-3"
-                data-testid="active-strategy-master-metrics"
-              >
-                <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
-                  <span className="text-[10px] font-semibold text-emerald-700">
-                    {t("retirement.masterYield")}
-                  </span>
-                  <span className="ml-1.5 text-sm font-bold text-emerald-700">
-                    {((simulationData.meta?.combined_dy || 0) * 100).toFixed(2)}
-                    %
-                  </span>
-                </div>
-                <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5">
-                  <span className="text-[10px] font-semibold text-sky-700">
-                    {t("retirement.tr")}
-                  </span>
-                  <span className="ml-1.5 text-sm font-bold text-sky-700">
-                    {((simulationData.meta?.combined_tr || 0) * 100).toFixed(2)}
-                    %
-                  </span>
-                </div>
-              </div>
-
-              {isSwitcherOpen && (
+              <div className="relative mt-3">
                 <div
-                  className="absolute top-full left-0 z-[100] mt-3 w-[380px] animate-in slide-in-from-top-1 rounded-[1.5rem] border border-white/80 bg-white/95 py-3 shadow-xl duration-200 ring-1 ring-emerald-100"
-                  data-testid="master-switcher-menu"
+                  className="flex items-center gap-3 cursor-pointer group/title w-fit"
+                  data-testid="master-switcher-trigger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSwitcherOpen(!isSwitcherOpen);
+                  }}
                 >
-                  <p
+                  <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-800 transition-all group-hover/title:text-emerald-700">
+                    {simulationData.meta?.master_name ||
+                      t("retirement.customStrategyBuilder")}
+                  </h1>
+                  <ChevronDown
                     className={cn(
-                      "mb-2 border-b border-slate-200 px-6 py-1.5",
-                      isKorean
-                        ? "text-xs font-semibold text-slate-500 tracking-normal"
-                        : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+                      "text-slate-400 transition-all group-hover/title:text-emerald-700",
+                      isSwitcherOpen && "rotate-180",
                     )}
+                    size={20}
+                  />
+                </div>
+
+                {isSwitcherOpen && (
+                  <div
+                    className="absolute top-full left-0 z-[100] mt-3 w-[380px] animate-in slide-in-from-top-1 rounded-[1.5rem] border border-white/80 bg-white/95 py-3 shadow-xl duration-200 ring-1 ring-emerald-100"
+                    data-testid="master-switcher-menu"
                   >
-                    {t("retirement.changePlan")}
-                  </p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                    {masterPortfolios.map((m) => (
-                      <div
-                        key={m.id}
-                        onClick={() => handleSwitchMaster(m.id)}
-                        data-testid={`master-switcher-item-${m.id}`}
-                        className={cn(
-                          "group/item mx-2 mb-0.5 flex cursor-pointer items-center justify-between rounded-xl px-6 py-3.5 transition-all",
-                          m.is_active
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800",
-                        )}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-bold tracking-tight">
-                              {m.name}
-                            </p>
-                            {m.combined_tr !== undefined &&
-                              m.combined_tr !== null && (
-                                <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                                  {(m.combined_tr * 100).toFixed(2)}%
+                    <p
+                      className={cn(
+                        "mb-2 border-b border-slate-200 px-6 py-1.5",
+                        isKorean
+                          ? "text-xs font-semibold text-slate-500 tracking-normal"
+                          : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+                      )}
+                    >
+                      {t("retirement.changePlan")}
+                    </p>
+                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {masterPortfolios.map((m) => (
+                        <div
+                          key={m.id}
+                          onClick={() => handleSwitchMaster(m.id)}
+                          data-testid={`master-switcher-item-${m.id}`}
+                          className={cn(
+                            "group/item mx-2 mb-0.5 flex cursor-pointer items-center justify-between rounded-xl px-6 py-3.5 transition-all",
+                            m.is_active
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-800",
+                          )}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-bold tracking-tight">
+                                {m.name}
+                              </p>
+                              {m.combined_tr !== undefined &&
+                                m.combined_tr !== null && (
+                                  <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                    {(m.combined_tr * 100).toFixed(2)}%
+                                  </span>
+                                )}
+                              {m.broken_reference && (
+                                <span className="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-600">
+                                  {t("retirement.broken")}
                                 </span>
                               )}
-                            {m.broken_reference && (
-                              <span className="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold text-rose-600">
-                                {t("retirement.broken")}
-                              </span>
+                            </div>
+                            <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
+                              Corp: {m.corp_name || "-"} / Pen:{" "}
+                              {m.pension_name || "-"}
+                            </p>
+                            {m.broken_reference && m.broken_reason && (
+                              <p className="mt-1 line-clamp-2 text-[10px] font-medium text-rose-500">
+                                {m.broken_reason}
+                              </p>
                             )}
                           </div>
-                          <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">
-                            Corp: {m.corp_name || "-"} / Pen:{" "}
-                            {m.pension_name || "-"}
-                          </p>
-                          {m.broken_reference && m.broken_reason && (
-                            <p className="mt-1 line-clamp-2 text-[10px] font-medium text-rose-500">
-                              {m.broken_reason}
-                            </p>
+
+                          {m.is_active && (
+                            <CheckCircle2
+                              size={16}
+                              className="text-emerald-500"
+                            />
                           )}
                         </div>
-
-                        {m.is_active && (
-                          <CheckCircle2
-                            size={16}
-                            className="text-emerald-500"
-                          />
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[720px]"
+              className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4"
               data-testid="active-strategy-summary"
             >
+              <div
+                className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-5 py-4 shadow-sm"
+                data-testid="active-strategy-master-metrics"
+              >
+                <Activity className="text-emerald-600/70" size={18} />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={cn(
+                        isKorean
+                          ? "text-xs font-semibold text-slate-500 tracking-normal"
+                          : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+                      )}
+                    >
+                      {t("retirement.snapshotMaster")}
+                    </p>
+                  </div>
+                  <p className="truncate text-sm font-bold tracking-tight text-slate-800">
+                    {simulationData.meta?.master_name ||
+                      t("retirement.customStrategyBuilder")}
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-semibold text-emerald-700 tracking-normal"
+                            : "text-[10px] font-semibold text-emerald-700",
+                        )}
+                      >
+                        {t("retirement.masterYield")}
+                      </span>
+                      <span className="ml-1 text-xs font-bold text-emerald-700">
+                        {(
+                          (simulationData.meta?.combined_dy || 0) * 100
+                        ).toFixed(2)}
+                        %
+                      </span>
+                    </div>
+                    <div className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1">
+                      <span
+                        className={cn(
+                          isKorean
+                            ? "text-[11px] font-semibold text-sky-700 tracking-normal"
+                            : "text-[10px] font-semibold text-sky-700",
+                        )}
+                      >
+                        {t("retirement.tr")}
+                      </span>
+                      <span className="ml-1 text-xs font-bold text-sky-700">
+                        {(
+                          (simulationData.meta?.combined_tr || 0) * 100
+                        ).toFixed(2)}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div
                 className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-5 py-4 shadow-sm"
                 data-testid="active-strategy-corp-card"
@@ -554,10 +592,10 @@ export function RetirementTab() {
                 </div>
               </div>
               <div
-                className="flex items-center justify-between gap-3 rounded-2xl border border-white/80 bg-white/75 px-6 py-4 shadow-sm"
+                className="rounded-2xl border border-white/80 bg-white/75 px-6 py-4 shadow-sm"
                 data-testid="active-strategy-exchange-rate"
               >
-                <div className="ml-auto flex flex-1 items-center justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-3">
                   <div className="text-right">
                     <p
                       className={cn(
@@ -585,17 +623,19 @@ export function RetirementTab() {
                       </span>
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void fetchExchangeRate(true)}
-                    disabled={isRefreshingExchangeRate}
-                    className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    data-testid="retirement-refresh-exchange-rate"
-                  >
-                    {isRefreshingExchangeRate
-                      ? t("retirement.exchangeRateRefreshing")
-                      : t("retirement.exchangeRateRefresh")}
-                  </button>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void fetchExchangeRate(true)}
+                      disabled={isRefreshingExchangeRate}
+                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      data-testid="retirement-refresh-exchange-rate"
+                    >
+                      {isRefreshingExchangeRate
+                        ? t("retirement.exchangeRateRefreshing")
+                        : t("retirement.exchangeRateRefresh")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
