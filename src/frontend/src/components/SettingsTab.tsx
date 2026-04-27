@@ -74,6 +74,10 @@ const DEFAULT_APPRECIATION_RATES = {
   growth_stocks: 9.5,
 };
 
+function formatDecimalDraft(value: number, fractionDigits = 1) {
+  return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
+}
+
 function getVisibleAssumptions(config: RetirementConfig) {
   return USER_VISIBLE_ASSUMPTION_IDS.map((id) => {
     const item = config.assumptions[id];
@@ -1442,29 +1446,21 @@ export function SettingsTab({
                         </div>
                       </div>
                     </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={
-                          retireConfig.tax_and_insurance?.point_unit_price ||
-                          208.4
-                        }
-                        onChange={(e) =>
-                          setRetireConfig({
-                            ...retireConfig,
-                            tax_and_insurance: {
-                              ...retireConfig.tax_and_insurance,
-                              point_unit_price: parseFloat(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
-                        KRW
-                      </span>
-                    </div>
+                    <HealthUnitPriceInput
+                      value={
+                        retireConfig.tax_and_insurance?.point_unit_price ||
+                        208.4
+                      }
+                      onCommit={(pointUnitPrice) =>
+                        setRetireConfig({
+                          ...retireConfig,
+                          tax_and_insurance: {
+                            ...retireConfig.tax_and_insurance,
+                            point_unit_price: pointUnitPrice,
+                          },
+                        })
+                      }
+                    />
                   </div>
                   <InputGroup
                     label={t("settings.highIncomeCap")}
@@ -1898,6 +1894,27 @@ function PercentRuleInput({
   testId?: string;
 }) {
   const { isKorean } = useI18n();
+  const [draft, setDraft] = useState(() => formatDecimalDraft(value * 100, 1));
+
+  useEffect(() => {
+    setDraft(formatDecimalDraft(value * 100, 1));
+  }, [value]);
+
+  const commitDraft = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setDraft(formatDecimalDraft(value * 100, 1));
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      setDraft(formatDecimalDraft(value * 100, 1));
+      return;
+    }
+    onChange(parsed / 100);
+    setDraft(formatDecimalDraft(parsed, 1));
+  };
+
   return (
     <div
       className="space-y-1.5"
@@ -1930,8 +1947,16 @@ function PercentRuleInput({
         <input
           type="number"
           step="0.1"
-          value={(value * 100).toFixed(1)}
-          onChange={(e) => onChange((parseFloat(e.target.value) || 0) / 100)}
+          inputMode="decimal"
+          data-testid={testId ? `${testId}-input` : undefined}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitDraft}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
           className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
         />
         <span
@@ -2002,6 +2027,58 @@ function BooleanRuleCard({
       >
         {checked ? t("settings.enabled") : t("settings.disabled")}
       </button>
+    </div>
+  );
+}
+
+function HealthUnitPriceInput({
+  value,
+  onCommit,
+}: {
+  value: number;
+  onCommit: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(() => formatDecimalDraft(value, 1));
+
+  useEffect(() => {
+    setDraft(formatDecimalDraft(value, 1));
+  }, [value]);
+
+  const commitDraft = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setDraft(formatDecimalDraft(value, 1));
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      setDraft(formatDecimalDraft(value, 1));
+      return;
+    }
+    onCommit(parsed);
+    setDraft(formatDecimalDraft(parsed, 1));
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        step="0.1"
+        inputMode="decimal"
+        data-testid="health-unit-price-input"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commitDraft}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+      />
+      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-600">
+        KRW
+      </span>
     </div>
   );
 }
