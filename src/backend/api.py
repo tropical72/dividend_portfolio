@@ -1601,16 +1601,18 @@ class DividendBackend:
         if changed:
             self.storage.save_json(self.portfolios_file, self.portfolios)
 
-    def get_exchange_rate(self) -> float:
-        """실시간 환율을 가져오거나 캐시된 값을 반환합니다. (12시간 주기 갱신)"""
+    def get_exchange_rate_info(self, force_refresh: bool = False) -> Dict[str, Any]:
+        """실시간 환율 메타데이터를 반환합니다. (기본 12시간 주기 갱신)"""
         now = datetime.datetime.now()
         # settings.json 내의 캐시 정보 확인
         cache = self.settings.get("exchange_rate_cache", {})
         last_fetch_str = cache.get("last_fetch")
-        last_rate = float(cache.get("rate", 1425.5))
+        last_rate = float(cache.get("rate", self.settings.get("current_exchange_rate", 1425.5)))
 
-        should_fetch = True
-        if last_fetch_str:
+        should_fetch = force_refresh
+        if not force_refresh:
+            should_fetch = True
+        if last_fetch_str and not force_refresh:
             try:
                 last_fetch = datetime.datetime.fromisoformat(last_fetch_str)
                 # 12시간(하루 2회) 이내면 캐시 사용
@@ -1622,15 +1624,20 @@ class DividendBackend:
         if should_fetch:
             try:
                 print("[Backend] Fetching real-time exchange rate...")
-                new_rate = self.data_provider.get_usd_krw_rate()
-                if new_rate > 0:
+                new_rate = self.data_provider.try_get_usd_krw_rate()
+                if new_rate is not None and new_rate > 0:
+                    refreshed_at = now.isoformat()
                     self.settings["exchange_rate_cache"] = {
-                        "last_fetch": now.isoformat(),
+                        "last_fetch": refreshed_at,
                         "rate": new_rate,
                     }
                     self.settings["current_exchange_rate"] = new_rate
                     self._save_settings()
-                    return new_rate
+                    return {
+                        "rate": new_rate,
+                        "last_fetch": refreshed_at,
+                        "source": "live",
+                    }
             except Exception as e:
                 print(f"[Backend] Exchange rate fetch failed: {e}")
 
@@ -1642,7 +1649,15 @@ class DividendBackend:
             self.settings["current_exchange_rate"] = last_rate
             self._save_settings()
 
-        return last_rate
+        return {
+            "rate": last_rate,
+            "last_fetch": last_fetch_str,
+            "source": "cache",
+        }
+
+    def get_exchange_rate(self, force_refresh: bool = False) -> float:
+        """실시간 환율을 가져오거나 캐시된 값을 반환합니다. (12시간 주기 갱신)"""
+        return float(self.get_exchange_rate_info(force_refresh=force_refresh)["rate"])
 
     def get_portfolio_stats_by_id(self, p_id: Optional[str]) -> Dict[str, Any]:
         """특정 ID의 포트폴리오 통계를 산출합니다.
@@ -2116,7 +2131,7 @@ class DividendBackend:
 
         total_capital = portfolio.get("total_capital", 0.0)
         items = portfolio.get("items", [])
-        usd_krw_rate = self.data_provider.get_usd_krw_rate()
+        usd_krw_rate = self.get_exchange_rate()
 
         total_weight = sum(item.get("weight", 0.0) for item in items)
         weighted_yield = 0.0

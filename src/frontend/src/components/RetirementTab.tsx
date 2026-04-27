@@ -85,10 +85,42 @@ export function RetirementTab() {
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("v1");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
+  const [exchangeRateLastUpdated, setExchangeRateLastUpdated] = useState<
+    string | null
+  >(null);
+  const [isRefreshingExchangeRate, setIsRefreshingExchangeRate] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const visibleAssumptions = getVisibleAssumptions(config);
+
+  const fetchExchangeRate = useCallback(
+    async (forceRefresh = false) => {
+      setIsRefreshingExchangeRate(true);
+      try {
+        const url = forceRefresh
+          ? "http://localhost:8000/api/exchange-rate?force=true"
+          : "http://localhost:8000/api/exchange-rate";
+        const rateRes = await fetch(url);
+        const rateData = await rateRes.json();
+
+        if (rateData.success && rateData.data?.rate) {
+          setExchangeRate(rateData.data.rate);
+          setExchangeRateLastUpdated(rateData.data.last_fetch || null);
+          return;
+        }
+
+        throw new Error(t("retirement.exchangeRateRefreshFailed"));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setErrorMessage(message);
+      } finally {
+        setIsRefreshingExchangeRate(false);
+      }
+    },
+    [t],
+  );
 
   const fetchData = useCallback(
     async (scenarioId: string | null = null) => {
@@ -116,12 +148,7 @@ export function RetirementTab() {
         setMasterPortfolios(masterData.data || []);
         setActiveId(normalizedScenario);
 
-        // 실시간 환율 정보 가져오기
-        const settingsRes = await fetch("http://localhost:8000/api/settings");
-        const settingsData = await settingsRes.json();
-        if (settingsData.success && settingsData.data?.current_exchange_rate) {
-          setExchangeRate(settingsData.data.current_exchange_rate);
-        }
+        await fetchExchangeRate();
 
         const currentScenario = normalizedScenario;
         const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
@@ -140,7 +167,7 @@ export function RetirementTab() {
         setIsLoading(false);
       }
     },
-    [t],
+    [fetchExchangeRate, t],
   );
 
   useEffect(() => {
@@ -230,6 +257,23 @@ export function RetirementTab() {
     (min, item) => Math.min(min, item.total_net_worth || 0),
     initialNetWorth || 0,
   );
+  const formattedExchangeRateUpdatedAt = (() => {
+    if (!exchangeRateLastUpdated) {
+      return t("retirement.exchangeRateUpdatedUnknown");
+    }
+    const parsed = new Date(exchangeRateLastUpdated);
+    if (Number.isNaN(parsed.getTime())) {
+      return t("retirement.exchangeRateUpdatedUnknown");
+    }
+    return parsed.toLocaleString(isKorean ? "ko-KR" : "en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  })();
 
   const level = (() => {
     const years = summary.total_survival_years || 0;
@@ -513,26 +557,45 @@ export function RetirementTab() {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-white/80 bg-white/75 px-6 py-4 shadow-sm"
                 data-testid="active-strategy-exchange-rate"
               >
-                <div className="text-right ml-auto">
-                  <p
-                    className={cn(
-                      "leading-none mb-1",
-                      isKorean
-                        ? "text-xs font-semibold text-slate-500 tracking-normal"
-                        : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
-                    )}
+                <div className="ml-auto flex flex-1 items-center justify-between gap-4">
+                  <div className="text-right">
+                    <p
+                      className={cn(
+                        "leading-none mb-1",
+                        isKorean
+                          ? "text-xs font-semibold text-slate-500 tracking-normal"
+                          : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+                      )}
+                    >
+                      {t("retirement.exchangeRate")}
+                    </p>
+                    <p className="text-lg font-bold leading-none text-emerald-700 tabular-nums">
+                      {exchangeRate.toLocaleString(undefined, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })}
+                      <span className="ml-1 text-[11px] font-semibold text-slate-500">
+                        KRW
+                      </span>
+                    </p>
+                    <p className="mt-2 text-[11px] font-medium text-slate-500">
+                      {t("retirement.exchangeRateUpdatedAt")}{" "}
+                      <span className="font-semibold text-slate-600">
+                        {formattedExchangeRateUpdatedAt}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void fetchExchangeRate(true)}
+                    disabled={isRefreshingExchangeRate}
+                    className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    data-testid="retirement-refresh-exchange-rate"
                   >
-                    {t("retirement.exchangeRate")}
-                  </p>
-                  <p className="text-lg font-bold leading-none text-emerald-700 tabular-nums">
-                    {exchangeRate.toLocaleString(undefined, {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })}
-                    <span className="ml-1 text-[11px] font-semibold text-slate-500">
-                      KRW
-                    </span>
-                  </p>
+                    {isRefreshingExchangeRate
+                      ? t("retirement.exchangeRateRefreshing")
+                      : t("retirement.exchangeRateRefresh")}
+                  </button>
                 </div>
               </div>
             </div>

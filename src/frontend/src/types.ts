@@ -28,6 +28,7 @@ export interface AppSettings {
   default_currency: "USD" | "KRW";
   ui_language: UiLanguage;
   current_exchange_rate?: number;
+  exchange_rate_last_updated?: string | null;
   price_appreciation_rate?: number;
   appreciation_rates?: {
     cash_sgov: number;

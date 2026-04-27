@@ -381,8 +381,8 @@ class StockDataProvider:
         ticker = yf.Ticker(ticker_symbol)
         return ticker.dividends
 
-    def get_usd_krw_rate(self) -> float:
-        """실시간 USD/KRW 환율을 가져옵니다. (yfinance USDKRW=X 사용)"""
+    def try_get_usd_krw_rate(self) -> Optional[float]:
+        """실시간 USD/KRW 환율을 가져옵니다. 실패 시 None을 반환합니다."""
         try:
             ticker = yf.Ticker("USDKRW=X")
             # 1. fast_info 시도
@@ -396,6 +396,13 @@ class StockDataProvider:
         except Exception as e:
             print(f"Exchange Rate Fetch Error: {e}")
 
+        return None
+
+    def get_usd_krw_rate(self) -> float:
+        """실시간 USD/KRW 환율을 가져옵니다. (yfinance USDKRW=X 사용)"""
+        rate = self.try_get_usd_krw_rate()
+        if rate is not None:
+            return rate
         return 1400.0  # 오류 시 기본 환율 (보수적 접근)
 
     def calculate_historical_annual_dividend(self, ticker_symbol: str) -> float:
