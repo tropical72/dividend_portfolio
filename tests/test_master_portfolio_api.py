@@ -95,6 +95,47 @@ def test_master_portfolio_crud_and_dependency(client):
     # 여기서는 요구사항대로 '활성 전략 삭제 불가'까지만 검증함.
 
 
+def test_master_portfolio_create_returns_computed_yield_and_tr(client):
+    suffix = uuid4().hex[:8]
+
+    corp_res = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Yield Corp {suffix}",
+            "account_type": "Corporate",
+            "total_capital": 1000,
+            "items": [
+                {
+                    "symbol": "SCHD",
+                    "name": "SCHD",
+                    "weight": 100,
+                    "dividend_yield": 4.0,
+                    "category": "Dividend Growth",
+                }
+            ],
+        },
+    )
+    assert corp_res.status_code == 200
+    corp_id = corp_res.json()["data"]["id"]
+
+    master_res = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Yield Strategy {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+        },
+    )
+    assert master_res.status_code == 200
+    body = master_res.json()
+    assert body["success"] is True
+    assert body["data"]["corp_name"] == f"Yield Corp {suffix}"
+    assert body["data"]["pension_name"] == "-"
+    assert body["data"]["combined_yield"] == pytest.approx(4.0)
+    assert body["data"]["combined_tr"] == pytest.approx(9.5)
+    assert body["data"]["broken_reference"] is False
+
+
 def test_default_master_bundle_is_seeded_on_app_boot(tmp_path):
     """실앱 부팅 모드에서는 기본 master/corp/pension 번들이 자동 생성되어야 한다."""
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)

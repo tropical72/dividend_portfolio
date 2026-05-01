@@ -1994,6 +1994,41 @@ class DividendBackend:
             },
         }
 
+    def _build_master_portfolio_summary(self, master: Dict[str, Any]) -> Dict[str, Any]:
+        """마스터 전략 응답용 요약 정보를 구성합니다."""
+        summary = dict(master)
+        master_calc = self.calculate_master_portfolio_tr(master)
+
+        if master_calc["success"]:
+            data = cast(Dict[str, Any], master_calc["data"])
+            corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
+            pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+            combined_tr = data.get("combined_tr")
+            combined_yield = data.get("combined_yield")
+
+            summary["corp_name"] = corp_p["name"] if corp_p else "-"
+            summary["pension_name"] = pen_p["name"] if pen_p else "-"
+            summary["combined_yield"] = (
+                combined_yield * 100.0 if combined_yield is not None else 0.0
+            )
+            summary["combined_tr"] = combined_tr * 100.0 if combined_tr is not None else 0.0
+            summary["broken_reference"] = False
+            summary["broken_reason"] = None
+        else:
+            data = cast(Dict[str, Any], master_calc["data"])
+            corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
+            pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+
+            summary["corp_name"] = corp_p["name"] if corp_p else "-"
+            summary["pension_name"] = pen_p["name"] if pen_p else "-"
+            summary["combined_yield"] = None
+            summary["combined_tr"] = None
+            summary["broken_reference"] = True
+            summary["broken_reason"] = master_calc["message"]
+
+        summary["is_system_default"] = self._is_system_default_master(master)
+        return summary
+
     def add_portfolio(
         self,
         name: str,
@@ -2061,35 +2096,7 @@ class DividendBackend:
         """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
         self._ensure_seeded_defaults_if_enabled()
         for m in self.master_portfolios:
-            master_calc = self.calculate_master_portfolio_tr(m)
-            if master_calc["success"]:
-                data = cast(Dict[str, Any], master_calc["data"])
-                corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
-                pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
-
-                # [FIX] 소수점 단위를 % 단위로 변환하여 프론트엔드에 전달
-                c_tr = data.get("combined_tr")
-                c_dy = data.get("combined_yield")
-
-                m["is_system_default"] = self._is_system_default_master(m)
-                m["corp_name"] = corp_p["name"] if corp_p else "-"
-                m["pension_name"] = pen_p["name"] if pen_p else "-"
-                m["combined_yield"] = c_dy * 100.0 if c_dy is not None else 0.0
-                m["combined_tr"] = c_tr * 100.0 if c_tr is not None else 0.0
-                m["broken_reference"] = False
-                m["broken_reason"] = None
-
-            else:
-                data = cast(Dict[str, Any], master_calc["data"])
-                corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
-                pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
-                m["is_system_default"] = self._is_system_default_master(m)
-                m["corp_name"] = corp_p["name"] if corp_p else "-"
-                m["pension_name"] = pen_p["name"] if pen_p else "-"
-                m["combined_yield"] = None
-                m["combined_tr"] = None
-                m["broken_reference"] = True
-                m["broken_reason"] = master_calc["message"]
+            m.update(self._build_master_portfolio_summary(m))
 
         return self.master_portfolios
 
@@ -2120,7 +2127,7 @@ class DividendBackend:
         }
         self.master_portfolios.append(new_m)
         self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
-        return {"success": True, "data": new_m}
+        return {"success": True, "data": self._build_master_portfolio_summary(new_m)}
 
     def activate_master_portfolio(self, m_id: str) -> Dict[str, Any]:
         """특정 마스터 전략을 활성화합니다."""
