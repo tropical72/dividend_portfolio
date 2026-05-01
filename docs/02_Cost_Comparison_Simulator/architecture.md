@@ -133,11 +133,17 @@
 ### 4.1 기준 포트폴리오 및 수익률
 비교 시뮬레이터는 다음 규칙으로 기준 수익률을 만든다.
 
-1. 활성 master portfolio 조회
-2. 포트폴리오 종목/비중 기준 가중 평균 `DY` 계산
-3. 사용자 입력 `PA` 조회
-4. `TR = DY + PA` 계산
-5. 동일 `TR`을 개인/법인 양쪽에 주입
+1. 비용 비교 설정의 `master_portfolio_id` 조회
+2. `master_portfolio_id`가 있으면 해당 저장 master portfolio를 로드하고, 없으면 활성 master portfolio를 fallback으로 조회
+3. master portfolio의 Corporate/Pension 참조 포트폴리오를 로드하고 참조 무결성을 검증
+4. 포트폴리오 종목/비중 기준 가중 평균 `DY` 계산
+5. 사용자 입력 `PA` 조회
+6. `TR = DY + PA` 계산
+7. 동일 `TR`을 개인/법인 양쪽에 주입
+
+주의:
+- 선택된 master portfolio나 내부 포트폴리오 참조가 깨진 경우 임의 기본 수익률로 대체하지 않고 실행을 중단한다.
+- 응답 메타에는 `master_portfolio_id`, master portfolio 이름, Corporate/Pension 포트폴리오 이름을 포함해 사용자가 계산 근거를 추적할 수 있어야 한다.
 
 ### 4.2 개인운용 시나리오
 입력:
@@ -282,7 +288,10 @@
 ```json
 {
   "assumptions": {
+    "master_portfolio_id": "strategy-default",
     "portfolio_name": "Active Master",
+    "corporate_portfolio_name": "Corporate Default",
+    "pension_portfolio_name": "Pension Default",
     "dy": 0.038,
     "pa": 0.03,
     "tr": 0.068,

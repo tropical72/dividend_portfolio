@@ -26,7 +26,7 @@
 - **[TEST-CCS-04] 테스트 상태 복구:**
     - Playwright 또는 API 테스트가 비교 시뮬레이터 설정을 변경해도 종료 후 사용자 데이터가 복구되는지 확인.
 
-### [Structure 2] 기준 포트폴리오 및 수익률 모델 (REQ-CCS-20 ~ 24, 91 ~ 92)
+### [Structure 2] 기준 포트폴리오 및 수익률 모델 (REQ-CCS-20 ~ 25, 91 ~ 92)
 - **[TEST-CCS-10] 활성 master portfolio 연동:**
     - 비교 시뮬레이터가 현재 활성 master portfolio를 기준 포트폴리오로 사용하고 있는지 확인.
 - **[TEST-CCS-11] DY 계산 정합성:**
@@ -37,6 +37,11 @@
     - 동일 포트폴리오/동일 PA 입력 시 개인운용과 법인운용이 같은 `TR`을 사용하고 있는지 확인.
 - **[TEST-CCS-14] 기준 포트폴리오 누락 에러:**
     - 활성 master portfolio가 없거나 참조가 깨졌을 때 비교 실행이 차단되고 명시적 오류가 반환되는지 확인.
+- **[TEST-CCS-101] 저장된 Master Portfolio 기반 비교 실행 [NEW]:**
+    - 서로 다른 `DY`를 가진 master portfolio 2개를 저장한 뒤 비용 비교 설정의 `master_portfolio_id`를 바꾸면 실행 응답의 `assumptions.master_portfolio_id`, `portfolio_name`, `dy`, `tr`, 연간 총수익이 선택 전략 기준으로 바뀌는지 확인.
+    - `master_portfolio_id`를 저장하지 않은 기존 설정은 현재 활성 master portfolio를 fallback으로 사용해 하위 호환 실행이 되는지 확인.
+    - 저장된 `master_portfolio_id`가 삭제되었거나 내부 `corp_id`/`pension_id` 참조가 깨진 경우, 비교 실행이 명시적 오류로 차단되고 임의 fallback 값이 사용되지 않는지 확인.
+    - Playwright에서 비용 비교 화면의 master portfolio 선택값을 변경, 저장, 재로드한 뒤 실행 결과 assumptions 영역에 실제 사용된 master portfolio 및 Corporate/Pension 포트폴리오 이름이 표시되는지 확인.
 
 ### [Structure 3] 개인운용 시나리오 (REQ-CCS-30 ~ 34, 90)
 - **[TEST-CCS-20] 개인 총수익 계산:**
@@ -126,6 +131,10 @@
     - 새 사용자 기본 설정 기준으로 `보유 자산 기반`이 기본 비교 모드인지 확인.
     - `비교 입력`과 `비교 결과` 영역이 분리 렌더링되고, 비교 실행 전에는 빈 결과 안내가 노출되는지 확인.
     - 비용 비교 화면의 보조 라벨이 최소 11px 이상으로 렌더링되도록 클래스가 유지되는지 회귀 검증한다.
+- **[TEST-CCS-100] 2026년 법인세율 및 지방소득세 포함 계산 검증:**
+    - 기본 법인세율 선택값이 명목 `10%`이고 실제 계산 세율이 지방소득세 포함 `11%`인지 확인.
+    - 비용 비교 화면에서 법인세율을 `22%`로 변경하면 계산 엔진이 `24.2%` 실효세율로 법인세를 산출하고, 결과의 법인세 비용이 증가하는지 확인.
+    - Settings의 기본 법인세율 선택값이 저장 후 비용 비교 기본값 또는 계산 엔진 기본값으로 유지되는지 확인.
 
 ### [Structure 7] 정책/메타/컴플라이언스 (REQ-CCS-80 ~ 82)
 - **[TEST-CCS-60] 기준 연도 노출:**
