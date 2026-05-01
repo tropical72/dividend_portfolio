@@ -68,8 +68,8 @@
 | REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done | d665e97 | 2026.04.16-17.02 |
 | REQ-SYS-05 | UI 다국어 지원 (ko/en) | T-GLB-12.5 | TEST-SYS-I18N-03 | Done | fcf36b4 | 2026.04.17-15.50 |
 | REQ-GLB-13 | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1 | TEST-SYS-STR-01 | Done | 2830367 | 2026.04.17-18.15 |
-| REQ-SYS-03.5 | 공개 저장소 기본값과 로컬 런타임 데이터 분리 | T-GLB-14.1 | TEST-SYS-1.3.2 | In Progress | - | 2026.04.25 |
-| REQ-SYS-03.6 | 공개 저장소 진입 문서 및 레거시 자산 정리 | T-GLB-15.1 | TEST-SYS-QG-04 | In Progress | - | 2026.04.25 |
+| REQ-SYS-03.5 | 공개 저장소 기본값과 로컬 런타임 데이터 분리 | T-GLB-14.1 | TEST-SYS-1.3.2 | Done | 75902aa | 2026.04.25-01.42 |
+| REQ-SYS-03.6 | 공개 저장소 진입 문서 및 레거시 자산 정리 | T-GLB-15.1 | TEST-SYS-QG-04 | Done | 0cef9b8 / 1dc1cb1 | 2026.04.25-23.47 |
 
 ---
 
@@ -105,12 +105,12 @@
 | REQ-CCS-55 | 상세 비용 감사(Audit) 내역 패널 | T-CCS-9.3.2 | TEST-CCS-91 | Done | 3a4d33a | 2026.04.23-14.30 |
 | REQ-CCS-95 | Asset-driven 순방향 계산 모델 | T-CCS-9.1.1 | TEST-CCS-92 | Done | 3a4d33a | 2026.04.23-14.30 |
 | REQ-CCS-3.3 | 30년 장기 프로젝션 연동 | T-CCS-9.1.3 | TEST-CCS-93 | Done | 3a4d33a | 2026.04.23-14.30 |
-| D-CCS-9.3.3 | Asset-driven 모드 wiring 및 KPI 단위 표기 회귀 수정 | T-CCS-9.3.3 | TEST-CCS-94 | In Progress | - | 2026.04.24 |
-| D-CCS-9.3.4 | 개인 Asset-driven 장기 시계열 이중 계산 회귀 수정 | T-CCS-9.3.4 | TEST-CCS-95 | In Progress | - | 2026.04.24 |
-| D-CCS-9.3.5 | 비교 결과 우열 문구 명시성 강화 | T-CCS-9.3.5 | TEST-CCS-96 | In Progress | - | 2026.04.24 |
-| D-CCS-9.3.6 | 우열 판정 기준을 순현금흐름으로 재정렬하고 주주대여금 상환 driver 제거 | T-CCS-9.3.6 | TEST-CCS-97 | In Progress | - | 2026.04.24 |
-| D-CCS-9.3.7 | 목표/자산 기반 공통 비교 철학을 `개인 순현금 vs 법인 순현금 + 순급여`로 통일 | T-CCS-9.3.7 | TEST-CCS-98 | In Progress | - | 2026.04.24 |
-| D-CCS-9.3.8 | 비용 비교 화면의 기본 모드, 입력/결과 분리, 최소 11px 타이포 규칙 정비 | T-CCS-9.3.8 | TEST-CCS-99 | In Progress | - | 2026.04.25 |
+| D-CCS-9.3.3 | Asset-driven 모드 wiring 및 KPI 단위 표기 회귀 수정 | T-CCS-9.3.3 | TEST-CCS-94 | Done | 5362208 | 2026.04.25-01.11 |
+| D-CCS-9.3.4 | 개인 Asset-driven 장기 시계열 이중 계산 회귀 수정 | T-CCS-9.3.4 | TEST-CCS-95 | Done | 5362208 | 2026.04.25-01.11 |
+| D-CCS-9.3.5 | 비교 결과 우열 문구 명시성 강화 | T-CCS-9.3.5 | TEST-CCS-96 | Done | 5362208 | 2026.04.25-01.11 |
+| D-CCS-9.3.6 | 우열 판정 기준을 순현금흐름으로 재정렬하고 주주대여금 상환 driver 제거 | T-CCS-9.3.6 | TEST-CCS-97 | Done | 5362208 | 2026.04.25-01.11 |
+| D-CCS-9.3.7 | 목표/자산 기반 공통 비교 철학을 `개인 순현금 vs 법인 순현금 + 순급여`로 통일 | T-CCS-9.3.7 | TEST-CCS-98 | Done | 5362208 | 2026.04.25-01.11 |
+| D-CCS-9.3.8 | 비용 비교 화면의 기본 모드, 입력/결과 분리, 최소 11px 타이포 규칙 정비 | T-CCS-9.3.8 | TEST-CCS-99 | Done | 3c810cb | 2026.04.25-18.43 |
 
 ---
-*마지막 업데이트: 2026-04-25 14:35:00*
+*마지막 업데이트: 2026-05-01 16:39:00*
