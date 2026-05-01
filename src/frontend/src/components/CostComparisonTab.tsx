@@ -24,6 +24,8 @@ import type {
 } from "../types";
 
 const API_BASE = "http://localhost:8000/api/cost-comparison";
+const MASTER_PORTFOLIO_API = "http://localhost:8000/api/master-portfolios";
+const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];
 type ConfigSectionKey =
   | "household"
   | "personal_assets"
@@ -33,6 +35,7 @@ type ConfigSectionKey =
   | "policy_meta";
 
 const defaultConfig: CostComparisonConfig = {
+  master_portfolio_id: null,
   simulation_mode: "asset",
   household: {
     members: [],
@@ -61,12 +64,20 @@ const defaultConfig: CostComparisonConfig = {
       },
     ],
     monthly_fixed_cost: 0,
+    corp_tax_nominal_rate: 0.1,
     initial_shareholder_loan: 0,
     annual_shareholder_loan_repayment: 0,
   },
   policy_meta: {
     base_year: 2026,
   },
+};
+
+type MasterPortfolioOption = {
+  id: string;
+  name: string;
+  is_active?: boolean;
+  broken_reference?: boolean;
 };
 
 function formatKrw(value: number) {
@@ -209,6 +220,9 @@ export function CostComparisonTab() {
   const { t } = useI18n();
   const [config, setConfig] = useState<CostComparisonConfig>(defaultConfig);
   const [result, setResult] = useState<CostComparisonResult | null>(null);
+  const [masterPortfolios, setMasterPortfolios] = useState<
+    MasterPortfolioOption[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -223,7 +237,12 @@ export function CostComparisonTab() {
 
     return {
       ...raw,
+      master_portfolio_id: raw.master_portfolio_id ?? null,
       simulation_mode: raw.simulation_mode || legacyMode || "asset",
+      corporate: {
+        ...raw.corporate,
+        corp_tax_nominal_rate: raw.corporate?.corp_tax_nominal_rate ?? 0.1,
+      },
       assumptions: {
         ...raw.assumptions,
       },
@@ -235,10 +254,19 @@ export function CostComparisonTab() {
       setLoading(true);
       setErrorMessage("");
       try {
-        const response = await fetch(`${API_BASE}/config`);
-        const payload = await response.json();
-        if (payload?.success && payload?.data) {
-          setConfig(normalizeConfig(payload.data as CostComparisonConfig));
+        const [configResponse, masterResponse] = await Promise.all([
+          fetch(`${API_BASE}/config`),
+          fetch(MASTER_PORTFOLIO_API),
+        ]);
+        const configPayload = await configResponse.json();
+        const masterPayload = await masterResponse.json();
+        if (masterPayload?.success && Array.isArray(masterPayload?.data)) {
+          setMasterPortfolios(masterPayload.data as MasterPortfolioOption[]);
+        }
+        if (configPayload?.success && configPayload?.data) {
+          setConfig(
+            normalizeConfig(configPayload.data as CostComparisonConfig),
+          );
         }
       } catch (error) {
         setErrorMessage(
@@ -272,6 +300,13 @@ export function CostComparisonTab() {
     setConfig((prev) => ({
       ...prev,
       simulation_mode: value,
+    }));
+  };
+
+  const updateMasterPortfolioId = (value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      master_portfolio_id: value || null,
     }));
   };
 
@@ -358,6 +393,9 @@ export function CostComparisonTab() {
   const resultMode =
     result?.assumptions.simulation_mode ?? config.simulation_mode;
   const isTargetMode = resultMode === "target";
+  const activeMasterId =
+    masterPortfolios.find((master) => master.is_active)?.id ?? null;
+  const effectiveMasterId = config.master_portfolio_id ?? activeMasterId ?? "";
   const winnerBasisFormula = result
     ? result.comparison.winner_basis === "annual_net_cashflow"
       ? t("costComparison.winnerBasisFormulaNetCashflow")
@@ -468,6 +506,14 @@ export function CostComparisonTab() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <MasterPortfolioField
+            label={t("costComparison.masterPortfolio")}
+            testId="cc-master-portfolio"
+            tooltip={t("costComparison.tooltip.masterPortfolio")}
+            value={effectiveMasterId}
+            options={masterPortfolios}
+            onChange={updateMasterPortfolioId}
+          />
           <NumberField
             label={t("costComparison.investmentAssets")}
             testId="cc-investment-assets"
@@ -554,6 +600,16 @@ export function CostComparisonTab() {
               updateConfig("corporate", "monthly_fixed_cost", value)
             }
           />
+          <SelectField
+            label={t("costComparison.corpTaxRate")}
+            testId="cc-corp-tax-rate"
+            tooltip={t("costComparison.tooltip.corpTaxRate")}
+            value={config.corporate.corp_tax_nominal_rate}
+            options={CORPORATE_TAX_RATE_OPTIONS}
+            onChange={(value) =>
+              updateConfig("corporate", "corp_tax_nominal_rate", value)
+            }
+          />
           <NumberField
             label={t("costComparison.salary")}
             testId="cc-salary-0"
@@ -603,6 +659,15 @@ export function CostComparisonTab() {
               </div>
               <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
                 <AssumptionBadge
+                  label={t("costComparison.masterPortfolio")}
+                  testId="cc-assumption-master-portfolio"
+                  tooltip={t("costComparison.tooltip.masterPortfolio")}
+                  value={
+                    result.assumptions.master_portfolio_name ??
+                    result.assumptions.portfolio_name
+                  }
+                />
+                <AssumptionBadge
                   label={t("costComparison.assumptionMode")}
                   testId="cc-assumption-mode"
                   tooltip={t("costComparison.tooltip.assumptionMode")}
@@ -625,6 +690,22 @@ export function CostComparisonTab() {
                   value={result.assumptions.portfolio_name}
                 />
                 <AssumptionBadge
+                  label={t("costComparison.assumptionCorporatePortfolio")}
+                  testId="cc-assumption-corporate-portfolio"
+                  tooltip={t(
+                    "costComparison.tooltip.assumptionCorporatePortfolio",
+                  )}
+                  value={result.assumptions.corporate_portfolio_name ?? "-"}
+                />
+                <AssumptionBadge
+                  label={t("costComparison.assumptionPensionPortfolio")}
+                  testId="cc-assumption-pension-portfolio"
+                  tooltip={t(
+                    "costComparison.tooltip.assumptionPensionPortfolio",
+                  )}
+                  value={result.assumptions.pension_portfolio_name ?? "-"}
+                />
+                <AssumptionBadge
                   label="DY"
                   testId="cc-assumption-dy"
                   tooltip={t("costComparison.tooltip.dy")}
@@ -641,6 +722,20 @@ export function CostComparisonTab() {
                   testId="cc-assumption-tr"
                   tooltip={t("costComparison.tooltip.tr")}
                   value={formatPercent(result.assumptions.tr)}
+                />
+                <AssumptionBadge
+                  label={t("costComparison.corpTaxRate")}
+                  testId="cc-assumption-corp-tax-rate"
+                  tooltip={t("costComparison.tooltip.corpTaxRate")}
+                  value={`${(
+                    (result.corporate.breakdown.audit_details?.corp_tax
+                      ?.nominal_rate ??
+                      config.corporate.corp_tax_nominal_rate) * 100
+                  ).toFixed(0)}% -> ${(
+                    (result.corporate.breakdown.audit_details?.corp_tax
+                      ?.effective_rate ??
+                      config.corporate.corp_tax_nominal_rate * 1.1) * 100
+                  ).toFixed(1)}%`}
                 />
               </div>
             </div>
@@ -1364,6 +1459,87 @@ function NumberField({
   );
 }
 
+function SelectField({
+  label,
+  testId,
+  tooltip,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  testId: string;
+  tooltip: string;
+  value: number;
+  options: number[];
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="rounded-2xl border border-white/80 bg-white/82 p-4 shadow-sm">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
+        <span data-testid={`${testId}-label`}>{label}</span>
+        <TooltipTrigger
+          testId={`cc-tooltip-trigger-${testId}`}
+          text={tooltip}
+        />
+      </div>
+      <select
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none"
+        data-testid={testId}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {(option * 100).toFixed(0)}% ({(option * 1.1 * 100).toFixed(1)}%)
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function MasterPortfolioField({
+  label,
+  testId,
+  tooltip,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  testId: string;
+  tooltip: string;
+  value: string;
+  options: MasterPortfolioOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="rounded-2xl border border-white/80 bg-white/82 p-4 shadow-sm">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest text-slate-500">
+        <span data-testid={`${testId}-label`}>{label}</span>
+        <TooltipTrigger
+          testId={`cc-tooltip-trigger-${testId}`}
+          text={tooltip}
+        />
+      </div>
+      <select
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none"
+        data-testid={testId}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.length === 0 ? <option value="">-</option> : null}
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function AssumptionBadge({
   label,
   value,
@@ -1527,8 +1703,18 @@ function ScenarioCard({
                   {t("costComparison.appliedCorpTaxRate")}
                 </span>
                 <span className="text-emerald-400 font-mono">
-                  {(auditDetails.corp_tax.tax_rate_low! * 100).toFixed(0)}% (2억
-                  이하)
+                  {(
+                    (auditDetails.corp_tax.nominal_rate ??
+                      auditDetails.corp_tax.tax_rate_low ??
+                      0) * 100
+                  ).toFixed(0)}
+                  % -&gt;{" "}
+                  {(
+                    (auditDetails.corp_tax.effective_rate ??
+                      auditDetails.corp_tax.tax_rate_low ??
+                      0) * 100
+                  ).toFixed(1)}
+                  %
                 </span>
               </div>
             )}

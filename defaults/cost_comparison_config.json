@@ -1,4 +1,5 @@
 {
+    "master_portfolio_id": null,
     "simulation_mode": "asset",
     "household": {
         "members": []
@@ -23,6 +24,7 @@
             }
         ],
         "monthly_fixed_cost": 500000,
+        "corp_tax_nominal_rate": 0.1,
         "initial_shareholder_loan": 1590000000,
         "annual_shareholder_loan_repayment": 90000000
     },

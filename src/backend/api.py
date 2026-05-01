@@ -576,8 +576,9 @@ class DividendBackend:
                 "point_unit_price": 211.5,
                 "ltc_rate": 0.12,
                 "corp_tax_threshold": 200000000,
-                "corp_tax_low_rate": 0.1,
-                "corp_tax_high_rate": 0.2,
+                "corp_tax_nominal_rate": 0.1,
+                "corp_tax_low_rate": 0.11,
+                "corp_tax_high_rate": 0.22,
                 "pension_rate": 0.045,
                 "health_rate": 0.035,
                 "employment_rate": 0.009,
@@ -660,7 +661,13 @@ class DividendBackend:
 
     def _get_default_cost_comparison_config(self) -> Dict[str, Any]:
         default_pa = float(self.settings.get("price_appreciation_rate", 3.0))
+        default_corp_tax_rate = float(
+            cast(Dict[str, Any], self.retirement_config.get("tax_and_insurance", {})).get(
+                "corp_tax_nominal_rate", 0.1
+            )
+        )
         return {
+            "master_portfolio_id": None,
             "simulation_mode": "asset",
             "household": {"members": []},
             "personal_assets": {
@@ -679,6 +686,7 @@ class DividendBackend:
             "corporate": {
                 "salary_recipients": [],
                 "monthly_fixed_cost": 0.0,
+                "corp_tax_nominal_rate": default_corp_tax_rate,
                 "initial_shareholder_loan": 0.0,
                 "annual_shareholder_loan_repayment": 0.0,
             },
@@ -706,7 +714,16 @@ class DividendBackend:
         if config.get("simulation_mode") not in {"target", "asset"}:
             return "simulation_mode는 target 또는 asset 이어야 합니다."
 
+        if config.get("master_portfolio_id") is not None and not isinstance(
+            config.get("master_portfolio_id"), str
+        ):
+            return "master_portfolio_id는 문자열 또는 null 이어야 합니다."
+
         corporate = cast(Dict[str, Any], config.get("corporate", {}))
+        corp_tax_nominal_rate = float(corporate.get("corp_tax_nominal_rate") or 0.0)
+        if corp_tax_nominal_rate not in {0.10, 0.20, 0.22, 0.25}:
+            return "corporate.corp_tax_nominal_rate는 10%, 20%, 22%, 25% 중 하나여야 합니다."
+
         salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
         if len(salary_recipients) > 4:
             return "corporate.salary_recipients는 최대 4명까지만 설정할 수 있습니다."
@@ -757,19 +774,48 @@ class DividendBackend:
             "data": self.cost_comparison_config,
         }
 
-    def _build_cost_comparison_assumptions(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def get_master_portfolio_by_id(self, m_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """ID로 마스터 전략을 조회합니다."""
+        self._ensure_seeded_defaults_if_enabled()
+        if not m_id:
+            return None
+        return next((m for m in self.master_portfolios if m.get("id") == m_id), None)
+
+    def _resolve_cost_comparison_master_portfolio(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        requested_master_id = config.get("master_portfolio_id")
+        if requested_master_id:
+            selected_master = self.get_master_portfolio_by_id(cast(str, requested_master_id))
+            if not selected_master:
+                return {
+                    "success": False,
+                    "message": (
+                        "저장된 비용 비교 기준 master portfolio를 찾을 수 없습니다. "
+                        "선택한 전략이 삭제되었는지 확인해 주세요."
+                    ),
+                }
+            return {"success": True, "data": selected_master}
+
         active_master = self.get_active_master_portfolio()
         if not active_master:
             return {
                 "success": False,
                 "message": "활성 master portfolio가 없어 비교 시뮬레이션을 실행할 수 없습니다.",
             }
+        return {"success": True, "data": active_master}
 
-        master_calc = self.calculate_master_portfolio_tr(active_master)
+    def _build_cost_comparison_assumptions(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        master_result = self._resolve_cost_comparison_master_portfolio(config)
+        if not master_result.get("success"):
+            return cast(Dict[str, Any], master_result)
+
+        selected_master = cast(Dict[str, Any], master_result["data"])
+        master_calc = self.calculate_master_portfolio_tr(selected_master)
         if not master_calc.get("success"):
             return cast(Dict[str, Any], master_calc)
 
         calc_data = cast(Dict[str, Any], master_calc["data"])
+        corp_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("corp_portfolio"))
+        pension_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("pension_portfolio"))
         pa_rate = float(
             cast(Dict[str, Any], config.get("assumptions", {})).get("price_appreciation_rate", 0)
         )
@@ -779,7 +825,15 @@ class DividendBackend:
         return {
             "success": True,
             "data": {
-                "portfolio_name": active_master.get("name", "Active Master"),
+                "master_portfolio_id": selected_master.get("id"),
+                "master_portfolio_name": selected_master.get("name", "Active Master"),
+                "portfolio_name": selected_master.get("name", "Active Master"),
+                "corporate_portfolio_name": (
+                    corp_portfolio.get("name", "-") if corp_portfolio else "-"
+                ),
+                "pension_portfolio_name": (
+                    pension_portfolio.get("name", "-") if pension_portfolio else "-"
+                ),
                 "dy": dy,
                 "pa": pa_rate / 100.0,
                 "tr": tr,
@@ -1223,7 +1277,9 @@ class DividendBackend:
                 "audit_details": {
                     "corp_tax": {
                         "tax_base": tax_base,
-                        "tax_rate_low": tax_engine.corp_tax_low_rate,
+                        "nominal_rate": tax_engine.corp_tax_nominal_rate,
+                        "effective_rate": tax_engine.corp_tax_effective_rate,
+                        "tax_rate_low": tax_engine.corp_tax_effective_rate,
                     },
                     "health": {"is_employee": True, "recipients": len(salary_recipients)},
                 },
@@ -1396,6 +1452,15 @@ class DividendBackend:
                 "net_corporate_cash": annual_net_corporate_cash,
                 "net_salary": net_salary_annual,
                 "target_household_cash": annual_target_cash,
+                "audit_details": {
+                    "corp_tax": {
+                        "tax_base": required_tax_base,
+                        "nominal_rate": tax_engine.corp_tax_nominal_rate,
+                        "effective_rate": tax_engine.corp_tax_effective_rate,
+                        "tax_rate_low": tax_engine.corp_tax_effective_rate,
+                    },
+                    "health": {"is_employee": True, "recipients": len(salary_recipients)},
+                },
             },
             "series": series,
             "sustainability_series": sustainability_series,
@@ -1469,7 +1534,11 @@ class DividendBackend:
             return cast(Dict[str, Any], assumptions_result)
 
         assumptions = cast(Dict[str, Any], assumptions_result["data"])
-        tax_engine = TaxEngine(config=self.retirement_config.get("tax_and_insurance", {}))
+        tax_config = dict(self.retirement_config.get("tax_and_insurance", {}))
+        corporate_config = cast(Dict[str, Any], effective_config.get("corporate", {}))
+        if corporate_config.get("corp_tax_nominal_rate") is not None:
+            tax_config["corp_tax_nominal_rate"] = corporate_config["corp_tax_nominal_rate"]
+        tax_engine = TaxEngine(config=tax_config)
 
         simulation_mode = effective_config.get("simulation_mode", "target")
 

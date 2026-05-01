@@ -164,6 +164,7 @@ export interface RetirementConfig {
     point_unit_price: number;
     ltc_rate: number;
     corp_tax_threshold: number;
+    corp_tax_nominal_rate: number;
     corp_tax_low_rate: number;
     corp_tax_high_rate: number;
     pension_rate: number;
@@ -260,6 +261,7 @@ export interface CostComparisonSalaryRecipient {
 }
 
 export interface CostComparisonConfig {
+  master_portfolio_id?: string | null;
   simulation_mode?: "target" | "asset";
   household: {
     members: CostComparisonHouseholdMember[];
@@ -280,6 +282,7 @@ export interface CostComparisonConfig {
   corporate: {
     salary_recipients: CostComparisonSalaryRecipient[];
     monthly_fixed_cost: number;
+    corp_tax_nominal_rate: number;
     initial_shareholder_loan: number;
     annual_shareholder_loan_repayment: number;
   };
@@ -340,6 +343,8 @@ export interface CostComparisonScenarioResult {
       };
       corp_tax?: {
         tax_base?: number;
+        nominal_rate?: number;
+        effective_rate?: number;
         tax_rate_low?: number;
       };
     };
@@ -368,7 +373,11 @@ export interface CostComparisonScenarioResult {
 
 export interface CostComparisonResult {
   assumptions: {
+    master_portfolio_id?: string | null;
+    master_portfolio_name?: string;
     portfolio_name: string;
+    corporate_portfolio_name?: string;
+    pension_portfolio_name?: string;
     dy: number;
     pa: number;
     tr: number;

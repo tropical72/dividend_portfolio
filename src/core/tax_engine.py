@@ -16,8 +16,10 @@ class TaxEngine:
 
         # 법인세 관련 변수
         self.corp_tax_threshold = float(config.get("corp_tax_threshold", 200000000))
-        self.corp_tax_low_rate = float(config.get("corp_tax_low_rate", 0.09))
-        self.corp_tax_high_rate = float(config.get("corp_tax_high_rate", 0.19))
+        self.corp_tax_nominal_rate = float(config.get("corp_tax_nominal_rate", 0.10))
+        self.corp_tax_effective_rate = round(self.corp_tax_nominal_rate * 1.1, 4)
+        self.corp_tax_low_rate = float(config.get("corp_tax_low_rate", 0.11))
+        self.corp_tax_high_rate = float(config.get("corp_tax_high_rate", 0.22))
 
         # 4대보험 요율 (근로자/사업자 합산 및 분담 로직용)
         self.pension_rate = float(config.get("pension_rate", 0.045))  # 근로자분
@@ -26,13 +28,20 @@ class TaxEngine:
         self.income_tax_estimate_rate = float(config.get("income_tax_estimate_rate", 0.05))
 
     def calculate_corp_tax(self, profit: float) -> float:
-        """법인세 산출 (변수화된 세율 적용)"""
+        """법인세 산출.
+
+        UI와 설정에는 일반적으로 말하는 명목 법인세율(10/20/22/25%)을 노출하고,
+        실제 계산은 지방소득세 10%를 포함한 실효세율로 수행합니다.
+        """
+        if profit <= 0:
+            return 0.0
+        if self.corp_tax_nominal_rate:
+            return profit * self.corp_tax_effective_rate
         if profit <= self.corp_tax_threshold:
             return profit * self.corp_tax_low_rate
-        else:
-            return (self.corp_tax_threshold * self.corp_tax_low_rate) + (
-                (profit - self.corp_tax_threshold) * self.corp_tax_high_rate
-            )
+        return (self.corp_tax_threshold * self.corp_tax_low_rate) + (
+            (profit - self.corp_tax_threshold) * self.corp_tax_high_rate
+        )
 
     def calculate_income_tax(self, monthly_salary: float) -> Dict[str, float]:
         """근로소득세 및 4대보험 산출 (변수화된 요율 적용)"""

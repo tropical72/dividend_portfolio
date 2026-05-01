@@ -27,17 +27,22 @@ def test_local_health_insurance_calculation():
 
 
 def test_corp_tax_calculation():
-    """법인세 계산 테스트 (2억 이하 9%, 초과 19%)"""
+    """법인세 계산 테스트 (2026년 명목 10%, 지방소득세 포함 11%)"""
     engine = TaxEngine()
 
-    # 1. 2억 이하 구간
     tax_1 = engine.calculate_corp_tax(profit=100000000)  # 1억
-    assert tax_1 == 9000000  # 9%
+    assert tax_1 == 11000000
 
-    # 2. 2억 초과 구간
     tax_2 = engine.calculate_corp_tax(profit=300000000)  # 3억
-    # 2억 * 9% + 1억 * 19% = 1800만 + 1900만 = 3700만
-    assert tax_2 == 37000000
+    assert tax_2 == 33000000
+
+
+def test_corp_tax_uses_effective_local_income_tax_rate():
+    """사용자에게 보이는 명목 세율에 지방소득세 10%를 더해 계산합니다."""
+    engine = TaxEngine({"corp_tax_nominal_rate": 0.2})
+
+    assert engine.corp_tax_effective_rate == 0.22
+    assert engine.calculate_corp_tax(profit=100000000) == 22000000
 
 
 def test_tax_engine_boundary_cases():
@@ -52,8 +57,8 @@ def test_tax_engine_boundary_cases():
     assert engine.get_property_points(property_val=50000000) == 0
     assert engine.get_property_points(property_val=100000000) == 0
 
-    # 3. 법인세 경계값 (딱 2억 원일 때)
-    assert engine.calculate_corp_tax(profit=200000000) == 18000000  # 딱 9% 상한
+    # 3. 법인세 기본값은 2026년 명목 10%, 지방소득세 포함 11%
+    assert engine.calculate_corp_tax(profit=200000000) == 22000000
 
     # 4. 매우 높은 급여에 대한 4대보험 계산 (에러 발생 여부 체크)
     income_info = engine.calculate_income_tax(monthly_salary=20000000)  # 월 2000만

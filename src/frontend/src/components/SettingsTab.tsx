@@ -74,6 +74,8 @@ const DEFAULT_APPRECIATION_RATES = {
   growth_stocks: 9.5,
 };
 
+const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];
+
 function formatDecimalDraft(value: number, fractionDigits = 1) {
   return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
 }
@@ -166,6 +168,11 @@ export function SettingsTab({
     if (globalRetireConfig) {
       setRetireConfig({
         ...JSON.parse(JSON.stringify(globalRetireConfig)),
+        tax_and_insurance: {
+          ...globalRetireConfig.tax_and_insurance,
+          corp_tax_nominal_rate:
+            globalRetireConfig.tax_and_insurance?.corp_tax_nominal_rate ?? 0.1,
+        },
         strategy_rules: {
           ...DEFAULT_STRATEGY_RULES,
           ...globalRetireConfig.strategy_rules,
@@ -649,6 +656,48 @@ export function SettingsTab({
                   })
                 }
               />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-800 pt-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.corpTaxRate")}
+                  </label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      {t("settings.corpTaxRateTooltip")}
+                    </div>
+                  </div>
+                </div>
+                <select
+                  data-testid="settings-corp-tax-rate"
+                  value={retireConfig.tax_and_insurance.corp_tax_nominal_rate}
+                  onChange={(event) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        corp_tax_nominal_rate: Number(event.target.value),
+                      },
+                    })
+                  }
+                  className="h-11 w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+                >
+                  {CORPORATE_TAX_RATE_OPTIONS.map((rate) => (
+                    <option key={rate} value={rate}>
+                      {(rate * 100).toFixed(0)}% (
+                      {(rate * 1.1 * 100).toFixed(1)}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </section>
 

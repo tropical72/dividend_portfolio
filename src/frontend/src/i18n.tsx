@@ -198,6 +198,9 @@ const translations = {
     "settings.fixedCost": "Fixed Cost",
     "settings.fixedCostTooltip":
       "Monthly fixed corporate expenses such as rent and bookkeeping.",
+    "settings.corpTaxRate": "Corporate Tax Rate",
+    "settings.corpTaxRateTooltip":
+      "Nominal corporate tax rate shown in tax tables. Calculations apply local income tax, so 10% is calculated as 11%.",
     "settings.employees": "Employees",
     "settings.employeesTooltip":
       "Total employee count used for social insurance burden calculations.",
@@ -341,7 +344,7 @@ const translations = {
     "costComparison.loadError": "Failed to load cost comparison settings.",
     "costComparison.title": "Personal vs Corporate Comparison",
     "costComparison.subtitle":
-      "Compare household cashflow and total costs under the same portfolio and the same TR.",
+      "Compare household cashflow and total costs under the selected master portfolio and the same TR.",
     "costComparison.inputSectionEyebrow": "Inputs",
     "costComparison.inputSection": "Comparison Inputs",
     "costComparison.inputSectionDescription":
@@ -371,12 +374,16 @@ const translations = {
     "costComparison.simulationYears": "Simulation Years",
     "costComparison.targetMonthlyCash": "Target After-tax Monthly Cash",
     "costComparison.monthlyFixedCost": "Monthly Fixed Cost",
+    "costComparison.corpTaxRate": "Corporate Tax Rate",
+    "costComparison.masterPortfolio": "Master Portfolio",
     "costComparison.initialLoan": "Initial Shareholder Loan",
     "costComparison.annualLoanRepayment": "Annual Loan Repayment",
     "costComparison.salary": "Monthly Salary",
     "costComparison.ratioUnit": "ratio",
     "costComparison.yearUnit": "years",
-    "costComparison.assumptionPortfolio": "Active Portfolio",
+    "costComparison.assumptionPortfolio": "Strategy Name",
+    "costComparison.assumptionCorporatePortfolio": "Corporate Portfolio",
+    "costComparison.assumptionPensionPortfolio": "Pension Portfolio",
     "costComparison.personal": "Personal",
     "costComparison.corporate": "Corporate",
     "costComparison.monthlyCash": "Target Monthly Cash",
@@ -474,6 +481,10 @@ const translations = {
       "Target after-tax monthly household cash that both scenarios must deliver.",
     "costComparison.tooltip.monthlyFixedCost":
       "Recurring monthly corporate operating expenses such as rent, bookkeeping, and administration.",
+    "costComparison.tooltip.corpTaxRate":
+      "Select the nominal corporate tax rate. The simulation applies local income tax, so 10% is calculated as 11%.",
+    "costComparison.tooltip.masterPortfolio":
+      "Choose which saved master portfolio the cost comparison should use. If no dedicated selection is saved, the currently active master portfolio is used.",
     "costComparison.tooltip.initialLoan":
       "Initial shareholder loan principal that can be repaid to the household without dividend taxation, subject to cash availability.",
     "costComparison.tooltip.annualLoanRepayment":
@@ -481,9 +492,13 @@ const translations = {
     "costComparison.tooltip.salary":
       "Gross monthly salary paid by the corporation to the selected household member.",
     "costComparison.tooltip.assumptionPortfolio":
-      "Currently active master portfolio used as the common baseline for both scenarios.",
+      "Name of the master strategy actually used for this comparison run.",
+    "costComparison.tooltip.assumptionCorporatePortfolio":
+      "Corporate portfolio connected to the selected master strategy.",
+    "costComparison.tooltip.assumptionPensionPortfolio":
+      "Pension portfolio connected to the selected master strategy.",
     "costComparison.tooltip.dy":
-      "Weighted dividend yield from the active master portfolio.",
+      "Weighted dividend yield from the selected master portfolio.",
     "costComparison.tooltip.pa":
       "Price appreciation assumption entered in the comparison simulator.",
     "costComparison.tooltip.tr":
@@ -742,6 +757,9 @@ const translations = {
     "settings.fixedCost": "고정비",
     "settings.fixedCostTooltip":
       "임대료, 기장료 등 법인 유지에 필요한 월 고정 비용입니다.",
+    "settings.corpTaxRate": "법인세율",
+    "settings.corpTaxRateTooltip":
+      "세율표에서 말하는 명목 법인세율입니다. 실제 계산은 지방소득세를 포함해 10% 선택 시 11%로 반영합니다.",
     "settings.employees": "직원 수",
     "settings.employeesTooltip": "4대보험 산정에 사용하는 총 직원 수입니다.",
     "settings.strategyRules": "전략 규칙",
@@ -875,7 +893,7 @@ const translations = {
     "costComparison.loadError": "비교 시뮬레이터 설정을 불러오지 못했습니다.",
     "costComparison.title": "개인 vs 법인 비교",
     "costComparison.subtitle":
-      "동일한 포트폴리오와 동일한 TR 기준에서 가구 총현금흐름과 총비용을 비교합니다.",
+      "선택한 master portfolio와 동일한 TR 기준에서 가구 총현금흐름과 총비용을 비교합니다.",
     "costComparison.inputSectionEyebrow": "입력",
     "costComparison.inputSection": "비교 입력",
     "costComparison.inputSectionDescription":
@@ -905,12 +923,16 @@ const translations = {
     "costComparison.simulationYears": "시뮬레이션 기간",
     "costComparison.targetMonthlyCash": "목표 세후 월현금",
     "costComparison.monthlyFixedCost": "월 고정비",
+    "costComparison.corpTaxRate": "법인세율",
+    "costComparison.masterPortfolio": "마스터 전략",
     "costComparison.initialLoan": "초기 주주대여금",
     "costComparison.annualLoanRepayment": "연간 주주대여금 상환",
     "costComparison.salary": "월 급여",
     "costComparison.ratioUnit": "비율",
     "costComparison.yearUnit": "년",
-    "costComparison.assumptionPortfolio": "활성 포트폴리오",
+    "costComparison.assumptionPortfolio": "전략 이름",
+    "costComparison.assumptionCorporatePortfolio": "법인 포트폴리오",
+    "costComparison.assumptionPensionPortfolio": "연금 포트폴리오",
     "costComparison.personal": "개인운용",
     "costComparison.corporate": "법인운용",
     "costComparison.monthlyCash": "목표 월현금",
@@ -1007,6 +1029,10 @@ const translations = {
       "두 시나리오가 동일하게 만들어야 하는 가계 세후 월현금 목표입니다.",
     "costComparison.tooltip.monthlyFixedCost":
       "임차료, 기장료, 관리비 등 법인에서 반복적으로 나가는 월 고정 운영비입니다.",
+    "costComparison.tooltip.corpTaxRate":
+      "세율표에서 말하는 명목 법인세율을 선택합니다. 시뮬레이션 계산은 지방소득세를 포함해 10% 선택 시 11%로 반영합니다.",
+    "costComparison.tooltip.masterPortfolio":
+      "비용 비교에 사용할 저장된 master portfolio를 선택합니다. 별도 선택을 저장하지 않으면 현재 활성 master portfolio를 사용합니다.",
     "costComparison.tooltip.initialLoan":
       "법인에 투입된 초기 주주대여금 원금입니다. 현금 여력이 있으면 비과세 상환 재원이 됩니다.",
     "costComparison.tooltip.annualLoanRepayment":
@@ -1014,9 +1040,13 @@ const translations = {
     "costComparison.tooltip.salary":
       "법인이 가구 구성원에게 지급하는 세전 월 급여입니다.",
     "costComparison.tooltip.assumptionPortfolio":
-      "개인과 법인 양쪽에 공통으로 적용하는 현재 활성 master portfolio입니다.",
+      "이번 비교 실행에 실제로 사용된 master 전략 이름입니다.",
+    "costComparison.tooltip.assumptionCorporatePortfolio":
+      "선택한 master 전략에 연결된 법인 포트폴리오입니다.",
+    "costComparison.tooltip.assumptionPensionPortfolio":
+      "선택한 master 전략에 연결된 연금 포트폴리오입니다.",
     "costComparison.tooltip.dy":
-      "활성 master portfolio에서 계산된 가중 평균 배당수익률입니다.",
+      "선택한 master portfolio에서 계산된 가중 평균 배당수익률입니다.",
     "costComparison.tooltip.pa":
       "비교 시뮬레이터에서 입력한 기대주가상승률입니다.",
     "costComparison.tooltip.tr":

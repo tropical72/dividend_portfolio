@@ -9,6 +9,8 @@ from src.backend.api import DividendBackend
 
 def _build_config_payload():
     return {
+        "master_portfolio_id": None,
+        "simulation_mode": "target",
         "household": {
             "members": [
                 {
@@ -55,6 +57,7 @@ def _build_config_payload():
                 }
             ],
             "monthly_fixed_cost": 500000,
+            "corp_tax_nominal_rate": 0.1,
             "initial_shareholder_loan": 500000000,
             "annual_shareholder_loan_repayment": 108000000,
         },
@@ -64,12 +67,52 @@ def _build_config_payload():
     }
 
 
+def _create_high_yield_master(backend: DividendBackend) -> str:
+    corp_portfolio = backend.add_portfolio(
+        name="CCS High Yield Corporate",
+        account_type="Corporate",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "HIGHC",
+                "name": "High Yield Corp",
+                "weight": 100,
+                "category": "High Income",
+                "dividend_yield": 12.0,
+            }
+        ],
+    )["data"]
+    pension_portfolio = backend.add_portfolio(
+        name="CCS High Yield Pension",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "HIGHP",
+                "name": "High Yield Pension",
+                "weight": 100,
+                "category": "Dividend Growth",
+                "dividend_yield": 9.0,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name="CCS High Yield Master",
+        corp_id=corp_portfolio["id"],
+        pension_id=pension_portfolio["id"],
+    )["data"]
+    return str(master["id"])
+
+
 def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     client = TestClient(main_module.app)
 
     payload = _build_config_payload()
+    payload["master_portfolio_id"] = backend.DEFAULT_MASTER_PORTFOLIO_ID
 
     save_response = client.post("/api/cost-comparison/config", json=payload)
     assert save_response.status_code == 200
@@ -81,14 +124,18 @@ def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
 
     assert data["personal_assets"]["investment_assets"] == 1600000000
     assert data["real_estate"]["ownership_ratio"] == 0.5
+    assert data["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
     assert data["assumptions"]["price_appreciation_rate"] == 3.0
     assert data["assumptions"]["target_monthly_household_cash_after_tax"] == 10000000
     assert data["corporate"]["salary_recipients"][0]["monthly_salary"] == 3000000
+    assert data["corporate"]["corp_tax_nominal_rate"] == 0.1
 
     with open(tmp_path / "cost_comparison_config.json", "r", encoding="utf-8") as handle:
         saved = json.load(handle)
 
     assert saved["assumptions"]["simulation_years"] == 5
+    assert saved["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
+    assert saved["corporate"]["corp_tax_nominal_rate"] == 0.1
     assert saved["corporate"]["annual_shareholder_loan_repayment"] == 108000000
 
 
@@ -114,10 +161,13 @@ def test_cost_comparison_run_uses_active_master_and_returns_kpis(tmp_path, monke
     comparison = data["comparison"]
 
     assert assumptions["portfolio_name"]
+    assert assumptions["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
     assert assumptions["dy"] > 0
     assert assumptions["tr"] == assumptions["dy"] + assumptions["pa"]
     assert assumptions["simulation_years"] == 5
     assert assumptions["target_monthly_household_cash_after_tax"] == 10000000
+    assert assumptions["corporate_portfolio_name"]
+    assert assumptions["pension_portfolio_name"]
 
     assert personal["kpis"]["annual_total_cost"] > 0
     assert personal["kpis"]["annual_health_insurance"] > 0
@@ -136,6 +186,97 @@ def test_cost_comparison_run_uses_active_master_and_returns_kpis(tmp_path, monke
     assert corporate["kpis"]["required_assets"] > 0
     assert "annual_net_cashflow" in personal["kpis"]
     assert "annual_net_cashflow" in corporate["kpis"]
+    assert corporate["breakdown"]["audit_details"]["corp_tax"]["nominal_rate"] == 0.1
+    assert corporate["breakdown"]["audit_details"]["corp_tax"]["effective_rate"] == 0.11
+
+
+def test_cost_comparison_run_uses_saved_master_portfolio_override(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    custom_master_id = _create_high_yield_master(backend)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    active_payload = _build_config_payload()
+    active_payload["simulation_mode"] = "asset"
+    active_response = client.post("/api/cost-comparison/run", json=active_payload)
+    assert active_response.status_code == 200
+    assert active_response.json()["success"] is True
+
+    override_payload = _build_config_payload()
+    override_payload["simulation_mode"] = "asset"
+    override_payload["master_portfolio_id"] = custom_master_id
+    save_response = client.post("/api/cost-comparison/config", json=override_payload)
+    assert save_response.status_code == 200
+    assert save_response.json()["success"] is True
+
+    run_response = client.post("/api/cost-comparison/run", json={})
+    assert run_response.status_code == 200
+    assert run_response.json()["success"] is True
+
+    active_data = active_response.json()["data"]
+    override_data = run_response.json()["data"]
+
+    assert override_data["assumptions"]["master_portfolio_id"] == custom_master_id
+    assert override_data["assumptions"]["master_portfolio_name"] == "CCS High Yield Master"
+    assert override_data["assumptions"]["corporate_portfolio_name"] == "CCS High Yield Corporate"
+    assert override_data["assumptions"]["pension_portfolio_name"] == "CCS High Yield Pension"
+    assert override_data["assumptions"]["dy"] > active_data["assumptions"]["dy"]
+    assert override_data["assumptions"]["tr"] > active_data["assumptions"]["tr"]
+    assert (
+        override_data["personal"]["breakdown"]["annual_revenue"]
+        > active_data["personal"]["breakdown"]["annual_revenue"]
+    )
+
+
+def test_cost_comparison_run_fails_when_saved_master_portfolio_is_missing(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    payload = _build_config_payload()
+    payload["master_portfolio_id"] = "missing-master-id"
+
+    save_response = client.post("/api/cost-comparison/config", json=payload)
+    assert save_response.status_code == 200
+    assert save_response.json()["success"] is True
+
+    run_response = client.post("/api/cost-comparison/run", json={})
+    assert run_response.status_code == 200
+    body = run_response.json()
+
+    assert body["success"] is False
+    assert "master portfolio" in body["message"]
+
+
+def test_cost_comparison_corporate_tax_rate_override_changes_tax(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    base_payload = _build_config_payload()
+    base_payload["simulation_mode"] = "asset"
+    base_payload["personal_assets"]["investment_assets"] = 5000000000
+
+    low_response = client.post("/api/cost-comparison/run", json=base_payload)
+    assert low_response.status_code == 200
+    assert low_response.json()["success"] is True
+
+    high_payload = _build_config_payload()
+    high_payload["simulation_mode"] = "asset"
+    high_payload["personal_assets"]["investment_assets"] = 5000000000
+    high_payload["corporate"]["corp_tax_nominal_rate"] = 0.22
+
+    high_response = client.post("/api/cost-comparison/run", json=high_payload)
+    assert high_response.status_code == 200
+    assert high_response.json()["success"] is True
+
+    low_tax = low_response.json()["data"]["corporate"]["breakdown"]["tax"]
+    high_tax = high_response.json()["data"]["corporate"]["breakdown"]["tax"]
+    high_audit = high_response.json()["data"]["corporate"]["breakdown"]["audit_details"]["corp_tax"]
+
+    assert high_tax > low_tax
+    assert high_audit["nominal_rate"] == 0.22
+    assert high_audit["effective_rate"] == pytest.approx(0.242)
 
 
 def test_cost_comparison_winner_follows_higher_annual_net_cashflow(tmp_path, monkeypatch):
@@ -376,7 +517,7 @@ def test_cost_comparison_run_honors_nested_asset_mode_override(tmp_path, monkeyp
     client = TestClient(main_module.app)
 
     payload = _build_config_payload()
-    payload["assumptions"]["simulation_mode"] = "asset"
+    payload["simulation_mode"] = "asset"
 
     save_response = client.post("/api/cost-comparison/config", json=payload)
     assert save_response.status_code == 200
@@ -399,7 +540,7 @@ def test_personal_asset_driven_series_does_not_double_count_household_cash(tmp_p
     client = TestClient(main_module.app)
 
     payload = _build_config_payload()
-    payload["assumptions"]["simulation_mode"] = "asset"
+    payload["simulation_mode"] = "asset"
     payload["assumptions"]["simulation_years"] = 2
 
     save_response = client.post("/api/cost-comparison/config", json=payload)

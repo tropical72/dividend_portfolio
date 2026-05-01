@@ -88,6 +88,7 @@ class RetirementConfigRequest(BaseModel):
 
 
 class CostComparisonConfigRequest(BaseModel):
+    master_portfolio_id: Optional[str] = None
     simulation_mode: Optional[str] = None
     household: Optional[Dict[str, Any]] = None
     personal_assets: Optional[Dict[str, Any]] = None
@@ -274,6 +275,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
             "point_unit_price",
             "ltc_rate",
             "corp_tax_threshold",
+            "corp_tax_nominal_rate",
             "corp_tax_low_rate",
             "corp_tax_high_rate",
             "pension_rate",

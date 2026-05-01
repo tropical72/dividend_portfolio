@@ -10,7 +10,7 @@ class RebalanceEngine:
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
         self.deviation_threshold = float(config.get("deviation_threshold", 0.05))
-        self.corp_tax_rate = float(config.get("corp_tax_rate", 0.09))
+        self.corp_tax_rate = float(config.get("corp_tax_rate", 0.11))
 
     def check_rebalance_condition(
         self, current_assets: Dict[str, float], target_weights: Dict[str, float]
