@@ -923,12 +923,12 @@ export function SettingsTab({
                     tooltip={t("settings.highIncomeMinTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate
-                        .high_income_min_ratio
+                        .high_income_min_ratio * 100
                     }
                     onChange={(value) =>
                       updateStrategyRules({
                         corporate: {
-                          high_income_min_ratio: value,
+                          high_income_min_ratio: value / 100,
                         },
                       })
                     }
@@ -938,12 +938,12 @@ export function SettingsTab({
                     tooltip={t("settings.highIncomeMaxTooltip")}
                     value={
                       retireConfig.strategy_rules.corporate
-                        .high_income_max_ratio
+                        .high_income_max_ratio * 100
                     }
                     onChange={(value) =>
                       updateStrategyRules({
                         corporate: {
-                          high_income_max_ratio: value,
+                          high_income_max_ratio: value / 100,
                         },
                       })
                     }
@@ -1003,12 +1003,13 @@ export function SettingsTab({
                     tooltip={t("settings.bondMinRatioTooltip")}
                     testId="input-group-bond-min-ratio"
                     value={
-                      retireConfig.strategy_rules.pension.bond_min_total_ratio
+                      retireConfig.strategy_rules.pension.bond_min_total_ratio *
+                      100
                     }
                     onChange={(value) =>
                       updateStrategyRules({
                         pension: {
-                          bond_min_total_ratio: value,
+                          bond_min_total_ratio: value / 100,
                         },
                       })
                     }
@@ -1017,12 +1018,13 @@ export function SettingsTab({
                     label={t("settings.dividendMinRatio")}
                     tooltip={t("settings.dividendMinRatioTooltip")}
                     value={
-                      retireConfig.strategy_rules.pension.dividend_min_ratio
+                      retireConfig.strategy_rules.pension.dividend_min_ratio *
+                      100
                     }
                     onChange={(value) =>
                       updateStrategyRules({
                         pension: {
-                          dividend_min_ratio: value,
+                          dividend_min_ratio: value / 100,
                         },
                       })
                     }
