@@ -63,7 +63,8 @@ const defaultConfig: CostComparisonConfig = {
         is_employee_insured: true,
       },
     ],
-    monthly_fixed_cost: 0,
+    monthly_bookkeeping_fee: 0,
+    annual_corp_tax_adjustment_fee: 0,
     corp_tax_nominal_rate: 0.1,
     initial_shareholder_loan: 0,
     annual_shareholder_loan_repayment: 0,
@@ -241,6 +242,12 @@ export function CostComparisonTab() {
       simulation_mode: raw.simulation_mode || legacyMode || "asset",
       corporate: {
         ...raw.corporate,
+        monthly_bookkeeping_fee:
+          raw.corporate?.monthly_bookkeeping_fee ??
+          raw.corporate?.monthly_fixed_cost ??
+          0,
+        annual_corp_tax_adjustment_fee:
+          raw.corporate?.annual_corp_tax_adjustment_fee ?? 0,
         corp_tax_nominal_rate: raw.corporate?.corp_tax_nominal_rate ?? 0.1,
       },
       assumptions: {
@@ -591,13 +598,23 @@ export function CostComparisonTab() {
             }
           />
           <NumberField
-            label={t("costComparison.monthlyFixedCost")}
-            testId="cc-monthly-fixed-cost"
-            tooltip={t("costComparison.tooltip.monthlyFixedCost")}
+            label={t("costComparison.monthlyBookkeepingFee")}
+            testId="cc-monthly-bookkeeping-fee"
+            tooltip={t("costComparison.tooltip.monthlyBookkeepingFee")}
             unit="KRW"
-            value={config.corporate.monthly_fixed_cost}
+            value={config.corporate.monthly_bookkeeping_fee ?? 0}
             onChange={(value) =>
-              updateConfig("corporate", "monthly_fixed_cost", value)
+              updateConfig("corporate", "monthly_bookkeeping_fee", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.annualTaxAdjustmentFee")}
+            testId="cc-annual-tax-adjustment-fee"
+            tooltip={t("costComparison.tooltip.annualTaxAdjustmentFee")}
+            unit="KRW"
+            value={config.corporate.annual_corp_tax_adjustment_fee ?? 0}
+            onChange={(value) =>
+              updateConfig("corporate", "annual_corp_tax_adjustment_fee", value)
             }
           />
           <SelectField

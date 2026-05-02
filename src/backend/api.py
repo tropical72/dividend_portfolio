@@ -559,7 +559,8 @@ class DividendBackend:
                 "capital_stock": 50000000,
                 "initial_shareholder_loan": 1550000000,
                 "monthly_salary": 2500000,
-                "monthly_fixed_cost": 500000,
+                "monthly_bookkeeping_fee": 500000,
+                "annual_corp_tax_adjustment_fee": 0,
                 "employee_count": 1,
             },
             "pension_params": {
@@ -630,11 +631,41 @@ class DividendBackend:
                 merged[key] = value
         return merged
 
+    def _normalize_corporate_cost_fields(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """기존 monthly_fixed_cost 입력을 신규 운영비 필드로 흡수합니다."""
+        normalized = dict(section or {})
+        legacy_monthly_fixed_cost = normalized.pop("monthly_fixed_cost", None)
+
+        if normalized.get("monthly_bookkeeping_fee") is None:
+            normalized["monthly_bookkeeping_fee"] = float(legacy_monthly_fixed_cost or 0.0)
+        if normalized.get("annual_corp_tax_adjustment_fee") is None:
+            normalized["annual_corp_tax_adjustment_fee"] = 0.0
+
+        return normalized
+
+    def _get_annual_corporate_operating_cost(
+        self, section: Optional[Dict[str, Any]]
+    ) -> Dict[str, float]:
+        normalized = self._normalize_corporate_cost_fields(section)
+        monthly_bookkeeping_fee = float(normalized.get("monthly_bookkeeping_fee") or 0.0)
+        annual_corp_tax_adjustment_fee = float(
+            normalized.get("annual_corp_tax_adjustment_fee") or 0.0
+        )
+        return {
+            "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
+            "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
+            "annual_operating_cost": (monthly_bookkeeping_fee * 12)
+            + annual_corp_tax_adjustment_fee,
+        }
+
     def _ensure_retirement_config_defaults(self) -> None:
         """은퇴 설정에 필요한 기본 스키마를 보강합니다."""
         self.retirement_config = self._deep_merge_dict(
             self._get_default_retirement_config(),
             self.retirement_config,
+        )
+        self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
         )
         self._sanitize_retirement_assumptions()
         assumptions = self.retirement_config.get("assumptions", {})
@@ -685,7 +716,8 @@ class DividendBackend:
             },
             "corporate": {
                 "salary_recipients": [],
-                "monthly_fixed_cost": 0.0,
+                "monthly_bookkeeping_fee": 0.0,
+                "annual_corp_tax_adjustment_fee": 0.0,
                 "corp_tax_nominal_rate": default_corp_tax_rate,
                 "initial_shareholder_loan": 0.0,
                 "annual_shareholder_loan_repayment": 0.0,
@@ -702,6 +734,9 @@ class DividendBackend:
         if "simulation_mode" not in normalized and assumptions.get("simulation_mode"):
             normalized["simulation_mode"] = assumptions.get("simulation_mode")
         assumptions.pop("simulation_mode", None)
+        normalized["corporate"] = self._normalize_corporate_cost_fields(
+            cast(Optional[Dict[str, Any]], normalized.get("corporate"))
+        )
         return normalized
 
     def _ensure_cost_comparison_config_defaults(self) -> None:
@@ -720,6 +755,14 @@ class DividendBackend:
             return "master_portfolio_id는 문자열 또는 null 이어야 합니다."
 
         corporate = cast(Dict[str, Any], config.get("corporate", {}))
+        monthly_bookkeeping_fee = float(corporate.get("monthly_bookkeeping_fee") or 0.0)
+        annual_corp_tax_adjustment_fee = float(
+            corporate.get("annual_corp_tax_adjustment_fee") or 0.0
+        )
+        if monthly_bookkeeping_fee < 0:
+            return "corporate.monthly_bookkeeping_fee는 음수일 수 없습니다."
+        if annual_corp_tax_adjustment_fee < 0:
+            return "corporate.annual_corp_tax_adjustment_fee는 음수일 수 없습니다."
         corp_tax_nominal_rate = float(corporate.get("corp_tax_nominal_rate") or 0.0)
         if corp_tax_nominal_rate not in {0.10, 0.20, 0.22, 0.25}:
             return "corporate.corp_tax_nominal_rate는 10%, 20%, 22%, 25% 중 하나여야 합니다."
@@ -1144,7 +1187,10 @@ class DividendBackend:
         current_assets = float(personal_assets.get("investment_assets") or 0.0)
         tr = float(assumptions["tr"])
         simulation_years = int(assumptions["simulation_years"])
-        monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
+        operating_costs = self._get_annual_corporate_operating_cost(corporate)
+        monthly_bookkeeping_fee = operating_costs["monthly_bookkeeping_fee"]
+        annual_corp_tax_adjustment_fee = operating_costs["annual_corp_tax_adjustment_fee"]
+        fixed_cost_annual = operating_costs["annual_operating_cost"]
         # 고정비 및 급여 기반 비용 산출
         company_health_total = 0.0
         employee_health_total = 0.0
@@ -1172,7 +1218,6 @@ class DividendBackend:
 
         # 1년차 계산
         annual_revenue = current_assets * tr
-        fixed_cost_annual = monthly_fixed_cost * 12
         # 위 근사는 복잡하므로 정확히 계산:
         company_social_insurance = total_gross_salary * (
             tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
@@ -1266,6 +1311,8 @@ class DividendBackend:
                 * (1 + tax_engine.ltc_rate),
                 "social_insurance": total_social_insurance,
                 "fixed_cost": fixed_cost_annual,
+                "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
+                "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
                 "gross_salary": total_gross_salary,
                 "company_insurance_cost": company_social_insurance,
                 "payroll_tax_withholding": payroll_tax,
@@ -1280,6 +1327,11 @@ class DividendBackend:
                         "nominal_rate": tax_engine.corp_tax_nominal_rate,
                         "effective_rate": tax_engine.corp_tax_effective_rate,
                         "tax_rate_low": tax_engine.corp_tax_effective_rate,
+                    },
+                    "operating_costs": {
+                        "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
+                        "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
+                        "annual_total": fixed_cost_annual,
                     },
                     "health": {"is_employee": True, "recipients": len(salary_recipients)},
                 },
@@ -1302,7 +1354,9 @@ class DividendBackend:
         tr = float(assumptions["tr"])
         simulation_years = int(assumptions["simulation_years"])
         annual_target_cash = float(assumptions["target_monthly_household_cash_after_tax"]) * 12
-        monthly_fixed_cost = float(corporate.get("monthly_fixed_cost") or 0.0)
+        operating_costs = self._get_annual_corporate_operating_cost(corporate)
+        monthly_bookkeeping_fee = operating_costs["monthly_bookkeeping_fee"]
+        annual_corp_tax_adjustment_fee = operating_costs["annual_corp_tax_adjustment_fee"]
         company_health_component = 0.0
         employee_health_component = 0.0
         social_insurance = 0.0
@@ -1337,7 +1391,7 @@ class DividendBackend:
                 monthly_salary * (tax_engine.pension_rate + tax_engine.employment_rate) * 12
             )
 
-        fixed_cost_annual = monthly_fixed_cost * 12
+        fixed_cost_annual = operating_costs["annual_operating_cost"]
         company_insurance_total = gross_salary_annual * (
             tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
         )
@@ -1444,6 +1498,8 @@ class DividendBackend:
                 "health_insurance": annual_health,
                 "social_insurance": social_insurance,
                 "fixed_cost": fixed_cost_annual,
+                "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
+                "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
                 "gross_salary": gross_salary_annual,
                 "company_insurance_cost": company_insurance_total,
                 "payroll_tax_withholding": payroll_tax_withholding,
@@ -1458,6 +1514,11 @@ class DividendBackend:
                         "nominal_rate": tax_engine.corp_tax_nominal_rate,
                         "effective_rate": tax_engine.corp_tax_effective_rate,
                         "tax_rate_low": tax_engine.corp_tax_effective_rate,
+                    },
+                    "operating_costs": {
+                        "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
+                        "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
+                        "annual_total": fixed_cost_annual,
                     },
                     "health": {"is_employee": True, "recipients": len(salary_recipients)},
                 },

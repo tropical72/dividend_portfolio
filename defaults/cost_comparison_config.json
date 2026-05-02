@@ -23,7 +23,8 @@
                 "monthly_salary": 2000000
             }
         ],
-        "monthly_fixed_cost": 500000,
+        "monthly_bookkeeping_fee": 500000,
+        "annual_corp_tax_adjustment_fee": 0,
         "corp_tax_nominal_rate": 0.1,
         "initial_shareholder_loan": 1590000000,
         "annual_shareholder_loan_repayment": 90000000

@@ -195,9 +195,12 @@ const translations = {
     "settings.salary": "Salary",
     "settings.salaryTooltip":
       "Monthly gross salary paid to yourself. Used for insurance calculations.",
-    "settings.fixedCost": "Fixed Cost",
-    "settings.fixedCostTooltip":
-      "Monthly fixed corporate expenses such as rent and bookkeeping.",
+    "settings.monthlyBookkeepingFee": "Monthly Bookkeeping Fee",
+    "settings.monthlyBookkeepingFeeTooltip":
+      "Recurring monthly corporate admin costs such as bookkeeping and basic filing support.",
+    "settings.annualTaxAdjustmentFee": "Annual Tax Adjustment Fee",
+    "settings.annualTaxAdjustmentFeeTooltip":
+      "Annual year-end tax adjustment and corporate filing fee applied once per year.",
     "settings.corpTaxRate": "Corporate Tax Rate",
     "settings.corpTaxRateTooltip":
       "Nominal corporate tax rate shown in tax tables. Calculations apply local income tax, so 10% is calculated as 11%.",
@@ -373,7 +376,8 @@ const translations = {
     "costComparison.paRate": "Price Appreciation",
     "costComparison.simulationYears": "Simulation Years",
     "costComparison.targetMonthlyCash": "Target After-tax Monthly Cash",
-    "costComparison.monthlyFixedCost": "Monthly Fixed Cost",
+    "costComparison.monthlyBookkeepingFee": "Monthly Bookkeeping Fee",
+    "costComparison.annualTaxAdjustmentFee": "Annual Tax Adjustment Fee",
     "costComparison.corpTaxRate": "Corporate Tax Rate",
     "costComparison.masterPortfolio": "Master Portfolio",
     "costComparison.initialLoan": "Initial Shareholder Loan",
@@ -479,8 +483,10 @@ const translations = {
       "Shows whether the current result was calculated in target-driven mode or asset-driven mode.",
     "costComparison.tooltip.targetMonthlyCash":
       "Target after-tax monthly household cash that both scenarios must deliver.",
-    "costComparison.tooltip.monthlyFixedCost":
-      "Recurring monthly corporate operating expenses such as rent, bookkeeping, and administration.",
+    "costComparison.tooltip.monthlyBookkeepingFee":
+      "Recurring monthly corporate admin costs such as bookkeeping and basic filing support.",
+    "costComparison.tooltip.annualTaxAdjustmentFee":
+      "Annual tax adjustment and filing fee applied once per year as part of corporate operating costs.",
     "costComparison.tooltip.corpTaxRate":
       "Select the nominal corporate tax rate. The simulation applies local income tax, so 10% is calculated as 11%.",
     "costComparison.tooltip.masterPortfolio":
@@ -754,9 +760,12 @@ const translations = {
     "settings.salary": "월 급여",
     "settings.salaryTooltip":
       "본인에게 지급할 세전 월 급여입니다. 보험료 계산 기준이 됩니다.",
-    "settings.fixedCost": "고정비",
-    "settings.fixedCostTooltip":
-      "임대료, 기장료 등 법인 유지에 필요한 월 고정 비용입니다.",
+    "settings.monthlyBookkeepingFee": "월 기장비",
+    "settings.monthlyBookkeepingFeeTooltip":
+      "매월 반복되는 기장료와 기본 신고 대행비 등 법인 유지비입니다.",
+    "settings.annualTaxAdjustmentFee": "연 법인세 조정료",
+    "settings.annualTaxAdjustmentFeeTooltip":
+      "결산/세무조정 시 연 1회 발생하는 법인세 조정료입니다.",
     "settings.corpTaxRate": "법인세율",
     "settings.corpTaxRateTooltip":
       "세율표에서 말하는 명목 법인세율입니다. 실제 계산은 지방소득세를 포함해 10% 선택 시 11%로 반영합니다.",
@@ -922,7 +931,8 @@ const translations = {
     "costComparison.paRate": "기대주가상승률",
     "costComparison.simulationYears": "시뮬레이션 기간",
     "costComparison.targetMonthlyCash": "목표 세후 월현금",
-    "costComparison.monthlyFixedCost": "월 고정비",
+    "costComparison.monthlyBookkeepingFee": "월 기장비",
+    "costComparison.annualTaxAdjustmentFee": "연 법인세 조정료",
     "costComparison.corpTaxRate": "법인세율",
     "costComparison.masterPortfolio": "마스터 전략",
     "costComparison.initialLoan": "초기 주주대여금",
@@ -1027,8 +1037,10 @@ const translations = {
       "현재 결과가 목표 수익 기반인지, 보유 자산 기반인지 보여줍니다.",
     "costComparison.tooltip.targetMonthlyCash":
       "두 시나리오가 동일하게 만들어야 하는 가계 세후 월현금 목표입니다.",
-    "costComparison.tooltip.monthlyFixedCost":
-      "임차료, 기장료, 관리비 등 법인에서 반복적으로 나가는 월 고정 운영비입니다.",
+    "costComparison.tooltip.monthlyBookkeepingFee":
+      "기장료와 기본 신고 대행비처럼 매월 반복되는 법인 운영비입니다.",
+    "costComparison.tooltip.annualTaxAdjustmentFee":
+      "결산/세무조정 시 연 1회 발생하는 법인세 조정료입니다.",
     "costComparison.tooltip.corpTaxRate":
       "세율표에서 말하는 명목 법인세율을 선택합니다. 시뮬레이션 계산은 지방소득세를 포함해 10% 선택 시 11%로 반영합니다.",
     "costComparison.tooltip.masterPortfolio":

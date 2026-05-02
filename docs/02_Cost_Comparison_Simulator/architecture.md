@@ -80,7 +80,8 @@
   },
   "corporate": {
     "salary_recipients": [],
-    "monthly_fixed_cost": 0,
+    "monthly_bookkeeping_fee": 0,
+    "annual_corp_tax_adjustment_fee": 0,
     "initial_shareholder_loan": 0,
     "annual_shareholder_loan_repayment": 0
   },
@@ -170,7 +171,8 @@
 입력:
 - 법인 투자자산 총액
 - 급여 수령자 목록
-- 월 고정 운영비
+- 월 기장비
+- 연 법인세 조정료
 - 초기 주주대여금
 - 연간 주주대여금 상환액
 - 가구 정보
@@ -181,7 +183,7 @@
 - 법인세
 - 급여 총액
 - 4대보험 및 직장건보료
-- 고정 운영비
+- 연간 운영비(`월 기장비 x 12 + 연 법인세 조정료`)
 - 실제 상환된 주주대여금
 - 연 총비용
 - 월 실수령액
@@ -393,6 +395,7 @@
 ```
 
 주의:
+- `fixed_cost`는 출력에서는 연간 운영비 총합을 의미하며, 내부 입력은 `monthly_bookkeeping_fee`와 `annual_corp_tax_adjustment_fee`로 분리된다.
 - `shareholder_loan_repayment`은 비용이 아니라 가구 유입 항목이므로 워터폴에서는 별도 방향으로 표현해야 한다.
 - `retained_earnings`도 비용이 아니라 내부 축적 항목이므로 총비용 차트와는 분리 표시가 필요하다.
 

@@ -56,7 +56,8 @@ def _build_config_payload():
                     "is_employee_insured": True,
                 }
             ],
-            "monthly_fixed_cost": 500000,
+            "monthly_bookkeeping_fee": 500000,
+            "annual_corp_tax_adjustment_fee": 1200000,
             "corp_tax_nominal_rate": 0.1,
             "initial_shareholder_loan": 500000000,
             "annual_shareholder_loan_repayment": 108000000,
@@ -128,6 +129,8 @@ def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
     assert data["assumptions"]["price_appreciation_rate"] == 3.0
     assert data["assumptions"]["target_monthly_household_cash_after_tax"] == 10000000
     assert data["corporate"]["salary_recipients"][0]["monthly_salary"] == 3000000
+    assert data["corporate"]["monthly_bookkeeping_fee"] == 500000
+    assert data["corporate"]["annual_corp_tax_adjustment_fee"] == 1200000
     assert data["corporate"]["corp_tax_nominal_rate"] == 0.1
 
     with open(tmp_path / "cost_comparison_config.json", "r", encoding="utf-8") as handle:
@@ -135,6 +138,8 @@ def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
 
     assert saved["assumptions"]["simulation_years"] == 5
     assert saved["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
+    assert saved["corporate"]["monthly_bookkeeping_fee"] == 500000
+    assert saved["corporate"]["annual_corp_tax_adjustment_fee"] == 1200000
     assert saved["corporate"]["corp_tax_nominal_rate"] == 0.1
     assert saved["corporate"]["annual_shareholder_loan_repayment"] == 108000000
 
@@ -277,6 +282,50 @@ def test_cost_comparison_corporate_tax_rate_override_changes_tax(tmp_path, monke
     assert high_tax > low_tax
     assert high_audit["nominal_rate"] == 0.22
     assert high_audit["effective_rate"] == pytest.approx(0.242)
+
+
+def test_cost_comparison_operating_cost_split_affects_tax_base_and_total_cost(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    richer_payload = _build_config_payload()
+    richer_payload["simulation_mode"] = "asset"
+    richer_payload["personal_assets"]["investment_assets"] = 5000000000
+    richer_payload["corporate"]["monthly_bookkeeping_fee"] = 400000
+    richer_payload["corporate"]["annual_corp_tax_adjustment_fee"] = 3000000
+
+    richer_response = client.post("/api/cost-comparison/run", json=richer_payload)
+    assert richer_response.status_code == 200
+    assert richer_response.json()["success"] is True
+
+    lean_payload = _build_config_payload()
+    lean_payload["simulation_mode"] = "asset"
+    lean_payload["personal_assets"]["investment_assets"] = 5000000000
+    lean_payload["corporate"]["monthly_bookkeeping_fee"] = 400000
+    lean_payload["corporate"]["annual_corp_tax_adjustment_fee"] = 0
+
+    lean_response = client.post("/api/cost-comparison/run", json=lean_payload)
+    assert lean_response.status_code == 200
+    assert lean_response.json()["success"] is True
+
+    richer_breakdown = richer_response.json()["data"]["corporate"]["breakdown"]
+    lean_breakdown = lean_response.json()["data"]["corporate"]["breakdown"]
+    richer_operating_costs = richer_breakdown["audit_details"]["operating_costs"]
+
+    assert richer_breakdown["monthly_bookkeeping_fee"] == 400000
+    assert richer_breakdown["annual_corp_tax_adjustment_fee"] == 3000000
+    assert richer_breakdown["fixed_cost"] == pytest.approx((400000 * 12) + 3000000)
+    assert richer_operating_costs["monthly_bookkeeping_fee"] == 400000
+    assert richer_operating_costs["annual_corp_tax_adjustment_fee"] == 3000000
+    assert richer_operating_costs["annual_total"] == pytest.approx((400000 * 12) + 3000000)
+    assert (
+        richer_breakdown["audit_details"]["corp_tax"]["tax_base"]
+        < lean_breakdown["audit_details"]["corp_tax"]["tax_base"]
+    )
+    assert richer_breakdown["tax"] < lean_breakdown["tax"]
 
 
 def test_cost_comparison_winner_follows_higher_annual_net_cashflow(tmp_path, monkeypatch):

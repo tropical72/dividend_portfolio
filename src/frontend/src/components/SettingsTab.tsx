@@ -168,6 +168,15 @@ export function SettingsTab({
     if (globalRetireConfig) {
       setRetireConfig({
         ...JSON.parse(JSON.stringify(globalRetireConfig)),
+        corp_params: {
+          ...globalRetireConfig.corp_params,
+          monthly_bookkeeping_fee:
+            globalRetireConfig.corp_params?.monthly_bookkeeping_fee ??
+            globalRetireConfig.corp_params?.monthly_fixed_cost ??
+            0,
+          annual_corp_tax_adjustment_fee:
+            globalRetireConfig.corp_params?.annual_corp_tax_adjustment_fee ?? 0,
+        },
         tax_and_insurance: {
           ...globalRetireConfig.tax_and_insurance,
           corp_tax_nominal_rate:
@@ -610,7 +619,7 @@ export function SettingsTab({
                 }
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-800 pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 border-t border-slate-800 pt-6">
               <InputGroup
                 label={t("settings.salary")}
                 isCurrency
@@ -627,16 +636,37 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label={t("settings.fixedCost")}
+                label={t("settings.monthlyBookkeepingFee")}
                 isCurrency
-                tooltip={t("settings.fixedCostTooltip")}
-                value={retireConfig.corp_params.monthly_fixed_cost}
+                tooltip={t("settings.monthlyBookkeepingFeeTooltip")}
+                value={
+                  retireConfig.corp_params.monthly_bookkeeping_fee ??
+                  retireConfig.corp_params.monthly_fixed_cost ??
+                  0
+                }
                 onChange={(v) =>
                   setRetireConfig({
                     ...retireConfig,
                     corp_params: {
                       ...retireConfig.corp_params,
-                      monthly_fixed_cost: parseInt(v) || 0,
+                      monthly_bookkeeping_fee: parseInt(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.annualTaxAdjustmentFee")}
+                isCurrency
+                tooltip={t("settings.annualTaxAdjustmentFeeTooltip")}
+                value={
+                  retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0
+                }
+                onChange={(v) =>
+                  setRetireConfig({
+                    ...retireConfig,
+                    corp_params: {
+                      ...retireConfig.corp_params,
+                      annual_corp_tax_adjustment_fee: parseInt(v) || 0,
                     },
                   })
                 }

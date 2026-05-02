@@ -266,7 +266,8 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         "corp_params": [
             "initial_investment",
             "monthly_salary",
-            "monthly_fixed_cost",
+            "monthly_bookkeeping_fee",
+            "annual_corp_tax_adjustment_fee",
             "employee_count",
             "initial_shareholder_loan",
         ],
@@ -305,6 +306,10 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
 
     # 2. 기초 자산 구성
     corp_params = config["corp_params"]
+    monthly_bookkeeping_fee = float(
+        corp_params.get("monthly_bookkeeping_fee", corp_params.get("monthly_fixed_cost", 0)) or 0
+    )
+    annual_corp_tax_adjustment_fee = float(corp_params.get("annual_corp_tax_adjustment_fee") or 0)
     pension_params = config["pension_params"]
     initial_assets = {
         "corp": corp_params["initial_investment"],
@@ -394,7 +399,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],
         "planned_cashflows": config.get("planned_cashflows", []),
         "corp_salary": corp_params["monthly_salary"],
-        "corp_fixed_cost": corp_params["monthly_fixed_cost"],
+        "corp_fixed_cost": monthly_bookkeeping_fee + (annual_corp_tax_adjustment_fee / 12.0),
         "employee_count": corp_params["employee_count"],
         "real_estate_price": config.get("personal_params", {}).get("real_estate_price") or 0,
         "rebalance_month": strategy_rules.get("rebalance_month", 1),

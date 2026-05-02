@@ -48,7 +48,8 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-pa-rate").fill("3");
     await page.getByTestId("cc-simulation-years").fill("5");
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
-    await page.getByTestId("cc-monthly-fixed-cost").fill("500000");
+    await page.getByTestId("cc-monthly-bookkeeping-fee").fill("500000");
+    await page.getByTestId("cc-annual-tax-adjustment-fee").fill("1200000");
     await page.getByTestId("cc-corp-tax-rate").selectOption("0.22");
     await page.getByTestId("cc-salary-0").fill("3000000");
     await page.getByTestId("cc-mode-target").click();
@@ -67,6 +68,12 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-simulation-years")).toHaveValue("5");
     await expect(page.getByTestId("cc-target-monthly-cash")).toHaveValue(
       "10,000,000",
+    );
+    await expect(page.getByTestId("cc-monthly-bookkeeping-fee")).toHaveValue(
+      "500,000",
+    );
+    await expect(page.getByTestId("cc-annual-tax-adjustment-fee")).toHaveValue(
+      "1,200,000",
     );
     await expect(page.getByTestId("cc-salary-0")).toHaveValue("3,000,000");
     await expect(page.getByTestId("cc-corp-tax-rate")).toHaveValue("0.22");
@@ -88,6 +95,14 @@ test.describe("Cost Comparison Simulator", () => {
     expect(
       runPayload.data.corporate.breakdown.audit_details.corp_tax.effective_rate,
     ).toBeCloseTo(0.242);
+    expect(
+      runPayload.data.corporate.breakdown.audit_details.operating_costs
+        .monthly_bookkeeping_fee,
+    ).toBe(500000);
+    expect(
+      runPayload.data.corporate.breakdown.audit_details.operating_costs
+        .annual_corp_tax_adjustment_fee,
+    ).toBe(1200000);
 
     await expect(page.getByTestId("cc-assumption-portfolio")).toBeVisible();
     await expect(page.getByTestId("cc-assumption-corp-tax-rate")).toContainText(

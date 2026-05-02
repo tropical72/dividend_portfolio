@@ -150,7 +150,9 @@ export interface RetirementConfig {
     capital_stock: number;
     initial_shareholder_loan: number;
     monthly_salary: number;
-    monthly_fixed_cost: number;
+    monthly_bookkeeping_fee?: number;
+    annual_corp_tax_adjustment_fee?: number;
+    monthly_fixed_cost?: number;
     employee_count: number;
   };
   pension_params: {
@@ -281,7 +283,9 @@ export interface CostComparisonConfig {
   };
   corporate: {
     salary_recipients: CostComparisonSalaryRecipient[];
-    monthly_fixed_cost: number;
+    monthly_bookkeeping_fee?: number;
+    annual_corp_tax_adjustment_fee?: number;
+    monthly_fixed_cost?: number;
     corp_tax_nominal_rate: number;
     initial_shareholder_loan: number;
     annual_shareholder_loan_repayment: number;
@@ -313,6 +317,8 @@ export interface CostComparisonScenarioResult {
     health_insurance: number;
     social_insurance: number;
     fixed_cost: number;
+    monthly_bookkeeping_fee?: number;
+    annual_corp_tax_adjustment_fee?: number;
     gross_salary?: number;
     company_insurance_cost?: number;
     payroll_tax_withholding: number;
@@ -346,6 +352,11 @@ export interface CostComparisonScenarioResult {
         nominal_rate?: number;
         effective_rate?: number;
         tax_rate_low?: number;
+      };
+      operating_costs?: {
+        monthly_bookkeeping_fee?: number;
+        annual_corp_tax_adjustment_fee?: number;
+        annual_total?: number;
       };
     };
   };
