@@ -105,7 +105,6 @@ function App() {
         }));
       return [...prev, ...itemsToAdd];
     });
-    setActiveTab("assets"); // 자산 관리 탭으로 전환
   };
 
   return (

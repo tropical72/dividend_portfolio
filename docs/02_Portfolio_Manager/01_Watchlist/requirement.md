@@ -23,6 +23,9 @@
 - **[REQ-WCH-02.3] 상태 알림:** 추가 성공 시 상태바(Status Bar)에 일시적 메시지 표시 ([GS-UI-02] 준수).
 - **[REQ-WCH-02.4] 삭제 확인:** 종목 삭제 시 사용자 확인 대화상자(Confirm Dialog) 표시.
 - **[REQ-WCH-02.5] 데이터 무결성 보호:** 포트폴리오(저장된 것 및 현재 탭 구성 중인 것 포함)에 포함된 종목은 삭제를 방지하고 경고 표시.
+- **[REQ-WCH-02.6] 포트폴리오 추가 후 탭 유지 [NEW]:**
+    - 관심종목에서 종목을 포트폴리오에 추가하더라도 화면을 `포트폴리오 관리` 탭으로 자동 전환해서는 안 된다.
+    - 사용자는 연속해서 여러 종목을 관심종목에서 선택/추가할 수 있어야 하며, 현재 보고 있던 `관심종목` 화면과 스크롤 문맥을 유지해야 한다.
 
 ## [REQ-WCH-03] 데이터 표시 및 기능
 - **[REQ-WCH-03.1] 필수 컬럼:** Ticker, Name(긴 이름은 두 줄 이상으로 표시), Price, Annual Yield(%), 1-Yr Total Return(%), Last Ex-Div Date, Last Dividend Amount, Last Div Yield(%), Past Avg. Monthly Div.
