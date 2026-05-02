@@ -107,6 +107,52 @@ def _create_high_yield_master(backend: DividendBackend) -> str:
     return str(master["id"])
 
 
+def _create_category_pa_master(
+    backend: DividendBackend,
+    *,
+    name: str,
+    corp_category: str,
+    pension_category: str,
+    dividend_yield: float = 4.0,
+) -> str:
+    corp_portfolio = backend.add_portfolio(
+        name=f"{name} Corporate",
+        account_type="Corporate",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": f"{name[:4].upper()}C",
+                "name": f"{name} Corp",
+                "weight": 100,
+                "category": corp_category,
+                "dividend_yield": dividend_yield,
+            }
+        ],
+    )["data"]
+    pension_portfolio = backend.add_portfolio(
+        name=f"{name} Pension",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": f"{name[:4].upper()}P",
+                "name": f"{name} Pension",
+                "weight": 100,
+                "category": pension_category,
+                "dividend_yield": dividend_yield,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name=name,
+        corp_id=corp_portfolio["id"],
+        pension_id=pension_portfolio["id"],
+    )["data"]
+    return str(master["id"])
+
+
 def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
@@ -231,6 +277,48 @@ def test_cost_comparison_run_uses_saved_master_portfolio_override(tmp_path, monk
         override_data["personal"]["breakdown"]["annual_revenue"]
         > active_data["personal"]["breakdown"]["annual_revenue"]
     )
+
+
+def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    conservative_master_id = _create_category_pa_master(
+        backend,
+        name="CCS Conservative Mix",
+        corp_category="High Income",
+        pension_category="Bond Buffer",
+    )
+    growth_master_id = _create_category_pa_master(
+        backend,
+        name="CCS Growth Mix",
+        corp_category="Growth Engine",
+        pension_category="Growth Engine",
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    conservative_payload = _build_config_payload()
+    conservative_payload["simulation_mode"] = "asset"
+    conservative_payload["master_portfolio_id"] = conservative_master_id
+    conservative_response = client.post("/api/cost-comparison/run", json=conservative_payload)
+    assert conservative_response.status_code == 200
+    assert conservative_response.json()["success"] is True
+
+    growth_payload = _build_config_payload()
+    growth_payload["simulation_mode"] = "asset"
+    growth_payload["master_portfolio_id"] = growth_master_id
+    growth_response = client.post("/api/cost-comparison/run", json=growth_payload)
+    assert growth_response.status_code == 200
+    assert growth_response.json()["success"] is True
+
+    conservative = conservative_response.json()["data"]["assumptions"]
+    growth = growth_response.json()["data"]["assumptions"]
+
+    assert conservative["dy"] == pytest.approx(growth["dy"])
+    assert conservative["pa"] == pytest.approx(0.01)
+    assert growth["pa"] == pytest.approx(0.05)
+    assert conservative["tr"] == pytest.approx(conservative["dy"] + conservative["pa"])
+    assert growth["tr"] == pytest.approx(growth["dy"] + growth["pa"])
+    assert growth["tr"] > conservative["tr"]
 
 
 def test_cost_comparison_run_fails_when_saved_master_portfolio_is_missing(tmp_path, monkeypatch):

@@ -68,10 +68,10 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
 };
 
 const DEFAULT_APPRECIATION_RATES = {
-  cash_sgov: 0.1,
-  fixed_income: 2.5,
-  dividend_stocks: 5.5,
-  growth_stocks: 9.5,
+  cash_sgov: 0.0,
+  fixed_income: 1.0,
+  dividend_stocks: 3.0,
+  growth_stocks: 5.0,
 };
 
 const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];

@@ -13,7 +13,7 @@
         "ownership_ratio": 1
     },
     "assumptions": {
-        "price_appreciation_rate": 5.5,
+        "price_appreciation_rate": 3.0,
         "simulation_years": 30,
         "target_monthly_household_cash_after_tax": 4000000
     },

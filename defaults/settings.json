@@ -2,12 +2,12 @@
     "default_capital": 10000.0,
     "default_currency": "USD",
     "current_exchange_rate": 1485.219970703125,
-    "price_appreciation_rate": 5.5,
+    "price_appreciation_rate": 3.0,
     "appreciation_rates": {
-        "cash_sgov": 0.1,
-        "fixed_income": 2.5,
-        "dividend_stocks": 5.5,
-        "growth_stocks": 9.5
+        "cash_sgov": 0.0,
+        "fixed_income": 1.0,
+        "dividend_stocks": 3.0,
+        "growth_stocks": 5.0
     },
     "exchange_rate_cache": {
         "last_fetch": "2026-04-24T16:00:23.042794",

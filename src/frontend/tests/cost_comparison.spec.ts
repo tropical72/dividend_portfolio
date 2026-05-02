@@ -45,7 +45,6 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-pension-assets").fill("700000000");
     await page.getByTestId("cc-real-estate-value").fill("650000000");
     await page.getByTestId("cc-real-estate-ratio").fill("0.5");
-    await page.getByTestId("cc-pa-rate").fill("3");
     await page.getByTestId("cc-simulation-years").fill("5");
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
     await page.getByTestId("cc-monthly-bookkeeping-fee").fill("500000");
@@ -262,7 +261,6 @@ test.describe("Cost Comparison Simulator", () => {
     page,
   }) => {
     await page.getByTestId("cc-investment-assets").fill("1000000000");
-    await page.getByTestId("cc-pa-rate").fill("5");
     await page.getByTestId("cc-simulation-years").fill("2");
     await page.getByTestId("cc-mode-asset").click();
     await page.getByTestId("cc-save-button").click();

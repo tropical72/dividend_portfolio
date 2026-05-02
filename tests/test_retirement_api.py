@@ -1,8 +1,58 @@
+import pytest
 from fastapi.testclient import TestClient
 
+import src.backend.main as main_module
+from src.backend.api import DividendBackend
 from src.backend.main import app, backend
 
 client = TestClient(app)
+
+
+def _create_retirement_master(
+    backend: DividendBackend,
+    *,
+    name: str,
+    corp_category: str,
+    pension_category: str,
+    dividend_yield: float = 4.0,
+) -> str:
+    corp_portfolio = backend.add_portfolio(
+        name=f"{name} Corporate",
+        account_type="Corporate",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": f"{name[:4].upper()}C",
+                "name": f"{name} Corp",
+                "weight": 100,
+                "category": corp_category,
+                "dividend_yield": dividend_yield,
+            }
+        ],
+    )["data"]
+    pension_portfolio = backend.add_portfolio(
+        name=f"{name} Pension",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": f"{name[:4].upper()}P",
+                "name": f"{name} Pension",
+                "weight": 100,
+                "category": pension_category,
+                "dividend_yield": dividend_yield,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name=name,
+        corp_id=corp_portfolio["id"],
+        pension_id=pension_portfolio["id"],
+    )["data"]
+    backend.activate_master_portfolio(str(master["id"]))
+    return str(master["id"])
 
 
 def test_get_retirement_config():
@@ -256,6 +306,79 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     month1 = payload["data"]["monthly_data"][0]
     assert month1["month"] == 1
     assert month1["corp_balance"] == 120000
+
+
+def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    growth_master_id = _create_retirement_master(
+        backend,
+        name="Retirement Growth Mix",
+        corp_category="Growth Engine",
+        pension_category="Growth Engine",
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "user_profile": {
+                "birth_year": 1972,
+                "birth_month": 3,
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 100000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+        },
+    )
+
+    response = client.get("/api/retirement/simulate")
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+    meta = response.json()["data"]["meta"]
+    assert meta["master_name"] == "Retirement Growth Mix"
+    assert meta["combined_dy"] == pytest.approx(0.04)
+    assert meta["combined_tr"] == pytest.approx(0.09)
+    assert meta["pa_rate"] == pytest.approx(0.05)
+
+    conservative_master_id = _create_retirement_master(
+        backend,
+        name="Retirement Conservative Mix",
+        corp_category="High Income",
+        pension_category="Bond Buffer",
+    )
+    assert conservative_master_id != growth_master_id
+
+    response = client.get("/api/retirement/simulate")
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+    conservative_meta = response.json()["data"]["meta"]
+    assert conservative_meta["master_name"] == "Retirement Conservative Mix"
+    assert conservative_meta["combined_dy"] == pytest.approx(0.04)
+    assert conservative_meta["combined_tr"] == pytest.approx(0.05)
+    assert conservative_meta["pa_rate"] == pytest.approx(0.01)
 
 
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():

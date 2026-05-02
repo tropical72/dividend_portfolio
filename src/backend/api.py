@@ -859,11 +859,9 @@ class DividendBackend:
         calc_data = cast(Dict[str, Any], master_calc["data"])
         corp_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("corp_portfolio"))
         pension_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("pension_portfolio"))
-        pa_rate = float(
-            cast(Dict[str, Any], config.get("assumptions", {})).get("price_appreciation_rate", 0)
-        )
         dy = float(calc_data.get("combined_yield") or 0.0)
-        tr = dy + (pa_rate / 100.0)
+        tr = float(calc_data.get("combined_tr") or 0.0)
+        pa = max(0.0, tr - dy)
 
         return {
             "success": True,
@@ -878,7 +876,7 @@ class DividendBackend:
                     pension_portfolio.get("name", "-") if pension_portfolio else "-"
                 ),
                 "dy": dy,
-                "pa": pa_rate / 100.0,
+                "pa": pa,
                 "tr": tr,
                 "simulation_years": int(
                     cast(Dict[str, Any], config.get("assumptions", {})).get("simulation_years", 10)
@@ -1822,10 +1820,10 @@ class DividendBackend:
         a_rates = self.settings.get(
             "appreciation_rates",
             {
-                "cash_sgov": 0.1,
-                "fixed_income": 2.5,
-                "dividend_stocks": 5.5,
-                "growth_stocks": 9.5,
+                "cash_sgov": 0.0,
+                "fixed_income": 1.0,
+                "dividend_stocks": 3.0,
+                "growth_stocks": 5.0,
             },
         )
 
@@ -1844,13 +1842,13 @@ class DividendBackend:
             cat_name = item.get("category", "Growth Engine")
             pa = 0.0
             if cat_name == "SGOV Buffer":
-                pa = a_rates.get("cash_sgov", 0.1)
+                pa = a_rates.get("cash_sgov", 0.0)
             elif cat_name in ["High Income", "Bond Buffer"]:
-                pa = a_rates.get("fixed_income", 2.5)
+                pa = a_rates.get("fixed_income", 1.0)
             elif cat_name == "Dividend Growth":
-                pa = a_rates.get("dividend_stocks", 5.5)
+                pa = a_rates.get("dividend_stocks", 3.0)
             elif cat_name == "Growth Engine":
-                pa = a_rates.get("growth_stocks", 9.5)
+                pa = a_rates.get("growth_stocks", 5.0)
 
             div_y = float(item.get("dividend_yield") or 0.0)
             # TR(expected_return) = (배당수익률 + 기대주가상승률) * 비중

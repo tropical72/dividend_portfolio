@@ -557,17 +557,6 @@ export function CostComparisonTab() {
             }
           />
           <NumberField
-            label={t("costComparison.paRate")}
-            testId="cc-pa-rate"
-            step="0.1"
-            tooltip={t("costComparison.tooltip.paRate")}
-            unit="%"
-            value={config.assumptions.price_appreciation_rate}
-            onChange={(value) =>
-              updateConfig("assumptions", "price_appreciation_rate", value)
-            }
-          />
-          <NumberField
             label={t("costComparison.simulationYears")}
             testId="cc-simulation-years"
             tooltip={t("costComparison.tooltip.simulationYears")}
@@ -1669,10 +1658,8 @@ function ScenarioCard({
         <button
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
           data-testid={`${testIdPrefix}-detail-button`}
-          onClick={(event) => {
-            const viewportWidth = window.innerWidth;
+          onClick={() => {
             const viewportHeight = window.innerHeight;
-            const popupWidth = Math.min(1240, viewportWidth - 16);
             const left = 8;
 
             window.scrollTo({
