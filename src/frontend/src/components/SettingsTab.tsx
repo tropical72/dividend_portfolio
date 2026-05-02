@@ -1321,6 +1321,7 @@ export function SettingsTab({
                 label={t("settings.catCash")}
                 unit="%"
                 value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
+                fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
@@ -1335,6 +1336,7 @@ export function SettingsTab({
                 label={t("settings.catFixed")}
                 unit="%"
                 value={(settings.appreciation_rates?.fixed_income || 0) * 1}
+                fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
@@ -1349,6 +1351,7 @@ export function SettingsTab({
                 label={t("settings.catDividend")}
                 unit="%"
                 value={(settings.appreciation_rates?.dividend_stocks || 0) * 1}
+                fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
@@ -1363,6 +1366,7 @@ export function SettingsTab({
                 label={t("settings.catGrowth")}
                 unit="%"
                 value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
+                fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
@@ -1447,7 +1451,7 @@ export function SettingsTab({
                       initialValue={
                         (item.master_inflation || item.inflation_rate) * 100
                       }
-                      systemDefault={id === "v1" ? 0.025 : 0.035}
+                      systemDefault={(id === "v1" ? 0.025 : 0.035) * 100}
                       tooltip={t("settings.inflationRateTooltip")}
                       resetTitle={t("settings.restoreSystemDefault")}
                       onCommit={(v) =>
@@ -1736,6 +1740,7 @@ function InputGroup({
   tooltip,
   tooltipAlign = "left",
   testId,
+  fractionDigits,
 }: {
   label: string;
   value: number;
@@ -1745,13 +1750,20 @@ function InputGroup({
   tooltip?: string;
   tooltipAlign?: "left" | "right";
   testId?: string;
+  fractionDigits?: number;
 }) {
   const { isKorean } = useI18n();
-  const formatDisplayValue = (nextValue: number | string) => {
+  const formatDisplayValue = (
+    nextValue: number | string,
+    fixedDigits?: number,
+  ) => {
     const raw = String(nextValue ?? "");
     if (raw === "") return "";
 
-    const normalized = raw.replace(/,/g, "");
+    const normalized =
+      typeof nextValue === "number" && fixedDigits !== undefined
+        ? nextValue.toFixed(fixedDigits)
+        : raw.replace(/,/g, "");
     const [integerPart = "", decimalPart] = normalized.split(".");
     const formattedInteger =
       integerPart === ""
@@ -1766,14 +1778,16 @@ function InputGroup({
 
     return formattedInteger;
   };
-  const [inputValue, setInputValue] = useState(() => formatDisplayValue(value));
+  const [inputValue, setInputValue] = useState(() =>
+    formatDisplayValue(value, fractionDigits),
+  );
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     if (!isFocused) {
-      setInputValue(formatDisplayValue(value));
+      setInputValue(formatDisplayValue(value, fractionDigits));
     }
-  }, [isFocused, value]);
+  }, [fractionDigits, isFocused, value]);
 
   return (
     <div
@@ -1818,7 +1832,7 @@ function InputGroup({
           onBlur={() => {
             setIsFocused(false);
             if (inputValue === "") {
-              setInputValue(formatDisplayValue(value));
+              setInputValue(formatDisplayValue(value, fractionDigits));
             }
           }}
           onChange={(e) => {
@@ -1973,24 +1987,24 @@ function PercentRuleInput({
   testId?: string;
 }) {
   const { isKorean } = useI18n();
-  const [draft, setDraft] = useState(() => formatDecimalDraft(value * 100, 1));
+  const [draft, setDraft] = useState(() => formatDecimalDraft(value, 1));
 
   useEffect(() => {
-    setDraft(formatDecimalDraft(value * 100, 1));
+    setDraft(formatDecimalDraft(value, 1));
   }, [value]);
 
   const commitDraft = () => {
     const trimmed = draft.trim();
     if (!trimmed) {
-      setDraft(formatDecimalDraft(value * 100, 1));
+      setDraft(formatDecimalDraft(value, 1));
       return;
     }
     const parsed = Number(trimmed);
     if (!Number.isFinite(parsed)) {
-      setDraft(formatDecimalDraft(value * 100, 1));
+      setDraft(formatDecimalDraft(value, 1));
       return;
     }
-    onChange(parsed / 100);
+    onChange(parsed);
     setDraft(formatDecimalDraft(parsed, 1));
   };
 
