@@ -384,7 +384,7 @@ export function RetirementTab() {
                               {m.combined_tr !== undefined &&
                                 m.combined_tr !== null && (
                                   <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                                    {(m.combined_tr * 100).toFixed(2)}%
+                                    {m.combined_tr.toFixed(2)}%
                                   </span>
                                 )}
                               {m.broken_reference && (
