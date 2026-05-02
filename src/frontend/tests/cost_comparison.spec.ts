@@ -77,6 +77,13 @@ test.describe("Cost Comparison Simulator", () => {
     );
     await expect(page.getByTestId("cc-salary-0")).toHaveValue("3,000,000");
     await expect(page.getByTestId("cc-corp-tax-rate")).toHaveValue("0.22");
+    await expect(page.getByTestId("cc-mode-asset")).toHaveClass(
+      /bg-indigo-600/,
+    );
+    await expect(page.getByTestId("cc-mode-target")).not.toHaveClass(
+      /bg-indigo-600/,
+    );
+    await page.getByTestId("cc-mode-target").click();
 
     const runResponsePromise = page.waitForResponse(
       (response) =>
@@ -177,6 +184,55 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(
       page.getByTestId("cc-breakdown-total-corporate"),
     ).toBeVisible();
+
+    await page.getByTestId("cc-kpi-personal-detail-button").click();
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/비용 항목|Cost Line Items/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/건보료 계산식|Health Insurance Formula/i);
+    await page
+      .getByTestId("cc-kpi-personal-detail-applied-tax-rate-tooltip")
+      .focus();
+    await expect(
+      page.getByTestId(
+        "cc-kpi-personal-detail-applied-tax-rate-tooltip-content",
+      ),
+    ).toContainText(
+      /15\.4%|15\.40%|22%|comprehensive|separate|종합과세|분리과세/i,
+    );
+    await page.getByTestId("cc-kpi-personal-detail-close").click();
+    await expect(page.getByTestId("cc-kpi-personal-detail-modal")).toHaveCount(
+      0,
+    );
+
+    await page.getByTestId("cc-kpi-corporate-detail-button").click();
+    await expect(
+      page.getByTestId("cc-kpi-corporate-detail-modal"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("cc-kpi-corporate-detail-modal"),
+    ).toContainText(/운영비 계산식|Operating Cost Formula/i);
+    await expect(
+      page.getByTestId("cc-kpi-corporate-detail-modal"),
+    ).toContainText(/과세표준 계산식|Tax Base Formula/i);
+    await page
+      .getByTestId("cc-kpi-corporate-detail-applied-corp-tax-rate-tooltip")
+      .focus();
+    await expect(
+      page.getByTestId(
+        "cc-kpi-corporate-detail-applied-corp-tax-rate-tooltip-content",
+      ),
+    ).toContainText(/22%|24\.2%|effective|실효세율/i);
+    await page.getByTestId("cc-kpi-corporate-detail-close").click();
+    await expect(page.getByTestId("cc-kpi-corporate-detail-modal")).toHaveCount(
+      0,
+    );
+
     await expect(page.getByTestId("cc-cumulative-note")).toContainText(
       /필요 자산|필요한 투자자산|investment asset base|required assets/i,
     );
@@ -240,6 +296,43 @@ test.describe("Cost Comparison Simulator", () => {
     ).toContainText(/세후 수익률|net yield/i);
     await expect(page.getByTestId("cc-cumulative-chart")).toHaveCount(0);
     await expect(page.getByTestId("cc-household-cash-chart")).toHaveCount(0);
+  });
+
+  test("should default to asset-driven mode when opening the tab", async ({
+    page,
+    request,
+  }) => {
+    const seededState = JSON.parse(
+      JSON.stringify(originalState),
+    ) as BackendTestState & {
+      cost_comparison_config: {
+        simulation_mode?: "target" | "asset";
+      };
+    };
+
+    seededState.cost_comparison_config.simulation_mode = "target";
+    await restoreBackendState(request, seededState);
+
+    await page.reload();
+    await page.getByTestId("nav-cost-comparison").click();
+
+    const runResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/cost-comparison/run") &&
+        response.request().method() === "POST" &&
+        response.ok(),
+    );
+
+    await page.getByTestId("cc-run-button").click();
+    const runPayload = await (await runResponsePromise).json();
+
+    expect(runPayload.data.assumptions.simulation_mode).toBe("asset");
+    await expect(page.getByTestId("cc-mode-asset")).toHaveClass(
+      /bg-indigo-600/,
+    );
+    await expect(page.getByTestId("cc-mode-target")).not.toHaveClass(
+      /bg-indigo-600/,
+    );
   });
 
   test("should save and run with selected master portfolio", async ({

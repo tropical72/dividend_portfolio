@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { Info } from "lucide-react";
 import {
   Bar,
@@ -89,8 +89,8 @@ function formatKrw(value: number) {
   }).format(value || 0);
 }
 
-function formatPercent(value: number) {
-  return `${(value * 100).toFixed(2)}%`;
+function formatPercent(value: number, digits = 2) {
+  return `${(value * 100).toFixed(digits)}%`;
 }
 
 function formatAxisKrw(value: number) {
@@ -230,16 +230,10 @@ export function CostComparisonTab() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const normalizeConfig = (raw: CostComparisonConfig): CostComparisonConfig => {
-    const legacyMode = (
-      raw.assumptions as CostComparisonConfig["assumptions"] & {
-        simulation_mode?: "target" | "asset";
-      }
-    ).simulation_mode;
-
     return {
       ...raw,
       master_portfolio_id: raw.master_portfolio_id ?? null,
-      simulation_mode: raw.simulation_mode || legacyMode || "asset",
+      simulation_mode: "asset",
       corporate: {
         ...raw.corporate,
         monthly_bookkeeping_fee:
@@ -767,6 +761,7 @@ export function CostComparisonTab() {
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <ScenarioCard
+                  scenario="personal"
                   monthlyCashLabel={
                     result.assumptions.simulation_mode === "asset"
                       ? t("costComparison.disposableCash")
@@ -798,6 +793,7 @@ export function CostComparisonTab() {
                   totalCost={result.personal.kpis.annual_total_cost}
                   health={result.personal.kpis.annual_health_insurance}
                   growth={result.personal.kpis.required_assets}
+                  annualNetCashflow={result.personal.kpis.annual_net_cashflow}
                   growthValue={
                     result.assumptions.simulation_mode === "asset"
                       ? formatPercent(
@@ -805,9 +801,11 @@ export function CostComparisonTab() {
                         )
                       : undefined
                   }
+                  breakdown={result.personal.breakdown}
                   auditDetails={result.personal.breakdown.audit_details}
                 />
                 <ScenarioCard
+                  scenario="corporate"
                   monthlyCashLabel={
                     result.assumptions.simulation_mode === "asset"
                       ? t("costComparison.disposableCash")
@@ -839,6 +837,7 @@ export function CostComparisonTab() {
                   totalCost={result.corporate.kpis.annual_total_cost}
                   health={result.corporate.kpis.annual_health_insurance}
                   growth={result.corporate.kpis.required_assets}
+                  annualNetCashflow={result.corporate.kpis.annual_net_cashflow}
                   growthValue={
                     result.assumptions.simulation_mode === "asset"
                       ? formatPercent(
@@ -846,6 +845,7 @@ export function CostComparisonTab() {
                         )
                       : undefined
                   }
+                  breakdown={result.corporate.breakdown}
                   auditDetails={result.corporate.breakdown.audit_details}
                 />
               </div>
@@ -1587,6 +1587,7 @@ function AssumptionBadge({
 }
 
 function ScenarioCard({
+  scenario,
   title,
   testId,
   testIdPrefix,
@@ -1602,9 +1603,12 @@ function ScenarioCard({
   totalCost,
   health,
   growth,
+  annualNetCashflow,
   growthValue, // 추가: 숫자가 아닌 문자열 표시용 (예: % 수익률)
+  breakdown,
   auditDetails, // 추가: 상세 감사 내역
 }: {
+  scenario: "personal" | "corporate";
   title: string;
   testId: string;
   testIdPrefix: string;
@@ -1620,10 +1624,14 @@ function ScenarioCard({
   totalCost: number;
   health: number;
   growth: number;
+  annualNetCashflow: number;
   growthValue?: string;
+  breakdown: CostComparisonScenarioResult["breakdown"];
   auditDetails?: CostComparisonScenarioResult["breakdown"]["audit_details"];
 }) {
   const { t } = useI18n();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailPosition, setDetailPosition] = useState<CSSProperties>({});
   return (
     <div
       className="rounded-2xl border border-white/80 bg-white/82 p-5 shadow-sm"
@@ -1657,87 +1665,655 @@ function ScenarioCard({
         />
       </div>
 
-      {auditDetails && auditDetails.health && (
-        <div className="mt-6 border-t border-slate-200 pt-4">
-          <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            {t("costComparison.detailedAudit")}
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <button
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+          data-testid={`${testIdPrefix}-detail-button`}
+          onClick={(event) => {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const popupWidth = Math.min(1240, viewportWidth - 16);
+            const left = 8;
+
+            window.scrollTo({
+              top: 0,
+              behavior: "auto",
+            });
+            setDetailPosition({
+              left,
+              top: 2,
+              maxHeight:
+                scenario === "corporate"
+                  ? Math.max(1120, viewportHeight - 2)
+                  : Math.max(980, viewportHeight - 4),
+            });
+            setDetailOpen(true);
+          }}
+          type="button"
+        >
+          {t("costComparison.viewDetailedCosts")}
+        </button>
+      </div>
+
+      {detailOpen ? (
+        <ScenarioCostDetailModal
+          annualNetCashflow={annualNetCashflow}
+          breakdown={breakdown}
+          auditDetails={auditDetails}
+          onClose={() => setDetailOpen(false)}
+          position={detailPosition}
+          scenario={scenario}
+          testIdPrefix={testIdPrefix}
+          title={title}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ScenarioCostDetailModal({
+  scenario,
+  title,
+  testIdPrefix,
+  breakdown,
+  annualNetCashflow,
+  auditDetails,
+  position,
+  onClose,
+}: {
+  scenario: "personal" | "corporate";
+  title: string;
+  testIdPrefix: string;
+  breakdown: CostComparisonScenarioResult["breakdown"];
+  annualNetCashflow: number;
+  auditDetails?: CostComparisonScenarioResult["breakdown"]["audit_details"];
+  position: CSSProperties;
+  onClose: () => void;
+}) {
+  const { t, isKorean } = useI18n();
+  const isCorporate = scenario === "corporate";
+  const personalTaxRate = auditDetails?.tax?.tax_rate ?? 0;
+  const personalTaxMode = auditDetails?.tax?.is_comprehensive
+    ? isKorean
+      ? "종합과세"
+      : "comprehensive taxation"
+    : isKorean
+      ? "분리과세"
+      : "separate taxation";
+  const healthLtcRate = auditDetails?.health?.ltc_rate ?? 0;
+  const corpNominalRate =
+    auditDetails?.corp_tax?.nominal_rate ??
+    auditDetails?.corp_tax?.tax_rate_low ??
+    0;
+  const corpEffectiveRate =
+    auditDetails?.corp_tax?.effective_rate ??
+    auditDetails?.corp_tax?.tax_rate_low ??
+    0;
+  const corpTaxRateLabel = auditDetails?.corp_tax
+    ? `${(corpNominalRate * 100).toFixed(0)}% -> ${(
+        corpEffectiveRate * 100
+      ).toFixed(1)}%`
+    : "-";
+  const revenueTooltip = isCorporate
+    ? isKorean
+      ? `저장된 master portfolio의 TR을 현재 투자자산에 적용한 연간 총수익입니다. 이후 총급여, 회사부담보험, 운영비, 법인세를 차감하는 출발값입니다.`
+      : `Annual investment revenue from applying the selected master portfolio TR to current investment assets. This is the starting amount before salary, company insurance, operating costs, and corporate tax.`
+    : isKorean
+      ? `저장된 master portfolio의 TR을 현재 투자자산에 적용한 연간 총수익입니다. 이후 소득세와 지역가입자 건보료를 차감합니다.`
+      : `Annual investment revenue from applying the selected master portfolio TR to current investment assets. Personal tax and local health insurance are deducted from this amount.`;
+  const taxTooltip = isCorporate
+    ? isKorean
+      ? `법인세는 과세표준 ${formatKrw(
+          auditDetails?.corp_tax?.tax_base ?? 0,
+        )}에 실효세율 ${formatPercent(corpEffectiveRate, 1)}를 적용해 계산했습니다. 명목세율 ${formatPercent(
+          corpNominalRate,
+          0,
+        )}에 지방소득세가 반영됩니다.`
+      : `Corporate tax is calculated on a tax base of ${formatKrw(
+          auditDetails?.corp_tax?.tax_base ?? 0,
+        )} using an effective rate of ${formatPercent(
+          corpEffectiveRate,
+          1,
+        )}. The nominal rate is ${formatPercent(
+          corpNominalRate,
+          0,
+        )}, with local income tax applied on top.`
+    : isKorean
+      ? `개인 투자수익 세금은 ${personalTaxMode} 기준 ${formatPercent(
+          personalTaxRate,
+          1,
+        )}를 적용했습니다. 기준선은 ${formatKrw(
+          auditDetails?.tax?.threshold ?? 0,
+        )}입니다.`
+      : `Personal investment income tax uses ${personalTaxMode} at ${formatPercent(
+          personalTaxRate,
+          1,
+        )}. The modeled threshold is ${formatKrw(
+          auditDetails?.tax?.threshold ?? 0,
+        )}.`;
+  const healthTooltip = isKorean
+    ? `건보료 본체 ${formatKrw(
+        auditDetails?.health?.base_premium ?? 0,
+      )}에 장기요양보험 ${formatPercent(
+        healthLtcRate,
+        1,
+      )}를 더해 총 ${formatKrw(
+        auditDetails?.health?.total_premium ?? breakdown.health_insurance,
+      )}로 계산했습니다.`
+    : `Health insurance starts from a base premium of ${formatKrw(
+        auditDetails?.health?.base_premium ?? 0,
+      )} and adds long-term care insurance at ${formatPercent(
+        healthLtcRate,
+        1,
+      )}, resulting in ${formatKrw(
+        auditDetails?.health?.total_premium ?? breakdown.health_insurance,
+      )}.`;
+  const socialInsuranceTooltip = isKorean
+    ? `회사부담 4대보험입니다. 총급여 ${formatKrw(
+        breakdown.gross_salary ?? 0,
+      )}를 기준으로 회사가 부담하는 보험료만 반영했습니다.`
+    : `Employer-side payroll social insurance. This includes only the company burden calculated from gross salary of ${formatKrw(
+        breakdown.gross_salary ?? 0,
+      )}.`;
+  const fixedCostTooltip = isKorean
+    ? `연 운영비는 월 기장비 ${formatKrw(
+        breakdown.monthly_bookkeeping_fee ?? 0,
+      )} x 12와 연 법인세 조정료 ${formatKrw(
+        breakdown.annual_corp_tax_adjustment_fee ?? 0,
+      )}를 합산했습니다.`
+    : `Annual operating cost combines monthly bookkeeping of ${formatKrw(
+        breakdown.monthly_bookkeeping_fee ?? 0,
+      )} x 12 and annual tax adjustment fee of ${formatKrw(
+        breakdown.annual_corp_tax_adjustment_fee ?? 0,
+      )}.`;
+  const payrollWithholdingTooltip = isKorean
+    ? `총급여에서 원천징수된 급여 관련 세금입니다. 투자수익에 대한 세금과는 별도로 순급여 계산에 반영됩니다.`
+    : `Salary-related withholding tax deducted from gross salary. It is separate from the tax applied to investment income and is used when calculating net salary.`;
+  const netCorporateCashTooltip = isKorean
+    ? `법인 내부에 남는 세후 투자현금입니다. 총수익에서 총급여, 회사부담보험, 연 운영비, 법인세를 차감한 값입니다.`
+    : `After-tax investment cash left inside the corporation after deducting gross salary, company insurance, annual operating cost, and corporate tax from annual revenue.`;
+  const netSalaryTooltip = isKorean
+    ? `가계로 넘어오는 세후 급여입니다. 총급여에서 원천징수세와 개인 부담 보험료를 차감한 값입니다.`
+    : `After-tax salary reaching the household after deducting withholding tax and employee-side insurance from gross salary.`;
+  const annualNetCashflowTooltip = isCorporate
+    ? isKorean
+      ? `최종 가계 유입 현금입니다. 법인 순현금 ${formatKrw(
+          breakdown.net_corporate_cash ?? 0,
+        )}과 순급여 ${formatKrw(breakdown.net_salary)}를 합산했습니다.`
+      : `Final household cashflow, combining net corporate cash of ${formatKrw(
+          breakdown.net_corporate_cash ?? 0,
+        )} and net salary of ${formatKrw(breakdown.net_salary)}.`
+    : isKorean
+      ? `최종 가계 유입 현금입니다. 연 수익에서 세금 ${formatKrw(
+          breakdown.tax,
+        )}과 건보료 ${formatKrw(breakdown.health_insurance)}를 차감했습니다.`
+      : `Final household cashflow after deducting tax of ${formatKrw(
+          breakdown.tax,
+        )} and health insurance of ${formatKrw(
+          breakdown.health_insurance,
+        )} from annual revenue.`;
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] bg-slate-950/15"
+      data-testid={`${testIdPrefix}-detail-modal`}
+      onClick={onClose}
+    >
+      <div
+        className="fixed z-[91] w-[min(77.5rem,calc(100vw-1rem))] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+        style={position}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {t("costComparison.detailedAudit")}
+            </div>
+            <h3 className="mt-1 text-xl font-bold text-slate-800">
+              {title} {t("costComparison.detailedCostTitle")}
+            </h3>
           </div>
-          <div className="space-y-2">
-            {auditDetails.health.property_points !== undefined && (
-              <div className="flex justify-between text-[13px]">
-                <span className="text-slate-400">
-                  {t("costComparison.propertyPoints")}
-                </span>
-                <span className="font-mono text-slate-700">
-                  {auditDetails.health.property_points.toLocaleString()} 점
-                </span>
-              </div>
-            )}
-            {auditDetails.health.income_points !== undefined && (
-              <div className="flex justify-between text-[13px]">
-                <span className="text-slate-400">
-                  {t("costComparison.incomePoints")}
-                </span>
-                <span className="font-mono text-slate-700">
-                  {auditDetails.health.income_points.toLocaleString()} 점
-                </span>
-              </div>
-            )}
-            {auditDetails.health.total_points !== undefined && (
-              <div className="mt-1 flex justify-between border-t border-slate-200 pt-1 text-[13px] font-bold">
-                <span className="text-slate-700">
-                  {t("costComparison.totalPoints")}
-                </span>
-                <span className="text-indigo-400 font-mono">
-                  {auditDetails.health.total_points.toLocaleString()} 점
-                </span>
-              </div>
-            )}
-            {auditDetails.health.point_unit_price && (
-              <div className="flex justify-between text-[11px] text-slate-500 italic">
-                <span>{t("costComparison.unitPriceLtc")}</span>
-                <span>
-                  {formatKrw(auditDetails.health.point_unit_price)} x{" "}
-                  {((1 + (auditDetails.health.ltc_rate || 0)) * 100).toFixed(1)}
-                  %
-                </span>
-              </div>
-            )}
-            {auditDetails.tax && (
-              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-[13px]">
-                <span className="text-slate-400">
-                  {t("costComparison.appliedTaxRate")}
-                </span>
-                <span className="text-orange-400 font-mono">
-                  {(auditDetails.tax.tax_rate! * 100).toFixed(1)}%
-                  {auditDetails.tax.is_comprehensive ? " (종합)" : " (분리)"}
-                </span>
-              </div>
-            )}
-            {auditDetails.corp_tax && (
-              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-[13px]">
-                <span className="text-slate-400">
-                  {t("costComparison.appliedCorpTaxRate")}
-                </span>
-                <span className="text-emerald-400 font-mono">
-                  {(
-                    (auditDetails.corp_tax.nominal_rate ??
-                      auditDetails.corp_tax.tax_rate_low ??
-                      0) * 100
-                  ).toFixed(0)}
-                  % -&gt;{" "}
-                  {(
-                    (auditDetails.corp_tax.effective_rate ??
-                      auditDetails.corp_tax.tax_rate_low ??
-                      0) * 100
-                  ).toFixed(1)}
-                  %
-                </span>
-              </div>
-            )}
+          <button
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            data-testid={`${testIdPrefix}-detail-close`}
+            onClick={onClose}
+            type="button"
+          >
+            {t("costComparison.close")}
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {t("costComparison.costLineItems")}
+            </div>
+            <div className="mt-3 space-y-2">
+              <DetailRow
+                label={t("costComparison.revenue")}
+                tooltip={revenueTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-revenue-tooltip`}
+                value={formatKrw(breakdown.annual_revenue)}
+              />
+              <DetailRow
+                label={t("costComparison.tax")}
+                tooltip={taxTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-tax-tooltip`}
+                value={formatKrw(breakdown.tax)}
+              />
+              <DetailRow
+                label={t("costComparison.healthInsurance")}
+                tooltip={healthTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-health-tooltip`}
+                value={formatKrw(breakdown.health_insurance)}
+              />
+              <DetailRow
+                label={t("costComparison.socialInsurance")}
+                tooltip={socialInsuranceTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-social-tooltip`}
+                value={formatKrw(breakdown.social_insurance)}
+              />
+              <DetailRow
+                label={t("costComparison.fixedCost")}
+                tooltip={fixedCostTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-fixed-tooltip`}
+                value={formatKrw(breakdown.fixed_cost)}
+              />
+              {typeof breakdown.gross_salary === "number" ? (
+                <DetailRow
+                  label={t("costComparison.grossSalary")}
+                  tooltip={
+                    isKorean
+                      ? `설정된 월 급여를 12개월로 환산한 연 총급여입니다. 이 값이 급여세와 회사부담보험 계산의 기준이 됩니다.`
+                      : `Annual gross salary based on the configured monthly salary x 12. This is the base for payroll tax and employer insurance calculations.`
+                  }
+                  tooltipTestId={`${testIdPrefix}-detail-gross-salary-tooltip`}
+                  value={formatKrw(breakdown.gross_salary)}
+                />
+              ) : null}
+              {typeof breakdown.company_insurance_cost === "number" ? (
+                <DetailRow
+                  label={t("costComparison.companyInsurance")}
+                  tooltip={socialInsuranceTooltip}
+                  tooltipTestId={`${testIdPrefix}-detail-company-insurance-tooltip`}
+                  value={formatKrw(breakdown.company_insurance_cost)}
+                />
+              ) : null}
+              <DetailRow
+                label={t("costComparison.payrollWithholding")}
+                tooltip={payrollWithholdingTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-payroll-tooltip`}
+                value={formatKrw(breakdown.payroll_tax_withholding)}
+              />
+              {typeof breakdown.net_corporate_cash === "number" ? (
+                <DetailRow
+                  label={t("costComparison.netCorporateCash")}
+                  tooltip={netCorporateCashTooltip}
+                  tooltipTestId={`${testIdPrefix}-detail-net-corporate-tooltip`}
+                  value={formatKrw(breakdown.net_corporate_cash)}
+                  highlight
+                />
+              ) : null}
+              <DetailRow
+                label={t("costComparison.netSalary")}
+                tooltip={netSalaryTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-net-salary-tooltip`}
+                value={formatKrw(breakdown.net_salary)}
+              />
+              <DetailRow
+                label={t("costComparison.annualNetCashflow")}
+                tooltip={annualNetCashflowTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-annual-net-tooltip`}
+                value={formatKrw(annualNetCashflow)}
+                highlight
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {t("costComparison.calculationSteps")}
+            </div>
+            <div className="mt-3 space-y-3 text-sm text-slate-700">
+              {isCorporate ? (
+                <>
+                  <FormulaBlock
+                    title={t("costComparison.operatingCostFormula")}
+                    tooltip={fixedCostTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-operating-formula-tooltip`}
+                    value={`${formatKrw(
+                      breakdown.monthly_bookkeeping_fee ?? 0,
+                    )} x 12 + ${formatKrw(
+                      breakdown.annual_corp_tax_adjustment_fee ?? 0,
+                    )} = ${formatKrw(breakdown.fixed_cost)}`}
+                  />
+                  <FormulaBlock
+                    title={t("costComparison.taxBaseFormula")}
+                    tooltip={
+                      isKorean
+                        ? `과세표준은 연 수익에서 총급여, 연 운영비, 회사부담보험을 차감해 계산합니다. 이 값에 실효 법인세율이 적용됩니다.`
+                        : `Tax base is annual revenue minus gross salary, annual operating cost, and employer insurance. The effective corporate tax rate is applied to this amount.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-tax-base-formula-tooltip`}
+                    value={`${formatKrw(breakdown.annual_revenue)} - ${formatKrw(
+                      breakdown.gross_salary ?? 0,
+                    )} - ${formatKrw(breakdown.fixed_cost)} - ${formatKrw(
+                      breakdown.company_insurance_cost ?? 0,
+                    )} = ${formatKrw(auditDetails?.corp_tax?.tax_base ?? 0)}`}
+                  />
+                  <FormulaBlock
+                    title={t("costComparison.finalCashFormula")}
+                    tooltip={annualNetCashflowTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-final-cash-formula-tooltip`}
+                    value={`${formatKrw(
+                      breakdown.net_corporate_cash ?? 0,
+                    )} + ${formatKrw(breakdown.net_salary)} = ${formatKrw(
+                      annualNetCashflow,
+                    )}`}
+                  />
+                </>
+              ) : (
+                <>
+                  <FormulaBlock
+                    title={t("costComparison.personalTaxFormula")}
+                    tooltip={taxTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-personal-tax-formula-tooltip`}
+                    value={`${formatKrw(breakdown.annual_revenue)} x ${(
+                      (auditDetails?.tax?.tax_rate ?? 0) * 100
+                    ).toFixed(1)}% = ${formatKrw(breakdown.tax)}`}
+                  />
+                  <FormulaBlock
+                    title={t("costComparison.personalHealthFormula")}
+                    tooltip={healthTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-personal-health-formula-tooltip`}
+                    value={`${formatKrw(
+                      auditDetails?.health?.base_premium ?? 0,
+                    )} x ${(
+                      (1 + (auditDetails?.health?.ltc_rate ?? 0)) *
+                      100
+                    ).toFixed(1)}% = ${formatKrw(breakdown.health_insurance)}`}
+                  />
+                  <FormulaBlock
+                    title={t("costComparison.finalCashFormula")}
+                    tooltip={annualNetCashflowTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-final-cash-formula-tooltip`}
+                    value={`${formatKrw(breakdown.annual_revenue)} - ${formatKrw(
+                      breakdown.tax,
+                    )} - ${formatKrw(breakdown.health_insurance)} = ${formatKrw(
+                      annualNetCashflow,
+                    )}`}
+                  />
+                </>
+              )}
+            </div>
           </div>
         </div>
-      )}
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {t("costComparison.healthInsurance")}
+            </div>
+            <div className="mt-3 space-y-2">
+              <DetailRow
+                label={t("costComparison.propertyPoints")}
+                tooltip={
+                  isKorean
+                    ? `지역가입자 건보료 산정에 반영되는 재산 점수입니다. 부동산 입력값을 점수 체계로 환산한 결과입니다.`
+                    : `Property points used in local health insurance scoring. This is derived from the modeled real estate input under the current scoring rules.`
+                }
+                tooltipTestId={`${testIdPrefix}-detail-property-points-tooltip`}
+                value={
+                  auditDetails?.health?.property_points !== undefined
+                    ? `${auditDetails.health.property_points.toLocaleString()} 점`
+                    : "-"
+                }
+              />
+              <DetailRow
+                label={t("costComparison.incomePoints")}
+                tooltip={
+                  isKorean
+                    ? `지역가입자 건보료 산정에 반영되는 소득 점수입니다. 개인 투자수익 등 소득 기반 점수입니다.`
+                    : `Income points used in local health insurance scoring. This reflects income-based points from personal investment income.`
+                }
+                tooltipTestId={`${testIdPrefix}-detail-income-points-tooltip`}
+                value={
+                  auditDetails?.health?.income_points !== undefined
+                    ? `${auditDetails.health.income_points.toLocaleString()} 점`
+                    : "-"
+                }
+              />
+              <DetailRow
+                label={t("costComparison.totalPoints")}
+                tooltip={
+                  isKorean
+                    ? `재산 점수와 소득 점수를 합산한 총점입니다. 이 총점에 점수당 단가를 곱해 건보료 본체를 계산합니다.`
+                    : `Combined score from property points and income points. This total is multiplied by the point-unit price to compute the base premium.`
+                }
+                tooltipTestId={`${testIdPrefix}-detail-total-points-tooltip`}
+                value={
+                  auditDetails?.health?.total_points !== undefined
+                    ? `${auditDetails.health.total_points.toLocaleString()} 점`
+                    : "-"
+                }
+              />
+              <DetailRow
+                label={t("costComparison.unitPriceLtc")}
+                tooltip={
+                  isKorean
+                    ? `점수당 단가 ${formatKrw(
+                        auditDetails?.health?.point_unit_price ?? 0,
+                      )}에 장기요양보험 ${formatPercent(
+                        healthLtcRate,
+                        1,
+                      )}를 반영한 계수입니다.`
+                    : `Point-unit price of ${formatKrw(
+                        auditDetails?.health?.point_unit_price ?? 0,
+                      )} with long-term care insurance at ${formatPercent(
+                        healthLtcRate,
+                        1,
+                      )} applied.`
+                }
+                tooltipTestId={`${testIdPrefix}-detail-unit-price-tooltip`}
+                value={
+                  auditDetails?.health?.point_unit_price
+                    ? `${formatKrw(auditDetails.health.point_unit_price)} x ${(
+                        (1 + (auditDetails.health.ltc_rate || 0)) *
+                        100
+                      ).toFixed(1)}%`
+                    : "-"
+                }
+              />
+              <DetailRow
+                label={t("costComparison.healthPremiumBase")}
+                tooltip={
+                  isKorean
+                    ? `장기요양보험을 더하기 전 건보료 본체입니다. 총점과 점수당 단가로 계산됩니다.`
+                    : `Base health premium before adding long-term care insurance. This is computed from total points and the point-unit price.`
+                }
+                tooltipTestId={`${testIdPrefix}-detail-health-base-tooltip`}
+                value={formatKrw(auditDetails?.health?.base_premium ?? 0)}
+              />
+              <DetailRow
+                label={t("costComparison.healthInsurance")}
+                tooltip={healthTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-health-total-tooltip`}
+                value={formatKrw(
+                  auditDetails?.health?.total_premium ??
+                    breakdown.health_insurance,
+                )}
+                highlight
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {t("costComparison.tax")}
+            </div>
+            <div className="mt-3 space-y-2">
+              {isCorporate ? (
+                <>
+                  <DetailRow
+                    label={t("costComparison.appliedCorpTaxRate")}
+                    tooltip={
+                      isKorean
+                        ? `명목세율 ${formatPercent(
+                            corpNominalRate,
+                            0,
+                          )}에 지방소득세를 반영해 실효세율 ${formatPercent(
+                            corpEffectiveRate,
+                            1,
+                          )}로 계산했습니다.`
+                        : `Nominal corporate tax rate of ${formatPercent(
+                            corpNominalRate,
+                            0,
+                          )} becomes an effective rate of ${formatPercent(
+                            corpEffectiveRate,
+                            1,
+                          )} after local income tax is included.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-applied-corp-tax-rate-tooltip`}
+                    value={corpTaxRateLabel}
+                  />
+                  <DetailRow
+                    label={t("costComparison.taxBase")}
+                    tooltip={
+                      isKorean
+                        ? `법인세 계산의 기준이 되는 과세표준입니다. 연 수익에서 총급여, 회사부담보험, 연 운영비를 차감해 계산합니다.`
+                        : `Corporate tax base after deducting gross salary, company insurance, and annual operating cost from annual revenue.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-tax-base-tooltip`}
+                    value={formatKrw(auditDetails?.corp_tax?.tax_base ?? 0)}
+                  />
+                  <DetailRow
+                    label={t("costComparison.monthlyBookkeepingFee")}
+                    tooltip={
+                      isKorean
+                        ? `매월 반복되는 기본 기장/신고 지원 비용입니다. 연 운영비 계산에 12개월치가 반영됩니다.`
+                        : `Recurring monthly bookkeeping and filing support cost. Twelve months are included in annual operating cost.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-bookkeeping-tooltip`}
+                    value={formatKrw(
+                      auditDetails?.operating_costs?.monthly_bookkeeping_fee ??
+                        0,
+                    )}
+                  />
+                  <DetailRow
+                    label={t("costComparison.annualTaxAdjustmentFee")}
+                    tooltip={
+                      isKorean
+                        ? `연 1회 반영되는 법인세 조정 및 신고 수수료입니다.`
+                        : `Annual one-time fee for year-end corporate tax adjustment and filing.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-tax-adjustment-tooltip`}
+                    value={formatKrw(
+                      auditDetails?.operating_costs
+                        ?.annual_corp_tax_adjustment_fee ?? 0,
+                    )}
+                  />
+                  <DetailRow
+                    label={t("costComparison.operatingCostAnnual")}
+                    tooltip={fixedCostTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-operating-cost-annual-tooltip`}
+                    value={formatKrw(
+                      auditDetails?.operating_costs?.annual_total ?? 0,
+                    )}
+                  />
+                </>
+              ) : (
+                <>
+                  <DetailRow
+                    label={t("costComparison.appliedTaxRate")}
+                    tooltip={taxTooltip}
+                    tooltipTestId={`${testIdPrefix}-detail-applied-tax-rate-tooltip`}
+                    value={
+                      auditDetails?.tax?.tax_rate !== undefined
+                        ? `${(auditDetails.tax.tax_rate * 100).toFixed(1)}%${
+                            auditDetails.tax.is_comprehensive
+                              ? " (종합)"
+                              : " (분리)"
+                          }`
+                        : "-"
+                    }
+                  />
+                  <DetailRow
+                    label={t("costComparison.taxThreshold")}
+                    tooltip={
+                      isKorean
+                        ? `이 기준선 위에서는 종합과세, 아래에서는 분리과세 등 현재 세금 분기 규칙을 설명하는 참조값입니다.`
+                        : `Reference threshold used by the current tax branch rules, such as separate versus comprehensive taxation.`
+                    }
+                    tooltipTestId={`${testIdPrefix}-detail-tax-threshold-tooltip`}
+                    value={formatKrw(auditDetails?.tax?.threshold ?? 0)}
+                  />
+                </>
+              )}
+              <DetailRow
+                label={t("costComparison.tax")}
+                tooltip={taxTooltip}
+                tooltipTestId={`${testIdPrefix}-detail-tax-total-tooltip`}
+                value={formatKrw(breakdown.tax)}
+                highlight
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  tooltip,
+  tooltipTestId,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  tooltip?: string;
+  tooltipTestId?: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 border-b border-slate-100 py-2 text-sm ${
+        highlight ? "font-semibold text-slate-800" : "text-slate-600"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span>{label}</span>
+        {tooltip && tooltipTestId ? (
+          <TooltipTrigger testId={tooltipTestId} text={tooltip} />
+        ) : null}
+      </div>
+      <span className="font-mono text-right">{value}</span>
+    </div>
+  );
+}
+
+function FormulaBlock({
+  title,
+  tooltip,
+  tooltipTestId,
+  value,
+}: {
+  title: string;
+  tooltip?: string;
+  tooltipTestId?: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <span>{title}</span>
+        {tooltip && tooltipTestId ? (
+          <TooltipTrigger testId={tooltipTestId} text={tooltip} />
+        ) : null}
+      </div>
+      <div className="mt-2 font-mono text-sm text-slate-700">{value}</div>
     </div>
   );
 }
