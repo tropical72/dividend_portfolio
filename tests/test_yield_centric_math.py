@@ -17,7 +17,8 @@ def temp_backend(tmp_path):
         "current_exchange_rate": 1400.0,
         "appreciation_rates": {
             "cash_sgov": 0.1,
-            "fixed_income": 2.5,
+            "bond_buffer": 2.5,
+            "high_income": 2.5,
             "dividend_stocks": 3.5,
             "growth_stocks": 3.5,
         },

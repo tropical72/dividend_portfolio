@@ -4,10 +4,11 @@
     "current_exchange_rate": 1485.219970703125,
     "price_appreciation_rate": 3.0,
     "appreciation_rates": {
-        "cash_sgov": 0.0,
-        "fixed_income": 1.0,
-        "dividend_stocks": 3.0,
-        "growth_stocks": 5.0
+        "cash_sgov": 0.1,
+        "bond_buffer": 0.1,
+        "high_income": 0.1,
+        "dividend_stocks": 9.6,
+        "growth_stocks": 8.2
     },
     "exchange_rate_cache": {
         "last_fetch": "2026-04-24T16:00:23.042794",

@@ -32,7 +32,8 @@ export interface AppSettings {
   price_appreciation_rate?: number;
   appreciation_rates?: {
     cash_sgov: number;
-    fixed_income: number;
+    bond_buffer: number;
+    high_income: number;
     dividend_stocks: number;
     growth_stocks: number;
   };

@@ -68,16 +68,36 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
 };
 
 const DEFAULT_APPRECIATION_RATES = {
-  cash_sgov: 0.0,
-  fixed_income: 1.0,
-  dividend_stocks: 3.0,
-  growth_stocks: 5.0,
+  cash_sgov: 0.1,
+  bond_buffer: 0.1,
+  high_income: 0.1,
+  dividend_stocks: 9.6,
+  growth_stocks: 8.2,
 };
 
 const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];
 
 function formatDecimalDraft(value: number, fractionDigits = 1) {
   return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
+}
+
+function normalizeAppreciationRates(
+  rates?: AppSettings["appreciation_rates"] | { fixed_income?: number } | null,
+) {
+  const legacyFixedIncome =
+    rates && typeof rates === "object" && "fixed_income" in rates
+      ? Number(rates.fixed_income)
+      : undefined;
+  return {
+    ...DEFAULT_APPRECIATION_RATES,
+    ...(legacyFixedIncome === undefined
+      ? {}
+      : {
+          bond_buffer: legacyFixedIncome,
+          high_income: legacyFixedIncome,
+        }),
+    ...(rates || {}),
+  };
 }
 
 function getVisibleAssumptions(config: RetirementConfig) {
@@ -160,9 +180,9 @@ export function SettingsTab({
         default_currency: globalSettings.default_currency || "USD",
         ui_language: globalSettings.ui_language || "ko",
         price_appreciation_rate: globalSettings.price_appreciation_rate ?? 3.0,
-        appreciation_rates: globalSettings.appreciation_rates || {
-          ...DEFAULT_APPRECIATION_RATES,
-        },
+        appreciation_rates: normalizeAppreciationRates(
+          globalSettings.appreciation_rates,
+        ),
       });
     }
     if (globalRetireConfig) {
@@ -1322,6 +1342,7 @@ export function SettingsTab({
               <InputGroup
                 label={t("settings.catCash")}
                 unit="%"
+                tooltip={t("settings.catCashTooltip")}
                 value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
                 fractionDigits={1}
                 onChange={(v) =>
@@ -1335,16 +1356,33 @@ export function SettingsTab({
                 }
               />
               <InputGroup
-                label={t("settings.catFixed")}
+                label={t("settings.catBond")}
                 unit="%"
-                value={(settings.appreciation_rates?.fixed_income || 0) * 1}
+                tooltip={t("settings.catBondTooltip")}
+                value={(settings.appreciation_rates?.bond_buffer || 0) * 1}
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      fixed_income: parseFloat(v) || 0,
+                      bond_buffer: parseFloat(v) || 0,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.catHighIncome")}
+                unit="%"
+                tooltip={t("settings.catHighIncomeTooltip")}
+                value={(settings.appreciation_rates?.high_income || 0) * 1}
+                fractionDigits={1}
+                onChange={(v) =>
+                  setSettings({
+                    ...settings,
+                    appreciation_rates: {
+                      ...settings.appreciation_rates!,
+                      high_income: parseFloat(v) || 0,
                     },
                   })
                 }
@@ -1352,6 +1390,7 @@ export function SettingsTab({
               <InputGroup
                 label={t("settings.catDividend")}
                 unit="%"
+                tooltip={t("settings.catDividendTooltip")}
                 value={(settings.appreciation_rates?.dividend_stocks || 0) * 1}
                 fractionDigits={1}
                 onChange={(v) =>
@@ -1367,6 +1406,7 @@ export function SettingsTab({
               <InputGroup
                 label={t("settings.catGrowth")}
                 unit="%"
+                tooltip={t("settings.catGrowthTooltip")}
                 value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
                 fractionDigits={1}
                 onChange={(v) =>

@@ -193,10 +193,10 @@ export function PortfolioDashboard({
         let pa = 0;
         const cat = item.category;
         if (cat === "SGOV Buffer") pa = paRates.cash_sgov || 0.1;
-        else if (cat === "High Income" || cat === "Bond Buffer")
-          pa = paRates.fixed_income || 2.5;
-        else if (cat === "Dividend Growth") pa = paRates.dividend_stocks || 5.5;
-        else if (cat === "Growth Engine") pa = paRates.growth_stocks || 9.5;
+        else if (cat === "Bond Buffer") pa = paRates.bond_buffer || 0.1;
+        else if (cat === "High Income") pa = paRates.high_income || 0.1;
+        else if (cat === "Dividend Growth") pa = paRates.dividend_stocks || 9.6;
+        else if (cat === "Growth Engine") pa = paRates.growth_stocks || 8.2;
         return (
           sum + ((item.dividend_yield || 0) + pa) * ((item.weight || 0) / 100)
         );

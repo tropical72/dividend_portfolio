@@ -8,6 +8,14 @@ from src.backend.data_provider import StockDataProvider
 from src.backend.storage import StorageManager
 from src.core.tax_engine import TaxEngine
 
+DEFAULT_APPRECIATION_RATES = {
+    "cash_sgov": 0.1,
+    "bond_buffer": 0.1,
+    "high_income": 0.1,
+    "dividend_stocks": 9.6,
+    "growth_stocks": 8.2,
+}
+
 
 class DividendBackend:
     """
@@ -90,7 +98,34 @@ class DividendBackend:
 
         merged_settings = deepcopy(public_settings)
         merged_settings.update(secret_settings)
-        return merged_settings
+        return self._normalize_settings(merged_settings)
+
+    def _normalize_settings(self, settings: Dict[str, Any]) -> Dict[str, Any]:
+        normalized = deepcopy(settings)
+        rates = normalized.get("appreciation_rates")
+        legacy_fixed_income = None
+        if isinstance(rates, dict):
+            legacy_fixed_income = rates.get("fixed_income")
+        normalized_rates = dict(DEFAULT_APPRECIATION_RATES)
+        if legacy_fixed_income is not None:
+            normalized_rates["bond_buffer"] = legacy_fixed_income
+            normalized_rates["high_income"] = legacy_fixed_income
+        if isinstance(rates, dict):
+            normalized_rates.update(
+                {
+                    key: value
+                    for key, value in rates.items()
+                    if key in DEFAULT_APPRECIATION_RATES
+                }
+            )
+        normalized["appreciation_rates"] = normalized_rates
+        normalized.setdefault("dart_api_key", "")
+        normalized.setdefault("gemini_api_key", "")
+        normalized.setdefault("default_capital", 10000.0)
+        normalized.setdefault("default_currency", "USD")
+        normalized.setdefault("ui_language", "ko")
+        normalized.setdefault("price_appreciation_rate", 3.0)
+        return normalized
 
     def _save_settings(self) -> None:
         public_settings, secret_settings = self._split_settings(self.settings)
@@ -1820,10 +1855,11 @@ class DividendBackend:
         a_rates = self.settings.get(
             "appreciation_rates",
             {
-                "cash_sgov": 0.0,
-                "fixed_income": 1.0,
-                "dividend_stocks": 3.0,
-                "growth_stocks": 5.0,
+                "cash_sgov": 0.1,
+                "bond_buffer": 0.1,
+                "high_income": 0.1,
+                "dividend_stocks": 9.6,
+                "growth_stocks": 8.2,
             },
         )
 
@@ -1842,13 +1878,15 @@ class DividendBackend:
             cat_name = item.get("category", "Growth Engine")
             pa = 0.0
             if cat_name == "SGOV Buffer":
-                pa = a_rates.get("cash_sgov", 0.0)
-            elif cat_name in ["High Income", "Bond Buffer"]:
-                pa = a_rates.get("fixed_income", 1.0)
+                pa = a_rates.get("cash_sgov", 0.1)
+            elif cat_name == "Bond Buffer":
+                pa = a_rates.get("bond_buffer", 0.1)
+            elif cat_name == "High Income":
+                pa = a_rates.get("high_income", 0.1)
             elif cat_name == "Dividend Growth":
-                pa = a_rates.get("dividend_stocks", 3.0)
+                pa = a_rates.get("dividend_stocks", 9.6)
             elif cat_name == "Growth Engine":
-                pa = a_rates.get("growth_stocks", 5.0)
+                pa = a_rates.get("growth_stocks", 8.2)
 
             div_y = float(item.get("dividend_yield") or 0.0)
             # TR(expected_return) = (배당수익률 + 기대주가상승률) * 비중
@@ -2359,13 +2397,7 @@ class DividendBackend:
 
     def get_settings(self) -> Dict[str, Any]:
         """저장된 설정 정보를 반환합니다."""
-        # 필수 필드 기본값 보정
-        self.settings.setdefault("dart_api_key", "")
-        self.settings.setdefault("gemini_api_key", "")
-        self.settings.setdefault("default_capital", 10000.0)
-        self.settings.setdefault("default_currency", "USD")
-        self.settings.setdefault("ui_language", "ko")
-        self.settings.setdefault("price_appreciation_rate", 3.0)
+        self.settings = self._normalize_settings(self.settings)
         return cast(Dict[str, Any], self.settings)
 
     def add_to_watchlist(self, ticker: str, country: str = "US") -> Dict[str, Any]:
@@ -2437,7 +2469,9 @@ class DividendBackend:
 
     def update_settings(self, new_settings: Dict[str, Any]) -> Dict[str, Any]:
         """설정을 업데이트합니다."""
-        self.settings.update(new_settings)
+        merged = deepcopy(self.settings)
+        merged.update(new_settings)
+        self.settings = self._normalize_settings(merged)
         self._save_settings()
         if "dart_api_key" in new_settings:
             self.data_provider = StockDataProvider(dart_api_key=self.settings["dart_api_key"])

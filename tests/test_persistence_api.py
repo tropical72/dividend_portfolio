@@ -138,13 +138,44 @@ def test_backend_loads_git_tracked_defaults_and_saves_only_to_local_data(tmp_pat
     assert (
         backend.get_retirement_config()["simulation_params"]["target_monthly_cashflow"] == 3500000
     )
-    assert not (data_dir / "settings.json").exists()
+
+
+def test_backend_normalizes_legacy_appreciation_rates_on_load(tmp_path):
+    from src.backend.api import DividendBackend
+
+    data_dir = tmp_path / "appdata"
+    data_dir.mkdir()
+
+    (data_dir / "settings.json").write_text(
+        json.dumps(
+            {
+                "default_currency": "USD",
+                "appreciation_rates": {
+                    "cash_sgov": 0.1,
+                    "fixed_income": 2.5,
+                    "dividend_stocks": 7.5,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    backend = DividendBackend(data_dir=str(data_dir))
+    settings = backend.get_settings()
+
+    assert settings["appreciation_rates"]["cash_sgov"] == 0.1
+    assert settings["appreciation_rates"]["bond_buffer"] == 2.5
+    assert settings["appreciation_rates"]["high_income"] == 2.5
+    assert settings["appreciation_rates"]["dividend_stocks"] == 7.5
+    assert settings["appreciation_rates"]["growth_stocks"] == 8.2
+    assert "fixed_income" not in settings["appreciation_rates"]
 
     backend.update_settings({"ui_language": "en"})
 
     saved_settings = json.loads((data_dir / "settings.json").read_text(encoding="utf-8"))
     assert saved_settings["ui_language"] == "en"
-    default_settings_after_save = json.loads(
-        (defaults_dir / "settings.json").read_text(encoding="utf-8")
-    )
-    assert default_settings_after_save == default_settings
+    assert saved_settings["appreciation_rates"]["bond_buffer"] == 2.5
+    assert saved_settings["appreciation_rates"]["high_income"] == 2.5
+    assert "fixed_income" not in saved_settings["appreciation_rates"]

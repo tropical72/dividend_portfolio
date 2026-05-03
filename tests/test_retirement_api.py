@@ -359,8 +359,8 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     meta = response.json()["data"]["meta"]
     assert meta["master_name"] == "Retirement Growth Mix"
     assert meta["combined_dy"] == pytest.approx(0.04)
-    assert meta["combined_tr"] == pytest.approx(0.09)
-    assert meta["pa_rate"] == pytest.approx(0.05)
+    assert meta["combined_tr"] == pytest.approx(0.122)
+    assert meta["pa_rate"] == pytest.approx(0.082)
 
     conservative_master_id = _create_retirement_master(
         backend,
@@ -377,8 +377,8 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     conservative_meta = response.json()["data"]["meta"]
     assert conservative_meta["master_name"] == "Retirement Conservative Mix"
     assert conservative_meta["combined_dy"] == pytest.approx(0.04)
-    assert conservative_meta["combined_tr"] == pytest.approx(0.05)
-    assert conservative_meta["pa_rate"] == pytest.approx(0.01)
+    assert conservative_meta["combined_tr"] == pytest.approx(0.041)
+    assert conservative_meta["pa_rate"] == pytest.approx(0.001)
 
 
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():

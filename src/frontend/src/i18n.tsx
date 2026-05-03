@@ -321,11 +321,22 @@ const translations = {
       "Control detailed engine parameters intended for expert use.",
     "settings.appreciationRates": "Categorized Price Appreciation",
     "settings.appreciationRatesTooltip":
-      "Define different annual price appreciation rates for each asset category.",
+      "Define different annual price appreciation rates for each asset category. Benchmarks: SGOV Buffer uses SGOV, Bond Buffer uses BND, High Income uses JEPI/JEPQ-style option income ETFs, Dividend Growth uses SCHD, and Growth Engine uses the S&P 500.",
     "settings.catCash": "SGOV Buffer",
-    "settings.catFixed": "Fixed Income",
+    "settings.catCashTooltip":
+      "Price-appreciation baseline derived from SGOV-style ultra-short Treasury exposure.",
+    "settings.catBond": "Bond Buffer",
+    "settings.catBondTooltip":
+      "Price-appreciation baseline derived from BND-style broad bond exposure.",
+    "settings.catHighIncome": "High Income",
+    "settings.catHighIncomeTooltip":
+      "Price-appreciation baseline for JEPI/JEPQ/DIVO-style option income and covered-call income assets.",
     "settings.catDividend": "Dividend Stocks",
+    "settings.catDividendTooltip":
+      "Price-appreciation baseline derived from SCHD-style dividend-growth equity exposure.",
     "settings.catGrowth": "Growth Stocks",
+    "settings.catGrowthTooltip":
+      "Price-appreciation baseline derived from long-run S&P 500 price growth.",
     "settings.highIncomeCap": "High Income Cap",
     "settings.highIncomeCapTooltip":
       "Yield threshold that limits withdrawals in high-income cases.",
@@ -891,11 +902,22 @@ const translations = {
       "계산 엔진의 세부 동작 파라미터를 제어하는 전문가용 설정입니다.",
     "settings.appreciationRates": "자산군별 기대주가상승률",
     "settings.appreciationRatesTooltip":
-      "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다.",
+      "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다. 기준 종목은 SGOV 버퍼=SGOV, 채권 버퍼=BND, 고인컴=JEPI/JEPQ 계열, 배당성장=SCHD, 성장엔진=S&P500 입니다.",
     "settings.catCash": "SGOV 버퍼",
-    "settings.catFixed": "채권/인컴",
+    "settings.catCashTooltip":
+      "SGOV 같은 초단기 국채 ETF를 기준으로 계산한 가격상승률입니다.",
+    "settings.catBond": "채권 버퍼",
+    "settings.catBondTooltip":
+      "BND 같은 광범위 채권 ETF를 기준으로 계산한 가격상승률입니다.",
+    "settings.catHighIncome": "고인컴",
+    "settings.catHighIncomeTooltip":
+      "JEPI/JEPQ/DIVO 같은 옵션 인컴·커버드콜 계열 자산을 기준으로 계산한 가격상승률입니다.",
     "settings.catDividend": "배당성장",
+    "settings.catDividendTooltip":
+      "SCHD 같은 배당성장 주식 ETF를 기준으로 계산한 가격상승률입니다.",
     "settings.catGrowth": "성장엔진",
+    "settings.catGrowthTooltip":
+      "S&P500의 장기 가격 상승을 기준으로 계산한 가격상승률입니다.",
     "settings.highIncomeCap": "고소득 상한",
     "settings.highIncomeCapTooltip":
       "고소득 상황에서 인출을 제한하는 수익률 임계치입니다.",

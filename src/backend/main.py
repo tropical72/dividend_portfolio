@@ -370,10 +370,11 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
             for k, v in backend.settings.get(
                 "appreciation_rates",
                 {
-                    "cash_sgov": 0.0,
-                    "fixed_income": 1.0,
-                    "dividend_stocks": 3.0,
-                    "growth_stocks": 5.0,
+                    "cash_sgov": 0.1,
+                    "bond_buffer": 0.1,
+                    "high_income": 0.1,
+                    "dividend_stocks": 9.6,
+                    "growth_stocks": 8.2,
                 },
             ).items()
         },

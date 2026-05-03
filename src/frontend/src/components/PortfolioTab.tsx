@@ -182,9 +182,10 @@ export function PortfolioTab({
       switch (catId) {
         case "SGOV Buffer":
           return rates.cash_sgov;
-        case "High Income":
         case "Bond Buffer":
-          return rates.fixed_income;
+          return rates.bond_buffer;
+        case "High Income":
+          return rates.high_income;
         case "Dividend Growth":
           return rates.dividend_stocks;
         case "Growth Engine":

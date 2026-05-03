@@ -314,8 +314,8 @@ def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypa
     growth = growth_response.json()["data"]["assumptions"]
 
     assert conservative["dy"] == pytest.approx(growth["dy"])
-    assert conservative["pa"] == pytest.approx(0.01)
-    assert growth["pa"] == pytest.approx(0.05)
+    assert conservative["pa"] == pytest.approx(0.001)
+    assert growth["pa"] == pytest.approx(0.082)
     assert conservative["tr"] == pytest.approx(conservative["dy"] + conservative["pa"])
     assert growth["tr"] == pytest.approx(growth["dy"] + growth["pa"])
     assert growth["tr"] > conservative["tr"]

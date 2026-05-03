@@ -128,7 +128,8 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
         price_appreciation_rate: paRate,
         appreciation_rates: {
           cash_sgov: 0.1,
-          fixed_income: paRate,
+          bond_buffer: paRate,
+          high_income: paRate,
           dividend_stocks: paRate,
           growth_stocks: paRate,
         },
