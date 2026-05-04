@@ -134,6 +134,67 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await expect(nameInput).toHaveValue(uniqueName);
   });
 
+  test("should rename a saved portfolio from the dashboard list", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "Rename interaction is verified on desktop layout.");
+
+    const testCard = page
+      .locator(".portfolio-card")
+      .filter({ hasText: uniqueName })
+      .first();
+    const renamed = `${uniqueName} Renamed`;
+
+    await testCard.hover();
+    await testCard
+      .getByTestId(new RegExp(`portfolio-rename-trigger-`))
+      .first()
+      .click({ force: true });
+    await testCard
+      .getByTestId(new RegExp(`portfolio-rename-input-`))
+      .fill(renamed);
+    await testCard
+      .getByTestId(new RegExp(`portfolio-rename-save-`))
+      .click({ force: true });
+
+    await expect(testCard).toContainText(renamed);
+  });
+
+  test("should rename a saved master strategy from the dashboard list", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "Rename interaction is verified on desktop layout.");
+
+    const strategyName = `Rename Master ${Date.now()}`;
+    await page.getByTestId("master-strategy-name-input").fill(strategyName);
+
+    const corpSelect = page.locator("select").first();
+    await corpSelect.selectOption({ label: uniqueName });
+    await page.getByTestId("save-master-strategy-btn").click({ force: true });
+
+    const masterCard = page
+      .locator("div")
+      .filter({ hasText: strategyName })
+      .filter({ hasText: uniqueName })
+      .first();
+    const renamed = `${strategyName} Updated`;
+
+    await masterCard.hover();
+    await masterCard
+      .getByTestId(new RegExp(`master-rename-trigger-`))
+      .click({ force: true });
+    await masterCard
+      .getByTestId(new RegExp(`master-rename-input-`))
+      .fill(renamed);
+    await masterCard
+      .getByTestId(new RegExp(`master-rename-save-`))
+      .click({ force: true });
+
+    await expect(masterCard).toContainText(renamed);
+  });
+
   test("should display comparison chart when multiple portfolios are selected", async ({
     page,
     isMobile,

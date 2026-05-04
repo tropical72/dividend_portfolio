@@ -49,6 +49,12 @@
 - **T-02-7.2: 저장된 리스트 내 이름 변경 기능**
     - [x] **T-02-7.2.1** `PortfolioDashboard.tsx` 리스트 항목에 Rename 버튼 및 인라인 편집 UI 추가.
     - [x] **T-02-7.2.2** 백엔드 PATCH API 연동을 통한 실시간 이름 업데이트.
+    - [x] **T-02-7.2.3** 저장된 개별 포트폴리오 이름 변경 흐름에 대한 회귀 검증 추가.
+
+### [Phase 8] Master Strategy Management (T-02-8) - DONE
+- **T-02-8.4: 마스터 전략 이름 변경 지원**
+    - [x] **T-02-8.4.1** `master_portfolios` PATCH API를 추가해 저장된 전략명 수정 경로를 제공한다.
+    - [x] **T-02-8.4.2** `PortfolioDashboard.tsx` 리스트 항목에 마스터 전략 Rename 버튼 및 인라인 편집 UI를 추가한다.
 
 ### [Phase 10] 전략 카테고리 편집기 재설계 (T-02-10) - DONE
 - **T-02-10.1: 계좌별 4카테고리 데이터 모델 정렬**

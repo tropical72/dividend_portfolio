@@ -108,7 +108,7 @@
     - [ ] **T-GLB-16.1.3** `get_portfolio_stats_by_id`, `calculate_master_portfolio_tr`, `retirement simulate`, `cost comparison`이 선택된 PA 시나리오를 받아 계산하도록 수정한다.
 - **T-GLB-16.2: [Frontend] Settings 시나리오 편집 UI**
     - [ ] **T-GLB-16.2.1** Settings에 3개 시나리오 선택/편집 UI와 기본 시나리오 선택 UI를 추가한다.
-    - [ ] **T-GLB-16.2.2** 각 자산군 툴팁에 기준 종목(SGOV/BND/JEPI-Syle/SCHD/S&P500)을 명시한다.
+    - [ ] **T-GLB-16.2.2** 각 자산군 툴팁에 기준 종목(SGOV/VGIT/JEPI-Syle/SCHD/S&P500)을 명시한다.
 - **T-GLB-16.3: [Frontend] 핵심 화면 선택형 PA 시나리오**
     - [ ] **T-GLB-16.3.1** Portfolio Manager(Designer + Dashboard)에 시나리오 선택기를 추가하고 TR 표시를 선택값 기준으로 갱신한다.
     - [ ] **T-GLB-16.3.2** Retirement 탭에 시나리오 선택기를 추가하고 시뮬레이션/메타/TR 표시가 선택값을 따르도록 연결한다.

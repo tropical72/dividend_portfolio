@@ -20,21 +20,21 @@ PA_SCENARIO_KEYS = ("conservative", "base", "optimistic")
 DEFAULT_APPRECIATION_RATE_SCENARIOS = {
     "conservative": {
         "cash_sgov": 0.0,
-        "bond_buffer": -0.5,
+        "bond_buffer": -0.8,
         "high_income": 0.5,
         "dividend_stocks": 5.5,
         "growth_stocks": 6.5,
     },
     "base": {
         "cash_sgov": 0.0,
-        "bond_buffer": 0.0,
+        "bond_buffer": -0.2,
         "high_income": 1.5,
         "dividend_stocks": 6.5,
         "growth_stocks": 7.5,
     },
     "optimistic": {
         "cash_sgov": 0.0,
-        "bond_buffer": 0.5,
+        "bond_buffer": 0.6,
         "high_income": 2.5,
         "dividend_stocks": 8.0,
         "growth_stocks": 9.0,
@@ -91,8 +91,94 @@ class DividendBackend:
         """실앱 모드에서는 기본 watchlist/master bundle이 항상 존재하도록 보장한다."""
         if not self.ensure_default_master_bundle:
             return
+        self._migrate_bnd_to_vgit()
         self._ensure_default_master_bundle()
         self._ensure_default_watchlist()
+
+    def _get_vgit_seed(self) -> Dict[str, Any]:
+        return {
+            "symbol": "VGIT",
+            "name": "Vanguard Intermediate-Term Treasury Index Fund ETF Shares",
+            "price": 59.015,
+            "currency": "USD",
+            "dividend_yield": 3.8498686774548845,
+            "one_yr_return": 3.5658201817754116,
+            "ex_div_date": "2026-05-01",
+            "last_div_amount": 0.187,
+            "last_div_yield": 0.3168685927306617,
+            "past_avg_monthly_div": 0.18933333333333335,
+            "dividend_frequency": "Monthly",
+            "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "country": "US",
+            "is_system_default": True,
+        }
+
+    def _get_bnd_seed(self) -> Dict[str, Any]:
+        return {
+            "symbol": "BND",
+            "name": "Vanguard Total Bond Market Index Fund",
+            "price": 73.88,
+            "currency": "USD",
+            "dividend_yield": 3.9063345966432057,
+            "one_yr_return": 5.512784692821852,
+            "ex_div_date": "2026-04-01",
+            "last_div_amount": 0.25,
+            "last_div_yield": 0.3383865728207905,
+            "past_avg_monthly_div": 0.24050000000000002,
+            "dividend_frequency": "Monthly",
+            "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "country": "US",
+            "is_system_default": True,
+        }
+
+    def _migrate_bnd_to_vgit(self) -> None:
+        """기존 BND 기반 채권 기본값을 VGIT 기준으로 교체한다."""
+        vgit_seed = self._get_vgit_seed()
+        changed_watchlist = False
+        changed_portfolios = False
+
+        migrated_watchlist: List[Dict[str, Any]] = []
+        has_existing_vgit = any(item.get("symbol") == "VGIT" for item in self.watchlist)
+        has_vgit = False
+        for item in self.watchlist:
+            if item.get("symbol") == "VGIT":
+                if has_vgit:
+                    changed_watchlist = True
+                    continue
+                merged = dict(item)
+                merged["dividend_yield"] = vgit_seed["dividend_yield"]
+                migrated_watchlist.append(merged)
+                has_vgit = True
+                continue
+            if item.get("symbol") == "BND":
+                if not has_existing_vgit and not has_vgit:
+                    migrated_watchlist.append(dict(vgit_seed))
+                    has_vgit = True
+                changed_watchlist = True
+                continue
+            migrated_watchlist.append(item)
+
+        if not has_vgit:
+            migrated_watchlist.append(dict(vgit_seed))
+            changed_watchlist = True
+
+        if changed_watchlist:
+            self.watchlist = migrated_watchlist
+            self.storage.save_json(self.watchlist_file, self.watchlist)
+
+        for portfolio in self.portfolios:
+            for item in portfolio.get("items", []):
+                if item.get("symbol") == "BND":
+                    item["symbol"] = "VGIT"
+                    item["name"] = vgit_seed["name"]
+                    item["price"] = vgit_seed["price"]
+                    item["dividend_yield"] = vgit_seed["dividend_yield"]
+                    item["last_div_amount"] = vgit_seed["last_div_amount"]
+                    item["payment_months"] = list(vgit_seed["payment_months"])
+                    changed_portfolios = True
+
+        if changed_portfolios:
+            self.storage.save_json(self.portfolios_file, self.portfolios)
 
     def _split_settings(self, settings: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
         public_settings = deepcopy(settings)
@@ -301,22 +387,8 @@ class DividendBackend:
                 "country": "US",
                 "is_system_default": True,
             },
-            {
-                "symbol": "BND",
-                "name": "Vanguard Total Bond Market Index Fund",
-                "price": 73.88,
-                "currency": "USD",
-                "dividend_yield": 3.9063345966432057,
-                "one_yr_return": 5.512784692821852,
-                "ex_div_date": "2026-04-01",
-                "last_div_amount": 0.25,
-                "last_div_yield": 0.3383865728207905,
-                "past_avg_monthly_div": 0.24050000000000002,
-                "dividend_frequency": "Monthly",
-                "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                "country": "US",
-                "is_system_default": True,
-            },
+            self._get_bnd_seed(),
+            self._get_vgit_seed(),
             {
                 "symbol": "DIVO",
                 "name": "Amplify CWP Enhanced Dividend Income ETF",
@@ -331,6 +403,22 @@ class DividendBackend:
                 "dividend_frequency": "Monthly",
                 "payment_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 "country": "US",
+                "is_system_default": True,
+            },
+            {
+                "symbol": "441640.KS",
+                "name": "KODEX 미국배당커버드콜액티브",
+                "price": 12830,
+                "currency": "KRW",
+                "dividend_yield": 8.87763055339049,
+                "one_yr_return": 25.93699641789597,
+                "ex_div_date": "2026-04-14",
+                "last_div_amount": 99,
+                "last_div_yield": 0.7716289945440374,
+                "past_avg_monthly_div": 94.91666666666667,
+                "dividend_frequency": "Monthly",
+                "payment_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "country": "KR",
                 "is_system_default": True,
             },
         ]
@@ -404,13 +492,13 @@ class DividendBackend:
                         "payment_months": [3, 6, 9, 12],
                     },
                     {
-                        "symbol": "BND",
-                        "name": "Vanguard Total Bond Market Index Fund",
+                        "symbol": "VGIT",
+                        "name": "Vanguard Intermediate-Term Treasury Index Fund ETF Shares",
                         "category": "Bond Buffer",
                         "weight": 30,
-                        "price": 73.88,
-                        "dividend_yield": 3.9063345966432057,
-                        "last_div_amount": 0.25,
+                        "price": 59.015,
+                        "dividend_yield": 3.8498686774548845,
+                        "last_div_amount": 0.187,
                         "payment_months": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                     },
                 ],
@@ -2331,6 +2419,15 @@ class DividendBackend:
             "message": "전략이 활성화되었습니다.",
             "yield": combined_tr,
         }
+
+    def update_master_portfolio(self, m_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """특정 마스터 전략의 정보를 업데이트합니다."""
+        for master in self.master_portfolios:
+            if master["id"] == m_id:
+                master.update(updates)
+                self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
+                return {"success": True, "data": self._build_master_portfolio_summary(master)}
+        return {"success": False, "message": "전략을 찾을 수 없습니다."}
 
     def remove_master_portfolio(self, m_id: str) -> Dict[str, Any]:
         """마스터 전략을 삭제합니다. [활성 전략 보호 추가]"""

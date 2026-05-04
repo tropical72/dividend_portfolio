@@ -14,7 +14,7 @@
     - 사용자가 국가를 'US'로 선택했더라도, 입력된 티커가 **6자리(숫자 및 영문 조합)**일 경우 자동으로 한국 종목(.KS)으로 간주하여 조회를 시도함 (예: 0104H0, 00593A 등).
     - 사용자 실수로 인한 조회 실패를 최소화함.
 - **[REQ-WCH-01.8] 시스템 기본 관심종목 보장 및 보호 (System Default) [NEW]:**
-    - 앱 부팅 시 SGOV, JEPI, JEPQ, VOO, QQQM, SCHD, BND, DIVO 등 주요 종목이 관심종목에 항상 존재하도록 자동 생성(Seeding) 로직을 갖춘다.
+    - 앱 부팅 시 SGOV, JEPI, JEPQ, VOO, QQQM, SCHD, BND, VGIT, DIVO, 441640.KS 등 주요 종목이 관심종목에 항상 존재하도록 자동 생성(Seeding) 로직을 갖춘다.
     - 해당 기본 항목들은 `is_system_default: true` 속성을 가지며, 사용자가 삭제할 수 없도록 UI와 API 레벨에서 강력하게 보호한다.
 
 ## [REQ-WCH-02] 사용자 경험 (UX) 개선

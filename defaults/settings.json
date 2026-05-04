@@ -7,21 +7,21 @@
     "appreciation_rates": {
         "conservative": {
             "cash_sgov": 0.0,
-            "bond_buffer": -0.5,
+            "bond_buffer": -0.8,
             "high_income": 0.5,
             "dividend_stocks": 5.5,
             "growth_stocks": 6.5
         },
         "base": {
             "cash_sgov": 0.0,
-            "bond_buffer": 0.0,
+            "bond_buffer": -0.2,
             "high_income": 1.5,
             "dividend_stocks": 6.5,
             "growth_stocks": 7.5
         },
         "optimistic": {
             "cash_sgov": 0.0,
-            "bond_buffer": 0.5,
+            "bond_buffer": 0.6,
             "high_income": 2.5,
             "dividend_stocks": 8.0,
             "growth_stocks": 9.0

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -18,7 +20,18 @@ def temp_backend(tmp_path):
 def test_default_watchlist_seeding(temp_backend):
     """기본 관심종목이 자동으로 생성되고 is_system_default가 True인지 확인"""
     watchlist = temp_backend.watchlist
-    default_symbols = {"SGOV", "JEPI", "JEPQ", "VOO", "QQQM", "SCHD", "BND", "DIVO"}
+    default_symbols = {
+        "SGOV",
+        "JEPI",
+        "JEPQ",
+        "VOO",
+        "QQQM",
+        "SCHD",
+        "BND",
+        "VGIT",
+        "DIVO",
+        "441640.KS",
+    }
 
     for symbol in default_symbols:
         item = next((i for i in watchlist if i["symbol"] == symbol), None)
@@ -47,3 +60,40 @@ def test_custom_stock_deletion_allowed(temp_backend):
     res = temp_backend.remove_from_watchlist("AAPL")
     assert res["success"] is True
     assert not any(i["symbol"] == "AAPL" for i in temp_backend.watchlist)
+
+
+def test_bnd_watchlist_migration_does_not_duplicate_existing_vgit(tmp_path):
+    """기존 VGIT가 있으면 BND 마이그레이션 후에도 VGIT가 중복 생성되지 않아야 한다."""
+    watchlist_path = tmp_path / "watchlist.json"
+    portfolios_path = tmp_path / "portfolios.json"
+
+    watchlist_path.write_text(
+        json.dumps(
+            [
+                {"symbol": "BND", "name": "Vanguard Total Bond Market ETF"},
+                {"symbol": "VGIT", "name": "User-added VGIT"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    portfolios_path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "p1",
+                    "name": "Bond Test",
+                    "items": [{"symbol": "BND", "name": "Legacy Bond Buffer"}],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+
+    vgit_items = [item for item in backend.watchlist if item["symbol"] == "VGIT"]
+    bnd_items = [item for item in backend.watchlist if item["symbol"] == "BND"]
+    assert len(vgit_items) == 1
+    assert len(bnd_items) == 1
+    assert bnd_items[0].get("is_system_default") is True
+    assert backend.portfolios[0]["items"][0]["symbol"] == "VGIT"

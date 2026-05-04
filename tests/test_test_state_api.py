@@ -31,7 +31,7 @@ def test_export_and_restore_test_state_round_trip(tmp_path):
         account_type="Pension",
         total_capital=500,
         currency="USD",
-        items=[{"symbol": "BND", "weight": 100, "category": "Bond Buffer"}],
+        items=[{"symbol": "VGIT", "weight": 100, "category": "Bond Buffer"}],
     )
     backend.update_retirement_config(
         {

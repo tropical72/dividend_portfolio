@@ -76,7 +76,7 @@ def test_create_portfolio_persists_account_type_and_strategy_categories(clean_da
         "currency": "KRW",
         "items": [
             {"symbol": "SGOV", "name": "SGOV", "category": "SGOV Buffer", "weight": 30},
-            {"symbol": "BND", "name": "BND", "category": "Bond Buffer", "weight": 10},
+            {"symbol": "VGIT", "name": "VGIT", "category": "Bond Buffer", "weight": 10},
             {"symbol": "JEPI", "name": "JEPI", "category": "High Income", "weight": 20},
             {"symbol": "SCHD", "name": "SCHD", "category": "Dividend Growth", "weight": 20},
             {"symbol": "VOO", "name": "VOO", "category": "Growth Engine", "weight": 20},
@@ -130,7 +130,7 @@ def test_strategy_categories_are_exposed_as_strategy_weights(tmp_path):
         currency="KRW",
         items=[
             {"symbol": "SGOV", "name": "SGOV", "category": "SGOV Buffer", "weight": 25},
-            {"symbol": "BND", "name": "BND", "category": "Bond Buffer", "weight": 35},
+            {"symbol": "VGIT", "name": "VGIT", "category": "Bond Buffer", "weight": 35},
             {
                 "symbol": "SCHD",
                 "name": "SCHD",

@@ -201,6 +201,12 @@ async def create_master_portfolio(req: MasterPortfolioRequest):
     )
 
 
+@app.patch("/api/master-portfolios/{m_id}")
+async def update_master_portfolio(m_id: str, req: MasterPortfolioRequest):
+    updates = req.model_dump(exclude_none=True)
+    return backend.update_master_portfolio(m_id, updates)
+
+
 @app.delete("/api/master-portfolios/{m_id}")
 async def delete_master_portfolio(m_id: str):
     return backend.remove_master_portfolio(m_id)

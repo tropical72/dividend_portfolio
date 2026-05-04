@@ -53,6 +53,7 @@
 | REQ-PRT-07 | UI 가독성(Sub-Tabs) 및 명칭(Corporate) 강화 | T-02-5.1 | TEST-PRT-07 | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-PRT-08 | 마스터 전략(Master Strategy) 구성 및 관리 | T-02-8.1 | TEST-RAMS-1.5 | Done | 23abcca | 2026.04.15-13.36 |
 | REQ-PRT-08.6 | 시스템 기본 번들 보장 및 보호 (System Default) | T-02-8.6 | TEST-RAMS-1.5 | Done | 21955e3 | 2026.04.16-17.40 |
+| D-PRT-08.7 | 저장된 마스터 전략/개별 포트폴리오 이름 변경 경로 보강 | T-02-8.4 / T-02-7.2.3 | TEST-PRT-04 / TEST-PRT-09.4 | Done | - | 2026.05.04 |
 | REQ-PRT-09 | 실시간 환율 동기화 및 캐싱 시스템 | T-02-9.1 | TEST-PRT-09 | Done | 7c5af70 | 2026.04.15-16.34 |
 | REQ-GLB-01 | 수익률 지표 표준화 (DY 중심 & PA 가산 모델) 및 설정 저장 버그 수정 | T-GLB-10.1 | TEST-GLB-10 | Done | a7f2b1d | 2026.04.15-19.10 |
 | REQ-PRT-01.1 | 계좌별 4단 전략 카테고리 편집기 | T-02-10.2.1 | TEST-PRT-01 | Done | 04bd94d | 2026.04.16-02.22 |

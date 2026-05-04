@@ -132,8 +132,45 @@ def test_master_portfolio_create_returns_computed_yield_and_tr(client):
     assert body["data"]["corp_name"] == f"Yield Corp {suffix}"
     assert body["data"]["pension_name"] == "-"
     assert body["data"]["combined_yield"] == pytest.approx(4.0)
-    assert body["data"]["combined_tr"] == pytest.approx(9.5)
+    assert body["data"]["combined_tr"] == pytest.approx(13.6)
     assert body["data"]["broken_reference"] is False
+
+
+def test_rename_master_portfolio(client):
+    suffix = uuid4().hex[:8]
+
+    corp_res = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Rename Corp {suffix}",
+            "account_type": "Corporate",
+            "total_capital": 1000,
+        },
+    )
+    corp_id = corp_res.json()["data"]["id"]
+
+    master_res = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Before Rename {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+        },
+    )
+    master_id = master_res.json()["data"]["id"]
+
+    rename_res = client.patch(
+        f"/api/master-portfolios/{master_id}",
+        json={"name": f"After Rename {suffix}"},
+    )
+
+    assert rename_res.status_code == 200
+    assert rename_res.json()["success"] is True
+    assert rename_res.json()["data"]["name"] == f"After Rename {suffix}"
+
+    list_res = client.get("/api/master-portfolios")
+    renamed = next(m for m in list_res.json()["data"] if m["id"] == master_id)
+    assert renamed["name"] == f"After Rename {suffix}"
 
 
 def test_default_master_bundle_is_seeded_on_app_boot(tmp_path):

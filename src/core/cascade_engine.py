@@ -13,7 +13,7 @@ class CascadeEngine:
         """
         self.target_buffer = target_buffer
         # 매도 우선순위 정의 (상위 계층부터 소진)
-        self.tier_order = ["VOO", "SCHD", "BND"]
+        self.tier_order = ["VOO", "SCHD", "VGIT"]
 
     def get_liquidation_decision(self, assets: Dict[str, float]) -> Dict:
         """

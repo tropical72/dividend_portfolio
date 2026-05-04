@@ -176,6 +176,11 @@ export function PortfolioDashboard({
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
+  const [editingPortfolioId, setEditingPortfolioId] = useState<string | null>(
+    null,
+  );
+  const [editingMasterId, setEditingMasterId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   /** 가중 평균 배당률 계산 공통 함수 */
   const getDY = useCallback((p: Portfolio | undefined) => {
@@ -339,11 +344,8 @@ export function PortfolioDashboard({
     }
   };
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-
-  /** 이름 변경 실행 */
-  const handleRename = async (id: string) => {
+  /** 개별 포트폴리오 이름 변경 실행 */
+  const handleRenamePortfolio = async (id: string) => {
     if (!editingName.trim()) return;
     try {
       const res = await fetch(`http://localhost:8000/api/portfolios/${id}`, {
@@ -356,7 +358,31 @@ export function PortfolioDashboard({
         setPortfolios((prev) =>
           prev.map((p) => (p.id === id ? { ...p, name: editingName } : p)),
         );
-        setEditingId(null);
+        setEditingPortfolioId(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /** 마스터 전략 이름 변경 실행 */
+  const handleRenameMaster = async (id: string) => {
+    if (!editingName.trim()) return;
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/master-portfolios/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editingName }),
+        },
+      );
+      const result = await res.json();
+      if (result.success) {
+        setMasterPortfolios((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, name: editingName } : m)),
+        );
+        setEditingMasterId(null);
       }
     } catch (err) {
       console.error(err);
@@ -625,9 +651,52 @@ export function PortfolioDashboard({
                     <div className="flex items-center gap-8">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                          <h4 className="text-xl font-bold tracking-tight text-slate-800">
-                            {m.name}
-                          </h4>
+                          {editingMasterId === m.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                autoFocus
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && handleRenameMaster(m.id)
+                                }
+                                className="w-full max-w-[250px] rounded-lg border border-emerald-300 bg-white px-3 py-1 text-xl font-bold text-slate-800 outline-none"
+                                data-testid={`master-rename-input-${m.id}`}
+                              />
+                              <button
+                                onClick={() => handleRenameMaster(m.id)}
+                                className="rounded-lg bg-emerald-50 p-2 text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white"
+                                data-testid={`master-rename-save-${m.id}`}
+                              >
+                                <CheckSquare size={18} />
+                              </button>
+                              <button
+                                onClick={() => setEditingMasterId(null)}
+                                className="rounded-lg bg-slate-100 p-2 text-slate-500 transition-all hover:bg-slate-200"
+                                data-testid={`master-rename-cancel-${m.id}`}
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <h4 className="text-xl font-bold tracking-tight text-slate-800">
+                                {m.name}
+                              </h4>
+                              <button
+                                onClick={() => {
+                                  setEditingMasterId(m.id);
+                                  setEditingPortfolioId(null);
+                                  setEditingName(m.name);
+                                }}
+                                className="p-1 text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:text-emerald-700"
+                                title={copy.renameTitle}
+                                data-testid={`master-rename-trigger-${m.id}`}
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                            </>
+                          )}
                           {m.is_active && (
                             <div className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-white shadow-sm">
                               {copy.active}
@@ -1144,7 +1213,7 @@ export function PortfolioDashboard({
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1 group/name">
-                      {editingId === p.id ? (
+                      {editingPortfolioId === p.id ? (
                         <div
                           className="flex items-center gap-2"
                           onClick={(e) => e.stopPropagation()}
@@ -1154,19 +1223,22 @@ export function PortfolioDashboard({
                             value={editingName}
                             onChange={(e) => setEditingName(e.target.value)}
                             onKeyDown={(e) =>
-                              e.key === "Enter" && handleRename(p.id)
+                              e.key === "Enter" && handleRenamePortfolio(p.id)
                             }
                             className="w-full max-w-[250px] rounded-lg border border-emerald-300 bg-white px-3 py-1 text-xl font-bold text-slate-800 outline-none"
+                            data-testid={`portfolio-rename-input-${p.id}`}
                           />
                           <button
-                            onClick={() => handleRename(p.id)}
+                            onClick={() => handleRenamePortfolio(p.id)}
                             className="rounded-lg bg-emerald-50 p-2 text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white"
+                            data-testid={`portfolio-rename-save-${p.id}`}
                           >
                             <CheckSquare size={18} />
                           </button>
                           <button
-                            onClick={() => setEditingId(null)}
+                            onClick={() => setEditingPortfolioId(null)}
                             className="rounded-lg bg-slate-100 p-2 text-slate-500 transition-all hover:bg-slate-200"
+                            data-testid={`portfolio-rename-cancel-${p.id}`}
                           >
                             <X size={18} />
                           </button>
@@ -1179,11 +1251,13 @@ export function PortfolioDashboard({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setEditingId(p.id);
+                              setEditingPortfolioId(p.id);
+                              setEditingMasterId(null);
                               setEditingName(p.name);
                             }}
                             className="p-1 text-slate-400 opacity-0 transition-all group-hover/name:opacity-100 hover:text-emerald-700"
                             title={copy.renameTitle}
+                            data-testid={`portfolio-rename-trigger-${p.id}`}
                           >
                             <Edit3 size={14} />
                           </button>

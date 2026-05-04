@@ -65,9 +65,9 @@ const translations = {
     "retirement.finalNw": "Final NW",
     "retirement.finalNwTooltip":
       "Estimated net worth at the end of the simulation period.",
-    "retirement.cashExhaust": "Cash Exhaust",
+    "retirement.cashExhaust": "Corporate Cash Buffer Exhaust",
     "retirement.cashExhaustTooltip":
-      "Expected date when liquid safety assets reach zero.",
+      "Expected date when the corporate SGOV/cash buffer reaches zero. This is not the date when total net worth is exhausted.",
     "retirement.yearsSustainableMetric": "Survival Horizon",
     "retirement.yearsSustainableTooltip":
       "How many full years the current strategy can sustain the retirement cashflow target.",
@@ -94,7 +94,7 @@ const translations = {
     "retirement.assumptionEditableHint":
       "Adjust this scenario when you want to test a stricter return or inflation assumption.",
     "retirement.chartStartAssets": "Starting Net Worth",
-    "retirement.chartLatestAssets": "Latest Net Worth",
+    "retirement.chartLatestAssets": "Final Net Worth",
     "retirement.chartMinimumAssets": "Minimum Net Worth",
     "retirement.chartFocusLabel": "Chart Focus",
     "retirement.chartFocusBody":
@@ -321,7 +321,7 @@ const translations = {
       "Control detailed engine parameters intended for expert use.",
     "settings.appreciationRates": "Categorized Price Appreciation",
     "settings.appreciationRatesTooltip":
-      "Define different annual price appreciation rates for each asset category. Benchmarks: SGOV Buffer uses SGOV, Bond Buffer uses BND, High Income uses JEPI/JEPQ-style option income ETFs, Dividend Growth uses SCHD, and Growth Engine uses the S&P 500.",
+      "Define different annual price appreciation rates for each asset category. Benchmarks: SGOV Buffer uses SGOV, Bond Buffer uses VGIT, High Income uses JEPI/JEPQ-style option income ETFs, Dividend Growth uses SCHD, and Growth Engine uses the S&P 500.",
     "settings.defaultPaScenario": "Default PA Scenario",
     "settings.defaultPaScenarioTooltip":
       "This scenario is used as the initial selection when Portfolio, Retirement, and Comparison views are opened.",
@@ -331,7 +331,7 @@ const translations = {
       "Price-appreciation baseline derived from SGOV-style ultra-short Treasury exposure.",
     "settings.catBond": "Bond Buffer",
     "settings.catBondTooltip":
-      "Price-appreciation baseline derived from BND-style broad bond exposure.",
+      "Price-appreciation baseline derived from VGIT-style intermediate treasury exposure.",
     "settings.catHighIncome": "High Income",
     "settings.catHighIncomeTooltip":
       "Price-appreciation baseline for JEPI/JEPQ/DIVO-style option income and covered-call income assets.",
@@ -354,7 +354,8 @@ const translations = {
     "settings.equityMultTooltip":
       "Yield multiplier for equity assets such as VOO.",
     "settings.debtMult": "Debt Mult",
-    "settings.debtMultTooltip": "Yield multiplier for debt assets such as BND.",
+    "settings.debtMultTooltip":
+      "Yield multiplier for debt assets such as VGIT.",
     "settings.triggerThresholds": "Trigger Thresholds",
     "settings.triggerThresholdsTooltip":
       "Thresholds where rebalancing or withdrawal strategy changes.",
@@ -663,9 +664,9 @@ const translations = {
     "retirement.yearsSuffix": "년 동안 유지 가능합니다.",
     "retirement.finalNw": "최종 순자산",
     "retirement.finalNwTooltip": "시뮬레이션 종료 시점의 예상 순자산입니다.",
-    "retirement.cashExhaust": "현금 고갈 시점",
+    "retirement.cashExhaust": "법인 현금 버퍼 고갈 시점",
     "retirement.cashExhaustTooltip":
-      "안전자산 잔고가 0이 되는 예상 시점입니다.",
+      "법인 SGOV/현금 버퍼 잔고가 0이 되는 예상 시점입니다. 총 순자산이 0이 되는 시점은 아닙니다.",
     "retirement.yearsSustainableMetric": "유지 가능 기간",
     "retirement.yearsSustainableTooltip":
       "현재 전략이 목표 생활비를 몇 년 동안 감당할 수 있는지 보여줍니다.",
@@ -692,7 +693,7 @@ const translations = {
     "retirement.assumptionEditableHint":
       "더 보수적인 수익률이나 물가 가정을 시험할 때 이 시나리오를 조정하세요.",
     "retirement.chartStartAssets": "시작 순자산",
-    "retirement.chartLatestAssets": "최신 순자산",
+    "retirement.chartLatestAssets": "최종 순자산",
     "retirement.chartMinimumAssets": "최저 순자산",
     "retirement.chartFocusLabel": "차트 읽는 법",
     "retirement.chartFocusBody":
@@ -909,7 +910,7 @@ const translations = {
       "계산 엔진의 세부 동작 파라미터를 제어하는 전문가용 설정입니다.",
     "settings.appreciationRates": "자산군별 기대주가상승률",
     "settings.appreciationRatesTooltip":
-      "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다. 기준 종목은 SGOV 버퍼=SGOV, 채권 버퍼=BND, 고인컴=JEPI/JEPQ 계열, 배당성장=SCHD, 성장엔진=S&P500 입니다.",
+      "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다. 기준 종목은 SGOV 버퍼=SGOV, 채권 버퍼=VGIT, 고인컴=JEPI/JEPQ 계열, 배당성장=SCHD, 성장엔진=S&P500 입니다.",
     "settings.defaultPaScenario": "기본 PA 시나리오",
     "settings.defaultPaScenarioTooltip":
       "포트폴리오, 은퇴, 비교 화면을 처음 열 때 기본으로 선택할 시나리오입니다.",
@@ -919,7 +920,7 @@ const translations = {
       "SGOV 같은 초단기 국채 ETF를 기준으로 계산한 가격상승률입니다.",
     "settings.catBond": "채권 버퍼",
     "settings.catBondTooltip":
-      "BND 같은 광범위 채권 ETF를 기준으로 계산한 가격상승률입니다.",
+      "VGIT 같은 중기 국채 ETF를 기준으로 계산한 가격상승률입니다.",
     "settings.catHighIncome": "고인컴",
     "settings.catHighIncomeTooltip":
       "JEPI/JEPQ/DIVO 같은 옵션 인컴·커버드콜 계열 자산을 기준으로 계산한 가격상승률입니다.",
