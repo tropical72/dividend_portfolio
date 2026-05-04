@@ -19,11 +19,13 @@
     - **[REQ-RAMS-1.4.1] 계좌 타입별 대표 포트폴리오 매핑:** 
         - 엔진 실행 시 `portfolios.json`에서 `account_type`이 'Corporate'인 포트폴리오와 'Pension'인 포트폴리오를 각각 로드한다.
         - 복수 존재 시 가장 최근에 수정된(또는 첫 번째) 포트폴리오를 기본값으로 사용한다.
-    - **[REQ-RAMS-1.4.2] 실시간 가중 평균 배당률(DY) 및 총수익률(TR) 산출:** 
-        - 선정된 포트폴리오의 각 종목(`items`)에 대해 다음 공식을 적용하여 엔진 주입용 지표를 산출한다.
-        - `Dividend Yield (DY) = Σ(종목별 배당률 * 종목 비중 / 100)`
-        - `Engine Total Return (TR) = DY + Price Appreciation (from Settings)`
-        - 종목별 가격 상승률은 별도 계산하지 않으며, `Price Appreciation`는 오직 `Settings`의 전역 가정값을 사용한다.
+    - **[REQ-RAMS-1.4.2] 자산군별 가중 평균 배당률(DY) 및 총수익률(TR) 산출:** 
+        - 엔진은 포트폴리오 전체 평균값 1개가 아니라, 전략 카테고리별 집계값을 주입받아야 한다.
+        - 각 전략 카테고리(`SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`)에 대해 다음 공식을 적용한다.
+        - `Category DY = Σ(종목별 배당률 * 종목 비중 / 100)`
+        - `Category TR = Category DY + Category PA`
+        - `Category PA`는 Settings의 시나리오값을 사용하되, 반드시 자산군별로 분리 적용한다.
+        - 문서 기반 표준 시뮬레이션에서는 사용하지 않는 카테고리(예: `High Income`)의 비중을 0으로 둘 수 있어야 하며, 다른 카테고리와 합쳐 계산해서는 안 된다.
     - **[REQ-RAMS-1.4.3] 엔진 주입 및 동적 동기화:** 
         - `ProjectionEngine`은 초기화 시 외부에서 주입된 `portfolio_stats` 객체를 확인하며, 값이 존재할 경우 내부 하드코딩 상수를 덮어쓴다(Override).
         - 사용자가 포트폴리오를 수정하거나 `Settings`에서 '자산 성장률(PA)'을 변경할 경우, 은퇴 시뮬레이션 결과에 즉시 반영되어야 한다.
@@ -38,11 +40,12 @@
 - **[REQ-RAMS-1.6] Retirement 탭 내 마스터 전략 퀵 스위처 (Quick Switcher):**
     - **[REQ-RAMS-1.6.1] 실시간 전략 교체:** 사용자는 은퇴 탭 메인 화면에서 즉시 다른 마스터 전략을 선택하여 시뮬레이션을 재실행할 수 있어야 한다.
     - **[REQ-RAMS-1.6.2] 드롭다운 인터페이스:** 현재 활성 전략 명칭 클릭 시 저장된 전체 전략 리스트를 노출하고 선택을 지원한다.
-- **[REQ-RAMS-1.7] 계좌별 4단계 전략 카테고리 구조:**
-    - **[REQ-RAMS-1.7.1] 연금 계좌 카테고리:** 연금 포트폴리오는 `SGOV Buffer`, `Bond Buffer`, `Dividend Growth`, `Growth Engine`의 4개 카테고리를 기본 구조로 가진다.
-    - **[REQ-RAMS-1.7.2] 법인 계좌 카테고리:** 법인 포트폴리오는 `SGOV Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`의 4개 카테고리를 기본 구조로 가진다.
-    - **[REQ-RAMS-1.7.3] 사용자 종목 배치:** 사용자는 Portfolio Manager 화면에서 각 계좌 타입별 4개 카테고리에 원하는 종목을 직접 배치하고 수정할 수 있어야 한다.
-    - **[REQ-RAMS-1.7.4] 엔진 카테고리 정합성:** Retirement Engine은 위 4개 카테고리를 직접 인식하여 인출 및 리밸런싱 전략에 사용해야 하며, 기존의 일반화된 `Cash/Fixed/Dividend/Growth` 추상 분류만으로 처리해서는 안 된다.
+- **[REQ-RAMS-1.7] 계좌 공통 5단계 전략 카테고리 구조:**
+    - **[REQ-RAMS-1.7.1] 공통 카테고리:** Corporate/Pension 포트폴리오는 모두 `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`의 5개 전략 카테고리를 공통 구조로 가진다.
+    - **[REQ-RAMS-1.7.2] 사용자 종목 배치:** 사용자는 Portfolio Manager 화면에서 각 계좌의 종목을 위 5개 카테고리 중 하나에 직접 배치하고 수정할 수 있어야 한다.
+    - **[REQ-RAMS-1.7.3] 문서 기반 표준 플랜 호환성:** 표준 OS v11.1 시뮬레이션에서는 `High Income`을 사용하지 않을 수 있으며, 이 경우 비중 0으로 처리해야 한다.
+    - **[REQ-RAMS-1.7.4] 엔진 카테고리 분리:** Retirement Engine은 위 5개 카테고리를 독립 버킷으로 직접 인식해야 하며, 어느 카테고리도 다른 카테고리와 자동 병합하거나 동일 버킷으로 환원해서는 안 된다.
+    - **[REQ-RAMS-1.7.5] 사용자 책임 분리:** 종목을 어느 카테고리에 넣을지는 사용자의 책임이며, 엔진은 저장된 카테고리 배치를 있는 그대로 해석해 시뮬레이션해야 한다.
 
 ### [Structure 2] 세무 및 수익성 엔진 (Tax Engine)
 - **[REQ-RAMS-2.1] 법인/개인 세무 산출:** 지역건보료, 종합소득세, 법인세를 정밀 계산한다.
@@ -55,23 +58,27 @@
 ### [Structure 3] 생애 주기 인출 및 이벤트 통합 시뮬레이션
 - **[REQ-RAMS-3.1] 월 단위 Phase 및 이벤트 반영:**
     - 나이와 월을 계산하여 Phase를 자동 전환하고, 해당 월에 등록된 **Planned Cashflow 이벤트를 자산 잔액에 즉시 가감**한다.
+- **[REQ-RAMS-3.1.1] 날짜 하드코딩 금지:**
+    - 문서에 기재된 Phase 2/3 시작월은 특정 사용자 사례를 설명하는 값일 뿐이며, 실제 엔진은 `birth_year`, `birth_month`, `private_pension_start_age`, `national_pension_start_age`, `simulation_start_year`, `simulation_start_month`를 사용해 동적으로 동일 시점을 계산해야 한다.
 - **[REQ-RAMS-3.2] 동적 인출 및 리밸런싱 알고리즘:**
-    - **[REQ-RAMS-3.2.1] 공통 원칙:** 매년 1회(기본값: 1월 둘째 주) 기계적 매도 및 리밸런싱을 실행하며, 평시에는 월별 투자 판단 개입 없이 현금흐름과 이벤트만 반영한다.
-    - **[REQ-RAMS-3.2.2] 연금 계좌 전략:** 
-        - 기본 매도 순서: `SGOV Buffer -> Bond Buffer -> Dividend Growth -> Growth Engine`.
-        - 연간 인출액은 우선 `SGOV Buffer`에서 조달한다.
-        - `SGOV Buffer`가 연 인출액 2년치 미만으로 하락하면 `Bond Buffer` 매도를 통해 `SGOV Buffer`를 보충한다.
-        - `Bond Buffer`가 연 인출액 5년치 또는 총 연금 자산의 5% 이하로 하락하면 `Dividend Growth` 자산 매도를 통해 완충 자산을 보강한다.
-        - `Dividend Growth` 비중이 총 연금 자산의 10% 이하이고 Phase 3에 진입한 경우에만 `Growth Engine` 매도를 허용한다.
-    - **[REQ-RAMS-3.2.3] 법인 계좌 전략:**
-        - 기본 매도 순서: `SGOV Buffer -> High Income -> Dividend Growth -> Growth Engine`.
-        - `SGOV Buffer`는 생활비 부족분 기준 36개월치 목표를 유지해야 한다.
-        - `SGOV Buffer`가 30개월치 미만이면 신규 인컴과 추가 유입금, 필요시 `High Income` 일부 매도 대금을 모두 `SGOV Buffer` 보강에 우선 투입한다.
-        - `High Income` 비중이 20% 미만으로 하락하면 `Dividend Growth` 자산으로 `SGOV Buffer`를 보충한다.
-        - `Growth Engine`은 원칙적으로 매도 금지이며, 기대수명 10년 미만 또는 `SGOV Buffer < 24개월`이면서 `High Income`과 `Dividend Growth`가 모두 소진된 구조적 위기에서만 예외적으로 허용한다.
-    - **[REQ-RAMS-3.2.4] 하락장 방어:** 하락장(Panic Threshold 도달 시) 리밸런싱을 중단하고 `Growth Engine` 및 `Dividend Growth` 매도를 금지한다.
-    - **[REQ-RAMS-3.2.5] 배당/인컴 현금화 분리:** 배당 및 인컴은 자산 자체에 자동 재투자되지 않고 우선 계좌별 현금 버퍼(`SGOV Buffer` 또는 현금 잔액)로 유입된 뒤, 지출/보강/재배치에 사용되어야 한다.
-    - **[REQ-RAMS-3.2.6] 운영비 처리:** 법인 급여, 4대보험, 고정비는 모두 법인 계좌의 현금 버퍼에서 우선 차감되며, 현금 부족 시에만 전략 규칙에 따라 자산 매도가 발생해야 한다.
+    - **[REQ-RAMS-3.2.1] OS v11.1 공통 원칙:** 월 인출은 항상 `SGOV Buffer`에서만 발생해야 하며, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`은 정기점검 또는 명시된 보충 이벤트에서만 재배치/매도된다.
+    - **[REQ-RAMS-3.2.2] 법인 Phase 현금흐름:** 법인 부담 월지출은 `총 필요금액 - 개인연금 월 인출 - 국민연금 월 유입`으로 계산한다. 총 필요금액 자체는 월별로 자동 감소하지 않는다.
+    - **[REQ-RAMS-3.2.3] 개인연금 월 인출:** 개인연금 계좌는 Phase 2부터 `monthly_withdrawal_target`을 `SGOV Buffer`에서 인출한다. Stress/Crash20 BOOST가 활성화되면 추가 인출액을 같은 계좌에서 한시적으로 더 인출할 수 있다.
+    - **[REQ-RAMS-3.2.4] 법인 5월 정기점검:** 5월에는 승인된 월 필요금액을 기준으로 법인 `SGOV Buffer`를 30개월, `Bond Buffer`를 floor 12개월 / target 18개월 / upper 24개월 구조로 재구성한다.
+    - **[REQ-RAMS-3.2.5] 법인 11월 반기정비:** 11월에는 법인 `SGOV Buffer`를 27개월 기준으로 복구하고 `Bond Buffer` 상태를 재점검한다. Shock Flag가 켜져 있으면 `Bond Buffer`와 `SGOV Buffer`를 주식성 카테고리보다 우선한다.
+    - **[REQ-RAMS-3.2.6] 개인연금 5월 정기점검:** 5월에는 개인연금 `SGOV Buffer`를 24개월, `Bond Buffer`를 floor 12개월 / target 18개월 / upper 24개월 구조로 재구성한다.
+    - **[REQ-RAMS-3.2.7] 개인연금 중간 점검:** 개인연금 `SGOV Buffer`가 12개월 floor 미만으로 내려가면, 우선 `Bond Buffer`에서 `SGOV Buffer`를 보충한다. 그래도 부족하면 다음 5월 정기점검에서 전면 조정한다.
+    - **[REQ-RAMS-3.2.8] donor 규칙 일반화:** 정기점검 시 `SGOV Buffer`와 `Bond Buffer` 보강은 문서의 donor 우선순위를 따르되, `High Income`, `Dividend Growth`, `Growth Engine`은 서로 다른 버킷으로 독립 유지해야 한다.
+    - **[REQ-RAMS-3.2.9] 카테고리 혼합 금지:** `Bond Buffer`와 `High Income`, `Dividend Growth`, `Growth Engine`은 계산 과정에서 동일 자산군으로 합산하거나 동일 성장률/하한선 규칙을 공유해서는 안 된다.
+- **[REQ-RAMS-3.3] 자산군별 PA/DY/TR 적용 엔진:**
+    - **[REQ-RAMS-3.3.1] 자산군별 독립 성장률:** 월 수익 계산은 계정 평균 수익률 1개가 아니라 전략 카테고리별 `PA`, `DY`, `TR`을 독립 적용해야 한다.
+    - **[REQ-RAMS-3.3.2] 수식 정합성:** 각 카테고리는 `TR = DY + PA`를 만족해야 하며, 월 변환은 단순 월 분할 또는 복리 월 변환 중 하나를 일관되게 사용해야 한다.
+    - **[REQ-RAMS-3.3.3] 사용자 변형 포트폴리오 지원:** 문서의 표준 플랜과 다른 종목/비중을 넣어도, 자산군 카테고리와 운용 규칙이 동일하면 같은 엔진으로 시뮬레이션할 수 있어야 한다.
+- **[REQ-RAMS-3.4] Shock / Stress / Inflation 운영 규칙:**
+    - **[REQ-RAMS-3.4.1] Crash20:** 월말 기준 주식성 슬리브 평가액이 직전 5월 기준값의 80% 이하가 되면 Shock Flag를 활성화한다.
+    - **[REQ-RAMS-3.4.2] Stress 판정:** Stress는 월말 숫자로 즉시 판정하지 않고 5월 정기점검의 A/B/C 테스트 결과로만 판정한다.
+    - **[REQ-RAMS-3.4.3] 인플레이션 적용:** 인플레이션 반영 여부는 5월 정기점검에서만 승인/동결하며, 승인된 총 필요금액은 6월부터 다음 해 5월까지 12개월 고정 적용한다.
+    - **[REQ-RAMS-3.4.4] 출력 투명성:** 월별 결과에는 최소한 Phase, 총 필요금액, 법인 부담 월지출, Shock Flag, Stress, 계정별 SGOV/Bond 개월수, 계정별 카테고리 잔액이 포함되어야 한다.
 
 ### [Structure 4] 사용자 설정 가능 전략 파라미터 (Simulation Controls)
 - **[REQ-RAMS-8.1] 설정값의 사용자화:** `stock-plan.txt`에 정의된 버퍼 개월수, 역할 하한선, 리밸런싱 월, 성장 자산 매도 허용 조건 등은 모두 Settings 화면에서 사용자 수정 가능해야 하며, 문서의 수치는 기본값으로 제공한다.

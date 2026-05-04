@@ -29,9 +29,10 @@
     - **[TEST-RAMS-1.6.1] 실시간 전략 교체:** `Retirement` 탭에서 다른 전략 선택 시 `activate` API 호출 및 시뮬레이션 데이터 갱신 여부 확인.
     - **[TEST-RAMS-1.6.2] 활성 전략 삭제 차단:** `Portfolio Manager` 리스트에서 활성화된 전략 삭제 시도 시 차단 및 안내 메시지 노출 확인.
 - **[TEST-RAMS-1.7] 전략 카테고리 구조 검증 [NEW]:**
-    - **[TEST-RAMS-1.7.1] 계좌 타입별 4카테고리 렌더링:** Corporate 선택 시 `SGOV Buffer/High Income/Dividend Growth/Growth Engine`, Pension 선택 시 `SGOV Buffer/Bond Buffer/Dividend Growth/Growth Engine`이 정확히 렌더링되는지 확인.
+    - **[TEST-RAMS-1.7.1] 계좌 공통 5카테고리 렌더링:** Corporate/Pension 모두 `SGOV Buffer/Bond Buffer/High Income/Dividend Growth/Growth Engine`이 정확히 렌더링되는지 확인.
     - **[TEST-RAMS-1.7.2] 사용자 종목 배치:** 사용자가 각 전략 카테고리에 종목을 추가/이동/삭제한 결과가 저장 및 재로드 후 유지되는지 확인.
-    - **[TEST-RAMS-1.7.3] 엔진 연동 정합성:** 저장된 전략 카테고리 비중이 시뮬레이션 엔진의 자산 버킷 초기값으로 정확히 반영되는지 확인.
+    - **[TEST-RAMS-1.7.3] 엔진 연동 정합성:** 저장된 전략 카테고리 비중이 시뮬레이션 엔진의 5개 자산 버킷 초기값으로 정확히 반영되는지 확인.
+    - **[TEST-RAMS-1.7.4] 카테고리 혼합 금지:** `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`이 엔진 내부에서 동일 버킷으로 합쳐지지 않는지 확인.
 
 ### [Structure 2] 세무 및 수익성 엔진 (REQ-RAMS-2.1 ~ 2.3)
 - **[TEST-TAX-01] 법인/개인 세무 산출:** 매월 발생하는 지역건보료와 법인 운영비가 자산에서 정확히 차감되는지 확인.
@@ -44,15 +45,28 @@
 ### [Structure 3] 생애 주기 시뮬레이션 (REQ-RAMS-3.1 ~ 3.3)
 - **[TEST-PHS-01] Phase 자동 전환:** 설정된 나이(예: 65세)에 도달했을 때 Phase 1에서 Phase 2(연금 수령)로 자동 전환되는지 확인.
 - **[TEST-SUR-01] 자산 고갈 시점 계산:** 기대수익률과 인플레이션을 반영하여 자산이 0이 되는 시점이 산술적으로 타당한지 확인.
-- **[TEST-SUR-02] 연 1회 실행 게이트 검증 [NEW]:**
-    - 리밸런싱과 전략 매도가 지정된 월/주에만 발생하고, 나머지 월에는 현금 유입/지출만 반영되는지 확인.
-- **[TEST-SUR-03] 역할 하한선 기반 매도 검증 [NEW]:**
-    - 연금 계좌에서 `SGOV 2년치`, `Bond 5년치/총자산 5%`, `Dividend 10%` 규칙이 단계적으로 적용되는지 확인.
-    - 법인 계좌에서 `SGOV 36/30/24개월` 임계치와 `High Income 20%` 규칙이 적용되는지 확인.
-    - 연금 `Phase 2`에서는 `Growth` 매도가 차단되고 `Phase 3`에서만 허용되는지 확인.
-- **[TEST-SUR-04] 하락장 보호 검증 [NEW]:**
-    - 하락장 플래그 활성화 시 `Dividend Growth` 및 `Growth Engine` 매도가 중단되는지 확인.
-    - 법인 `SGOV` 버퍼가 위기 임계치 이상이면 리밸런싱 월에도 `Growth Engine` 매도가 발생하지 않는지 확인.
+- **[TEST-SUR-02] 5월/11월 정기점검 게이트 검증 [NEW]:**
+    - 법인 `SGOV 30개월` 복구가 5월에만, `SGOV 27개월` 복구가 11월에만 발생하는지 확인.
+    - 개인연금 정기 리밸런싱은 5월에만 실행되고 11월에는 실행되지 않는지 확인.
+- **[TEST-SUR-03] Phase별 법인 부담 월지출 검증 [NEW]:**
+    - Phase 1/2/3에서 법인 부담 월지출이 `총 필요금액 - 개인연금 - 국민연금` 공식대로 계산되는지 확인.
+    - 총 필요금액은 자동 감소하지 않고 법인 부담액만 변하는지 확인.
+- **[TEST-SUR-04] SGOV only 인출 검증 [NEW]:**
+    - 평시 월 인출에서 `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`이 직접 감소하지 않는지 확인.
+- **[TEST-SUR-05] 개인연금 floor breach 중간보충 검증 [NEW]:**
+    - 개인연금 `SGOV Buffer`가 12개월 미만이 되면 `Bond Buffer`에서 우선 보충되고, 다른 카테고리는 즉시 매도되지 않는지 확인.
+- **[TEST-SUR-06] Shock / Crash20 / Stress 검증 [NEW]:**
+    - 주식성 슬리브가 직전 5월 기준 대비 20% 이상 하락하면 Shock Flag가 ON 되는지 확인.
+    - Stress가 월말 숫자가 아니라 5월 A/B/C 테스트 결과로만 판정되는지 확인.
+    - Shock Flag는 5월 정기점검에서만 해제되는지 확인.
+- **[TEST-SUR-07] 인플레이션 승인/동결 검증 [NEW]:**
+    - 5월 테스트 통과 시 후보 총 필요금액이 승인되고 6월~다음해 5월까지 고정 적용되는지 확인.
+    - 테스트 실패 시 기존 총 필요금액이 그대로 유지되는지 확인.
+- **[TEST-SUR-08] 자산군별 PA/DY/TR 독립 적용 검증 [NEW]:**
+    - `SGOV`, `Bond`, `High Income`, `Dividend`, `Growth`가 서로 다른 `PA/DY/TR`을 가질 때 월별 증가율이 독립적으로 반영되는지 확인.
+    - 계정 전체 평균 성장률 1개가 모든 비현금 자산에 공유되지 않는지 확인.
+- **[TEST-SUR-09] 사용자 변형 포트폴리오 호환성 검증 [NEW]:**
+    - 문서 표준 포트폴리오가 아닌 다른 종목/비중 조합을 넣어도, 같은 자산군 카테고리 규칙으로 동일 엔진이 동작하는지 확인.
 
 ### [Structure 4] 설정 사용자화 및 UI 검증 (REQ-RAMS-8.1 ~ 8.5)
 - **[TEST-UI-RULE-01] 전략 설정 UI 렌더링:**
