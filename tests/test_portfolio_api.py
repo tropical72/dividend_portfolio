@@ -68,7 +68,7 @@ def test_rename_portfolio(clean_data):
 
 
 def test_create_portfolio_persists_account_type_and_strategy_categories(clean_data):
-    """새 전략 카테고리와 account_type이 저장 시 유지되는지 검증한다."""
+    """법인 포트폴리오에 Bond Buffer 포함 5자산군이 저장 시 유지되는지 검증한다."""
     payload = {
         "name": "Corp Strategy",
         "account_type": "Corporate",
@@ -76,9 +76,10 @@ def test_create_portfolio_persists_account_type_and_strategy_categories(clean_da
         "currency": "KRW",
         "items": [
             {"symbol": "SGOV", "name": "SGOV", "category": "SGOV Buffer", "weight": 30},
+            {"symbol": "BND", "name": "BND", "category": "Bond Buffer", "weight": 10},
             {"symbol": "JEPI", "name": "JEPI", "category": "High Income", "weight": 20},
             {"symbol": "SCHD", "name": "SCHD", "category": "Dividend Growth", "weight": 20},
-            {"symbol": "VOO", "name": "VOO", "category": "Growth Engine", "weight": 30},
+            {"symbol": "VOO", "name": "VOO", "category": "Growth Engine", "weight": 20},
         ],
     }
 
@@ -89,6 +90,7 @@ def test_create_portfolio_persists_account_type_and_strategy_categories(clean_da
     assert data["account_type"] == "Corporate"
     assert [item["category"] for item in data["items"]] == [
         "SGOV Buffer",
+        "Bond Buffer",
         "High Income",
         "Dividend Growth",
         "Growth Engine",

@@ -75,7 +75,7 @@ export function PortfolioTab({
         manageCompare: "관리 및 비교",
         designMode: "설계 모드",
         designDescription:
-          "계좌 타입별 4단 전략 카테고리로 자산 배분과 우선순위를 설계합니다.",
+          "계좌 타입별 5단 자산 카테고리로 자산 배분과 우선순위를 설계합니다.",
         reset: "새로만들기",
         savePortfolio: "포트폴리오 저장",
         simulationSettings: "시뮬레이션 설정",
@@ -136,7 +136,7 @@ export function PortfolioTab({
         manageCompare: "Manage & Compare",
         designMode: "Design Mode",
         designDescription:
-          "Design allocation and priority using the four strategic categories for each account type.",
+          "Design allocation and priority using the five asset categories for each account type.",
         reset: "Reset",
         savePortfolio: "Save Portfolio",
         simulationSettings: "Simulation Settings",
@@ -216,23 +216,30 @@ export function PortfolioTab({
               color: "bg-blue-400",
             },
             {
+              id: "Bond Buffer" as PortfolioCategory,
+              name: "Bond Buffer",
+              subtitle: "2nd Priority",
+              description: "채권 기반 중기 완충 자산",
+              color: "bg-cyan-400",
+            },
+            {
               id: "High Income" as PortfolioCategory,
               name: "High Income",
-              subtitle: "2nd Priority",
+              subtitle: "3rd Priority",
               description: "고인컴 현금흐름 보강 블록",
               color: "bg-amber-400",
             },
             {
               id: "Dividend Growth" as PortfolioCategory,
               name: "Dividend Growth",
-              subtitle: "3rd Priority",
+              subtitle: "4th Priority",
               description: "배당성장 자산으로 중간 보강",
               color: "bg-emerald-400",
             },
             {
               id: "Growth Engine" as PortfolioCategory,
               name: "Growth Engine",
-              subtitle: "4th Priority",
+              subtitle: "5th Priority",
               description: "최후의 순간까지 보호할 성장 엔진",
               color: "bg-fuchsia-400",
             },
@@ -493,9 +500,6 @@ export function PortfolioTab({
   useEffect(() => {
     setItems((prev) =>
       prev.map((item) => {
-        if (accountType === "Corporate" && item.category === "Bond Buffer") {
-          return { ...item, category: "High Income" as PortfolioCategory };
-        }
         if (accountType === "Pension" && item.category === "High Income") {
           return { ...item, category: "Bond Buffer" as PortfolioCategory };
         }

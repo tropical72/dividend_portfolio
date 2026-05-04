@@ -306,6 +306,13 @@ export function WatchlistTab({
             "bg-blue-400",
           ],
           [
+            "Bond Buffer",
+            isKorean
+              ? "채권 기반 중기 완충 버퍼"
+              : "Bond-based mid-term buffer",
+            "bg-cyan-400",
+          ],
+          [
             "High Income",
             isKorean ? "고인컴 현금흐름 블록" : "High-income cashflow block",
             "bg-amber-400",

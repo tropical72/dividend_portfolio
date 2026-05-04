@@ -1779,6 +1779,7 @@ class DividendBackend:
             "Growth": "Growth Engine",
             "HighIncome": "High Income",
             "SGOV Buffer": "SGOV Buffer",
+            "Bond Buffer": "Bond Buffer",
             "High Income": "High Income",
             "Dividend Growth": "Dividend Growth",
             "Growth Engine": "Growth Engine",

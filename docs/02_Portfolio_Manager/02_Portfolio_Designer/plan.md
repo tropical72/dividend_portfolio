@@ -55,11 +55,11 @@
     - [x] **T-02-10.1.1** Corporate/Pension 계좌별 허용 카테고리 정의 및 타입 반영.
     - [x] **T-02-10.1.2** 기존 3단 카테고리 포트폴리오 마이그레이션 규칙 구현.
 - **T-02-10.2: Portfolio Designer UI 개편**
-    - [x] **T-02-10.2.1** Corporate용 `SGOV Buffer/High Income/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
+    - [x] **T-02-10.2.1** Corporate용 `SGOV Buffer/Bond Buffer/High Income/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
     - [x] **T-02-10.2.2** Pension용 `SGOV Buffer/Bond Buffer/Dividend Growth/Growth Engine` 편집 레이아웃 구현.
     - [x] **T-02-10.2.3** 각 카테고리 설명, 매도 우선순위, 역할 안내 UI 추가.
 - **T-02-10.3: Watchlist 연동 및 분석 리포트 정합성**
-    - [x] **T-02-10.3.1** 종목 이관 팝업의 카테고리 선택지를 계좌 타입별 4카테고리로 교체.
+    - [x] **T-02-10.3.1** 종목 이관 팝업의 카테고리 선택지를 계좌 타입별 카테고리 구조에 맞게 교체.
     - [x] **T-02-10.3.2** 분석 리포트와 비교 대시보드의 카테고리 집계를 새 전략 카테고리 기준으로 갱신.
 
 ### [Implementation Notes] 구현 메모

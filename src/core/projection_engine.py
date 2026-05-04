@@ -48,7 +48,16 @@ class ProjectionEngine:
         curr_assets = {
             "corp_growth": c_bal * (c_sw.get("Growth Engine", c_w.get("Growth", 0))),
             "corp_dividend": c_bal * (c_sw.get("Dividend Growth", c_w.get("Dividend", 0))),
-            "corp_high_income": c_bal * (c_sw.get("High Income", c_w.get("Fixed", 0))),
+            "corp_high_income": c_bal
+            * (
+                c_sw.get("High Income", 0)
+                + c_sw.get("Bond Buffer", 0)
+                + (
+                    c_w.get("Fixed", 0)
+                    if "High Income" not in c_sw and "Bond Buffer" not in c_sw
+                    else 0
+                )
+            ),
             "corp_cash": c_bal * (c_sw.get("SGOV Buffer", c_w.get("Cash", 0))),
             "pen_growth": p_bal * (p_sw.get("Growth Engine", p_w.get("Growth", 0))),
             "pen_dividend": p_bal * (p_sw.get("Dividend Growth", p_w.get("Dividend", 0))),

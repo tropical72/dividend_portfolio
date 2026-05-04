@@ -3,14 +3,14 @@
 ## 1. 테스트 시나리오
 
 ### [TEST-PRT-01] 전략 카테고리 편집기 검증 [NEW]
-- **[TEST-PRT-01.1] Corporate 4카테고리 렌더링:**
-    - Corporate 계좌 선택 시 `SGOV Buffer`, `High Income`, `Dividend Growth`, `Growth Engine` 4개 섹션이 렌더링되는지 확인한다.
+- **[TEST-PRT-01.1] Corporate 5카테고리 렌더링:**
+    - Corporate 계좌 선택 시 `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine` 5개 섹션이 렌더링되는지 확인한다.
 - **[TEST-PRT-01.2] Pension 4카테고리 렌더링:**
     - Pension 계좌 선택 시 `SGOV Buffer`, `Bond Buffer`, `Dividend Growth`, `Growth Engine` 4개 섹션이 렌더링되는지 확인한다.
 - **[TEST-PRT-01.3] 카테고리 설명 표시:**
     - 각 섹션에 역할 설명과 매도 우선순위 안내가 노출되는지 확인한다.
 - **[TEST-PRT-01.4] 저장/재로드 정합성:**
-    - 4개 카테고리에 배치한 종목과 비중이 저장 후 재로드 시 동일하게 복원되는지 확인한다.
+    - 현재 계좌 타입에서 제공되는 카테고리에 배치한 종목과 비중이 저장 후 재로드 시 동일하게 복원되는지 확인한다.
 - **[TEST-PRT-01.5] 레거시 마이그레이션:**
     - 기존 3단 카테고리 포트폴리오를 열 때 계좌 타입 기준의 4단 전략 카테고리로 안전하게 변환되는지 확인한다.
 
@@ -23,7 +23,7 @@
 - **[TEST-PRT-07.3] 데이터 무결성 검증:**
     - Corporate 계좌 타입으로 새로운 포트폴리오 저장 시 API를 통해 데이터베이스에 `account_type: "Corporate"`로 저장되는지 확인.
 - **[TEST-PRT-07.4] 전략 중심 정보 구조 검증:**
-    - 4카테고리 편집기에서 각 카테고리의 역할/우선순위가 시각적으로 구분되며, 폰트 크기가 11px 미만으로 내려가지 않는지 검증한다.
+    - 카테고리 편집기에서 각 카테고리의 역할/우선순위가 시각적으로 구분되며, 폰트 크기가 11px 미만으로 내려가지 않는지 검증한다.
 
 ## 2. Feature Completion Gate [NEW]
 - Portfolio Designer 관련 Frontend 변경은 커밋 전 `npm run lint`, `npm run build`, `npx prettier --check <changed_frontend_files>`를 통과해야 한다.

@@ -14,11 +14,12 @@ test.describe("Portfolio Strategy Categories", () => {
     });
   });
 
-  test("should render four strategy categories for corporate accounts", async ({
+  test("should render five asset categories for corporate accounts", async ({
     page,
   }) => {
     await expect(page.getByTestId("portfolio-account-corporate")).toBeVisible();
     await expect(page.getByText("SGOV Buffer")).toBeVisible();
+    await expect(page.getByText("Bond Buffer")).toBeVisible();
     await expect(page.getByText("High Income")).toBeVisible();
     await expect(page.getByText("Dividend Growth")).toBeVisible();
     await expect(page.getByText("Growth Engine")).toBeVisible();

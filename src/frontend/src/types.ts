@@ -9,6 +9,7 @@ export type UiLanguage = "ko" | "en";
 export type PaScenarioKey = "conservative" | "base" | "optimistic";
 export type CorporateStrategyCategory =
   | "SGOV Buffer"
+  | "Bond Buffer"
   | "High Income"
   | "Dividend Growth"
   | "Growth Engine";

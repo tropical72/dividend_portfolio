@@ -1,8 +1,8 @@
 # Requirement: Portfolio (02) & Integration [Deep Dive]
 
 ## [REQ-PRT-01] 포트폴리오 설계 및 구성 (Design)
-- **[REQ-PRT-01.1] 설계 인터페이스:** 계좌 타입별 4단 전략 카테고리 섹션을 제공한다.
-    - Corporate: `SGOV Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`
+- **[REQ-PRT-01.1] 설계 인터페이스:** 계좌 타입별 전략 카테고리 섹션을 제공한다.
+    - Corporate: `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`
     - Pension: `SGOV Buffer`, `Bond Buffer`, `Dividend Growth`, `Growth Engine`
 - **[REQ-PRT-01.2] 항목 관리:** 각 종목의 Ticker, 이름, 비중(Weight, %)을 입력 및 수정 가능. [REQ-04]
 - **[REQ-PRT-01.3] 실시간 비중 합산:** 
@@ -25,7 +25,7 @@
 - **[REQ-PRT-03.2] 실시간 환율 연산:** 한쪽 통화 입력 시 즉시 현재 환율을 적용하여 다른 쪽 통화로 변환 표시 (환율 수치 병기).
 - **[REQ-PRT-03.3] 분석 모드 전환:** '과거 이력(TTM)' 또는 '미래 예측(Forward)' 모드 중 선택하여 시뮬레이션 수행.
 - **[REQ-PRT-03.4] 분석 결과 보고:** 카테고리별 및 전체에 대해 **가중 평균 배당률(Dividend Yield)**을 메인 지표로 표시하며, 은퇴 시뮬레이션용 **총수익률(TR)**은 PA 합산 수치임을 명시하여 병기한다. (세전 기준)
-- **[REQ-PRT-03.5] 전략 카테고리별 분석:** 분석 리포트는 4개 전략 카테고리별 비중과 DY/TR을 별도로 보여주어 사용자가 버퍼, 인컴, 성장 엔진 구성을 검토할 수 있어야 한다.
+- **[REQ-PRT-03.5] 전략 카테고리별 분석:** 분석 리포트는 현재 계좌 타입에서 제공되는 전략 카테고리별 비중과 DY/TR을 별도로 보여주어 사용자가 버퍼, 인컴, 성장 엔진 구성을 검토할 수 있어야 한다.
 
 ## [REQ-PRT-04] 영속성 및 데이터 관리 (Storage)
 - **[REQ-PRT-04.1] 포트폴리오 저장:** 
