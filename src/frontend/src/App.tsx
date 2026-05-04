@@ -164,9 +164,9 @@ function AppShell({
   const { t } = useI18n();
 
   return (
-    <div className="planner-shell flex min-h-screen bg-transparent text-slate-100 font-sans">
+    <div className="planner-shell flex h-screen overflow-hidden bg-transparent text-slate-100 font-sans">
       {/* 사이드바: RAMS 계층 구조 반영 */}
-      <nav className="w-72 shrink-0 border-r border-slate-800/70 bg-white/60 p-6 backdrop-blur-xl flex flex-col gap-2">
+      <nav className="soft-scrollbar flex h-full w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r border-slate-800/70 bg-white/60 p-6 backdrop-blur-xl">
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="p-2.5 rounded-2xl bg-emerald-100 shadow-sm ring-1 ring-emerald-200/70">
             <TrendingUp className="h-6 w-6 text-emerald-700" />
@@ -246,7 +246,7 @@ function AppShell({
       </nav>
 
       {/* 메인 컨텐츠 영역 */}
-      <main className="soft-scrollbar flex-1 overflow-y-auto bg-transparent p-8">
+      <main className="soft-scrollbar flex-1 overflow-y-auto bg-transparent p-8 min-h-0">
         <div className="mx-auto min-h-full max-w-[1600px] rounded-[2rem] border border-white/65 bg-white/42 p-8 shadow-sm backdrop-blur-md">
           {activeTab === "retirement" && <RetirementTab />}
           {activeTab === "cost-comparison" && <CostComparisonTab />}
