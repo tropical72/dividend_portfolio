@@ -47,6 +47,13 @@
     - **Portfolio Designer:** 각 카테고리 헤더에 해당 카테고리의 `기대주가상승률`과 합산된 `TR`을 실시간으로 표시한다.
     - **Retirement Simulation:** 국민연금 수령 시작 연령(60~70세)과 월 예상 수령액 설정을 보강하여 Phase 3 시뮬레이션에 반영한다.
 
+## [REQ-GLB-16] 자산군별 PA 시나리오 3중화 (Phase 1)
+- **[REQ-GLB-16.1] 5개 자산군 x 3 시나리오 설정:** `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`에 대해 `conservative / base / optimistic` 3가지 PA 기본값을 저장/수정할 수 있어야 한다.
+- **[REQ-GLB-16.2] 구버전 설정 호환성:** 기존 단일 `appreciation_rates` 구조와 `fixed_income` 레거시 값은 신규 3시나리오 구조의 `base` 시나리오로 안전하게 이관되어야 한다.
+- **[REQ-GLB-16.3] 화면별 시나리오 선택:** `Portfolio Manager`, `Retirement`, `Personal vs Corporate Comparison` 화면은 사용자가 `conservative / base / optimistic` 중 하나를 선택할 수 있어야 하며, 선택값 기준으로 PA/TR을 계산해야 한다.
+- **[REQ-GLB-16.4] Phase 1 계산 원칙:** Phase 1에서는 `DY`는 현재 포트폴리오/종목 기준 관측값을 유지하고, `TR = 현재 DY + 선택된 시나리오 PA` 공식을 사용한다.
+- **[REQ-GLB-16.5] 설정 툴팁 기준 종목 명시:** Settings의 자산군별 PA 툴팁에는 각 자산군의 산정 기준 종목을 명시해야 한다.
+
 ## Related Files
 - `src/backend/main.py` (FastAPI Entry Point)
 - `src/frontend/src/` (React Source)

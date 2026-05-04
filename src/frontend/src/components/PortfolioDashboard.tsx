@@ -32,13 +32,15 @@ import {
 } from "recharts";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
-import type { Portfolio, MasterPortfolio } from "../types";
+import type { AppreciationRateSet, Portfolio, MasterPortfolio } from "../types";
 
 /** [REQ-PRT-06, REQ-GLB-13] 포트폴리오 대시보드 및 비교 탭 */
 export function PortfolioDashboard({
   onLoad,
+  paRates,
 }: {
   onLoad: (p: Portfolio) => void;
+  paRates: AppreciationRateSet;
 }) {
   const { isKorean } = useI18n();
   const copy = isKorean
@@ -174,7 +176,6 @@ export function PortfolioDashboard({
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
-  const [paRates, setPaRates] = useState<Record<string, number>>({});
 
   /** 가중 평균 배당률 계산 공통 함수 */
   const getDY = useCallback((p: Portfolio | undefined) => {
@@ -232,8 +233,6 @@ export function PortfolioDashboard({
         if (res.success && res.data) {
           const s = res.data;
           if (s.current_exchange_rate) setExchangeRate(s.current_exchange_rate);
-          if (s.appreciation_rates) setPaRates(s.appreciation_rates);
-
           if (s.default_capital) {
             const cap = s.default_capital;
             if (s.default_currency === "KRW") {
@@ -591,9 +590,27 @@ export function PortfolioDashboard({
                 const c_p = portfolios.find((p) => p.id === m.corp_id);
                 const p_p = portfolios.find((p) => p.id === m.pension_id);
 
-                // [REQ-GLB-13] 백엔드에서 미리 계산해 준 값을 우선 사용하거나 프론트에서 가중 평균 계산
-                const avg_dy = m.combined_yield ?? 0;
-                const avg_tr = m.combined_tr ?? 0;
+                const corpCapital = c_p?.total_capital || 0;
+                const pensionCapital = p_p?.total_capital || 0;
+                const totalCapital = corpCapital + pensionCapital;
+                const avg_dy =
+                  totalCapital > 0
+                    ? (getDY(c_p) * corpCapital + getDY(p_p) * pensionCapital) /
+                      totalCapital
+                    : c_p
+                      ? getDY(c_p)
+                      : p_p
+                        ? getDY(p_p)
+                        : 0;
+                const avg_tr =
+                  totalCapital > 0
+                    ? (getTR(c_p) * corpCapital + getTR(p_p) * pensionCapital) /
+                      totalCapital
+                    : c_p
+                      ? getTR(c_p)
+                      : p_p
+                        ? getTR(p_p)
+                        : 0;
 
                 return (
                   <div

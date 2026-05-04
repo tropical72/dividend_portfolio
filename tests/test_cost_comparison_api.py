@@ -42,6 +42,7 @@ def _build_config_payload():
             "ownership_ratio": 0.5,
         },
         "assumptions": {
+            "pa_scenario": "base",
             "price_appreciation_rate": 3.0,
             "simulation_years": 5,
             "target_monthly_household_cash_after_tax": 10000000,
@@ -172,6 +173,7 @@ def test_cost_comparison_config_persistence(tmp_path, monkeypatch):
     assert data["personal_assets"]["investment_assets"] == 1600000000
     assert data["real_estate"]["ownership_ratio"] == 0.5
     assert data["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
+    assert data["assumptions"]["pa_scenario"] == "base"
     assert data["assumptions"]["price_appreciation_rate"] == 3.0
     assert data["assumptions"]["target_monthly_household_cash_after_tax"] == 10000000
     assert data["corporate"]["salary_recipients"][0]["monthly_salary"] == 3000000
@@ -215,6 +217,7 @@ def test_cost_comparison_run_uses_active_master_and_returns_kpis(tmp_path, monke
     assert assumptions["master_portfolio_id"] == backend.DEFAULT_MASTER_PORTFOLIO_ID
     assert assumptions["dy"] > 0
     assert assumptions["tr"] == assumptions["dy"] + assumptions["pa"]
+    assert assumptions["pa_scenario"] == "base"
     assert assumptions["simulation_years"] == 5
     assert assumptions["target_monthly_household_cash_after_tax"] == 10000000
     assert assumptions["corporate_portfolio_name"]
@@ -314,8 +317,8 @@ def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypa
     growth = growth_response.json()["data"]["assumptions"]
 
     assert conservative["dy"] == pytest.approx(growth["dy"])
-    assert conservative["pa"] == pytest.approx(0.001)
-    assert growth["pa"] == pytest.approx(0.082)
+    assert conservative["pa"] == pytest.approx(0.0075)
+    assert growth["pa"] == pytest.approx(0.075)
     assert conservative["tr"] == pytest.approx(conservative["dy"] + conservative["pa"])
     assert growth["tr"] == pytest.approx(growth["dy"] + growth["pa"])
     assert growth["tr"] > conservative["tr"]

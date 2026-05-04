@@ -31,12 +31,29 @@ test.describe("National Pension Graph Regression", () => {
     seededState.settings = {
       ...(seededState.settings || {}),
       ui_language: "ko",
+      default_pa_scenario: "base",
       appreciation_rates: {
-        cash_sgov: 0,
-        bond_buffer: 0,
-        high_income: 0,
-        dividend_stocks: 0,
-        growth_stocks: 0,
+        conservative: {
+          cash_sgov: 0,
+          bond_buffer: 0,
+          high_income: 0,
+          dividend_stocks: 0,
+          growth_stocks: 0,
+        },
+        base: {
+          cash_sgov: 0,
+          bond_buffer: 0,
+          high_income: 0,
+          dividend_stocks: 0,
+          growth_stocks: 0,
+        },
+        optimistic: {
+          cash_sgov: 0,
+          bond_buffer: 0,
+          high_income: 0,
+          dividend_stocks: 0,
+          growth_stocks: 0,
+        },
       },
     };
 

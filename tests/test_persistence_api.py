@@ -165,17 +165,18 @@ def test_backend_normalizes_legacy_appreciation_rates_on_load(tmp_path):
     backend = DividendBackend(data_dir=str(data_dir))
     settings = backend.get_settings()
 
-    assert settings["appreciation_rates"]["cash_sgov"] == 0.1
-    assert settings["appreciation_rates"]["bond_buffer"] == 2.5
-    assert settings["appreciation_rates"]["high_income"] == 2.5
-    assert settings["appreciation_rates"]["dividend_stocks"] == 7.5
-    assert settings["appreciation_rates"]["growth_stocks"] == 8.2
-    assert "fixed_income" not in settings["appreciation_rates"]
+    assert settings["appreciation_rates"]["base"]["cash_sgov"] == 0.1
+    assert settings["appreciation_rates"]["base"]["bond_buffer"] == 2.5
+    assert settings["appreciation_rates"]["base"]["high_income"] == 2.5
+    assert settings["appreciation_rates"]["base"]["dividend_stocks"] == 7.5
+    assert settings["appreciation_rates"]["base"]["growth_stocks"] == 7.5
+    assert "fixed_income" not in settings["appreciation_rates"]["base"]
+    assert settings["default_pa_scenario"] == "base"
 
     backend.update_settings({"ui_language": "en"})
 
     saved_settings = json.loads((data_dir / "settings.json").read_text(encoding="utf-8"))
     assert saved_settings["ui_language"] == "en"
-    assert saved_settings["appreciation_rates"]["bond_buffer"] == 2.5
-    assert saved_settings["appreciation_rates"]["high_income"] == 2.5
-    assert "fixed_income" not in saved_settings["appreciation_rates"]
+    assert saved_settings["appreciation_rates"]["base"]["bond_buffer"] == 2.5
+    assert saved_settings["appreciation_rates"]["base"]["high_income"] == 2.5
+    assert "fixed_income" not in saved_settings["appreciation_rates"]["base"]

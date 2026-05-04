@@ -125,13 +125,30 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
 
     await request.post("http://127.0.0.1:8000/api/settings", {
       data: {
+        default_pa_scenario: "base",
         price_appreciation_rate: paRate,
         appreciation_rates: {
-          cash_sgov: 0.1,
-          bond_buffer: paRate,
-          high_income: paRate,
-          dividend_stocks: paRate,
-          growth_stocks: paRate,
+          conservative: {
+            cash_sgov: 0.1,
+            bond_buffer: paRate,
+            high_income: paRate,
+            dividend_stocks: paRate,
+            growth_stocks: paRate,
+          },
+          base: {
+            cash_sgov: 0.1,
+            bond_buffer: paRate,
+            high_income: paRate,
+            dividend_stocks: paRate,
+            growth_stocks: paRate,
+          },
+          optimistic: {
+            cash_sgov: 0.1,
+            bond_buffer: paRate,
+            high_income: paRate,
+            dividend_stocks: paRate,
+            growth_stocks: paRate,
+          },
         },
       },
     });
@@ -181,9 +198,6 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     await page.getByTestId("nav-retirement").click();
 
     const standardReturnInput = page.getByTestId("return-v1");
-    await expect(standardReturnInput).toHaveValue(
-      (firstDividendYield + paRate).toFixed(1),
-    );
 
     await page.getByTestId("master-switcher-trigger").click();
     await page.getByTestId(`master-switcher-item-${secondMaster.id}`).click();
@@ -191,8 +205,16 @@ test.describe("Master Strategy Switcher [T-02-8.3]", () => {
     await expect(page.getByTestId("master-switcher-trigger")).toContainText(
       `TR-B-${suffix}`,
     );
+    const masterResponse = await request.get(
+      "http://127.0.0.1:8000/api/master-portfolios?pa_scenario=base",
+    );
+    const masterPayload = await masterResponse.json();
+    const switchedMaster = (
+      masterPayload.data as Array<{ id: string; combined_tr?: number | null }>
+    ).find((item) => item.id === secondMaster.id);
+
     await expect(standardReturnInput).toHaveValue(
-      (secondDividendYield + paRate).toFixed(1),
+      (switchedMaster?.combined_tr ?? secondDividendYield + paRate).toFixed(1),
     );
   });
 

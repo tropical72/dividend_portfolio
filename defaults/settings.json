@@ -2,13 +2,30 @@
     "default_capital": 10000.0,
     "default_currency": "USD",
     "current_exchange_rate": 1485.219970703125,
+    "default_pa_scenario": "base",
     "price_appreciation_rate": 3.0,
     "appreciation_rates": {
-        "cash_sgov": 0.1,
-        "bond_buffer": 0.1,
-        "high_income": 0.1,
-        "dividend_stocks": 9.6,
-        "growth_stocks": 8.2
+        "conservative": {
+            "cash_sgov": 0.0,
+            "bond_buffer": -0.5,
+            "high_income": 0.5,
+            "dividend_stocks": 5.5,
+            "growth_stocks": 6.5
+        },
+        "base": {
+            "cash_sgov": 0.0,
+            "bond_buffer": 0.0,
+            "high_income": 1.5,
+            "dividend_stocks": 6.5,
+            "growth_stocks": 7.5
+        },
+        "optimistic": {
+            "cash_sgov": 0.0,
+            "bond_buffer": 0.5,
+            "high_income": 2.5,
+            "dividend_stocks": 8.0,
+            "growth_stocks": 9.0
+        }
     },
     "exchange_rate_cache": {
         "last_fetch": "2026-04-24T16:00:23.042794",

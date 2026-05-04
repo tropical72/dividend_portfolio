@@ -24,7 +24,12 @@ import {
 } from "recharts";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
+import {
+  DEFAULT_PA_SCENARIO,
+  normalizePaScenarioKey,
+} from "../lib/paScenarios";
 import type {
+  PaScenarioKey,
   RetirementConfig,
   SimulationResult,
   MasterPortfolio,
@@ -84,6 +89,8 @@ export function RetirementTab() {
   );
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("v1");
+  const [paScenario, setPaScenario] =
+    useState<PaScenarioKey>(DEFAULT_PA_SCENARIO);
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [exchangeRateLastUpdated, setExchangeRateLastUpdated] = useState<
     string | null
@@ -123,13 +130,18 @@ export function RetirementTab() {
   );
 
   const fetchData = useCallback(
-    async (scenarioId: string | null = null) => {
+    async (
+      scenarioId: string | null = null,
+      selectedPaScenario: PaScenarioKey = paScenario,
+    ) => {
       setIsLoading(true);
       setErrorMessage(null);
       try {
         const [configRes, masterRes] = await Promise.all([
           fetch("http://localhost:8000/api/retirement/config"),
-          fetch("http://localhost:8000/api/master-portfolios"),
+          fetch(
+            `http://localhost:8000/api/master-portfolios?pa_scenario=${selectedPaScenario}`,
+          ),
         ]);
 
         const configData = await configRes.json();
@@ -151,7 +163,7 @@ export function RetirementTab() {
         await fetchExchangeRate();
 
         const currentScenario = normalizedScenario;
-        const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}`;
+        const simUrl = `http://localhost:8000/api/retirement/simulate?scenario=${currentScenario}&pa_scenario=${selectedPaScenario}`;
         const simRes = await fetch(simUrl);
         const simData = await simRes.json();
 
@@ -171,8 +183,21 @@ export function RetirementTab() {
   );
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetch("http://localhost:8000/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data.data) {
+          setPaScenario(
+            normalizePaScenarioKey(data.data.default_pa_scenario || "base"),
+          );
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    fetchData(null, paScenario);
+  }, [fetchData, paScenario]);
 
   const handleSwitchVersion = async (id: string) => {
     if (!config) return;
@@ -183,7 +208,7 @@ export function RetirementTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...config, active_assumption_id: id }),
       });
-      await fetchData(id);
+      await fetchData(id, paScenario);
     } catch (err) {
       console.error(err);
     }
@@ -202,7 +227,7 @@ export function RetirementTab() {
           prev.map((m) => ({ ...m, is_active: m.id === m_id })),
         );
         setIsSwitcherOpen(false);
-        await fetchData(activeId);
+        await fetchData(activeId, paScenario);
       } else {
         setErrorMessage(data.message || "전략을 활성화할 수 없습니다.");
       }
@@ -416,6 +441,36 @@ export function RetirementTab() {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white/90 p-1.5 shadow-sm">
+              {(["conservative", "base", "optimistic"] as PaScenarioKey[]).map(
+                (scenario) => (
+                  <button
+                    key={scenario}
+                    type="button"
+                    onClick={() => setPaScenario(scenario)}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-normal transition-all",
+                      paScenario === scenario
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                    )}
+                  >
+                    {scenario === "conservative"
+                      ? isKorean
+                        ? "보수적"
+                        : "Conservative"
+                      : scenario === "base"
+                        ? isKorean
+                          ? "기본"
+                          : "Base"
+                        : isKorean
+                          ? "낙관적"
+                          : "Optimistic"}
+                  </button>
+                ),
+              )}
             </div>
 
             <div
@@ -745,7 +800,11 @@ export function RetirementTab() {
                   </p>
                   <EditableInput
                     id={`return-${id}`}
-                    initialValue={item.expected_return * 100}
+                    initialValue={
+                      (id === "v1"
+                        ? standardMasterReturn
+                        : item.expected_return) * 100
+                    }
                     masterValue={
                       (id === "v1"
                         ? standardMasterReturn

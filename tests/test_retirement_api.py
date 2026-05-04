@@ -233,6 +233,7 @@ def test_run_retirement_simulation_with_events():
 
 def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     """사용자 설정 rebalance_month가 실제 엔진 매도 시점에 반영되어야 한다."""
+    live_backend = main_module.backend
     client.post(
         "/api/retirement/config",
         json={
@@ -274,18 +275,18 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
         },
     )
 
-    original_get_active_master_portfolio = backend.get_active_master_portfolio
-    original_get_portfolio_by_id = backend.get_portfolio_by_id
-    original_portfolios = backend.portfolios
-    original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
-    original_get_standard_profile_return = backend.get_standard_profile_return
+    original_get_active_master_portfolio = live_backend.get_active_master_portfolio
+    original_get_portfolio_by_id = live_backend.get_portfolio_by_id
+    original_portfolios = live_backend.portfolios
+    original_get_portfolio_stats_by_id = live_backend.get_portfolio_stats_by_id
+    original_get_standard_profile_return = live_backend.get_standard_profile_return
 
     try:
-        backend.get_active_master_portfolio = lambda: None
-        backend.get_portfolio_by_id = lambda _portfolio_id: None
-        backend.portfolios = []
-        backend.get_standard_profile_return = lambda: 0.0
-        backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
+        live_backend.get_active_master_portfolio = lambda: None
+        live_backend.get_portfolio_by_id = lambda _portfolio_id: None
+        live_backend.portfolios = []
+        live_backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+        live_backend.get_portfolio_stats_by_id = lambda _portfolio_id, *_args, **_kwargs: {
             "dividend_yield": 0.0,
             "expected_return": 0.0,
             "weights": {"Growth": 1.0},
@@ -293,11 +294,11 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
 
         response = client.get("/api/retirement/simulate")
     finally:
-        backend.get_active_master_portfolio = original_get_active_master_portfolio
-        backend.get_portfolio_by_id = original_get_portfolio_by_id
-        backend.portfolios = original_portfolios
-        backend.get_standard_profile_return = original_get_standard_profile_return
-        backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
+        live_backend.get_active_master_portfolio = original_get_active_master_portfolio
+        live_backend.get_portfolio_by_id = original_get_portfolio_by_id
+        live_backend.portfolios = original_portfolios
+        live_backend.get_standard_profile_return = original_get_standard_profile_return
+        live_backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
 
     assert response.status_code == 200
     payload = response.json()
@@ -359,8 +360,9 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     meta = response.json()["data"]["meta"]
     assert meta["master_name"] == "Retirement Growth Mix"
     assert meta["combined_dy"] == pytest.approx(0.04)
-    assert meta["combined_tr"] == pytest.approx(0.122)
-    assert meta["pa_rate"] == pytest.approx(0.082)
+    assert meta["combined_tr"] == pytest.approx(0.115)
+    assert meta["pa_rate"] == pytest.approx(0.075)
+    assert meta["pa_scenario"] == "base"
 
     conservative_master_id = _create_retirement_master(
         backend,
@@ -377,12 +379,13 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     conservative_meta = response.json()["data"]["meta"]
     assert conservative_meta["master_name"] == "Retirement Conservative Mix"
     assert conservative_meta["combined_dy"] == pytest.approx(0.04)
-    assert conservative_meta["combined_tr"] == pytest.approx(0.041)
-    assert conservative_meta["pa_rate"] == pytest.approx(0.001)
+    assert conservative_meta["combined_tr"] == pytest.approx(0.0475)
+    assert conservative_meta["pa_rate"] == pytest.approx(0.0075)
 
 
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():
     """국민연금 개시 연령과 월 수령액이 Phase 3 현금흐름에 반영되어야 한다."""
+    live_backend = main_module.backend
     client.post(
         "/api/retirement/config",
         json={
@@ -423,18 +426,18 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
         },
     )
 
-    original_get_active_master_portfolio = backend.get_active_master_portfolio
-    original_get_portfolio_by_id = backend.get_portfolio_by_id
-    original_portfolios = backend.portfolios
-    original_get_portfolio_stats_by_id = backend.get_portfolio_stats_by_id
-    original_get_standard_profile_return = backend.get_standard_profile_return
+    original_get_active_master_portfolio = live_backend.get_active_master_portfolio
+    original_get_portfolio_by_id = live_backend.get_portfolio_by_id
+    original_portfolios = live_backend.portfolios
+    original_get_portfolio_stats_by_id = live_backend.get_portfolio_stats_by_id
+    original_get_standard_profile_return = live_backend.get_standard_profile_return
 
     try:
-        backend.get_active_master_portfolio = lambda: None
-        backend.get_portfolio_by_id = lambda _portfolio_id: None
-        backend.portfolios = []
-        backend.get_standard_profile_return = lambda: 0.0
-        backend.get_portfolio_stats_by_id = lambda _portfolio_id: {
+        live_backend.get_active_master_portfolio = lambda: None
+        live_backend.get_portfolio_by_id = lambda _portfolio_id: None
+        live_backend.portfolios = []
+        live_backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+        live_backend.get_portfolio_stats_by_id = lambda _portfolio_id, *_args, **_kwargs: {
             "dividend_yield": 0.0,
             "expected_return": 0.0,
             "weights": {"Growth": 1.0},
@@ -442,11 +445,11 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
 
         response = client.get("/api/retirement/simulate")
     finally:
-        backend.get_active_master_portfolio = original_get_active_master_portfolio
-        backend.get_portfolio_by_id = original_get_portfolio_by_id
-        backend.portfolios = original_portfolios
-        backend.get_standard_profile_return = original_get_standard_profile_return
-        backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
+        live_backend.get_active_master_portfolio = original_get_active_master_portfolio
+        live_backend.get_portfolio_by_id = original_get_portfolio_by_id
+        live_backend.portfolios = original_portfolios
+        live_backend.get_standard_profile_return = original_get_standard_profile_return
+        live_backend.get_portfolio_stats_by_id = original_get_portfolio_stats_by_id
 
     assert response.status_code == 200
     payload = response.json()
@@ -459,22 +462,33 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
 
 def test_run_retirement_simulation_rejects_broken_active_master_reference():
     """활성 마스터 전략의 포트폴리오 참조가 깨지면 시뮬레이션은 실패해야 한다."""
-    original_master_portfolios = backend.master_portfolios
+    live_backend = main_module.backend
+    original_get_active_master_portfolio = live_backend.get_active_master_portfolio
+    original_calculate_master_portfolio_tr = live_backend.calculate_master_portfolio_tr
 
     try:
-        backend.master_portfolios = [
-            {
-                "id": "broken-master",
-                "name": "Broken Master",
-                "corp_id": "missing-corp",
-                "pension_id": None,
-                "is_active": True,
-            }
-        ]
+        live_backend.get_active_master_portfolio = lambda: {
+            "id": "broken-master",
+            "name": "Broken Master",
+            "corp_id": "missing-corp",
+            "pension_id": None,
+            "is_active": True,
+        }
+        live_backend.calculate_master_portfolio_tr = lambda *_args, **_kwargs: {
+            "success": False,
+            "message": "broken portfolio references: corp_id=missing-corp",
+            "data": {
+                "corp_portfolio": None,
+                "pension_portfolio": None,
+                "missing_refs": ["corp_id=missing-corp"],
+                "is_broken": True,
+            },
+        }
 
         response = client.get("/api/retirement/simulate")
     finally:
-        backend.master_portfolios = original_master_portfolios
+        live_backend.get_active_master_portfolio = original_get_active_master_portfolio
+        live_backend.calculate_master_portfolio_tr = original_calculate_master_portfolio_tr
 
     assert response.status_code == 200
     payload = response.json()

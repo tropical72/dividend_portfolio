@@ -23,7 +23,14 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
+import {
+  DEFAULT_APPRECIATION_RATE_SCENARIOS,
+  DEFAULT_PA_SCENARIO,
+  normalizeAppreciationScenarios,
+  normalizePaScenarioKey,
+} from "../lib/paScenarios";
 import type {
+  PaScenarioKey,
   RetirementConfig,
   AppSettings,
   PlannedCashflow,
@@ -67,37 +74,10 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
   },
 };
 
-const DEFAULT_APPRECIATION_RATES = {
-  cash_sgov: 0.1,
-  bond_buffer: 0.1,
-  high_income: 0.1,
-  dividend_stocks: 9.6,
-  growth_stocks: 8.2,
-};
-
 const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];
 
 function formatDecimalDraft(value: number, fractionDigits = 1) {
   return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
-}
-
-function normalizeAppreciationRates(
-  rates?: AppSettings["appreciation_rates"] | { fixed_income?: number } | null,
-) {
-  const legacyFixedIncome =
-    rates && typeof rates === "object" && "fixed_income" in rates
-      ? Number(rates.fixed_income)
-      : undefined;
-  return {
-    ...DEFAULT_APPRECIATION_RATES,
-    ...(legacyFixedIncome === undefined
-      ? {}
-      : {
-          bond_buffer: legacyFixedIncome,
-          high_income: legacyFixedIncome,
-        }),
-    ...(rates || {}),
-  };
 }
 
 function getVisibleAssumptions(config: RetirementConfig) {
@@ -157,9 +137,12 @@ export function SettingsTab({
     default_capital: 10000,
     default_currency: "USD",
     ui_language: "ko" as UiLanguage,
+    default_pa_scenario: DEFAULT_PA_SCENARIO,
     price_appreciation_rate: 3.0,
-    appreciation_rates: { ...DEFAULT_APPRECIATION_RATES },
+    appreciation_rates: { ...DEFAULT_APPRECIATION_RATE_SCENARIOS },
   });
+  const [editingPaScenario, setEditingPaScenario] =
+    useState<PaScenarioKey>(DEFAULT_PA_SCENARIO);
 
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(
     null,
@@ -179,11 +162,17 @@ export function SettingsTab({
         default_capital: globalSettings.default_capital ?? 10000,
         default_currency: globalSettings.default_currency || "USD",
         ui_language: globalSettings.ui_language || "ko",
+        default_pa_scenario: normalizePaScenarioKey(
+          globalSettings.default_pa_scenario,
+        ),
         price_appreciation_rate: globalSettings.price_appreciation_rate ?? 3.0,
-        appreciation_rates: normalizeAppreciationRates(
+        appreciation_rates: normalizeAppreciationScenarios(
           globalSettings.appreciation_rates,
         ),
       });
+      setEditingPaScenario(
+        normalizePaScenarioKey(globalSettings.default_pa_scenario),
+      );
     }
     if (globalRetireConfig) {
       setRetireConfig({
@@ -1329,7 +1318,10 @@ export function SettingsTab({
                 onClick={() =>
                   setSettings({
                     ...settings,
-                    appreciation_rates: { ...DEFAULT_APPRECIATION_RATES },
+                    appreciation_rates: {
+                      ...DEFAULT_APPRECIATION_RATE_SCENARIOS,
+                    },
+                    default_pa_scenario: DEFAULT_PA_SCENARIO,
                   })
                 }
                 className="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700 transition-all"
@@ -1338,19 +1330,91 @@ export function SettingsTab({
                 <RotateCcw size={14} />
               </button>
             </div>
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,260px)_1fr]">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label
+                    className={cn(
+                      isKorean
+                        ? "text-xs font-bold text-slate-400 tracking-normal"
+                        : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                    )}
+                  >
+                    {t("settings.defaultPaScenario")}
+                  </label>
+                  <div className="group relative">
+                    <Info size={12} className="text-slate-600 cursor-help" />
+                    <div className="absolute left-0 bottom-full mb-2 w-64 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
+                      {t("settings.defaultPaScenarioTooltip")}
+                    </div>
+                  </div>
+                </div>
+                <select
+                  value={settings.default_pa_scenario || DEFAULT_PA_SCENARIO}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      default_pa_scenario: normalizePaScenarioKey(
+                        e.target.value,
+                      ),
+                    })
+                  }
+                  className="h-11 w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500"
+                >
+                  <option value="conservative">
+                    {t("scenario.conservative")}
+                  </option>
+                  <option value="base">{t("scenario.base")}</option>
+                  <option value="optimistic">{t("scenario.optimistic")}</option>
+                </select>
+              </div>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    ["conservative", "base", "optimistic"] as PaScenarioKey[]
+                  ).map((scenario) => (
+                    <button
+                      key={scenario}
+                      type="button"
+                      onClick={() => setEditingPaScenario(scenario)}
+                      className={cn(
+                        "rounded-xl border px-4 py-2 text-xs font-black tracking-wide transition-all",
+                        editingPaScenario === scenario
+                          ? "border-emerald-400 bg-emerald-500/15 text-emerald-200"
+                          : "border-slate-700 bg-slate-900/50 text-slate-400 hover:text-slate-200",
+                      )}
+                    >
+                      {t(`scenario.${scenario}` as const)}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] font-medium text-slate-500">
+                  {t("settings.editingPaScenario")}{" "}
+                  <span className="text-slate-300">
+                    {t(`scenario.${editingPaScenario}` as const)}
+                  </span>
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <InputGroup
                 label={t("settings.catCash")}
                 unit="%"
                 tooltip={t("settings.catCashTooltip")}
-                value={(settings.appreciation_rates?.cash_sgov || 0) * 1}
+                value={
+                  settings.appreciation_rates?.[editingPaScenario]?.cash_sgov ||
+                  0
+                }
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      cash_sgov: parseFloat(v) || 0,
+                      [editingPaScenario]: {
+                        ...settings.appreciation_rates?.[editingPaScenario],
+                        cash_sgov: parseFloat(v) || 0,
+                      },
                     },
                   })
                 }
@@ -1359,14 +1423,20 @@ export function SettingsTab({
                 label={t("settings.catBond")}
                 unit="%"
                 tooltip={t("settings.catBondTooltip")}
-                value={(settings.appreciation_rates?.bond_buffer || 0) * 1}
+                value={
+                  settings.appreciation_rates?.[editingPaScenario]
+                    ?.bond_buffer || 0
+                }
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      bond_buffer: parseFloat(v) || 0,
+                      [editingPaScenario]: {
+                        ...settings.appreciation_rates?.[editingPaScenario],
+                        bond_buffer: parseFloat(v) || 0,
+                      },
                     },
                   })
                 }
@@ -1375,14 +1445,20 @@ export function SettingsTab({
                 label={t("settings.catHighIncome")}
                 unit="%"
                 tooltip={t("settings.catHighIncomeTooltip")}
-                value={(settings.appreciation_rates?.high_income || 0) * 1}
+                value={
+                  settings.appreciation_rates?.[editingPaScenario]
+                    ?.high_income || 0
+                }
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      high_income: parseFloat(v) || 0,
+                      [editingPaScenario]: {
+                        ...settings.appreciation_rates?.[editingPaScenario],
+                        high_income: parseFloat(v) || 0,
+                      },
                     },
                   })
                 }
@@ -1391,14 +1467,20 @@ export function SettingsTab({
                 label={t("settings.catDividend")}
                 unit="%"
                 tooltip={t("settings.catDividendTooltip")}
-                value={(settings.appreciation_rates?.dividend_stocks || 0) * 1}
+                value={
+                  settings.appreciation_rates?.[editingPaScenario]
+                    ?.dividend_stocks || 0
+                }
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      dividend_stocks: parseFloat(v) || 0,
+                      [editingPaScenario]: {
+                        ...settings.appreciation_rates?.[editingPaScenario],
+                        dividend_stocks: parseFloat(v) || 0,
+                      },
                     },
                   })
                 }
@@ -1407,14 +1489,20 @@ export function SettingsTab({
                 label={t("settings.catGrowth")}
                 unit="%"
                 tooltip={t("settings.catGrowthTooltip")}
-                value={(settings.appreciation_rates?.growth_stocks || 0) * 1}
+                value={
+                  settings.appreciation_rates?.[editingPaScenario]
+                    ?.growth_stocks || 0
+                }
                 fractionDigits={1}
                 onChange={(v) =>
                   setSettings({
                     ...settings,
                     appreciation_rates: {
                       ...settings.appreciation_rates!,
-                      growth_stocks: parseFloat(v) || 0,
+                      [editingPaScenario]: {
+                        ...settings.appreciation_rates?.[editingPaScenario],
+                        growth_stocks: parseFloat(v) || 0,
+                      },
                     },
                   })
                 }

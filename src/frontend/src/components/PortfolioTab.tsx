@@ -15,9 +15,15 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
+import {
+  DEFAULT_PA_SCENARIO,
+  getScenarioRates,
+  normalizePaScenarioKey,
+} from "../lib/paScenarios";
 import type {
   AccountType,
   AppSettings,
+  PaScenarioKey,
   Portfolio,
   PortfolioCategory,
   PortfolioItem,
@@ -168,6 +174,8 @@ export function PortfolioTab({
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">(
     "design",
   );
+  const [paScenario, setPaScenario] =
+    useState<PaScenarioKey>(DEFAULT_PA_SCENARIO);
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState(copy.defaultName);
   const [status, setStatus] = useState<{
@@ -177,8 +185,7 @@ export function PortfolioTab({
 
   const getCategoryPA = useCallback(
     (catId: PortfolioCategory) => {
-      if (!globalSettings?.appreciation_rates) return 0;
-      const rates = globalSettings.appreciation_rates;
+      const rates = getScenarioRates(globalSettings, paScenario);
       switch (catId) {
         case "SGOV Buffer":
           return rates.cash_sgov;
@@ -194,7 +201,7 @@ export function PortfolioTab({
           return 0;
       }
     },
-    [globalSettings],
+    [globalSettings, paScenario],
   );
 
   const categories = useMemo(
@@ -286,6 +293,9 @@ export function PortfolioTab({
   /** 전역 설정 동기화 [REQ-PRT-03] */
   useEffect(() => {
     if (globalSettings) {
+      setPaScenario(
+        normalizePaScenarioKey(globalSettings.default_pa_scenario || "base"),
+      );
       const currentRate = globalSettings.current_exchange_rate || 1425.5;
       setExchangeRate(currentRate);
 
@@ -597,35 +607,69 @@ export function PortfolioTab({
       )}
 
       {/* 서브 네비게이션 [GS-UI-03.3] */}
-      <div className="mx-auto mb-10 flex w-fit self-center rounded-2xl border border-slate-200 bg-white/86 p-2 shadow-sm">
-        <button
-          onClick={() => setActiveSubTab("design")}
-          data-testid="portfolio-subtab-design"
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-10 py-4 text-sm font-semibold transition-all duration-300",
-            activeSubTab === "design"
-              ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+      <div className="mx-auto mb-10 flex w-full max-w-5xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex w-fit self-center rounded-2xl border border-slate-200 bg-white/86 p-2 shadow-sm">
+          <button
+            onClick={() => setActiveSubTab("design")}
+            data-testid="portfolio-subtab-design"
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-10 py-4 text-sm font-semibold transition-all duration-300",
+              activeSubTab === "design"
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+            )}
+          >
+            <Layout size={20} /> {copy.portfolioDesigner}
+          </button>
+          <button
+            onClick={() => setActiveSubTab("manage")}
+            data-testid="portfolio-subtab-dashboard"
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-10 py-4 text-sm font-semibold transition-all duration-300",
+              activeSubTab === "manage"
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+            )}
+          >
+            <PieChart size={20} /> {copy.manageCompare}
+          </button>
+        </div>
+        <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/86 p-2 shadow-sm">
+          {(["conservative", "base", "optimistic"] as PaScenarioKey[]).map(
+            (scenario) => (
+              <button
+                key={scenario}
+                type="button"
+                onClick={() => setPaScenario(scenario)}
+                className={cn(
+                  "rounded-xl px-4 py-2 text-xs font-black tracking-wide transition-all",
+                  paScenario === scenario
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                )}
+              >
+                {scenario === "conservative"
+                  ? isKorean
+                    ? "보수적"
+                    : "Conservative"
+                  : scenario === "base"
+                    ? isKorean
+                      ? "기본"
+                      : "Base"
+                    : isKorean
+                      ? "낙관적"
+                      : "Optimistic"}
+              </button>
+            ),
           )}
-        >
-          <Layout size={20} /> {copy.portfolioDesigner}
-        </button>
-        <button
-          onClick={() => setActiveSubTab("manage")}
-          data-testid="portfolio-subtab-dashboard"
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-10 py-4 text-sm font-semibold transition-all duration-300",
-            activeSubTab === "manage"
-              ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
-          )}
-        >
-          <PieChart size={20} /> {copy.manageCompare}
-        </button>
+        </div>
       </div>
 
       {activeSubTab === "manage" ? (
-        <PortfolioDashboard onLoad={handleLoadPortfolio} />
+        <PortfolioDashboard
+          onLoad={handleLoadPortfolio}
+          paRates={getScenarioRates(globalSettings, paScenario)}
+        />
       ) : (
         <>
           {/* 상단 헤더 및 액션 버튼 */}

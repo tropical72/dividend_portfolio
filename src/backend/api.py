@@ -15,6 +15,31 @@ DEFAULT_APPRECIATION_RATES = {
     "dividend_stocks": 9.6,
     "growth_stocks": 8.2,
 }
+DEFAULT_PA_SCENARIO = "base"
+PA_SCENARIO_KEYS = ("conservative", "base", "optimistic")
+DEFAULT_APPRECIATION_RATE_SCENARIOS = {
+    "conservative": {
+        "cash_sgov": 0.0,
+        "bond_buffer": -0.5,
+        "high_income": 0.5,
+        "dividend_stocks": 5.5,
+        "growth_stocks": 6.5,
+    },
+    "base": {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 1.5,
+        "dividend_stocks": 6.5,
+        "growth_stocks": 7.5,
+    },
+    "optimistic": {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.5,
+        "high_income": 2.5,
+        "dividend_stocks": 8.0,
+        "growth_stocks": 9.0,
+    },
+}
 
 
 class DividendBackend:
@@ -102,30 +127,76 @@ class DividendBackend:
 
     def _normalize_settings(self, settings: Dict[str, Any]) -> Dict[str, Any]:
         normalized = deepcopy(settings)
-        rates = normalized.get("appreciation_rates")
-        legacy_fixed_income = None
-        if isinstance(rates, dict):
-            legacy_fixed_income = rates.get("fixed_income")
-        normalized_rates = dict(DEFAULT_APPRECIATION_RATES)
-        if legacy_fixed_income is not None:
-            normalized_rates["bond_buffer"] = legacy_fixed_income
-            normalized_rates["high_income"] = legacy_fixed_income
-        if isinstance(rates, dict):
-            normalized_rates.update(
-                {
-                    key: value
-                    for key, value in rates.items()
-                    if key in DEFAULT_APPRECIATION_RATES
-                }
-            )
-        normalized["appreciation_rates"] = normalized_rates
+        normalized["appreciation_rates"] = self._normalize_appreciation_rate_scenarios(
+            normalized.get("appreciation_rates")
+        )
         normalized.setdefault("dart_api_key", "")
         normalized.setdefault("gemini_api_key", "")
         normalized.setdefault("default_capital", 10000.0)
         normalized.setdefault("default_currency", "USD")
         normalized.setdefault("ui_language", "ko")
         normalized.setdefault("price_appreciation_rate", 3.0)
+        normalized["default_pa_scenario"] = self._normalize_pa_scenario(
+            normalized.get("default_pa_scenario")
+        )
         return normalized
+
+    def _normalize_pa_scenario(self, candidate: Optional[Any]) -> str:
+        if isinstance(candidate, str) and candidate in PA_SCENARIO_KEYS:
+            return candidate
+        return DEFAULT_PA_SCENARIO
+
+    def _normalize_appreciation_rate_set(
+        self,
+        rate_set: Optional[Dict[str, Any]],
+        default_rate_set: Dict[str, float],
+    ) -> Dict[str, float]:
+        normalized_rates = dict(default_rate_set)
+        if not isinstance(rate_set, dict):
+            return normalized_rates
+
+        legacy_fixed_income = rate_set.get("fixed_income")
+        if legacy_fixed_income is not None:
+            normalized_rates["bond_buffer"] = float(legacy_fixed_income)
+            normalized_rates["high_income"] = float(legacy_fixed_income)
+
+        for key in DEFAULT_APPRECIATION_RATES:
+            if key in rate_set and rate_set[key] is not None:
+                normalized_rates[key] = float(rate_set[key])
+        return normalized_rates
+
+    def _normalize_appreciation_rate_scenarios(self, rates: Any) -> Dict[str, Dict[str, float]]:
+        normalized = deepcopy(DEFAULT_APPRECIATION_RATE_SCENARIOS)
+        if not isinstance(rates, dict):
+            return normalized
+
+        if any(key in rates for key in PA_SCENARIO_KEYS):
+            for scenario in PA_SCENARIO_KEYS:
+                normalized[scenario] = self._normalize_appreciation_rate_set(
+                    cast(Optional[Dict[str, Any]], rates.get(scenario)),
+                    DEFAULT_APPRECIATION_RATE_SCENARIOS[scenario],
+                )
+            return normalized
+
+        normalized["base"] = self._normalize_appreciation_rate_set(
+            cast(Optional[Dict[str, Any]], rates),
+            DEFAULT_APPRECIATION_RATE_SCENARIOS["base"],
+        )
+        return normalized
+
+    def get_appreciation_rates_for_scenario(
+        self, pa_scenario: Optional[str] = None
+    ) -> Dict[str, float]:
+        scenario = self._normalize_pa_scenario(
+            pa_scenario or self.settings.get("default_pa_scenario")
+        )
+        all_rates = cast(
+            Dict[str, Dict[str, float]],
+            self._normalize_appreciation_rate_scenarios(self.settings.get("appreciation_rates")),
+        )
+        return dict(
+            all_rates.get(scenario, DEFAULT_APPRECIATION_RATE_SCENARIOS[DEFAULT_PA_SCENARIO])
+        )
 
     def _save_settings(self) -> None:
         public_settings, secret_settings = self._split_settings(self.settings)
@@ -545,11 +616,11 @@ class DividendBackend:
             },
         }
 
-    def get_standard_profile_return(self) -> float:
+    def get_standard_profile_return(self, pa_scenario: Optional[str] = None) -> float:
         """표준 프로필은 현재 활성 마스터 전략의 TR을 기본값으로 사용한다."""
         active_master = self.get_active_master_portfolio()
         if active_master:
-            master_calc = self.calculate_master_portfolio_tr(active_master)
+            master_calc = self.calculate_master_portfolio_tr(active_master, pa_scenario)
             if master_calc.get("success"):
                 combined_tr = cast(Dict[str, Any], master_calc["data"]).get("combined_tr")
                 if combined_tr is not None:
@@ -560,7 +631,7 @@ class DividendBackend:
             None,
         )
         if default_master:
-            master_calc = self.calculate_master_portfolio_tr(default_master)
+            master_calc = self.calculate_master_portfolio_tr(default_master, pa_scenario)
             if master_calc.get("success"):
                 combined_tr = cast(Dict[str, Any], master_calc["data"]).get("combined_tr")
                 if combined_tr is not None:
@@ -745,6 +816,9 @@ class DividendBackend:
                 "ownership_ratio": 1.0,
             },
             "assumptions": {
+                "pa_scenario": self._normalize_pa_scenario(
+                    self.settings.get("default_pa_scenario")
+                ),
                 "price_appreciation_rate": default_pa,
                 "simulation_years": 10,
                 "target_monthly_household_cash_after_tax": 10000000.0,
@@ -769,6 +843,8 @@ class DividendBackend:
         if "simulation_mode" not in normalized and assumptions.get("simulation_mode"):
             normalized["simulation_mode"] = assumptions.get("simulation_mode")
         assumptions.pop("simulation_mode", None)
+        assumptions["pa_scenario"] = self._normalize_pa_scenario(assumptions.get("pa_scenario"))
+        normalized["assumptions"] = assumptions
         normalized["corporate"] = self._normalize_corporate_cost_fields(
             cast(Optional[Dict[str, Any]], normalized.get("corporate"))
         )
@@ -816,6 +892,8 @@ class DividendBackend:
 
         if float(assumptions.get("price_appreciation_rate") or 0.0) < 0:
             return "assumptions.price_appreciation_rate는 음수일 수 없습니다."
+        if assumptions.get("pa_scenario") not in PA_SCENARIO_KEYS:
+            return "assumptions.pa_scenario는 conservative, base, optimistic 중 하나여야 합니다."
 
         if float(assumptions.get("target_monthly_household_cash_after_tax") or 0.0) <= 0:
             return "assumptions.target_monthly_household_cash_after_tax는 0보다 커야 합니다."
@@ -887,7 +965,10 @@ class DividendBackend:
             return cast(Dict[str, Any], master_result)
 
         selected_master = cast(Dict[str, Any], master_result["data"])
-        master_calc = self.calculate_master_portfolio_tr(selected_master)
+        pa_scenario = self._normalize_pa_scenario(
+            cast(Dict[str, Any], config.get("assumptions", {})).get("pa_scenario")
+        )
+        master_calc = self.calculate_master_portfolio_tr(selected_master, pa_scenario)
         if not master_calc.get("success"):
             return cast(Dict[str, Any], master_calc)
 
@@ -896,7 +977,7 @@ class DividendBackend:
         pension_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("pension_portfolio"))
         dy = float(calc_data.get("combined_yield") or 0.0)
         tr = float(calc_data.get("combined_tr") or 0.0)
-        pa = max(0.0, tr - dy)
+        pa = tr - dy
 
         return {
             "success": True,
@@ -913,6 +994,7 @@ class DividendBackend:
                 "dy": dy,
                 "pa": pa,
                 "tr": tr,
+                "pa_scenario": pa_scenario,
                 "simulation_years": int(
                     cast(Dict[str, Any], config.get("assumptions", {})).get("simulation_years", 10)
                 ),
@@ -1822,7 +1904,9 @@ class DividendBackend:
         """실시간 환율을 가져오거나 캐시된 값을 반환합니다. (12시간 주기 갱신)"""
         return float(self.get_exchange_rate_info(force_refresh=force_refresh)["rate"])
 
-    def get_portfolio_stats_by_id(self, p_id: Optional[str]) -> Dict[str, Any]:
+    def get_portfolio_stats_by_id(
+        self, p_id: Optional[str], pa_scenario: Optional[str] = None
+    ) -> Dict[str, Any]:
         """특정 ID의 포트폴리오 통계를 산출합니다.
         데이터가 없거나 비어있으면 기본값(4%/3.5%)을 반환합니다.
         """
@@ -1852,16 +1936,7 @@ class DividendBackend:
         strategy_buckets = cast(Dict[str, float], stats["strategy_weights"])
 
         # [REQ-GLB-13] 자산군별 기대주가상승률(PA) 로드
-        a_rates = self.settings.get(
-            "appreciation_rates",
-            {
-                "cash_sgov": 0.1,
-                "bond_buffer": 0.1,
-                "high_income": 0.1,
-                "dividend_stocks": 9.6,
-                "growth_stocks": 8.2,
-            },
-        )
+        a_rates = self.get_appreciation_rates_for_scenario(pa_scenario)
 
         for item in items:
             w = item.get("weight", 0.0) / total_weight
@@ -2040,7 +2115,9 @@ class DividendBackend:
             "message": message,
         }
 
-    def calculate_master_portfolio_tr(self, master: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_master_portfolio_tr(
+        self, master: Dict[str, Any], pa_scenario: Optional[str] = None
+    ) -> Dict[str, Any]:
         """마스터 전략의 TR 계산 결과 또는 깨진 참조 오류를 반환합니다."""
         reference_status = self.get_master_reference_status(master)
         if reference_status["is_broken"]:
@@ -2052,8 +2129,8 @@ class DividendBackend:
 
         corp_portfolio = cast(Optional[Dict[str, Any]], reference_status["corp_portfolio"])
         pension_portfolio = cast(Optional[Dict[str, Any]], reference_status["pension_portfolio"])
-        corp_stats = self.get_portfolio_stats_by_id(master.get("corp_id"))
-        pension_stats = self.get_portfolio_stats_by_id(master.get("pension_id"))
+        corp_stats = self.get_portfolio_stats_by_id(master.get("corp_id"), pa_scenario)
+        pension_stats = self.get_portfolio_stats_by_id(master.get("pension_id"), pa_scenario)
 
         corp_capital = corp_portfolio["total_capital"] if corp_portfolio else 0
         pension_capital = pension_portfolio["total_capital"] if pension_portfolio else 0
@@ -2091,10 +2168,12 @@ class DividendBackend:
             },
         }
 
-    def _build_master_portfolio_summary(self, master: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_master_portfolio_summary(
+        self, master: Dict[str, Any], pa_scenario: Optional[str] = None
+    ) -> Dict[str, Any]:
         """마스터 전략 응답용 요약 정보를 구성합니다."""
         summary = dict(master)
-        master_calc = self.calculate_master_portfolio_tr(master)
+        master_calc = self.calculate_master_portfolio_tr(master, pa_scenario)
 
         if master_calc["success"]:
             data = cast(Dict[str, Any], master_calc["data"])
@@ -2189,11 +2268,11 @@ class DividendBackend:
                 return {"success": True, "message": f"{removed['name']} 삭제됨"}
         return {"success": False, "message": "포트폴리오를 찾을 수 없습니다."}
 
-    def get_master_portfolios(self) -> List[Dict[str, Any]]:
+    def get_master_portfolios(self, pa_scenario: Optional[str] = None) -> List[Dict[str, Any]]:
         """저장된 모든 마스터 포트폴리오를 반환합니다. [REQ-PRT-09.2 요약 정보 포함]"""
         self._ensure_seeded_defaults_if_enabled()
         for m in self.master_portfolios:
-            m.update(self._build_master_portfolio_summary(m))
+            m.update(self._build_master_portfolio_summary(m, pa_scenario))
 
         return self.master_portfolios
 

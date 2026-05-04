@@ -6,6 +6,7 @@ export const TYPES_VERSION = "1.0.0";
 
 export type AccountType = "Corporate" | "Pension";
 export type UiLanguage = "ko" | "en";
+export type PaScenarioKey = "conservative" | "base" | "optimistic";
 export type CorporateStrategyCategory =
   | "SGOV Buffer"
   | "High Income"
@@ -20,6 +21,19 @@ export type PortfolioCategory =
   | CorporateStrategyCategory
   | PensionStrategyCategory;
 
+export interface AppreciationRateSet {
+  cash_sgov: number;
+  bond_buffer: number;
+  high_income: number;
+  dividend_stocks: number;
+  growth_stocks: number;
+}
+
+export type AppreciationRateScenarios = Record<
+  PaScenarioKey,
+  AppreciationRateSet
+>;
+
 /** 앱 설정 인터페이스 */
 export interface AppSettings {
   dart_api_key: string;
@@ -27,16 +41,11 @@ export interface AppSettings {
   default_capital: number;
   default_currency: "USD" | "KRW";
   ui_language: UiLanguage;
+  default_pa_scenario?: PaScenarioKey;
   current_exchange_rate?: number;
   exchange_rate_last_updated?: string | null;
   price_appreciation_rate?: number;
-  appreciation_rates?: {
-    cash_sgov: number;
-    bond_buffer: number;
-    high_income: number;
-    dividend_stocks: number;
-    growth_stocks: number;
-  };
+  appreciation_rates?: AppreciationRateScenarios;
 }
 
 /** 주식 종목 정보 인터페이스 (Watchlist 용) [REQ-WCH-03] */
@@ -231,6 +240,7 @@ export interface SimulationResult {
     combined_dy?: number;
     combined_tr?: number;
     pa_rate?: number;
+    pa_scenario?: PaScenarioKey;
     strategy_rules_summary?: {
       rebalance_month: number;
       rebalance_week: number;
@@ -279,6 +289,7 @@ export interface CostComparisonConfig {
   };
   assumptions: {
     price_appreciation_rate: number;
+    pa_scenario?: PaScenarioKey;
     simulation_years: number;
     target_monthly_household_cash_after_tax: number;
   };
@@ -393,6 +404,7 @@ export interface CostComparisonResult {
     dy: number;
     pa: number;
     tr: number;
+    pa_scenario?: PaScenarioKey;
     simulation_years: number;
     target_monthly_household_cash_after_tax: number;
     base_year: number;

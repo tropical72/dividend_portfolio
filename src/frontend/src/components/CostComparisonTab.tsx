@@ -17,10 +17,15 @@ import {
 } from "recharts";
 
 import { useI18n, type TranslationKey } from "../i18n";
+import {
+  DEFAULT_PA_SCENARIO,
+  normalizePaScenarioKey,
+} from "../lib/paScenarios";
 import type {
   CostComparisonConfig,
   CostComparisonResult,
   CostComparisonScenarioResult,
+  PaScenarioKey,
 } from "../types";
 
 const API_BASE = "http://localhost:8000/api/cost-comparison";
@@ -49,6 +54,7 @@ const defaultConfig: CostComparisonConfig = {
     ownership_ratio: 1,
   },
   assumptions: {
+    pa_scenario: DEFAULT_PA_SCENARIO,
     price_appreciation_rate: 3,
     simulation_years: 10,
     target_monthly_household_cash_after_tax: 10000000,
@@ -246,6 +252,9 @@ export function CostComparisonTab() {
       },
       assumptions: {
         ...raw.assumptions,
+        pa_scenario: normalizePaScenarioKey(
+          raw.assumptions?.pa_scenario || "base",
+        ),
       },
     };
   };
@@ -255,19 +264,28 @@ export function CostComparisonTab() {
       setLoading(true);
       setErrorMessage("");
       try {
-        const [configResponse, masterResponse] = await Promise.all([
-          fetch(`${API_BASE}/config`),
-          fetch(MASTER_PORTFOLIO_API),
-        ]);
+        const [configResponse, masterResponse, settingsResponse] =
+          await Promise.all([
+            fetch(`${API_BASE}/config`),
+            fetch(MASTER_PORTFOLIO_API),
+            fetch("http://localhost:8000/api/settings"),
+          ]);
         const configPayload = await configResponse.json();
         const masterPayload = await masterResponse.json();
+        const settingsPayload = await settingsResponse.json();
         if (masterPayload?.success && Array.isArray(masterPayload?.data)) {
           setMasterPortfolios(masterPayload.data as MasterPortfolioOption[]);
         }
         if (configPayload?.success && configPayload?.data) {
-          setConfig(
-            normalizeConfig(configPayload.data as CostComparisonConfig),
+          const nextConfig = normalizeConfig(
+            configPayload.data as CostComparisonConfig,
           );
+          if (!nextConfig.assumptions.pa_scenario && settingsPayload?.success) {
+            nextConfig.assumptions.pa_scenario = normalizePaScenarioKey(
+              settingsPayload.data?.default_pa_scenario || "base",
+            );
+          }
+          setConfig(nextConfig);
         }
       } catch (error) {
         setErrorMessage(
@@ -301,6 +319,16 @@ export function CostComparisonTab() {
     setConfig((prev) => ({
       ...prev,
       simulation_mode: value,
+    }));
+  };
+
+  const updatePaScenario = (value: PaScenarioKey) => {
+    setConfig((prev) => ({
+      ...prev,
+      assumptions: {
+        ...prev.assumptions,
+        pa_scenario: value,
+      },
     }));
   };
 
@@ -416,6 +444,29 @@ export function CostComparisonTab() {
           <p className="mt-2 max-w-3xl text-sm text-slate-600">
             {t("costComparison.subtitle")}
           </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 p-2 shadow-sm">
+          {(["conservative", "base", "optimistic"] as PaScenarioKey[]).map(
+            (scenario) => (
+              <button
+                key={scenario}
+                type="button"
+                onClick={() => updatePaScenario(scenario)}
+                className={`rounded-xl px-4 py-2 text-xs font-black tracking-wide transition-all ${
+                  config.assumptions.pa_scenario === scenario
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                }`}
+                data-testid={`cc-pa-scenario-${scenario}`}
+              >
+                {scenario === "conservative"
+                  ? t("scenario.conservative")
+                  : scenario === "base"
+                    ? t("scenario.base")
+                    : t("scenario.optimistic")}
+              </button>
+            ),
+          )}
         </div>
       </div>
 

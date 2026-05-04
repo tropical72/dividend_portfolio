@@ -15,6 +15,10 @@ import { PortfolioTab } from "./components/PortfolioTab";
 import { RetirementTab } from "./components/RetirementTab";
 import { CostComparisonTab } from "./components/CostComparisonTab";
 import { I18nProvider, useI18n } from "./i18n";
+import {
+  DEFAULT_APPRECIATION_RATE_SCENARIOS,
+  DEFAULT_PA_SCENARIO,
+} from "./lib/paScenarios";
 import type {
   AccountType,
   PortfolioItem,
@@ -23,14 +27,6 @@ import type {
   RetirementConfig,
   UiLanguage,
 } from "./types";
-
-const DEFAULT_APPRECIATION_RATES = {
-  cash_sgov: 0.1,
-  bond_buffer: 0.1,
-  high_income: 0.1,
-  dividend_stocks: 9.6,
-  growth_stocks: 8.2,
-};
 
 /**
  * [GS-UI-03] 모던 디자인 원칙이 적용된 메인 대시보드
@@ -90,8 +86,9 @@ function App() {
     default_capital: 10000,
     default_currency: "USD",
     ui_language: "ko",
+    default_pa_scenario: DEFAULT_PA_SCENARIO,
     price_appreciation_rate: 3.0,
-    appreciation_rates: { ...DEFAULT_APPRECIATION_RATES },
+    appreciation_rates: { ...DEFAULT_APPRECIATION_RATE_SCENARIOS },
   };
 
   /** Watchlist에서 종목들을 포트폴리오로 이관하는 핸들러 [REQ-PRT-02.1] */

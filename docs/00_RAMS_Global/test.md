@@ -32,6 +32,12 @@
     - 시나리오: `Retirement`, `Settings`, 전역 네비게이션 화면에서 사용자 노출 문자열이 한국어/영어로 임의 혼용되지 않고 선택 언어 기준으로 일관되게 렌더링되는가?
 - **[TEST-SYS-I18N-04] 번역 fallback 안정성**
     - 시나리오: 번역 키가 누락된 경우 앱이 깨지지 않고 정의된 fallback 언어 문자열 또는 안전한 placeholder로 렌더링되는가?
+- **[TEST-SYS-STR-02] PA 시나리오 설정 정규화**
+    - 시나리오: 구버전 단일 `appreciation_rates` 또는 `fixed_income` 저장값을 로드하면 `conservative / base / optimistic` 구조로 정규화되고, legacy 값은 `base` 시나리오에 보존되는가?
+- **[TEST-SYS-STR-03] 화면별 PA 시나리오 전환**
+    - 시나리오: `Portfolio Manager`, `Retirement`, `Personal vs Corporate Comparison`에서 `conservative / base / optimistic`를 전환하면 `DY / PA / TR` 및 관련 계산 결과가 즉시 선택값 기준으로 갱신되는가?
+- **[TEST-SYS-STR-04] Retirement / Cost Comparison 시나리오 계산 정합성**
+    - 시나리오: 동일 DY, 다른 카테고리 mix의 master portfolio 두 개를 비교할 때, 선택한 PA 시나리오에 따라 `PA / TR` 및 시뮬레이션 메타가 합리적으로 달라지는가?
 
 ## [Manual/UX] 수동 테스트
 - **[UX-SYS-03] 통합 실행 스크립트 (run_dev.py) 검증**

@@ -69,6 +69,7 @@
 | REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리 | T-GLB-11.4.1 | TEST-SYS-2.2.2 | Done | d665e97 | 2026.04.16-17.02 |
 | REQ-SYS-05 | UI 다국어 지원 (ko/en) | T-GLB-12.5 | TEST-SYS-I18N-03 | Done | fcf36b4 | 2026.04.17-15.50 |
 | REQ-GLB-13 | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1 | TEST-SYS-STR-01 | Done | 2830367 | 2026.04.17-18.15 |
+| REQ-GLB-16 | 자산군별 PA 시나리오 3중화 (Phase 1) | T-GLB-16.1 | TEST-SYS-STR-02 | In Progress | - | 2026.05.04 |
 | REQ-SYS-03.5 | 공개 저장소 기본값과 로컬 런타임 데이터 분리 | T-GLB-14.1 | TEST-SYS-1.3.2 | Done | 75902aa | 2026.04.25-01.42 |
 | REQ-SYS-03.6 | 공개 저장소 진입 문서 및 레거시 자산 정리 | T-GLB-15.1 | TEST-SYS-QG-04 | Done | 0cef9b8 / 1dc1cb1 | 2026.04.25-23.47 |
 

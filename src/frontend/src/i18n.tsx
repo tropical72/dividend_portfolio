@@ -322,6 +322,10 @@ const translations = {
     "settings.appreciationRates": "Categorized Price Appreciation",
     "settings.appreciationRatesTooltip":
       "Define different annual price appreciation rates for each asset category. Benchmarks: SGOV Buffer uses SGOV, Bond Buffer uses BND, High Income uses JEPI/JEPQ-style option income ETFs, Dividend Growth uses SCHD, and Growth Engine uses the S&P 500.",
+    "settings.defaultPaScenario": "Default PA Scenario",
+    "settings.defaultPaScenarioTooltip":
+      "This scenario is used as the initial selection when Portfolio, Retirement, and Comparison views are opened.",
+    "settings.editingPaScenario": "Editing scenario:",
     "settings.catCash": "SGOV Buffer",
     "settings.catCashTooltip":
       "Price-appreciation baseline derived from SGOV-style ultra-short Treasury exposure.",
@@ -337,6 +341,9 @@ const translations = {
     "settings.catGrowth": "Growth Stocks",
     "settings.catGrowthTooltip":
       "Price-appreciation baseline derived from long-run S&P 500 price growth.",
+    "scenario.conservative": "Conservative",
+    "scenario.base": "Base",
+    "scenario.optimistic": "Optimistic",
     "settings.highIncomeCap": "High Income Cap",
     "settings.highIncomeCapTooltip":
       "Yield threshold that limits withdrawals in high-income cases.",
@@ -903,6 +910,10 @@ const translations = {
     "settings.appreciationRates": "자산군별 기대주가상승률",
     "settings.appreciationRatesTooltip":
       "각 자산 카테고리별로 서로 다른 연간 기대주가상승률을 정의합니다. 기준 종목은 SGOV 버퍼=SGOV, 채권 버퍼=BND, 고인컴=JEPI/JEPQ 계열, 배당성장=SCHD, 성장엔진=S&P500 입니다.",
+    "settings.defaultPaScenario": "기본 PA 시나리오",
+    "settings.defaultPaScenarioTooltip":
+      "포트폴리오, 은퇴, 비교 화면을 처음 열 때 기본으로 선택할 시나리오입니다.",
+    "settings.editingPaScenario": "현재 편집 중:",
     "settings.catCash": "SGOV 버퍼",
     "settings.catCashTooltip":
       "SGOV 같은 초단기 국채 ETF를 기준으로 계산한 가격상승률입니다.",
@@ -918,6 +929,9 @@ const translations = {
     "settings.catGrowth": "성장엔진",
     "settings.catGrowthTooltip":
       "S&P500의 장기 가격 상승을 기준으로 계산한 가격상승률입니다.",
+    "scenario.conservative": "보수적",
+    "scenario.base": "기본",
+    "scenario.optimistic": "낙관적",
     "settings.highIncomeCap": "고소득 상한",
     "settings.highIncomeCapTooltip":
       "고소득 상황에서 인출을 제한하는 수익률 임계치입니다.",

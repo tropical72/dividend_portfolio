@@ -61,8 +61,9 @@ class SettingsRequest(BaseModel):
     default_capital: Optional[float] = 10000.0
     default_currency: Optional[str] = "USD"
     ui_language: Optional[str] = "ko"
+    default_pa_scenario: Optional[str] = None
     price_appreciation_rate: Optional[float] = None
-    appreciation_rates: Optional[Dict[str, float]] = None
+    appreciation_rates: Optional[Dict[str, Any]] = None
 
 
 class PortfolioRequest(BaseModel):
@@ -189,8 +190,8 @@ async def update_portfolio(p_id: str, req: PortfolioRequest):
 
 
 @app.get("/api/master-portfolios")
-async def get_master_portfolios():
-    return {"success": True, "data": backend.get_master_portfolios()}
+async def get_master_portfolios(pa_scenario: Optional[str] = None):
+    return {"success": True, "data": backend.get_master_portfolios(pa_scenario)}
 
 
 @app.post("/api/master-portfolios")
@@ -244,7 +245,9 @@ async def run_cost_comparison(req: Optional[CostComparisonConfigRequest] = None)
 
 
 @app.get("/api/retirement/simulate")
-async def run_retirement_simulation(scenario: Optional[str] = None):
+async def run_retirement_simulation(
+    scenario: Optional[str] = None, pa_scenario: Optional[str] = None
+):
     config = backend.get_retirement_config()
     if not config:
         return {"success": False, "message": "설정 데이터가 없습니다."}
@@ -354,34 +357,27 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         backend.get_portfolio_by_id(active_master.get("pension_id")) if active_master else None
     )
     if active_master and (active_corp or active_pension):
-        corp_stats = backend.get_portfolio_stats_by_id(active_master.get("corp_id"))
-        pension_stats = backend.get_portfolio_stats_by_id(active_master.get("pension_id"))
+        corp_stats = backend.get_portfolio_stats_by_id(active_master.get("corp_id"), pa_scenario)
+        pension_stats = backend.get_portfolio_stats_by_id(
+            active_master.get("pension_id"), pa_scenario
+        )
     else:
         # Fallback: 마스터가 없으면 타입별 첫 번째 포트폴리오 사용 (하위 호환)
         c_p = next((p for p in backend.portfolios if p.get("account_type") == "Corporate"), None)
         p_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
-        corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None)
-        pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None)
+        corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None, pa_scenario)
+        pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None, pa_scenario)
 
     base_params = {
         "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
         "appreciation_rates": {
             k: v / 100.0
-            for k, v in backend.settings.get(
-                "appreciation_rates",
-                {
-                    "cash_sgov": 0.1,
-                    "bond_buffer": 0.1,
-                    "high_income": 0.1,
-                    "dividend_stocks": 9.6,
-                    "growth_stocks": 8.2,
-                },
-            ).items()
+            for k, v in backend.get_appreciation_rates_for_scenario(pa_scenario).items()
         },
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": (
-            backend.get_standard_profile_return()
+            backend.get_standard_profile_return(pa_scenario)
             if active_id == "v1"
             else assumption["expected_return"]
         ),
@@ -491,6 +487,7 @@ async def run_retirement_simulation(scenario: Optional[str] = None):
         "combined_dy": combined_dy,
         "combined_tr": combined_tr,
         "pa_rate": combined_tr - combined_dy if (combined_tr and combined_dy) else 0.0,
+        "pa_scenario": backend._normalize_pa_scenario(pa_scenario),
         "strategy_rules_summary": {
             "rebalance_month": strategy_rules.get("rebalance_month", 1),
             "rebalance_week": strategy_rules.get("rebalance_week", 2),
