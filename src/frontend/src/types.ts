@@ -218,8 +218,29 @@ export interface MonthlySimulationData {
   pension_balance: number;
   loan_balance: number;
   target_cashflow: number;
+  next_target_cashflow?: number;
   net_salary: number;
   pension_draw?: number;
+  boost_amount?: number;
+  corp_monthly_need?: number;
+  shock_flag?: boolean;
+  crash20_triggered?: boolean;
+  stress?: boolean;
+  inflation_action?: "none" | "approved" | "frozen";
+  corp_sgov_balance?: number;
+  corp_bond_balance?: number;
+  corp_high_income_balance?: number;
+  corp_dividend_balance?: number;
+  corp_growth_balance?: number;
+  pension_sgov_balance?: number;
+  pension_bond_balance?: number;
+  pension_high_income_balance?: number;
+  pension_dividend_balance?: number;
+  pension_growth_balance?: number;
+  corp_sgov_months?: number;
+  corp_bond_months?: number;
+  pension_sgov_months?: number;
+  pension_bond_months?: number;
   event?: boolean;
 }
 

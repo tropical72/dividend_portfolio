@@ -179,3 +179,181 @@ def test_category_specific_pa_dy_tr_are_applied_independently():
 
     assert month1["corp_bond_balance"] == 60000
     assert month1["corp_growth_balance"] > 60000
+
+
+def test_crash20_sets_shock_flag_and_keeps_it_until_next_may():
+    """Crash20은 월말 이벤트로 Shock Flag를 켜고, 다음 5월 정기점검 전까지 유지되어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_month"] = 5
+    params["target_monthly_cashflow"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        }
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-06": {"pa": -2.5, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=13,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    april = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 4)
+    may = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 5)
+
+    assert june["crash20_triggered"] is True
+    assert june["shock_flag"] is True
+    assert april["shock_flag"] is True
+    assert may["shock_flag"] is False
+
+
+def test_stress_is_decided_only_at_may_review():
+    """Stress는 월말 잔액이 아니라 5월 정기점검 테스트 결과로만 갱신되어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_year"] = 2026
+    params["simulation_start_month"] = 4
+    params["target_monthly_cashflow"] = 1000000
+    params["inflation_rate"] = 0.10
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.02,
+        "Bond Buffer": 0.10,
+        "High Income": 0.00,
+        "Dividend Growth": 0.00,
+        "Growth Engine": 0.88,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 10000000, "pension": 0},
+        params=params,
+        months=2,
+    )
+
+    april = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 4)
+    may = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 5)
+
+    assert april["stress"] is False
+    assert may["stress"] is True
+    assert may["inflation_action"] == "frozen"
+
+
+def test_inflation_change_is_approved_in_may_and_applied_from_june():
+    """인플레이션 조정은 5월에 승인 여부를 결정하고 6월부터 12개월 고정 적용해야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_month"] = 5
+    params["target_monthly_cashflow"] = 1000000
+    params["inflation_rate"] = 0.10
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.30,
+        "Bond Buffer": 0.20,
+        "High Income": 0.00,
+        "Dividend Growth": 0.00,
+        "Growth Engine": 0.50,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000000, "pension": 0},
+        params=params,
+        months=3,
+    )
+
+    may = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 5)
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    july = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 7)
+
+    assert may["target_cashflow"] == 1000000
+    assert may["next_target_cashflow"] == 1100000
+    assert may["inflation_action"] == "approved"
+    assert june["target_cashflow"] == 1100000
+    assert july["target_cashflow"] == 1100000
+
+
+def test_boost_temporarily_increases_pension_draw_for_six_months():
+    """Shock 또는 Stress가 발생하면 개인연금 BOOST가 6개월 동안 추가 인출을 적용해야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_month"] = 5
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["target_monthly_cashflow"] = 0
+    params["pension_withdrawal_target"] = 2500000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+        "pension": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-06": {"pa": -3.6, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 50000000},
+        params=params,
+        months=8,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    july = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 7)
+    november = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 11)
+    december = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 12)
+
+    assert june["boost_amount"] == 3000000
+    assert july["pension_draw"] == 5500000
+    assert november["pension_draw"] == 5500000
+    assert december["boost_amount"] == 0

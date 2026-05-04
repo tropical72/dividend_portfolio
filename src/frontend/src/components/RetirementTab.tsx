@@ -33,6 +33,7 @@ import type {
   RetirementConfig,
   SimulationResult,
   MasterPortfolio,
+  MonthlySimulationData,
 } from "../types";
 
 const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
@@ -276,6 +277,7 @@ export function RetirementTab() {
   );
   const largeCurrencyUnit = t("retirement.table.hundredMillion");
   const initialNetWorth = monthlyData[0]?.total_net_worth || 0;
+  const latestMonth = monthlyData[monthlyData.length - 1];
   const latestNetWorth =
     monthlyData[monthlyData.length - 1]?.total_net_worth || 0;
   const minimumNetWorth = monthlyData.reduce(
@@ -323,6 +325,26 @@ export function RetirementTab() {
       icon: <AlertTriangle size={24} />,
     };
   })();
+
+  const inflationDecisionLabel = (action?: string) => {
+    if (action === "approved") return t("retirement.inflationApproved");
+    if (action === "frozen") return t("retirement.inflationFrozen");
+    return t("retirement.inflationNone");
+  };
+
+  const opsBadge = (m: MonthlySimulationData) => {
+    const labels: string[] = [];
+    if (m.crash20_triggered) labels.push("Crash20");
+    if (m.shock_flag) labels.push(t("retirement.shockOn"));
+    if (m.stress) labels.push(t("retirement.stressOn"));
+    if ((m.boost_amount || 0) > 0) {
+      labels.push(`BOOST +${((m.boost_amount || 0) / 10000).toFixed(0)}`);
+    }
+    if (m.inflation_action && m.inflation_action !== "none") {
+      labels.push(inflationDecisionLabel(m.inflation_action));
+    }
+    return labels.length > 0 ? labels.join(" / ") : "-";
+  };
 
   return (
     <div
@@ -972,6 +994,30 @@ export function RetirementTab() {
                     </span>
                   </h2>
                 )}
+                <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
+                  <InlineHint
+                    label={t("retirement.shockFlag")}
+                    value={
+                      latestMonth?.shock_flag
+                        ? t("retirement.shockOn")
+                        : t("retirement.shockOff")
+                    }
+                  />
+                  <InlineHint
+                    label={t("retirement.stressMode")}
+                    value={
+                      latestMonth?.stress
+                        ? t("retirement.stressOn")
+                        : t("retirement.stressOff")
+                    }
+                  />
+                  <InlineHint
+                    label={t("retirement.inflationDecision")}
+                    value={inflationDecisionLabel(
+                      latestMonth?.inflation_action,
+                    )}
+                  />
+                </div>
               </div>
               <div>
                 <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
@@ -1286,6 +1332,7 @@ export function RetirementTab() {
                       {t("retirement.table.dateAge")}
                     </th>
                     <th className="px-6 py-5">{t("retirement.table.phase")}</th>
+                    <th className="px-6 py-5">{t("retirement.table.ops")}</th>
                     <th className="px-6 py-5 text-right text-rose-500/70">
                       {t("retirement.table.targetCf")}
                     </th>
@@ -1332,6 +1379,9 @@ export function RetirementTab() {
                         >
                           {m.phase}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-left text-[11px] font-medium text-slate-500">
+                        {opsBadge(m)}
                       </td>
                       <td className="px-6 py-4 text-right text-xs font-semibold text-rose-500">
                         {(m.target_cashflow / 10000).toFixed(0)}

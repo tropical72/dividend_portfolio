@@ -57,7 +57,8 @@ class ProjectionEngine:
         birth_month = int(p("birth_month", 8))
         private_pension_start_age = int(p("private_pension_start_age", 55))
         national_pension_start_age = int(p("national_pension_start_age", 65))
-        total_need = float(p("target_monthly_cashflow", 11500000))
+        approved_total_need = float(p("target_monthly_cashflow", 11500000))
+        inflation_rate = float(p("inflation_rate", 0.0))
         national_pension_amount = float(p("national_pension_amount", 2000000))
         pension_withdrawal_target = float(p("pension_withdrawal_target", 2500000))
         loan_balance = float(p("initial_shareholder_loan", 0.0))
@@ -70,10 +71,13 @@ class ProjectionEngine:
 
         current_stress = False
         shock_flag = False
+        boost_amount = 0.0
+        boost_months_remaining = 0
         growth_sell_date = "None"
         sgov_exhaustion_date = "Permanent"
         survival_m = 0
         crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+        previous_may_total_assets = None
         monthly_data = []
 
         for index in range(1, months + 1):
@@ -85,12 +89,22 @@ class ProjectionEngine:
             self._apply_planned_cashflows(
                 corp_assets, pension_assets, planned_cashflows, sim_year, sim_month
             )
-            self._apply_monthly_returns("corp", corp_assets, corp_stats, params)
-            self._apply_monthly_returns("pension", pension_assets, pension_stats, params)
+            self._apply_monthly_returns(
+                "corp", corp_assets, corp_stats, params, sim_year, sim_month
+            )
+            self._apply_monthly_returns(
+                "pension", pension_assets, pension_stats, params, sim_year, sim_month
+            )
 
-            pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
+            current_total_need = approved_total_need
+            current_boost_amount = boost_amount if boost_months_remaining > 0 else 0.0
+            pension_income = (
+                pension_withdrawal_target + current_boost_amount
+                if phase in {"Phase 2", "Phase 3"}
+                else 0.0
+            )
             national_income = national_pension_amount if phase == "Phase 3" else 0.0
-            corp_monthly_need = max(0.0, total_need - pension_income - national_income)
+            corp_monthly_need = max(0.0, current_total_need - pension_income - national_income)
 
             corp_operating_cost = self._corp_operating_cost(
                 corp_salary, corp_fixed_cost, employee_count
@@ -110,16 +124,39 @@ class ProjectionEngine:
                 loan_balance -= loan_repayment
                 corp_assets["SGOV Buffer"] -= loan_repayment
 
+            inflation_action = "none"
+            next_target_cashflow = current_total_need
             if sim_month == 5:
+                (
+                    current_stress,
+                    inflation_action,
+                    next_target_cashflow,
+                ) = self._run_may_review(
+                    corp_assets=corp_assets,
+                    pension_assets=pension_assets,
+                    current_total_need=current_total_need,
+                    inflation_rate=inflation_rate,
+                    previous_may_total_assets=previous_may_total_assets,
+                    shock_flag=shock_flag,
+                    phase=phase,
+                    pension_withdrawal_target=pension_withdrawal_target,
+                    national_pension_amount=national_pension_amount,
+                )
                 growth_used = self._run_may_rebalance(
                     corp_assets=corp_assets,
                     pension_assets=pension_assets,
-                    corp_monthly_need=corp_monthly_need,
+                    corp_monthly_need=self._phase_corp_monthly_need(
+                        next_target_cashflow,
+                        phase,
+                        pension_withdrawal_target,
+                        national_pension_amount,
+                    ),
                     pension_withdrawal_target=pension_withdrawal_target,
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
                 crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+                previous_may_total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
                 shock_flag = False
             elif sim_month == 11:
                 growth_used = self._run_november_rebalance(corp_assets, corp_monthly_need)
@@ -133,8 +170,13 @@ class ProjectionEngine:
                 break
 
             equity_value = self._equity_value(corp_assets) + self._equity_value(pension_assets)
-            if crash20_base > 0 and equity_value <= crash20_base * 0.8:
+            crash20_triggered = False
+            if crash20_base > 0 and equity_value <= crash20_base * 0.8 and not shock_flag:
+                crash20_triggered = True
                 shock_flag = True
+            if crash20_triggered or (sim_month == 5 and current_stress):
+                boost_amount = self._boost_amount_for_drawdown(equity_value, crash20_base)
+                boost_months_remaining = 6 if boost_amount > 0 else 0
 
             corp_sgov_months = self._months_cover(corp_assets["SGOV Buffer"], corp_monthly_need)
             corp_bond_months = self._months_cover(corp_assets["Bond Buffer"], corp_monthly_need)
@@ -162,12 +204,16 @@ class ProjectionEngine:
                     "corp_balance": corp_balance,
                     "pension_balance": pension_balance,
                     "loan_balance": loan_balance,
-                    "target_cashflow": total_need,
+                    "target_cashflow": current_total_need,
+                    "next_target_cashflow": next_target_cashflow,
                     "net_salary": 0.0,
                     "pension_draw": pension_draw,
+                    "boost_amount": boost_amount if boost_months_remaining > 0 else 0.0,
                     "corp_monthly_need": corp_monthly_need,
                     "shock_flag": shock_flag,
+                    "crash20_triggered": crash20_triggered,
                     "stress": current_stress,
+                    "inflation_action": inflation_action,
                     "corp_sgov_balance": corp_assets["SGOV Buffer"],
                     "corp_bond_balance": corp_assets["Bond Buffer"],
                     "corp_high_income_balance": corp_assets["High Income"],
@@ -184,6 +230,12 @@ class ProjectionEngine:
                     "pension_bond_months": pension_bond_months,
                 }
             )
+            if boost_months_remaining > 0:
+                boost_months_remaining -= 1
+                if boost_months_remaining == 0:
+                    boost_amount = 0.0
+            if sim_month == 5:
+                approved_total_need = next_target_cashflow
 
         return {
             "summary": {
@@ -277,6 +329,8 @@ class ProjectionEngine:
         account_assets: Dict[str, float],
         account_stats: Dict[str, Any],
         params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
     ) -> None:
         for category in self.CATEGORY_ORDER:
             balance = account_assets[category]
@@ -284,7 +338,7 @@ class ProjectionEngine:
                 continue
 
             category_rates = self._category_rate_spec(
-                account_key, category, account_assets, account_stats, params
+                account_key, category, account_assets, account_stats, params, sim_year, sim_month
             )
             monthly_dy = float(category_rates["dy"]) / 12.0
             monthly_pa = float(category_rates["pa"]) / 12.0
@@ -304,7 +358,20 @@ class ProjectionEngine:
         account_assets: Dict[str, float],
         account_stats: Dict[str, Any],
         params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
     ) -> Dict[str, float]:
+        month_key = f"{sim_year}-{sim_month:02d}"
+        monthly_override = (
+            params.get("monthly_return_overrides", {})
+            .get(account_key, {})
+            .get(category, {})
+            .get(month_key, {})
+        )
+        if monthly_override:
+            dy = float(monthly_override.get("dy", 0.0))
+            pa = float(monthly_override.get("pa", 0.0))
+            return {"dy": dy, "pa": pa, "tr": dy + pa}
         category_override = (
             params.get("category_return_rates", {}).get(account_key, {}).get(category, {})
         )
@@ -362,6 +429,101 @@ class ProjectionEngine:
             + (corp_salary * ins_rate * employee_count)
             + corp_fixed_cost
         )
+
+    def _run_may_review(
+        self,
+        corp_assets: Dict[str, float],
+        pension_assets: Dict[str, float],
+        current_total_need: float,
+        inflation_rate: float,
+        previous_may_total_assets: float | None,
+        shock_flag: bool,
+        phase: str,
+        pension_withdrawal_target: float,
+        national_pension_amount: float,
+    ) -> tuple[bool, str, float]:
+        candidate_total_need = current_total_need * (1.0 + inflation_rate)
+        corp_candidate_need = self._phase_corp_monthly_need(
+            candidate_total_need,
+            phase,
+            pension_withdrawal_target,
+            national_pension_amount,
+        )
+        can_fill_sgov = self._can_fill_target(
+            corp_assets,
+            target_category="SGOV Buffer",
+            target_amount=corp_candidate_need * 30.0,
+            donor_sequence=(
+                ("Bond Buffer", corp_candidate_need * 12.0),
+                ("High Income", 0.0),
+                ("Dividend Growth", 0.0),
+                ("Growth Engine", 0.0),
+            ),
+        )
+        can_keep_bond_floor = self._can_fill_target(
+            corp_assets,
+            target_category="Bond Buffer",
+            target_amount=corp_candidate_need * 12.0,
+            donor_sequence=(
+                ("High Income", 0.0),
+                ("Dividend Growth", 0.0),
+                ("Growth Engine", 0.0),
+            ),
+        )
+        total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
+        real_asset_guard = True
+        if previous_may_total_assets is not None:
+            real_asset_guard = total_assets >= previous_may_total_assets * (1.0 + inflation_rate)
+        is_stress = not (can_fill_sgov and can_keep_bond_floor and real_asset_guard)
+
+        if shock_flag or is_stress:
+            return is_stress, "frozen", current_total_need
+        return is_stress, "approved", candidate_total_need
+
+    def _phase_corp_monthly_need(
+        self,
+        total_need: float,
+        phase: str,
+        pension_withdrawal_target: float,
+        national_pension_amount: float,
+    ) -> float:
+        pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
+        national_income = national_pension_amount if phase == "Phase 3" else 0.0
+        return max(0.0, total_need - pension_income - national_income)
+
+    def _can_fill_target(
+        self,
+        account_assets: Dict[str, float],
+        target_category: str,
+        target_amount: float,
+        donor_sequence: tuple,
+    ) -> bool:
+        projected_assets = dict(account_assets)
+        if target_amount <= projected_assets[target_category]:
+            return True
+        needed = target_amount - projected_assets[target_category]
+        remaining = needed
+        for donor, floor in donor_sequence:
+            if remaining <= 0:
+                break
+            available = max(0.0, projected_assets[donor] - floor)
+            moved = min(available, remaining)
+            projected_assets[donor] -= moved
+            projected_assets[target_category] += moved
+            remaining -= moved
+        return remaining <= 0
+
+    def _boost_amount_for_drawdown(self, equity_value: float, crash20_base: float) -> float:
+        if crash20_base <= 0:
+            return 0.0
+        drawdown = 1.0 - (equity_value / crash20_base)
+        if drawdown > 0.30:
+            return 3000000.0
+        if drawdown >= 0.20:
+            return 2000000.0
+        if drawdown >= 0.15:
+            return 1000000.0
+        return 0.0
 
     def _run_may_rebalance(
         self,
