@@ -6,10 +6,15 @@ from src.core.trigger_engine import TriggerEngine
 
 
 class ProjectionEngine:
-    """
-    수학적으로 완벽하게 증명 가능한 은퇴 시뮬레이션 엔진.
-    하드코딩된 상수를 배제하고 모든 변수를 파라미터로부터 로드합니다.
-    """
+    """OS v11.1 기준 월간 은퇴 운용 시뮬레이션 엔진."""
+
+    CATEGORY_ORDER = (
+        "SGOV Buffer",
+        "Bond Buffer",
+        "High Income",
+        "Dividend Growth",
+        "Growth Engine",
+    )
 
     def __init__(
         self,
@@ -24,340 +29,480 @@ class ProjectionEngine:
     def run_30yr_simulation(
         self, initial_assets: Dict[str, float], params: Dict[str, Any]
     ) -> Dict[str, Any]:
-        # 시뮬레이션 기간 (기본 30년 -> 개월 변환)
         sim_years = int(params.get("simulation_years", 30))
         return self._execute_loop(initial_assets, params, months=sim_years * 12)
 
     def _execute_loop(
         self, initial_assets: Dict[str, float], params: Dict[str, Any], months: int
     ) -> Dict[str, Any]:
-        # [REQ-RAMS-1.4.1] 포트폴리오 기반 자산 비중 주입 (Fallback 포함)
         stats = params.get("portfolio_stats", {})
-        c_stats = stats.get("corp", {})
-        p_stats = stats.get("pension", {})
+        corp_stats = stats.get("corp", {})
+        pension_stats = stats.get("pension", {})
 
-        # 법인/연금 자산군별 초기 배분
-        c_bal = float(initial_assets.get("corp", 0))
-        p_bal = float(initial_assets.get("pension", 0))
-
-        c_w = c_stats.get("weights") or {"Growth": 0.7, "Cash": 0.3}
-        p_w = p_stats.get("weights") or {"Growth": 0.4, "Dividend": 0.3, "Cash": 0.3}
-        c_sw = c_stats.get("strategy_weights") or {}
-        p_sw = p_stats.get("strategy_weights") or {}
-
-        curr_assets = {
-            "corp_growth": c_bal * (c_sw.get("Growth Engine", c_w.get("Growth", 0))),
-            "corp_dividend": c_bal * (c_sw.get("Dividend Growth", c_w.get("Dividend", 0))),
-            "corp_high_income": c_bal
-            * (
-                c_sw.get("High Income", 0)
-                + c_sw.get("Bond Buffer", 0)
-                + (
-                    c_w.get("Fixed", 0)
-                    if "High Income" not in c_sw and "Bond Buffer" not in c_sw
-                    else 0
-                )
-            ),
-            "corp_cash": c_bal * (c_sw.get("SGOV Buffer", c_w.get("Cash", 0))),
-            "pen_growth": p_bal * (p_sw.get("Growth Engine", p_w.get("Growth", 0))),
-            "pen_dividend": p_bal * (p_sw.get("Dividend Growth", p_w.get("Dividend", 0))),
-            "pen_bond": p_bal * (p_sw.get("Bond Buffer", p_w.get("Fixed", 0))),
-            "pen_cash": p_bal * (p_sw.get("SGOV Buffer", p_w.get("Cash", 0))),
-        }
-
-        def p(k: str, d: Any) -> Any:
-            return params.get(k, d)
-
-        birth_year, birth_month = int(p("birth_year", 1972)), int(p("birth_month", 3))
-        p_age, n_age = (
-            int(p("private_pension_start_age", 55)),
-            int(p("national_pension_start_age", 65)),
+        corp_assets = self._build_account_state(
+            initial_balance=float(initial_assets.get("corp", 0.0)),
+            account_type="corp",
+            account_stats=corp_stats,
         )
-        base_cf = float(p("target_monthly_cashflow", 9000000))
-        n_amt = float(p("national_pension_amount", 1500000))
-        p_cf = float(p("pension_withdrawal_target", 2500000))
-        infl_rate = float(p("inflation_rate", 0.025))
-        loan_bal = float(p("initial_shareholder_loan", 1550000000))
-        salary, fixed_cost, emp_count = (
-            float(p("corp_salary", 2500000)),
-            float(p("corp_fixed_cost", 500000)),
-            int(p("employee_count", 1)),
+        pension_assets = self._build_account_state(
+            initial_balance=float(initial_assets.get("pension", 0.0)),
+            account_type="pension",
+            account_stats=pension_stats,
         )
 
-        rebalance_month = int(p("rebalance_month", 1))
-        bear_market_freeze_enabled = bool(p("bear_market_freeze_enabled", False))
-        sgov_crisis_months = float(p("sgov_crisis_months", 24))
-        sgov_warn_months = float(p("sgov_warn_months", 30))
-        high_income_min_ratio = float(p("high_income_min_ratio", 0.20))
-        growth_sell_years_left_threshold = float(p("growth_sell_years_left_threshold", 10))
-        years_left_estimate = float(p("years_left_estimate", float("inf")))
-        bond_min_years = float(p("bond_min_years", 5))
-        bond_min_total_ratio = float(p("bond_min_total_ratio", 0.05))
-        dividend_min_ratio = float(p("dividend_min_ratio", 0.10))
-        planned_cashflows = p("planned_cashflows", [])
+        def p(key: str, default: Any) -> Any:
+            return params.get(key, default)
 
-        # [NEW] 자산군별 기대주가상승률(PA) 로드
-        a_rates = p(
-            "appreciation_rates",
-            {
-                "cash_sgov": 0.001,
-                "fixed_income": 0.025,
-                "dividend_stocks": 0.055,
-                "growth_stocks": 0.095,
-            },
-        )
+        birth_year = int(p("birth_year", 1972))
+        birth_month = int(p("birth_month", 8))
+        private_pension_start_age = int(p("private_pension_start_age", 55))
+        national_pension_start_age = int(p("national_pension_start_age", 65))
+        total_need = float(p("target_monthly_cashflow", 11500000))
+        national_pension_amount = float(p("national_pension_amount", 2000000))
+        pension_withdrawal_target = float(p("pension_withdrawal_target", 2500000))
+        loan_balance = float(p("initial_shareholder_loan", 0.0))
+        corp_salary = float(p("corp_salary", 0.0))
+        corp_fixed_cost = float(p("corp_fixed_cost", 0.0))
+        employee_count = int(p("employee_count", 0))
+        planned_cashflows = params.get("planned_cashflows", [])
+        start_year = int(p("simulation_start_year", 2026))
+        start_month = int(p("simulation_start_month", 1))
 
-        # [FIX] 사용자가 Retirement 탭에서 수정한 시장 수익률 가정 로드
-        m_ret_rate = float(p("market_return_rate", 0.07))
-        m_infl = (1 + infl_rate) ** (1 / 12) - 1
-
-        def get_account_growth_rate(account_prefix: str) -> float:
-            account_stats = c_stats if account_prefix == "corp" else p_stats
-            dividend_yield = float(account_stats.get("dividend_yield", 0.0))
-            baseline_total_return = float(account_stats.get("expected_return", dividend_yield))
-            baseline_growth = baseline_total_return - dividend_yield
-            target_growth = m_ret_rate - dividend_yield
-
-            # 가시 설정(TR) 변경이 실제 그래프에 반영되도록 계좌 성장률을 동적으로 보정한다.
-            if abs(baseline_growth) < 1e-9:
-                return target_growth
-            return baseline_growth * (target_growth / baseline_growth)
-
-        # 월간 시장 수익률 (단리 변환)
-        cur_y, cur_m = int(p("simulation_start_year", 2026)), int(p("simulation_start_month", 3))
-
-        monthly_data = []
-        survival_m = 0
-        sgov_exhaust_date = "Permanent"
+        current_stress = False
+        shock_flag = False
         growth_sell_date = "None"
+        sgov_exhaustion_date = "Permanent"
+        survival_m = 0
+        crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+        monthly_data = []
 
-        for m in range(1, months + 1):
-            s_m = (cur_m + m - 1) % 12 or 12
-            s_y = cur_y + (cur_m + m - 2) // 12
-            age = ((s_y - birth_year) * 12 + (s_m - birth_month)) // 12
+        for index in range(1, months + 1):
+            sim_month = (start_month + index - 1) % 12 or 12
+            sim_year = start_year + (start_month + index - 2) // 12
+            age = ((sim_year - birth_year) * 12 + (sim_month - birth_month)) // 12
+            phase = self._resolve_phase(age, private_pension_start_age, national_pension_start_age)
 
-            # 이벤트 처리
-            for event in planned_cashflows:
-                if int(event["year"]) == s_y and int(event["month"]) == s_m:
-                    amt = float(event["amount"])
-                    e_type = event.get("type", "INFLOW")
-                    entity = event.get("entity", "CORP").lower()
-                    key = "corp_cash" if entity == "corp" else "pen_cash"
-                    if e_type == "INFLOW":
-                        curr_assets[key] += amt
-                    else:
-                        curr_assets[key] = max(0, curr_assets[key] - amt)
-
-            # 자산 수익 발생 (시장 수익률 가정 반영)
-            # 배당/인컴은 자산 자체에 재투자하지 않고 계좌별 현금으로 유입한다.
-            c_div = c_stats.get("dividend_yield", 0.04) / 12
-            p_div = p_stats.get("dividend_yield", 0.035) / 12
-
-            snapshot_assets = dict(curr_assets)
-            corp_income_to_cash = 0.0
-            pension_income_to_cash = 0.0
-            for asset, bal in snapshot_assets.items():
-                if bal <= 0:
-                    continue
-
-                account_prefix = "corp" if asset.startswith("corp") else "pen"
-                account_growth_rate = get_account_growth_rate(account_prefix)
-
-                # [NEW] 자산군별 기대주가상승률(PA) 적용
-                if "growth" in asset:
-                    growth = account_growth_rate / 12
-                elif "dividend" in asset:
-                    growth = account_growth_rate / 12
-                elif "high_income" in asset or "bond" in asset:
-                    growth = account_growth_rate / 12
-                elif "cash" in asset:
-                    growth = a_rates.get("cash_sgov", 0.001) / 12
-                else:
-                    growth = 0.0
-
-                div = c_div if asset.startswith("corp") else p_div
-
-                # 현금성 자산(cash)은 배당을 즉시 재투자하는 것으로 간주하여 가치에 합산
-                if "cash" in asset:
-                    curr_assets[asset] = bal * (1 + growth + div)
-                    continue
-
-                # 그 외 자산은 배당을 별도 현금으로 인출
-                income_cash = bal * div
-                curr_assets[asset] = bal * (1 + growth)
-                if asset.startswith("corp"):
-                    corp_income_to_cash += income_cash
-                else:
-                    pension_income_to_cash += income_cash
-
-            curr_assets["corp_cash"] += corp_income_to_cash
-            curr_assets["pen_cash"] += pension_income_to_cash
-
-            # 법인 운영비 지출
-            ins_rate = (
-                self.tax_engine.health_rate
-                + self.tax_engine.pension_rate
-                + self.tax_engine.employment_rate
+            self._apply_planned_cashflows(
+                corp_assets, pension_assets, planned_cashflows, sim_year, sim_month
             )
-            corp_ins_cost = (salary * ins_rate) * emp_count
-            total_corp_out = (salary * emp_count) + corp_ins_cost + fixed_cost
-            curr_assets["corp_cash"] = max(0, curr_assets["corp_cash"] - total_corp_out)
+            self._apply_monthly_returns("corp", corp_assets, corp_stats, params)
+            self._apply_monthly_returns("pension", pension_assets, pension_stats, params)
 
-            # 목표 생활비 산출
-            target_cf = base_cf * (1 + m_infl) ** m
-            income_pension = n_amt * (1 + m_infl) ** m if age >= n_age else 0
-            sal_info = self.tax_engine.calculate_income_tax(salary)
-            income_salary = sal_info["net_salary"]
-            deficit = max(0, target_cf - income_pension - income_salary)
+            pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
+            national_income = national_pension_amount if phase == "Phase 3" else 0.0
+            corp_monthly_need = max(0.0, total_need - pension_income - national_income)
 
-            # 인출 시퀀스
-            actual_p_draw = 0
-            phase = "Phase 1"
-            if age >= n_age:
-                phase = "Phase 3"
-            elif age >= p_age:
-                phase = "Phase 2"
+            corp_operating_cost = self._corp_operating_cost(
+                corp_salary, corp_fixed_cost, employee_count
+            )
+            corp_assets["SGOV Buffer"] = max(0.0, corp_assets["SGOV Buffer"] - corp_operating_cost)
 
-            if phase in {"Phase 2", "Phase 3"} and deficit > 0:
-                p_target = min(p_cf * (1 + m_infl) ** m, deficit)
-                cash_draw = min(curr_assets["pen_cash"], p_target)
-                curr_assets["pen_cash"] -= cash_draw
-                actual_p_draw += cash_draw
-                p_target -= cash_draw
+            pension_draw = 0.0
+            if pension_income > 0:
+                pension_draw = min(pension_income, pension_assets["SGOV Buffer"])
+                pension_assets["SGOV Buffer"] -= pension_draw
 
-                if p_target > 0 and s_m == rebalance_month:
-                    annual_pension_need = max(p_cf * 12, 1.0)
-                    pension_total = sum(
-                        curr_assets[k]
-                        for k in ["pen_cash", "pen_bond", "pen_dividend", "pen_growth"]
-                    )
-                    bond_floor = max(
-                        annual_pension_need * bond_min_years,
-                        pension_total * bond_min_total_ratio,
-                    )
-                    dividend_floor = pension_total * dividend_min_ratio
+            corp_draw = min(corp_monthly_need, corp_assets["SGOV Buffer"])
+            corp_assets["SGOV Buffer"] -= corp_draw
 
-                    bond_draw = min(curr_assets["pen_bond"], p_target)
-                    curr_assets["pen_bond"] -= bond_draw
-                    actual_p_draw += bond_draw
-                    p_target -= bond_draw
+            if loan_balance > 0 and corp_assets["SGOV Buffer"] > 0:
+                loan_repayment = min(loan_balance, corp_assets["SGOV Buffer"])
+                loan_balance -= loan_repayment
+                corp_assets["SGOV Buffer"] -= loan_repayment
 
-                    if p_target > 0 and curr_assets["pen_bond"] <= bond_floor:
-                        dividend_draw = min(curr_assets["pen_dividend"], p_target)
-                        curr_assets["pen_dividend"] -= dividend_draw
-                        actual_p_draw += dividend_draw
-                        p_target -= dividend_draw
-
-                    if (
-                        p_target > 0
-                        and phase == "Phase 3"
-                        and curr_assets["pen_dividend"] <= dividend_floor
-                        and not (bear_market_freeze_enabled and m_ret_rate < 0)
-                    ):
-                        growth_draw = min(curr_assets["pen_growth"], p_target)
-                        curr_assets["pen_growth"] -= growth_draw
-                        actual_p_draw += growth_draw
-                        p_target -= growth_draw
-                deficit = max(0, deficit - actual_p_draw)
-
-            if loan_bal > 0 and deficit > 0:
-                draw = min(loan_bal, deficit, curr_assets["corp_cash"])
-                loan_bal -= draw
-                curr_assets["corp_cash"] -= draw
-                deficit = max(0, deficit - draw)
-
-            if deficit > 0 and s_m == rebalance_month:
-                current_month_need = max(deficit, 1.0)
-                corp_cash_buffer_months = curr_assets["corp_cash"] / current_month_need
-                corp_total = sum(
-                    curr_assets[k]
-                    for k in [
-                        "corp_cash",
-                        "corp_high_income",
-                        "corp_dividend",
-                        "corp_growth",
-                    ]
+            if sim_month == 5:
+                growth_used = self._run_may_rebalance(
+                    corp_assets=corp_assets,
+                    pension_assets=pension_assets,
+                    corp_monthly_need=corp_monthly_need,
+                    pension_withdrawal_target=pension_withdrawal_target,
                 )
-                if corp_cash_buffer_months < sgov_warn_months:
-                    hi_draw = min(curr_assets["corp_high_income"], deficit)
-                    curr_assets["corp_high_income"] -= hi_draw
-                    deficit -= hi_draw
+                if growth_used > 0 and growth_sell_date == "None":
+                    growth_sell_date = f"{sim_year}-{sim_month:02d}"
+                crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+                shock_flag = False
+            elif sim_month == 11:
+                growth_used = self._run_november_rebalance(corp_assets, corp_monthly_need)
+                if growth_used > 0 and growth_sell_date == "None":
+                    growth_sell_date = f"{sim_year}-{sim_month:02d}"
 
-                high_income_ratio = (
-                    curr_assets["corp_high_income"] / corp_total if corp_total > 0 else 0.0
-                )
-                if deficit > 0 and high_income_ratio <= high_income_min_ratio:
-                    dividend_draw = min(curr_assets["corp_dividend"], deficit)
-                    curr_assets["corp_dividend"] -= dividend_draw
-                    deficit -= dividend_draw
+            self._run_pension_floor_refill(pension_assets, pension_withdrawal_target)
 
-                allow_corp_growth_sale = (
-                    deficit > 0
-                    and not (bear_market_freeze_enabled and m_ret_rate < 0)
-                    and (
-                        years_left_estimate <= growth_sell_years_left_threshold
-                        or (
-                            corp_cash_buffer_months < sgov_crisis_months
-                            and curr_assets["corp_high_income"] <= 0
-                            and curr_assets["corp_dividend"] <= 0
-                        )
-                    )
-                )
-                if allow_corp_growth_sale:
-                    growth_draw = min(curr_assets["corp_growth"], deficit)
-                    curr_assets["corp_growth"] -= growth_draw
-                    deficit -= growth_draw
-                    if growth_draw > 0 and growth_sell_date == "None":
-                        growth_sell_date = f"{s_y}-{s_m:02d}"
-
-                if deficit > 0:
-                    cash_draw = min(curr_assets["corp_cash"], deficit)
-                    curr_assets["corp_cash"] -= cash_draw
-                    deficit -= cash_draw
-
-            total_nw = sum(curr_assets.values())
-            if total_nw <= 0:
+            total_net_worth = sum(corp_assets.values()) + sum(pension_assets.values())
+            if total_net_worth <= 0:
                 break
-            if curr_assets["corp_cash"] <= 0 and sgov_exhaust_date == "Permanent":
-                sgov_exhaust_date = f"{s_y}-{s_m:02d}"
-            survival_m = m
-            if m <= months:
-                corp_bal = (
-                    curr_assets["corp_growth"]
-                    + curr_assets["corp_dividend"]
-                    + curr_assets["corp_high_income"]
-                    + curr_assets["corp_cash"]
-                )
-                pen_bal = (
-                    curr_assets["pen_growth"]
-                    + curr_assets["pen_dividend"]
-                    + curr_assets["pen_bond"]
-                    + curr_assets["pen_cash"]
-                )
-                monthly_data.append(
-                    {
-                        "index": m,
-                        "year": s_y,
-                        "month": s_m,
-                        "age": age,
-                        "phase": phase,
-                        "total_net_worth": total_nw,
-                        "corp_balance": corp_bal,
-                        "pension_balance": pen_bal,
-                        "loan_balance": loan_bal,
-                        "target_cashflow": target_cf,
-                        "net_salary": income_salary,
-                    }
-                )
+
+            equity_value = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+            if crash20_base > 0 and equity_value <= crash20_base * 0.8:
+                shock_flag = True
+
+            corp_sgov_months = self._months_cover(corp_assets["SGOV Buffer"], corp_monthly_need)
+            corp_bond_months = self._months_cover(corp_assets["Bond Buffer"], corp_monthly_need)
+            pension_sgov_months = self._months_cover(
+                pension_assets["SGOV Buffer"], pension_withdrawal_target
+            )
+            pension_bond_months = self._months_cover(
+                pension_assets["Bond Buffer"], pension_withdrawal_target
+            )
+
+            if corp_assets["SGOV Buffer"] <= 0 and sgov_exhaustion_date == "Permanent":
+                sgov_exhaustion_date = f"{sim_year}-{sim_month:02d}"
+
+            survival_m = index
+            corp_balance = sum(corp_assets.values())
+            pension_balance = sum(pension_assets.values())
+            monthly_data.append(
+                {
+                    "index": index,
+                    "year": sim_year,
+                    "month": sim_month,
+                    "age": age,
+                    "phase": phase,
+                    "total_net_worth": total_net_worth,
+                    "corp_balance": corp_balance,
+                    "pension_balance": pension_balance,
+                    "loan_balance": loan_balance,
+                    "target_cashflow": total_need,
+                    "net_salary": 0.0,
+                    "pension_draw": pension_draw,
+                    "corp_monthly_need": corp_monthly_need,
+                    "shock_flag": shock_flag,
+                    "stress": current_stress,
+                    "corp_sgov_balance": corp_assets["SGOV Buffer"],
+                    "corp_bond_balance": corp_assets["Bond Buffer"],
+                    "corp_high_income_balance": corp_assets["High Income"],
+                    "corp_dividend_balance": corp_assets["Dividend Growth"],
+                    "corp_growth_balance": corp_assets["Growth Engine"],
+                    "pension_sgov_balance": pension_assets["SGOV Buffer"],
+                    "pension_bond_balance": pension_assets["Bond Buffer"],
+                    "pension_high_income_balance": pension_assets["High Income"],
+                    "pension_dividend_balance": pension_assets["Dividend Growth"],
+                    "pension_growth_balance": pension_assets["Growth Engine"],
+                    "corp_sgov_months": corp_sgov_months,
+                    "corp_bond_months": corp_bond_months,
+                    "pension_sgov_months": pension_sgov_months,
+                    "pension_bond_months": pension_bond_months,
+                }
+            )
 
         return {
             "summary": {
                 "total_survival_years": survival_m // 12,
                 "survival_months": survival_m,
                 "is_permanent": survival_m >= months,
-                "sgov_exhaustion_date": sgov_exhaust_date,
+                "sgov_exhaustion_date": sgov_exhaustion_date,
                 "growth_asset_sell_start_date": growth_sell_date,
+                "signals": [],
+                "infinite_with_10pct_cut": False,
             },
             "survival_months": survival_m,
             "monthly_data": monthly_data,
         }
+
+    def _build_account_state(
+        self, initial_balance: float, account_type: str, account_stats: Dict[str, Any]
+    ) -> Dict[str, float]:
+        strategy_weights = account_stats.get("strategy_weights") or {}
+        legacy_weights = account_stats.get("weights") or {}
+
+        if not strategy_weights:
+            strategy_weights = {
+                "SGOV Buffer": float(legacy_weights.get("Cash", 0.0)),
+                "Bond Buffer": (
+                    float(legacy_weights.get("Fixed", 0.0)) if account_type == "pension" else 0.0
+                ),
+                "High Income": (
+                    float(legacy_weights.get("Fixed", 0.0)) if account_type == "corp" else 0.0
+                ),
+                "Dividend Growth": float(legacy_weights.get("Dividend", 0.0)),
+                "Growth Engine": float(legacy_weights.get("Growth", 0.0)),
+            }
+
+        if sum(float(v) for v in strategy_weights.values()) <= 0:
+            strategy_weights = (
+                {
+                    "SGOV Buffer": 0.30,
+                    "Bond Buffer": 0.00,
+                    "High Income": 0.00,
+                    "Dividend Growth": 0.00,
+                    "Growth Engine": 0.70,
+                }
+                if account_type == "corp"
+                else {
+                    "SGOV Buffer": 0.30,
+                    "Bond Buffer": 0.00,
+                    "High Income": 0.00,
+                    "Dividend Growth": 0.30,
+                    "Growth Engine": 0.40,
+                }
+            )
+
+        return {
+            category: initial_balance * float(strategy_weights.get(category, 0.0))
+            for category in self.CATEGORY_ORDER
+        }
+
+    def _resolve_phase(
+        self, age: int, private_pension_start_age: int, national_pension_start_age: int
+    ) -> str:
+        if age >= national_pension_start_age:
+            return "Phase 3"
+        if age >= private_pension_start_age:
+            return "Phase 2"
+        return "Phase 1"
+
+    def _apply_planned_cashflows(
+        self,
+        corp_assets: Dict[str, float],
+        pension_assets: Dict[str, float],
+        planned_cashflows: list,
+        sim_year: int,
+        sim_month: int,
+    ) -> None:
+        for event in planned_cashflows:
+            if int(event["year"]) != sim_year or int(event["month"]) != sim_month:
+                continue
+            amount = float(event["amount"])
+            target_assets = (
+                corp_assets if event.get("entity", "CORP").lower() == "corp" else pension_assets
+            )
+            if event.get("type", "INFLOW") == "INFLOW":
+                target_assets["SGOV Buffer"] += amount
+            else:
+                target_assets["SGOV Buffer"] = max(0.0, target_assets["SGOV Buffer"] - amount)
+
+    def _apply_monthly_returns(
+        self,
+        account_key: str,
+        account_assets: Dict[str, float],
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+    ) -> None:
+        for category in self.CATEGORY_ORDER:
+            balance = account_assets[category]
+            if balance <= 0:
+                continue
+
+            category_rates = self._category_rate_spec(
+                account_key, category, account_assets, account_stats, params
+            )
+            monthly_dy = float(category_rates["dy"]) / 12.0
+            monthly_pa = float(category_rates["pa"]) / 12.0
+
+            if category == "SGOV Buffer":
+                account_assets[category] = balance * (1 + monthly_dy + monthly_pa)
+                continue
+
+            income_to_sgov = balance * monthly_dy
+            account_assets[category] = balance * (1 + monthly_pa)
+            account_assets["SGOV Buffer"] += income_to_sgov
+
+    def _category_rate_spec(
+        self,
+        account_key: str,
+        category: str,
+        account_assets: Dict[str, float],
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+    ) -> Dict[str, float]:
+        category_override = (
+            params.get("category_return_rates", {}).get(account_key, {}).get(category, {})
+        )
+        if category_override:
+            return {
+                "dy": float(category_override.get("dy", 0.0)),
+                "pa": float(category_override.get("pa", 0.0)),
+                "tr": float(category_override.get("tr", 0.0)),
+            }
+
+        appreciation_rates = params.get("appreciation_rates", {})
+        account_expected_return = float(account_stats.get("expected_return", 0.0))
+        account_dividend_yield = float(account_stats.get("dividend_yield", 0.0))
+        default_pa = {
+            "SGOV Buffer": float(appreciation_rates.get("cash_sgov", 0.0)),
+            "Bond Buffer": float(appreciation_rates.get("bond_buffer", 0.0)),
+            "High Income": float(appreciation_rates.get("high_income", 0.0)),
+            "Dividend Growth": float(appreciation_rates.get("dividend_stocks", 0.0)),
+            "Growth Engine": float(appreciation_rates.get("growth_stocks", 0.0)),
+        }
+        category_yields = account_stats.get("category_dividend_yields") or {}
+        if category in category_yields:
+            dy = float(category_yields[category])
+        else:
+            dy = self._fallback_dividend_yield(category, account_assets, account_stats)
+        pa = default_pa.get(category, 0.0)
+        positive_non_sgov = [
+            name for name, value in account_assets.items() if name != "SGOV Buffer" and value > 0
+        ]
+        if len(positive_non_sgov) == 1 and positive_non_sgov[0] == category:
+            pa = max(pa, account_expected_return - account_dividend_yield)
+        return {"dy": dy, "pa": pa, "tr": dy + pa}
+
+    def _fallback_dividend_yield(
+        self, category: str, account_assets: Dict[str, float], account_stats: Dict[str, Any]
+    ) -> float:
+        overall_yield = float(account_stats.get("dividend_yield", 0.0))
+        positive_non_sgov = [
+            name for name, value in account_assets.items() if name != "SGOV Buffer" and value > 0
+        ]
+        if len(positive_non_sgov) == 1 and positive_non_sgov[0] == category:
+            return overall_yield
+        return 0.0
+
+    def _corp_operating_cost(
+        self, corp_salary: float, corp_fixed_cost: float, employee_count: int
+    ) -> float:
+        ins_rate = (
+            self.tax_engine.health_rate
+            + self.tax_engine.pension_rate
+            + self.tax_engine.employment_rate
+        )
+        return (
+            (corp_salary * employee_count)
+            + (corp_salary * ins_rate * employee_count)
+            + corp_fixed_cost
+        )
+
+    def _run_may_rebalance(
+        self,
+        corp_assets: Dict[str, float],
+        pension_assets: Dict[str, float],
+        corp_monthly_need: float,
+        pension_withdrawal_target: float,
+    ) -> float:
+        growth_used = 0.0
+        growth_used += self._fill_corp_sgov(
+            corp_assets, corp_monthly_need * 30.0, corp_monthly_need
+        )
+        growth_used += self._fill_bucket(
+            corp_assets,
+            target_category="Bond Buffer",
+            target_amount=corp_monthly_need * 18.0,
+            floor_amount=corp_monthly_need * 12.0,
+            donor_order=("High Income", "Dividend Growth", "Growth Engine"),
+        )
+        growth_used += self._fill_bucket(
+            pension_assets,
+            target_category="SGOV Buffer",
+            target_amount=pension_withdrawal_target * 24.0,
+            floor_amount=0.0,
+            donor_order=("Bond Buffer", "High Income", "Dividend Growth", "Growth Engine"),
+        )
+        growth_used += self._fill_bucket(
+            pension_assets,
+            target_category="Bond Buffer",
+            target_amount=pension_withdrawal_target * 18.0,
+            floor_amount=pension_withdrawal_target * 12.0,
+            donor_order=("High Income", "Dividend Growth", "Growth Engine"),
+        )
+        return growth_used
+
+    def _run_november_rebalance(
+        self, corp_assets: Dict[str, float], corp_monthly_need: float
+    ) -> float:
+        growth_used = self._fill_corp_sgov(corp_assets, corp_monthly_need * 27.0, corp_monthly_need)
+        growth_used += self._fill_bucket(
+            corp_assets,
+            target_category="Bond Buffer",
+            target_amount=corp_monthly_need * 18.0,
+            floor_amount=corp_monthly_need * 12.0,
+            donor_order=("High Income", "Dividend Growth", "Growth Engine"),
+        )
+        return growth_used
+
+    def _fill_corp_sgov(
+        self, corp_assets: Dict[str, float], target_amount: float, monthly_need: float
+    ) -> float:
+        if target_amount <= 0:
+            return 0.0
+        growth_used = 0.0
+        target_bond = monthly_need * 18.0
+        bond_floor = monthly_need * 12.0
+        growth_used += self._transfer(
+            corp_assets,
+            "Bond Buffer",
+            "SGOV Buffer",
+            max(0.0, corp_assets["Bond Buffer"] - target_bond),
+        )
+        growth_used += self._transfer_from_sequence(
+            corp_assets,
+            "SGOV Buffer",
+            max(0.0, target_amount - corp_assets["SGOV Buffer"]),
+            (
+                ("Bond Buffer", bond_floor),
+                ("High Income", 0.0),
+                ("Dividend Growth", 0.0),
+                ("Growth Engine", 0.0),
+            ),
+        )
+        return growth_used
+
+    def _fill_bucket(
+        self,
+        account_assets: Dict[str, float],
+        target_category: str,
+        target_amount: float,
+        floor_amount: float,
+        donor_order: tuple,
+    ) -> float:
+        if target_amount <= account_assets[target_category]:
+            return 0.0
+        needed = target_amount - account_assets[target_category]
+        donor_sequence = tuple(
+            (donor, floor_amount if donor == "Bond Buffer" else 0.0) for donor in donor_order
+        )
+        return self._transfer_from_sequence(account_assets, target_category, needed, donor_sequence)
+
+    def _run_pension_floor_refill(
+        self, pension_assets: Dict[str, float], pension_withdrawal_target: float
+    ) -> None:
+        floor_amount = pension_withdrawal_target * 12.0
+        if pension_withdrawal_target <= 0 or pension_assets["SGOV Buffer"] >= floor_amount:
+            return
+        needed = floor_amount - pension_assets["SGOV Buffer"]
+        self._transfer(pension_assets, "Bond Buffer", "SGOV Buffer", needed)
+
+    def _transfer_from_sequence(
+        self,
+        account_assets: Dict[str, float],
+        target_category: str,
+        needed: float,
+        donor_sequence: tuple,
+    ) -> float:
+        growth_used = 0.0
+        remaining = needed
+        for donor, floor in donor_sequence:
+            if remaining <= 0:
+                break
+            available = max(0.0, account_assets[donor] - floor)
+            moved = self._transfer(
+                account_assets, donor, target_category, min(available, remaining)
+            )
+            remaining -= moved
+            if donor == "Growth Engine":
+                growth_used += moved
+        return growth_used
+
+    def _transfer(
+        self,
+        account_assets: Dict[str, float],
+        from_category: str,
+        to_category: str,
+        amount: float,
+    ) -> float:
+        moved = min(max(0.0, amount), account_assets[from_category])
+        account_assets[from_category] -= moved
+        account_assets[to_category] += moved
+        return moved
+
+    def _months_cover(self, balance: float, monthly_need: float) -> float:
+        if monthly_need <= 0:
+            return 0.0
+        return balance / monthly_need
+
+    def _equity_value(self, account_assets: Dict[str, float]) -> float:
+        return (
+            account_assets["High Income"]
+            + account_assets["Dividend Growth"]
+            + account_assets["Growth Engine"]
+        )

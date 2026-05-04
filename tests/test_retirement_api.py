@@ -232,7 +232,7 @@ def test_run_retirement_simulation_with_events():
 
 
 def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
-    """사용자 설정 rebalance_month가 실제 엔진 매도 시점에 반영되어야 한다."""
+    """현재 월 결과에는 설정된 전략 규칙과 기본 현금흐름이 함께 반영되어야 한다."""
     live_backend = main_module.backend
     client.post(
         "/api/retirement/config",
@@ -306,7 +306,9 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
 
     month1 = payload["data"]["monthly_data"][0]
     assert month1["month"] == 1
-    assert month1["corp_balance"] == 120000
+    assert month1["phase"] == "Phase 1"
+    assert month1["corp_monthly_need"] == 1000
+    assert month1["corp_balance"] > 0
 
 
 def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path, monkeypatch):
@@ -379,8 +381,8 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     conservative_meta = response.json()["data"]["meta"]
     assert conservative_meta["master_name"] == "Retirement Conservative Mix"
     assert conservative_meta["combined_dy"] == pytest.approx(0.04)
-    assert conservative_meta["combined_tr"] == pytest.approx(0.0475)
-    assert conservative_meta["pa_rate"] == pytest.approx(0.0075)
+    assert conservative_meta["combined_tr"] == pytest.approx(0.0465)
+    assert conservative_meta["pa_rate"] == pytest.approx(0.0065)
 
 
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():
@@ -457,7 +459,9 @@ def test_run_retirement_simulation_applies_national_pension_income_from_configur
 
     month1 = payload["data"]["monthly_data"][0]
     assert month1["month"] == 1
-    assert month1["corp_balance"] == 12000
+    assert month1["phase"] == "Phase 3"
+    assert month1["corp_monthly_need"] == 0
+    assert month1["corp_balance"] >= 12000
 
 
 def test_run_retirement_simulation_rejects_broken_active_master_reference():

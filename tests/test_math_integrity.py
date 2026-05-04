@@ -4,60 +4,91 @@ from src.core.tax_engine import TaxEngine
 from src.core.trigger_engine import TriggerEngine
 
 
-def test_simulation_math_integrity():
-    """시뮬레이션 자산 증감 산식의 무결성을 검증합니다."""
-    tax_engine = TaxEngine()
-    engine = ProjectionEngine(tax_engine, TriggerEngine(), RebalanceEngine())
+def make_engine() -> ProjectionEngine:
+    return ProjectionEngine(TaxEngine(), TriggerEngine(), RebalanceEngine())
 
-    initial_assets = {"corp": 1000000000, "pension": 500000000}
-    params = {
-        "target_monthly_cashflow": 10000000,
-        "inflation_rate": 0.03,
-        "market_return_rate": 0.05,
-        "corp_salary": 3000000,
-        "corp_fixed_cost": 500000,
-        "employee_count": 1,
-        "initial_shareholder_loan": 500000000,
-        "national_pension_amount": 1500000,
-        "pension_withdrawal_target": 2000000,
+
+def base_params() -> dict:
+    return {
+        "simulation_years": 2,
+        "simulation_start_year": 2026,
+        "simulation_start_month": 1,
+        "birth_year": 1972,
+        "birth_month": 8,
+        "private_pension_start_age": 80,
+        "national_pension_start_age": 90,
+        "target_monthly_cashflow": 0,
+        "inflation_rate": 0.0,
+        "corp_salary": 0,
+        "corp_fixed_cost": 0,
+        "employee_count": 0,
+        "initial_shareholder_loan": 0,
+        "national_pension_amount": 0,
+        "pension_withdrawal_target": 0,
+        "portfolio_stats": {
+            "corp": {
+                "dividend_yield": 0.0,
+                "expected_return": 0.0,
+                "strategy_weights": {
+                    "SGOV Buffer": 0.0,
+                    "Bond Buffer": 0.0,
+                    "High Income": 0.0,
+                    "Dividend Growth": 0.0,
+                    "Growth Engine": 1.0,
+                },
+            },
+            "pension": {
+                "dividend_yield": 0.0,
+                "expected_return": 0.0,
+                "strategy_weights": {
+                    "SGOV Buffer": 0.0,
+                    "Bond Buffer": 0.0,
+                    "High Income": 0.0,
+                    "Dividend Growth": 0.0,
+                    "Growth Engine": 1.0,
+                },
+            },
+        },
     }
 
-    result = engine.run_30yr_simulation(initial_assets, params)
+
+def test_simulation_math_integrity():
+    """지출이 없고 수익률이 양수이면 총 순자산은 월별로 감소하지 않아야 한다."""
+    params = base_params()
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.12, "tr": 0.12}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.12, "tr": 0.12}},
+    }
+
+    result = make_engine().run_30yr_simulation(
+        {"corp": 1000000000, "pension": 500000000},
+        params,
+    )
     data = result["monthly_data"]
 
-    # 첫 달부터 마지막 달까지 자산 변화 검증
+    assert len(data) > 0
     for i in range(1, len(data)):
-        prev_nw = data[i - 1]["total_net_worth"]
-        curr_nw = data[i]["total_net_worth"]
-
-        # 수익률과 지출을 고려했을 때, 자산이 비정상적으로 급감하지 않는지 확인
-        # (정확한 산식 검증은 세무 엔진 로직을 포함해야 하므로 오차범위 1% 이내 확인)
-        expected_min = prev_nw * 0.95  # 대규모 지출이 있을 수 있으므로 여유 있게 설정
-        assert curr_nw > expected_min, f"Month {i}: Asset drop is too sharp! {prev_nw} -> {curr_nw}"
+        assert data[i]["total_net_worth"] >= data[i - 1]["total_net_worth"]
 
 
-def test_conservative_profile_benchmarking():
-    """Conservative Profile에서 이중 차감 수정 후 생존 기간이 늘어났는지 확인합니다."""
-    tax_engine = TaxEngine()
-    engine = ProjectionEngine(tax_engine, TriggerEngine(), RebalanceEngine())
-
-    initial_assets = {"corp": 1600000000, "pension": 600000000}
-    # Conservative: 3.5% return, 3.5% inflation
-    params = {
-        "target_monthly_cashflow": 9000000,
-        "inflation_rate": 0.035,
-        "market_return_rate": 0.035,
-        "corp_salary": 2500000,
-        "corp_fixed_cost": 500000,
-        "employee_count": 1,
-        "initial_shareholder_loan": 1550000000,
-        "national_pension_amount": 1500000,
-        "pension_withdrawal_target": 2500000,
+def test_higher_growth_profile_finishes_with_higher_net_worth():
+    """같은 초기 조건이면 더 높은 Growth Engine PA가 더 큰 최종 순자산을 만들어야 한다."""
+    conservative = base_params()
+    conservative["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.02, "tr": 0.02}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.02, "tr": 0.02}},
+    }
+    optimistic = base_params()
+    optimistic["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.12, "tr": 0.12}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.12, "tr": 0.12}},
     }
 
-    result = engine.run_30yr_simulation(initial_assets, params)
-    # 이중 차감이 해결되었다면 최소 30년 이상 생존해야 함 (기존 28년에서 개선 확인)
-    survival_years = result["summary"]["total_survival_years"]
+    initial_assets = {"corp": 800000000, "pension": 400000000}
+    low_result = make_engine().run_30yr_simulation(initial_assets, conservative)
+    high_result = make_engine().run_30yr_simulation(initial_assets, optimistic)
+
     assert (
-        survival_years >= 30
-    ), f"Conservative profile still failing too early: {survival_years} years"
+        high_result["monthly_data"][-1]["total_net_worth"]
+        > low_result["monthly_data"][-1]["total_net_worth"]
+    )

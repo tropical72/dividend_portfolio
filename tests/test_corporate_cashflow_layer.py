@@ -12,454 +12,258 @@ def make_engine() -> ProjectionEngine:
     )
 
 
-def test_corporate_dividend_income_flows_to_cash_before_expense():
-    """법인 배당/인컴은 자산 재투자가 아니라 현금으로 유입되어야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "target_monthly_cashflow": 0,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.12,
-            "corp_salary": 0,
-            "corp_fixed_cost": 500,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.12,
-                    "weights": {"Dividend": 1.0},
+def base_params() -> dict:
+    return {
+        "simulation_years": 1,
+        "simulation_start_year": 2026,
+        "simulation_start_month": 1,
+        "birth_year": 1972,
+        "birth_month": 8,
+        "private_pension_start_age": 55,
+        "national_pension_start_age": 65,
+        "target_monthly_cashflow": 11500000,
+        "inflation_rate": 0.0,
+        "corp_salary": 0,
+        "corp_fixed_cost": 0,
+        "employee_count": 0,
+        "initial_shareholder_loan": 0,
+        "national_pension_amount": 2000000,
+        "pension_withdrawal_target": 2500000,
+        "planned_cashflows": [],
+        "portfolio_stats": {
+            "corp": {
+                "dividend_yield": 0.0,
+                "expected_return": 0.0,
+                "strategy_weights": {
+                    "SGOV Buffer": 0.2,
+                    "Bond Buffer": 0.3,
+                    "High Income": 0.1,
+                    "Dividend Growth": 0.15,
+                    "Growth Engine": 0.25,
                 },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
+            },
+            "pension": {
+                "dividend_yield": 0.0,
+                "expected_return": 0.0,
+                "strategy_weights": {
+                    "SGOV Buffer": 0.1,
+                    "Bond Buffer": 0.4,
+                    "High Income": 0.0,
+                    "Dividend Growth": 0.2,
+                    "Growth Engine": 0.3,
+                },
             },
         },
+        "appreciation_rates": {
+            "cash_sgov": 0.0,
+            "bond_buffer": 0.0,
+            "high_income": 0.0,
+            "dividend_stocks": 0.0,
+            "growth_stocks": 0.0,
+        },
+    }
+
+
+def test_corporate_dividend_income_flows_into_sgov_before_expense():
+    """비-SGOV 자산 배당은 먼저 SGOV Buffer로 유입되어야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 4
+    params["target_monthly_cashflow"] = 0
+    params["corp_fixed_cost"] = 500
+    params["portfolio_stats"]["corp"]["dividend_yield"] = 0.12
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 1.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000, "pension": 0},
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
-
-    # 12만 원 자산에서 월 배당 1,200원이 현금으로 들어오고,
-    # 운영비 500원을 먼저 지출한 뒤 총 법인 자산은 120,700원이 남아야 한다.
+    assert month1["corp_sgov_balance"] == 700
+    assert month1["corp_dividend_balance"] == 120000
     assert month1["corp_balance"] == 120700
 
 
-def test_shareholder_loan_repayment_uses_corporate_cash_only():
-    """주주대여금 반환은 법인 현금 잔액 범위 내에서만 이루어져야 한다."""
-    engine = make_engine()
+def test_shareholder_loan_repayment_uses_remaining_corporate_sgov_only():
+    """주주대여금 상환은 월지출 이후 남은 법인 SGOV 잔액 범위 내에서만 이뤄져야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 4
+    params["target_monthly_cashflow"] = 1000
+    params["initial_shareholder_loan"] = 100000
+    params["portfolio_stats"]["corp"]["dividend_yield"] = 0.12
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 1.0,
+        "Growth Engine": 0.0,
+    }
 
-    result = engine._execute_loop(
+    result = make_engine()._execute_loop(
         initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.12,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 100000,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.12,
-                    "weights": {"Dividend": 1.0},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
-
-    # 월 배당 1,200원 중 1,000원만 주주대여금 반환으로 사용되고
-    # 200원은 법인 현금에 남아 총 법인 자산은 120,200원이 되어야 한다.
-    assert month1["loan_balance"] == 99000
-    assert month1["corp_balance"] == 120200
-
-
-def test_corporate_growth_sale_waits_for_rebalance_month():
-    """전략 자산 매도는 지정된 리밸런싱 월이 아니면 실행되지 않아야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 2,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Growth": 1.0},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-
+    assert month1["loan_balance"] == 99800
+    assert month1["corp_sgov_balance"] == 0
     assert month1["corp_balance"] == 120000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
 
 
-def test_corporate_growth_sale_runs_in_rebalance_month():
-    """전략 자산 매도는 지정된 리밸런싱 월에는 실행될 수 있어야 한다."""
-    engine = make_engine()
+def test_corporate_may_rebalance_refills_sgov_to_thirty_months():
+    """5월 정기점검에서는 적자 여부와 무관하게 법인 SGOV를 30개월 목표로 복구해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["target_monthly_cashflow"] = 1000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.02,
+        "Bond Buffer": 0.58,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.4,
+    }
 
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Growth": 1.0},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
+    assert month1["corp_sgov_months"] >= 30.0
+    assert month1["corp_bond_months"] >= 12.0
 
-    assert month1["corp_balance"] == 119000
-    assert result["summary"]["growth_asset_sell_start_date"] == "2026-01"
 
+def test_corporate_november_rebalance_refills_sgov_to_twenty_seven_months():
+    """11월 반기정비에서는 법인 SGOV를 27개월 목표로 복구해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 11
+    params["target_monthly_cashflow"] = 1000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.05,
+        "Bond Buffer": 0.45,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.5,
+    }
 
-def test_corporate_rebalance_prefers_income_assets_before_growth():
-    """리밸런싱 월에는 성장 자산보다 인컴 자산을 먼저 사용해야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Dividend": 0.5, "Growth": 0.5},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
-
-    # 총 법인 자산은 1,000원 감소하지만 성장 자산 매도는 발생하지 않아야 한다.
-    assert month1["corp_balance"] == 119000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
+    assert month1["corp_sgov_months"] >= 27.0
 
 
-def test_pension_rebalance_uses_bond_before_dividend_and_growth():
-    """연금 계좌는 SGOV 부족 시 Bond Buffer를 먼저 사용해야 한다."""
-    engine = make_engine()
+def test_pension_floor_refill_uses_bond_buffer_first():
+    """개인연금 SGOV가 12개월 floor 아래면 Bond Buffer에서 먼저 보충해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 4
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["national_pension_start_age"] = 80
+    params["pension_withdrawal_target"] = 1000
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 1.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
 
-    result = engine._execute_loop(
-        initial_assets={"corp": 0, "pension": 120000},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "private_pension_start_age": 0,
-            "birth_year": 1980,
-            "birth_month": 1,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "monthly_withdrawal_target": 1000,
-            "pension_withdrawal_target": 1000,
-            "rebalance_month": 1,
-            "sgov_min_years": 2,
-            "bond_min_years": 5,
-            "bond_min_total_ratio": 0.05,
-            "dividend_min_ratio": 0.10,
-            "portfolio_stats": {
-                "corp": {"dividend_yield": 0.0, "weights": {}},
-                "pension": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Cash": 0.0, "Fixed": 0.5, "Dividend": 0.5},
-                },
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-    assert month1["pension_balance"] == 119000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
-
-
-def test_bear_market_freeze_blocks_growth_sale():
-    """하락장 잠금이 켜지면 성장 자산 매도는 리밸런싱 월에도 막혀야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": -0.30,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "bear_market_freeze_enabled": True,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Growth": 1.0},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-    assert month1["corp_balance"] == 117000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
-
-
-def test_corporate_growth_sale_requires_crisis_buffer_threshold():
-    """법인 Growth 매도는 위기 버퍼 임계치 미만일 때만 허용되어야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 120000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "sgov_crisis_months": 24,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Cash": 0.2, "Growth": 0.8},
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-    assert month1["corp_balance"] == 119000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
-
-
-def test_pension_growth_sale_is_blocked_before_phase3():
-    """연금 Growth 매도는 Phase 2에서는 금지되어야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 0, "pension": 120000},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "private_pension_start_age": 0,
-            "national_pension_start_age": 65,
-            "national_pension_amount": 0,
-            "birth_year": 1980,
-            "birth_month": 1,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "monthly_withdrawal_target": 1000,
-            "pension_withdrawal_target": 1000,
-            "rebalance_month": 1,
-            "portfolio_stats": {
-                "corp": {"dividend_yield": 0.0, "weights": {}},
-                "pension": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Growth": 1.0},
-                },
-            },
-        },
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0, "pension": 20000},
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
     assert month1["phase"] == "Phase 2"
-    assert month1["pension_balance"] == 120000
+    assert month1["pension_draw"] == 0
+    assert month1["pension_sgov_balance"] == 12000
+    assert month1["pension_bond_balance"] == 8000
 
 
-def test_pension_growth_sale_is_allowed_in_phase3():
-    """연금 Growth 매도는 Phase 3에서는 허용되어야 한다."""
-    engine = make_engine()
+def test_phase_two_corporate_need_subtracts_pension_draw():
+    """Phase 2에서는 법인 부담 월지출이 총 필요금액에서 개인연금만 차감된 값이어야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 8
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["national_pension_start_age"] = 80
+    params["national_pension_amount"] = 0
+    params["pension_withdrawal_target"] = 2500000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
 
-    result = engine._execute_loop(
-        initial_assets={"corp": 0, "pension": 120000},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 1000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "private_pension_start_age": 0,
-            "national_pension_start_age": 0,
-            "national_pension_amount": 0,
-            "birth_year": 1980,
-            "birth_month": 1,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "monthly_withdrawal_target": 1000,
-            "pension_withdrawal_target": 1000,
-            "rebalance_month": 1,
-            "portfolio_stats": {
-                "corp": {"dividend_yield": 0.0, "weights": {}},
-                "pension": {
-                    "dividend_yield": 0.0,
-                    "weights": {"Growth": 1.0},
-                },
-            },
-        },
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 50000000, "pension": 50000000},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+    assert month1["phase"] == "Phase 2"
+    assert month1["corp_monthly_need"] == 9000000
+    assert month1["pension_draw"] == 2500000
+
+
+def test_phase_three_corporate_need_subtracts_pension_and_national_income():
+    """Phase 3에서는 법인 부담액에서 개인연금과 국민연금이 모두 차감되어야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 8
+    params["birth_year"] = 1960
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["national_pension_start_age"] = 65
+    params["target_monthly_cashflow"] = 11500000
+    params["pension_withdrawal_target"] = 2500000
+    params["national_pension_amount"] = 2000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 50000000, "pension": 50000000},
+        params=params,
         months=1,
     )
 
     month1 = result["monthly_data"][0]
     assert month1["phase"] == "Phase 3"
-    assert month1["pension_balance"] == 119000
-
-
-def test_pension_growth_sale_waits_until_dividend_floor_is_breached():
-    """연금 Growth 매도는 Phase 3이어도 Dividend 10% 바닥 전에는 금지되어야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 0, "pension": 100000},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 15000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "private_pension_start_age": 0,
-            "national_pension_start_age": 0,
-            "national_pension_amount": 0,
-            "birth_year": 1980,
-            "birth_month": 1,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "pension_withdrawal_target": 15000,
-            "rebalance_month": 1,
-            "dividend_min_ratio": 0.10,
-            "portfolio_stats": {
-                "corp": {"dividend_yield": 0.0, "weights": {}},
-                "pension": {
-                    "dividend_yield": 0.0,
-                    "strategy_weights": {
-                        "SGOV Buffer": 0.0,
-                        "Bond Buffer": 0.8,
-                        "Dividend Growth": 0.15,
-                        "Growth Engine": 0.05,
-                    },
-                },
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-    assert month1["phase"] == "Phase 3"
-    assert month1["pension_balance"] == 85000
-
-
-def test_corporate_dividend_sale_waits_until_high_income_floor_is_breached():
-    """법인 SCHD 매도는 High Income 20% 바닥 전에는 금지되어야 한다."""
-    engine = make_engine()
-
-    result = engine._execute_loop(
-        initial_assets={"corp": 100000, "pension": 0},
-        params={
-            "simulation_years": 1,
-            "simulation_start_year": 2026,
-            "simulation_start_month": 1,
-            "target_monthly_cashflow": 25000,
-            "inflation_rate": 0.0,
-            "market_return_rate": 0.0,
-            "corp_salary": 0,
-            "corp_fixed_cost": 0,
-            "employee_count": 0,
-            "initial_shareholder_loan": 0,
-            "rebalance_month": 1,
-            "sgov_warn_months": 30,
-            "sgov_crisis_months": 24,
-            "high_income_min_ratio": 0.20,
-            "growth_sell_years_left_threshold": 0,
-            "portfolio_stats": {
-                "corp": {
-                    "dividend_yield": 0.0,
-                    "strategy_weights": {
-                        "SGOV Buffer": 0.10,
-                        "High Income": 0.30,
-                        "Dividend Growth": 0.60,
-                        "Growth Engine": 0.0,
-                    },
-                },
-                "pension": {"dividend_yield": 0.0, "weights": {}},
-            },
-        },
-        months=1,
-    )
-
-    month1 = result["monthly_data"][0]
-    assert month1["corp_balance"] == 75000
-    assert result["summary"]["growth_asset_sell_start_date"] == "None"
+    assert month1["corp_monthly_need"] == 7000000
