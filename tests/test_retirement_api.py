@@ -385,6 +385,104 @@ def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path
     assert conservative_meta["pa_rate"] == pytest.approx(0.0065)
 
 
+def test_retirement_simulation_uses_category_return_rates_from_saved_portfolio(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    corp_portfolio = backend.add_portfolio(
+        name="Reference Corporate",
+        account_type="Corporate",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "VGIT",
+                "name": "VGIT",
+                "weight": 50,
+                "category": "Bond Buffer",
+                "dividend_yield": 4.0,
+            },
+            {
+                "ticker": "VOO",
+                "name": "VOO",
+                "weight": 50,
+                "category": "Growth Engine",
+                "dividend_yield": 1.5,
+            },
+        ],
+    )["data"]
+    pension_portfolio = backend.add_portfolio(
+        name="Reference Pension",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "SGOV",
+                "name": "SGOV",
+                "weight": 100,
+                "category": "SGOV Buffer",
+                "dividend_yield": 3.5,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name="Reference Rates",
+        corp_id=corp_portfolio["id"],
+        pension_id=pension_portfolio["id"],
+    )["data"]
+    backend.activate_master_portfolio(str(master["id"]))
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.0,
+                    "inflation_rate": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 120000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+        },
+    )
+
+    response = local_client.get("/api/retirement/simulate?pa_scenario=base")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    month1 = payload["data"]["monthly_data"][0]
+    assert month1["corp_bond_balance"] == pytest.approx(59990.0)
+    assert month1["corp_growth_balance"] == pytest.approx(60375.0)
+    assert month1["corp_sgov_balance"] == pytest.approx(275.0)
+
+
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():
     """국민연금 개시 연령과 월 수령액이 Phase 3 현금흐름에 반영되어야 한다."""
     live_backend = main_module.backend

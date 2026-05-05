@@ -2020,9 +2020,13 @@ class DividendBackend:
             "expected_return": 0.0,
             "weights": {},
             "strategy_weights": {},
+            "category_dividend_yields": {},
+            "category_return_rates": {},
         }
         weight_buckets = cast(Dict[str, float], stats["weights"])
         strategy_buckets = cast(Dict[str, float], stats["strategy_weights"])
+        category_dividend_yields = cast(Dict[str, float], stats["category_dividend_yields"])
+        category_return_rates = cast(Dict[str, Dict[str, float]], stats["category_return_rates"])
 
         # [REQ-GLB-13] 자산군별 기대주가상승률(PA) 로드
         a_rates = self.get_appreciation_rates_for_scenario(pa_scenario)
@@ -2053,9 +2057,36 @@ class DividendBackend:
                 pa = a_rates.get("growth_stocks", 8.2)
 
             div_y = float(item.get("dividend_yield") or 0.0)
+            category_dividend_yields[strategy_cat] = category_dividend_yields.get(
+                strategy_cat, 0.0
+            ) + (div_y / 100.0 * w)
             # TR(expected_return) = (배당수익률 + 기대주가상승률) * 비중
             stats["expected_return"] = float(stats["expected_return"]) + ((div_y + pa) / 100.0 * w)
             stats["dividend_yield"] = float(stats["dividend_yield"]) + (div_y / 100.0 * w)
+
+        for strategy_cat, weight in strategy_buckets.items():
+            if weight <= 0:
+                continue
+            category_dividend_yields[strategy_cat] = (
+                category_dividend_yields.get(strategy_cat, 0.0) / weight
+            )
+            category_pa = 0.0
+            if strategy_cat == "SGOV Buffer":
+                category_pa = a_rates.get("cash_sgov", 0.1) / 100.0
+            elif strategy_cat == "Bond Buffer":
+                category_pa = a_rates.get("bond_buffer", 0.1) / 100.0
+            elif strategy_cat == "High Income":
+                category_pa = a_rates.get("high_income", 0.1) / 100.0
+            elif strategy_cat == "Dividend Growth":
+                category_pa = a_rates.get("dividend_stocks", 9.6) / 100.0
+            elif strategy_cat == "Growth Engine":
+                category_pa = a_rates.get("growth_stocks", 8.2) / 100.0
+            category_dy = category_dividend_yields[strategy_cat]
+            category_return_rates[strategy_cat] = {
+                "dy": category_dy,
+                "pa": category_pa,
+                "tr": category_dy + category_pa,
+            }
 
         return stats
 

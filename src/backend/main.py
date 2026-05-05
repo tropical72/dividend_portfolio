@@ -376,6 +376,10 @@ async def run_retirement_simulation(
 
     base_params = {
         "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
+        "category_return_rates": {
+            "corp": corp_stats.get("category_return_rates", {}),
+            "pension": pension_stats.get("category_return_rates", {}),
+        },
         "appreciation_rates": {
             k: v / 100.0
             for k, v in backend.get_appreciation_rates_for_scenario(pa_scenario).items()

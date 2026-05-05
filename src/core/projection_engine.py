@@ -158,6 +158,8 @@ class ProjectionEngine:
                 crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
                 previous_may_total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
                 shock_flag = False
+            elif sim_month == 8:
+                self._run_august_corporate_review(corp_assets, corp_monthly_need)
             elif sim_month == 11:
                 growth_used = self._run_november_rebalance(corp_assets, corp_monthly_need)
                 if growth_used > 0 and growth_sell_date == "None":
@@ -543,12 +545,10 @@ class ProjectionEngine:
             floor_amount=corp_monthly_need * 12.0,
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
         )
-        growth_used += self._fill_bucket(
+        growth_used += self._fill_pension_sgov(
             pension_assets,
-            target_category="SGOV Buffer",
             target_amount=pension_withdrawal_target * 24.0,
-            floor_amount=0.0,
-            donor_order=("Bond Buffer", "High Income", "Dividend Growth", "Growth Engine"),
+            monthly_need=pension_withdrawal_target,
         )
         growth_used += self._fill_bucket(
             pension_assets,
@@ -572,29 +572,41 @@ class ProjectionEngine:
         )
         return growth_used
 
+    def _run_august_corporate_review(
+        self, corp_assets: Dict[str, float], corp_monthly_need: float
+    ) -> None:
+        if corp_monthly_need <= 0 or corp_assets["SGOV Buffer"] >= corp_monthly_need:
+            return
+        self._transfer(
+            corp_assets,
+            "Bond Buffer",
+            "SGOV Buffer",
+            corp_monthly_need - corp_assets["SGOV Buffer"],
+        )
+
     def _fill_corp_sgov(
         self, corp_assets: Dict[str, float], target_amount: float, monthly_need: float
     ) -> float:
         if target_amount <= 0:
             return 0.0
         growth_used = 0.0
-        target_bond = monthly_need * 18.0
+        bond_upper = monthly_need * 24.0
         bond_floor = monthly_need * 12.0
         growth_used += self._transfer(
             corp_assets,
             "Bond Buffer",
             "SGOV Buffer",
-            max(0.0, corp_assets["Bond Buffer"] - target_bond),
+            max(0.0, corp_assets["Bond Buffer"] - bond_upper),
         )
         growth_used += self._transfer_from_sequence(
             corp_assets,
             "SGOV Buffer",
             max(0.0, target_amount - corp_assets["SGOV Buffer"]),
             (
-                ("Bond Buffer", bond_floor),
                 ("High Income", 0.0),
                 ("Dividend Growth", 0.0),
                 ("Growth Engine", 0.0),
+                ("Bond Buffer", bond_floor),
             ),
         )
         return growth_used
@@ -614,6 +626,33 @@ class ProjectionEngine:
             (donor, floor_amount if donor == "Bond Buffer" else 0.0) for donor in donor_order
         )
         return self._transfer_from_sequence(account_assets, target_category, needed, donor_sequence)
+
+    def _fill_pension_sgov(
+        self, pension_assets: Dict[str, float], target_amount: float, monthly_need: float
+    ) -> float:
+        if target_amount <= 0:
+            return 0.0
+        growth_used = 0.0
+        bond_upper = monthly_need * 24.0
+        bond_floor = monthly_need * 12.0
+        growth_used += self._transfer(
+            pension_assets,
+            "Bond Buffer",
+            "SGOV Buffer",
+            max(0.0, pension_assets["Bond Buffer"] - bond_upper),
+        )
+        growth_used += self._transfer_from_sequence(
+            pension_assets,
+            "SGOV Buffer",
+            max(0.0, target_amount - pension_assets["SGOV Buffer"]),
+            (
+                ("High Income", 0.0),
+                ("Dividend Growth", 0.0),
+                ("Growth Engine", 0.0),
+                ("Bond Buffer", bond_floor),
+            ),
+        )
+        return growth_used
 
     def _run_pension_floor_refill(
         self, pension_assets: Dict[str, float], pension_withdrawal_target: float

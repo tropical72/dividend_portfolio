@@ -152,3 +152,51 @@ def test_strategy_categories_are_exposed_as_strategy_weights(tmp_path):
     assert stats["strategy_weights"]["Bond Buffer"] == pytest.approx(0.35)
     assert stats["strategy_weights"]["Dividend Growth"] == pytest.approx(0.20)
     assert stats["strategy_weights"]["Growth Engine"] == pytest.approx(0.20)
+
+
+def test_strategy_categories_expose_category_return_rates(tmp_path):
+    """은퇴 엔진이 직접 사용할 카테고리별 DY/PA/TR 통계가 함께 노출되어야 한다."""
+    backend = DividendBackend(data_dir=str(tmp_path))
+    created = backend.add_portfolio(
+        name="Retirement Reference",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="KRW",
+        items=[
+            {
+                "symbol": "SGOV",
+                "name": "SGOV",
+                "category": "SGOV Buffer",
+                "weight": 20,
+                "dividend_yield": 3.5,
+            },
+            {
+                "symbol": "VGIT",
+                "name": "VGIT",
+                "category": "Bond Buffer",
+                "weight": 30,
+                "dividend_yield": 4.0,
+            },
+            {
+                "symbol": "SCHD",
+                "name": "SCHD",
+                "category": "Dividend Growth",
+                "weight": 20,
+                "dividend_yield": 3.0,
+            },
+            {
+                "symbol": "VOO",
+                "name": "VOO",
+                "category": "Growth Engine",
+                "weight": 30,
+                "dividend_yield": 1.5,
+            },
+        ],
+    )
+
+    stats = backend.get_portfolio_stats_by_id(created["data"]["id"], pa_scenario="base")
+
+    assert stats["category_dividend_yields"]["Bond Buffer"] == pytest.approx(0.04)
+    assert stats["category_return_rates"]["Bond Buffer"]["dy"] == pytest.approx(0.04)
+    assert stats["category_return_rates"]["Bond Buffer"]["pa"] == pytest.approx(-0.002)
+    assert stats["category_return_rates"]["Bond Buffer"]["tr"] == pytest.approx(0.038)
