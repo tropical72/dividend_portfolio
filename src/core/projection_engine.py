@@ -126,6 +126,7 @@ class ProjectionEngine:
 
             inflation_action = "none"
             next_target_cashflow = current_total_need
+            boost_reference_base = crash20_base
             if sim_month == 5:
                 (
                     current_stress,
@@ -177,7 +178,7 @@ class ProjectionEngine:
                 crash20_triggered = True
                 shock_flag = True
             if crash20_triggered or (sim_month == 5 and current_stress):
-                boost_amount = self._boost_amount_for_drawdown(equity_value, crash20_base)
+                boost_amount = self._boost_amount_for_drawdown(equity_value, boost_reference_base)
                 boost_months_remaining = 6 if boost_amount > 0 else 0
 
             corp_sgov_months = self._months_cover(corp_assets["SGOV Buffer"], corp_monthly_need)

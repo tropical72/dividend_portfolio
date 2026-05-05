@@ -73,6 +73,10 @@
 - **[TEST-SUR-11] 문서 대표 캘린더 기준선 검증 [NEW]:**
     - 문서 대표 Phase 2 시나리오에서 법인 `SGOV 30 -> (10월 말 25) -> 11월 복구 27 -> (4월 말 22) -> 다음 5월 복구 30` 구조가 재현되는지 확인.
     - 개인연금 `SGOV 24 -> 11월 말 18 -> 다음 5월 복구 24` 구조가 재현되는지 확인.
+- **[TEST-SUR-12] Shock / Inflation Freeze / BOOST Ladder 대표 시나리오 검증 [NEW]:**
+    - 6월 Crash20 발생 후 다음 해 5월까지 `Shock Flag`가 유지되고, 해당 5월에는 인플레이션 승인이 동결되는지 확인.
+    - `BOOST`가 Shock drawdown 구간에 따라 `+2m`, `+3m`으로 발동하는지 확인.
+    - `BOOST` ladder의 첫 구간(15~20%)이 `+1m`으로 계산되는지 확인.
 
 ### [Structure 4] 설정 사용자화 및 UI 검증 (REQ-RAMS-8.1 ~ 8.5)
 - **[TEST-UI-RULE-01] 전략 설정 UI 렌더링:**

@@ -565,3 +565,119 @@ def test_phase_two_reference_calendar_matches_document_buffer_months():
     assert apr_2028["corp_sgov_months"] == pytest.approx(22.0)
     assert may_2028["corp_sgov_months"] == pytest.approx(30.0)
     assert may_2028["pension_sgov_months"] == pytest.approx(24.0)
+
+
+def test_shock_flag_freezes_may_inflation_even_when_assets_are_otherwise_healthy():
+    """Shock Flag가 ON이면 다음 5월에는 자산여력이 있어도 인플레이션 승인을 하면 안 된다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_year"] = 2026
+    params["simulation_start_month"] = 5
+    params["target_monthly_cashflow"] = 1000000
+    params["inflation_rate"] = 0.10
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.30,
+        "Bond Buffer": 0.20,
+        "High Income": 0.00,
+        "Dividend Growth": 0.00,
+        "Growth Engine": 0.50,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Bond Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        },
+        "pension": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-06": {"pa": -2.5, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000000, "pension": 60000000},
+        params=params,
+        months=13,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    april_next = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 4)
+    may_next = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 5)
+
+    assert june["shock_flag"] is True
+    assert april_next["shock_flag"] is True
+    assert may_next["inflation_action"] == "frozen"
+    assert may_next["shock_flag"] is False
+
+
+@pytest.mark.parametrize(
+    ("monthly_pa", "expected_boost"),
+    [
+        (-2.5, 2000000.0),
+        (-3.6, 3000000.0),
+    ],
+)
+def test_boost_amount_follows_shock_drawdown_ladder(monthly_pa: float, expected_boost: float):
+    """Shock 발생 시 BOOST 금액은 drawdown 구간에 따라 2m/3m으로 나뉘어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["simulation_start_month"] = 5
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["target_monthly_cashflow"] = 0
+    params["pension_withdrawal_target"] = 2500000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+        "pension": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-06": {"pa": monthly_pa, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 50000000},
+        params=params,
+        months=2,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+
+    assert june["shock_flag"] is True
+    assert june["boost_amount"] == expected_boost
+
+
+def test_boost_amount_first_ladder_is_one_million():
+    """BOOST ladder의 15~20% 구간은 +1m이어야 한다."""
+    engine = make_engine()
+
+    assert engine._boost_amount_for_drawdown(85.0, 100.0) == 1000000.0
