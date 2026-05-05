@@ -148,6 +148,7 @@ export interface RetirementConfig {
     national_pension_start_age: number;
   };
   simulation_params: {
+    household_monthly_need?: number;
     target_monthly_cashflow: number;
     inflation_rate: number;
     expected_market_growth: number;
@@ -220,7 +221,10 @@ export interface MonthlySimulationData {
   target_cashflow: number;
   next_target_cashflow?: number;
   net_salary: number;
+  corp_draw?: number;
   pension_draw?: number;
+  shareholder_loan_payment?: number;
+  household_shortfall?: number;
   boost_amount?: number;
   corp_monthly_need?: number;
   shock_flag?: boolean;
@@ -241,6 +245,10 @@ export interface MonthlySimulationData {
   corp_bond_months?: number;
   pension_sgov_months?: number;
   pension_bond_months?: number;
+  pre_review_corp_sgov_months?: number;
+  pre_review_corp_bond_months?: number;
+  pre_review_pension_sgov_months?: number;
+  pre_review_pension_bond_months?: number;
   event?: boolean;
 }
 

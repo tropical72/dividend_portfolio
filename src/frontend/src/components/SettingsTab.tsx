@@ -125,6 +125,18 @@ function SectionTitle({
   );
 }
 
+function estimateNetSalary(
+  monthlySalary: number,
+  rates?: RetirementConfig["tax_and_insurance"],
+) {
+  const pensionRate = rates?.pension_rate ?? 0.045;
+  const healthRate = rates?.health_rate ?? 0.035;
+  const employmentRate = rates?.employment_rate ?? 0.009;
+  const incomeTaxRate = rates?.income_tax_estimate_rate ?? 0.05;
+  const totalRate = pensionRate + healthRate + employmentRate + incomeTaxRate;
+  return Math.max(0, monthlySalary * (1 - totalRate));
+}
+
 export function SettingsTab({
   onSettingsUpdate,
   globalSettings,
@@ -185,6 +197,17 @@ export function SettingsTab({
             0,
           annual_corp_tax_adjustment_fee:
             globalRetireConfig.corp_params?.annual_corp_tax_adjustment_fee ?? 0,
+        },
+        simulation_params: {
+          ...globalRetireConfig.simulation_params,
+          household_monthly_need:
+            globalRetireConfig.simulation_params?.household_monthly_need ??
+            globalRetireConfig.simulation_params?.target_monthly_cashflow ??
+            0,
+          target_monthly_cashflow:
+            globalRetireConfig.simulation_params?.target_monthly_cashflow ??
+            globalRetireConfig.simulation_params?.household_monthly_need ??
+            0,
         },
         tax_and_insurance: {
           ...globalRetireConfig.tax_and_insurance,
@@ -325,6 +348,16 @@ export function SettingsTab({
         {t("settings.loading")}
       </div>
     );
+
+  const estimatedNetSalary = estimateNetSalary(
+    retireConfig.corp_params.monthly_salary,
+    retireConfig.tax_and_insurance,
+  );
+  const corporateOperatingCost =
+    (retireConfig.corp_params.monthly_bookkeeping_fee ??
+      retireConfig.corp_params.monthly_fixed_cost ??
+      0) +
+    (retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
 
   return (
     <div className="max-w-6xl mx-auto py-8 space-y-12 pb-40 px-4">
@@ -644,6 +677,40 @@ export function SettingsTab({
                   })
                 }
               />
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+                <p
+                  className={cn(
+                    isKorean
+                      ? "text-xs font-bold text-slate-400 tracking-normal"
+                      : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                  )}
+                >
+                  {t("settings.netSalaryEstimate")}
+                </p>
+                <p className="mt-2 text-sm font-bold text-emerald-300">
+                  {Math.round(estimatedNetSalary).toLocaleString()}
+                  <span className="ml-1 text-[11px] text-slate-500">
+                    {t("settings.krwPerMonth")}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+                <p
+                  className={cn(
+                    isKorean
+                      ? "text-xs font-bold text-slate-400 tracking-normal"
+                      : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
+                  )}
+                >
+                  {t("settings.corporateNeedEstimate")}
+                </p>
+                <p className="mt-2 text-sm font-bold text-cyan-300">
+                  {Math.round(corporateOperatingCost).toLocaleString()}
+                  <span className="ml-1 text-[11px] text-slate-500">
+                    {t("settings.krwPerMonth")}
+                  </span>
+                </p>
+              </div>
               <InputGroup
                 label={t("settings.monthlyBookkeepingFee")}
                 isCurrency
@@ -1272,6 +1339,41 @@ export function SettingsTab({
             />
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <InputGroup
+                label={t("settings.simulationStartYear")}
+                unit={t("settings.year")}
+                tooltip={t("settings.simulationStartYearTooltip")}
+                testId="input-group-simulation-start-year"
+                value={retireConfig.simulation_params.simulation_start_year}
+                onChange={(v) =>
+                  setRetireConfig({
+                    ...retireConfig,
+                    simulation_params: {
+                      ...retireConfig.simulation_params,
+                      simulation_start_year: parseInt(v) || 2026,
+                    },
+                  })
+                }
+              />
+              <InputGroup
+                label={t("settings.simulationStartMonth")}
+                unit={t("settings.month")}
+                tooltip={t("settings.simulationStartMonthTooltip")}
+                testId="input-group-simulation-start-month"
+                value={retireConfig.simulation_params.simulation_start_month}
+                onChange={(v) =>
+                  setRetireConfig({
+                    ...retireConfig,
+                    simulation_params: {
+                      ...retireConfig.simulation_params,
+                      simulation_start_month: Math.max(
+                        1,
+                        Math.min(12, parseInt(v) || 1),
+                      ),
+                    },
+                  })
+                }
+              />
+              <InputGroup
                 label={t("settings.monthlyLivingCost")}
                 isCurrency
                 tooltip={t("settings.monthlyLivingCostTooltip")}
@@ -1282,6 +1384,7 @@ export function SettingsTab({
                     ...retireConfig,
                     simulation_params: {
                       ...retireConfig.simulation_params,
+                      household_monthly_need: parseInt(v) || 0,
                       target_monthly_cashflow: parseInt(v) || 0,
                     },
                   })

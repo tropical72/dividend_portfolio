@@ -67,6 +67,43 @@ def base_params() -> dict:
     }
 
 
+def test_household_shortfall_uses_net_salary_not_gross_salary():
+    """주주대여금 상환 필요액은 급여 총액이 아니라 실수령액 기준 부족분이어야 한다."""
+    params = base_params()
+    params["household_monthly_need"] = 10000000
+    params["target_monthly_cashflow"] = 10000000
+    params["corp_salary"] = 2500000
+    params["employee_count"] = 1
+    params["household_monthly_need"] = 10000000
+    params["initial_shareholder_loan"] = 100000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 30000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["net_salary"] == pytest.approx(2151375.0)
+    assert month1["shareholder_loan_payment"] == pytest.approx(7848625.0)
+    assert month1["corp_monthly_need"] == pytest.approx(10348625.0)
+
+
 def test_monthly_output_exposes_all_five_strategy_buckets_separately():
     """OS v11.1 결과는 5개 전략 카테고리 잔액을 각각 노출해야 한다."""
     params = base_params()
@@ -427,6 +464,41 @@ def test_may_rebalance_keeps_pension_bond_buffer_when_within_upper_band():
     assert month1["pension_sgov_months"] >= 24.0
 
 
+def test_may_rebalance_caps_pension_sgov_and_bond_at_document_limits():
+    """개인연금 5월 리밸런싱 후 SGOV 24개월, Bond 24개월 상한이 유지되어야 한다."""
+    params = base_params()
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["target_monthly_cashflow"] = 0
+    params["pension_withdrawal_target"] = 1000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.50,
+        "Bond Buffer": 0.50,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0, "pension": 100000000},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["pension_sgov_months"] == pytest.approx(24.0)
+    assert month1["pension_bond_months"] == pytest.approx(24.0)
+
+
 def test_november_does_not_run_pension_target_rebalance():
     """11월에는 개인연금 정기 24개월 복구를 실행하면 안 된다."""
     params = base_params()
@@ -557,12 +629,12 @@ def test_phase_two_reference_calendar_matches_document_buffer_months():
     assert may_2027["corp_monthly_need"] == 9000000
     assert may_2027["corp_sgov_months"] == pytest.approx(30.0)
     assert may_2027["pension_sgov_months"] == pytest.approx(24.0)
-    # 월별 로그는 월말 기준이라 11월 리밸런싱 직전 24개월은 10월 말 25개월로 관측된다.
     assert oct_2027["corp_sgov_months"] == pytest.approx(25.0)
+    assert nov_2027["pre_review_corp_sgov_months"] == pytest.approx(24.0)
     assert nov_2027["corp_sgov_months"] == pytest.approx(27.0)
     assert nov_2027["pension_sgov_months"] == pytest.approx(18.0)
-    # 다음 5월 직전 21개월은 5월 인출 후/리밸런싱 전 기준이므로 4월 말 로그는 22개월이다.
     assert apr_2028["corp_sgov_months"] == pytest.approx(22.0)
+    assert may_2028["pre_review_corp_sgov_months"] == pytest.approx(21.0)
     assert may_2028["corp_sgov_months"] == pytest.approx(30.0)
     assert may_2028["pension_sgov_months"] == pytest.approx(24.0)
 

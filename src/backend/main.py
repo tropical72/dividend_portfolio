@@ -385,6 +385,9 @@ async def run_retirement_simulation(
             for k, v in backend.get_appreciation_rates_for_scenario(pa_scenario).items()
         },
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
+        "household_monthly_need": sim_params.get(
+            "household_monthly_need", sim_params["target_monthly_cashflow"]
+        ),
         "inflation_rate": assumption["inflation_rate"],
         "market_return_rate": (
             backend.get_standard_profile_return(pa_scenario)

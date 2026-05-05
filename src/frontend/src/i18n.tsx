@@ -133,11 +133,39 @@ const translations = {
     "retirement.table.dateAge": "Date (Age)",
     "retirement.table.phase": "Phase",
     "retirement.table.ops": "Ops",
+    "retirement.table.reviewSnapshot": "Review",
     "retirement.table.targetCf": "Target CF",
-    "retirement.table.totalDraw": "Total Draw",
+    "retirement.table.totalDraw": "Household Receipt",
+    "retirement.table.dateAgeTooltip":
+      "Simulation month and the calculated age for that month.",
+    "retirement.table.phaseTooltip":
+      "Lifecycle phase. Phase 1 uses corporate cash only, Phase 2 adds private pension, and Phase 3 adds national pension.",
+    "retirement.table.opsTooltip":
+      "Monthly operating state such as Crash20, Shock Flag, Stress, BOOST, and inflation review result.",
+    "retirement.table.reviewSnapshotTooltip":
+      "Months of cover before and after review for both SGOV and Bond buffers. Corporate and pension accounts are shown separately.",
+    "retirement.table.targetCfTooltip":
+      "Monthly total cashflow target from Settings. This stays fixed unless a May inflation review approves a new value.",
+    "retirement.table.totalDrawTooltip":
+      "Actual cash received by the household in that month: pension draw, national pension, net salary, and shareholder-loan repayment.",
+    "retirement.table.corpBalTooltip":
+      "End-of-month total balance of the corporate account after draws and any review/rebalancing.",
+    "retirement.table.penBalTooltip":
+      "End-of-month total balance of the pension account after draws and any review/rebalancing.",
+    "retirement.table.netWorthTooltip":
+      "Combined end-of-month total assets of corporate and pension accounts.",
+    "retirement.table.loanBalTooltip":
+      "Remaining shareholder-loan balance available for tax-free repayment from corporate cash.",
+    "retirement.table.noReviewChange": "No change",
+    "retirement.table.reviewCorp": "Corp SGOV",
+    "retirement.table.reviewPension": "Pension SGOV",
+    "retirement.table.initialStateLabel": "Initial State",
+    "retirement.table.initialStateOps": "Before simulation",
+    "retirement.table.initialStateReview": "Configured starting values",
+    "retirement.table.monthsSuffix": "mo",
     "retirement.table.corpBal": "Corp Bal",
     "retirement.table.penBal": "Pen Bal",
-    "retirement.table.netWorth": "Net Worth",
+    "retirement.table.netWorth": "Total Assets",
     "retirement.table.loanBal": "Loan Bal",
     "retirement.table.ageSuffix": "y",
     "retirement.table.tenThousand": "K",
@@ -288,9 +316,18 @@ const translations = {
     "settings.programSettings": "Program Settings",
     "settings.programSettingsTooltip":
       "Configure app-wide preferences that affect the entire interface rather than the calculation engine.",
-    "settings.monthlyLivingCost": "Monthly Living Cost",
+    "settings.monthlyLivingCost": "Household Need",
     "settings.monthlyLivingCostTooltip":
-      "Total monthly living cost target that corporate and pension assets must fund.",
+      "Net household cash need per month. Pension income, national pension, net salary, and shareholder-loan repayment are measured against this value.",
+    "settings.netSalaryEstimate": "Estimated Net Salary",
+    "settings.corporateNeedEstimate": "Derived Corp Cost",
+    "settings.krwPerMonth": "KRW / mo",
+    "settings.simulationStartYear": "Start Year",
+    "settings.simulationStartYearTooltip":
+      "The first simulation year. The detailed log begins with an Initial State row at this year and month.",
+    "settings.simulationStartMonth": "Start Month",
+    "settings.simulationStartMonthTooltip":
+      "The first simulation month. After the Initial State row, the log shows end-of-month balances from this month onward.",
     "settings.duration": "Duration",
     "settings.durationTooltip": "Total number of retirement years to simulate.",
     "settings.basicConstants": "Basic Constants",
@@ -743,11 +780,39 @@ const translations = {
     "retirement.table.dateAge": "일자 (나이)",
     "retirement.table.phase": "단계",
     "retirement.table.ops": "운용 상태",
+    "retirement.table.reviewSnapshot": "점검 기준",
     "retirement.table.targetCf": "목표 현금흐름",
-    "retirement.table.totalDraw": "총 인출",
+    "retirement.table.totalDraw": "가계 수령액",
+    "retirement.table.dateAgeTooltip":
+      "해당 시뮬레이션 월과 그 달 기준 계산 나이입니다.",
+    "retirement.table.phaseTooltip":
+      "생애주기 단계입니다. Phase 1은 법인만, Phase 2는 개인연금 추가, Phase 3는 국민연금까지 반영합니다.",
+    "retirement.table.opsTooltip":
+      "Crash20, Shock Flag, Stress, BOOST, 인플레이션 리뷰 결과 같은 월간 운용 상태입니다.",
+    "retirement.table.reviewSnapshotTooltip":
+      "법인과 연금 계좌를 나눠서, SGOV/Bond 버퍼의 점검 전 개월수와 점검 후 개월수를 표시합니다. 점검 이벤트가 없는 달은 변동 없음으로 표시합니다.",
+    "retirement.table.targetCfTooltip":
+      "Settings의 월 총 필요 생활비입니다. 5월 인플레이션 리뷰가 승인되기 전까지는 Phase가 바뀌어도 이 값 자체는 유지됩니다.",
+    "retirement.table.totalDrawTooltip":
+      "그 달 가계가 실제로 받은 현금입니다. 개인연금 인출, 국민연금, 급여 실수령액, 주주대여금 상환액을 합산합니다.",
+    "retirement.table.corpBalTooltip":
+      "법인 계좌의 월말 총잔고입니다. 월 인출과 점검/리밸런싱 반영 후 기준입니다.",
+    "retirement.table.penBalTooltip":
+      "개인연금 계좌의 월말 총잔고입니다. 월 인출과 점검/리밸런싱 반영 후 기준입니다.",
+    "retirement.table.netWorthTooltip":
+      "법인과 개인연금 계좌를 합산한 월말 총자산입니다.",
+    "retirement.table.loanBalTooltip":
+      "법인 현금으로 비과세 상환 가능한 주주대여금 원금의 남은 잔액입니다.",
+    "retirement.table.noReviewChange": "변동 없음",
+    "retirement.table.reviewCorp": "법인 SGOV",
+    "retirement.table.reviewPension": "연금 SGOV",
+    "retirement.table.initialStateLabel": "초기상태",
+    "retirement.table.initialStateOps": "시뮬레이션 시작 전",
+    "retirement.table.initialStateReview": "설정에 입력한 시작값",
+    "retirement.table.monthsSuffix": "개월",
     "retirement.table.corpBal": "법인 잔고",
     "retirement.table.penBal": "연금 잔고",
-    "retirement.table.netWorth": "순자산",
+    "retirement.table.netWorth": "총자산",
     "retirement.table.loanBal": "대여금 잔고",
     "retirement.table.ageSuffix": "세",
     "retirement.table.tenThousand": "만",
@@ -889,9 +954,18 @@ const translations = {
     "settings.programSettings": "프로그램 설정",
     "settings.programSettingsTooltip":
       "계산 엔진이 아니라 프로그램 전체 인터페이스에 적용되는 공통 설정입니다.",
-    "settings.monthlyLivingCost": "월 생활비",
+    "settings.monthlyLivingCost": "월 가계필요비용",
     "settings.monthlyLivingCostTooltip":
-      "법인과 연금 자산이 매달 충당해야 할 총 생활비 목표입니다.",
+      "가계 기준 월 세후 필요금액입니다. 개인연금, 국민연금, 급여 실수령액, 주주대여금 상환이 이 값을 기준으로 계산됩니다.",
+    "settings.netSalaryEstimate": "세후 실수령 추정액",
+    "settings.corporateNeedEstimate": "법인필요비용 추정액",
+    "settings.krwPerMonth": "원 / 월",
+    "settings.simulationStartYear": "시작 연도",
+    "settings.simulationStartYearTooltip":
+      "시뮬레이션을 시작할 첫 연도입니다. 상세 로그는 이 연월의 초기상태 행부터 시작합니다.",
+    "settings.simulationStartMonth": "시작 월",
+    "settings.simulationStartMonthTooltip":
+      "시뮬레이션을 시작할 첫 월입니다. 초기상태 다음 행부터는 해당 월의 월말 결과가 순서대로 표시됩니다.",
     "settings.duration": "기간",
     "settings.durationTooltip": "은퇴 후 시뮬레이션할 총 연수입니다.",
     "settings.basicConstants": "기본 상수",

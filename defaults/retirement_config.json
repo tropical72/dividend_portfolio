@@ -44,6 +44,7 @@
         "national_pension_start_age": 65
     },
     "simulation_params": {
+        "household_monthly_need": 3000000,
         "target_monthly_cashflow": 3000000,
         "inflation_rate": 0.025,
         "expected_market_growth": 0.0485,

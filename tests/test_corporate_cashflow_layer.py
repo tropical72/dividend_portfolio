@@ -1,3 +1,5 @@
+import pytest
+
 from src.core.projection_engine import ProjectionEngine
 from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
@@ -92,7 +94,7 @@ def test_corporate_dividend_income_flows_into_sgov_before_expense():
 
 
 def test_shareholder_loan_repayment_uses_remaining_corporate_sgov_only():
-    """주주대여금 상환은 월지출 이후 남은 법인 SGOV 잔액 범위 내에서만 이뤄져야 한다."""
+    """주주대여금 상환은 세후 부족분까지만 집행되고, 남는 SGOV는 그대로 남아야 한다."""
     params = base_params()
     params["simulation_start_month"] = 4
     params["target_monthly_cashflow"] = 1000
@@ -113,9 +115,41 @@ def test_shareholder_loan_repayment_uses_remaining_corporate_sgov_only():
     )
 
     month1 = result["monthly_data"][0]
-    assert month1["loan_balance"] == 99800
-    assert month1["corp_sgov_balance"] == 0
-    assert month1["corp_balance"] == 120000
+    assert month1["shareholder_loan_payment"] == 1000
+    assert month1["loan_balance"] == 99000
+    assert month1["corp_sgov_balance"] == 200
+    assert month1["corp_balance"] == 120200
+
+
+def test_shareholder_loan_payment_only_covers_household_net_shortfall():
+    """남는 SGOV 전액 상환이 아니라 세후 가계 부족분만 주주대여금으로 지급해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 4
+    params["household_monthly_need"] = 10000000
+    params["target_monthly_cashflow"] = 10000000
+    params["corp_salary"] = 2500000
+    params["employee_count"] = 1
+    params["corp_fixed_cost"] = 500000
+    params["initial_shareholder_loan"] = 100000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 20000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+    assert month1["net_salary"] == 2151375.0
+    assert month1["shareholder_loan_payment"] == pytest.approx(7848625.0)
+    assert month1["corp_monthly_need"] == pytest.approx(10848625.0)
+    assert month1["loan_balance"] == pytest.approx(92151375.0)
 
 
 def test_corporate_may_rebalance_refills_sgov_to_thirty_months():

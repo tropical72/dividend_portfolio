@@ -740,6 +740,7 @@ class DividendBackend:
                 "national_pension_start_age": 65,
             },
             "simulation_params": {
+                "household_monthly_need": 11000000,
                 "target_monthly_cashflow": 11000000,
                 "inflation_rate": 0.025,
                 "expected_market_growth": 0.0485,
@@ -837,6 +838,24 @@ class DividendBackend:
 
         return normalized
 
+    def _normalize_retirement_simulation_fields(
+        self, section: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        normalized = dict(section or {})
+        household_need = normalized.get("household_monthly_need")
+        target_need = normalized.get("target_monthly_cashflow")
+        if household_need is None and target_need is not None:
+            household_need = target_need
+        if target_need is None and household_need is not None:
+            target_need = household_need
+        if household_need is None:
+            household_need = 11000000
+        if target_need is None:
+            target_need = household_need
+        normalized["household_monthly_need"] = float(household_need)
+        normalized["target_monthly_cashflow"] = float(target_need)
+        return normalized
+
     def _get_annual_corporate_operating_cost(
         self, section: Optional[Dict[str, Any]]
     ) -> Dict[str, float]:
@@ -857,6 +876,9 @@ class DividendBackend:
         self.retirement_config = self._deep_merge_dict(
             self._get_default_retirement_config(),
             self.retirement_config,
+        )
+        self.retirement_config["simulation_params"] = self._normalize_retirement_simulation_fields(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("simulation_params"))
         )
         self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
             cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
@@ -2106,6 +2128,21 @@ class DividendBackend:
                 and key in candidate_config
                 and isinstance(candidate_config[key], dict)
             ):
+                if key == "simulation_params":
+                    value = dict(value)
+                    if "target_monthly_cashflow" in value and "household_monthly_need" not in value:
+                        value["household_monthly_need"] = value["target_monthly_cashflow"]
+                    if "household_monthly_need" in value and "target_monthly_cashflow" not in value:
+                        value["target_monthly_cashflow"] = value["household_monthly_need"]
+                if key == "corp_params":
+                    value = dict(value)
+                    if "monthly_fixed_cost" in value and "monthly_bookkeeping_fee" not in value:
+                        value["monthly_bookkeeping_fee"] = value["monthly_fixed_cost"]
+                    if (
+                        "monthly_fixed_cost" in value
+                        and "annual_corp_tax_adjustment_fee" not in value
+                    ):
+                        value["annual_corp_tax_adjustment_fee"] = 0.0
                 candidate_config[key] = self._deep_merge_dict(candidate_config[key], value)
             else:
                 candidate_config[key] = value
@@ -2119,6 +2156,12 @@ class DividendBackend:
             }
 
         self.retirement_config = candidate_config
+        self.retirement_config["simulation_params"] = self._normalize_retirement_simulation_fields(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("simulation_params"))
+        )
+        self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
+        )
 
         self.storage.save_json(self.retirement_config_file, self.retirement_config)
         return {

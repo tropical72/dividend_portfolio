@@ -36,6 +36,10 @@ import type {
   MonthlySimulationData,
 } from "../types";
 
+type DetailLogRow = MonthlySimulationData & {
+  is_initial_state?: boolean;
+};
+
 const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
 const ASSUMPTION_NAME_FALLBACK: Record<string, string> = {
   v1: "Standard Profile",
@@ -265,6 +269,46 @@ export function RetirementTab() {
 
   const summary = simulationData.summary || {};
   const monthlyData = simulationData.monthly_data || [];
+  const householdMonthlyNeed =
+    config.simulation_params.household_monthly_need ??
+    config.simulation_params.target_monthly_cashflow;
+  const startYear = config.simulation_params.simulation_start_year;
+  const startMonth = config.simulation_params.simulation_start_month;
+  const startAge = Math.floor(
+    ((startYear - config.user_profile.birth_year) * 12 +
+      (startMonth - config.user_profile.birth_month)) /
+      12,
+  );
+  const initialPhase =
+    startAge < config.user_profile.private_pension_start_age
+      ? "Phase 1"
+      : startAge < config.user_profile.national_pension_start_age
+        ? "Phase 2"
+        : "Phase 3";
+  const initialLedgerRow: DetailLogRow = {
+    index: 0,
+    year: startYear,
+    month: startMonth,
+    age: startAge,
+    phase: initialPhase,
+    total_net_worth:
+      config.corp_params.initial_investment +
+      config.pension_params.initial_investment +
+      config.pension_params.severance_reserve +
+      config.pension_params.other_reserve,
+    corp_balance: config.corp_params.initial_investment,
+    pension_balance:
+      config.pension_params.initial_investment +
+      config.pension_params.severance_reserve +
+      config.pension_params.other_reserve,
+    loan_balance: config.corp_params.initial_shareholder_loan,
+    target_cashflow: householdMonthlyNeed,
+    net_salary: 0,
+    corp_draw: 0,
+    pension_draw: 0,
+    is_initial_state: true,
+  };
+  const detailLogRows: DetailLogRow[] = [initialLedgerRow, ...monthlyData];
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const portfolioMeta = simulationData.meta?.used_portfolios;
   const standardMasterReturn =
@@ -276,7 +320,7 @@ export function RetirementTab() {
     (d) => d.index % 12 === 0 || d.index === 1,
   );
   const largeCurrencyUnit = t("retirement.table.hundredMillion");
-  const initialNetWorth = monthlyData[0]?.total_net_worth || 0;
+  const initialNetWorth = initialLedgerRow.total_net_worth || 0;
   const latestMonth = monthlyData[monthlyData.length - 1];
   const latestNetWorth =
     monthlyData[monthlyData.length - 1]?.total_net_worth || 0;
@@ -332,6 +376,17 @@ export function RetirementTab() {
     return t("retirement.inflationNone");
   };
 
+  const nationalPensionReceipt = (m: DetailLogRow) =>
+    !m.is_initial_state && m.phase === "Phase 3"
+      ? config.simulation_params.national_pension_amount
+      : 0;
+
+  const householdReceiptAmount = (m: DetailLogRow) =>
+    (m.pension_draw || 0) +
+    (m.net_salary || 0) +
+    (m.shareholder_loan_payment || 0) +
+    nationalPensionReceipt(m);
+
   const opsBadge = (m: MonthlySimulationData) => {
     const labels: string[] = [];
     if (m.crash20_triggered) labels.push("Crash20");
@@ -344,6 +399,60 @@ export function RetirementTab() {
       labels.push(inflationDecisionLabel(m.inflation_action));
     }
     return labels.length > 0 ? labels.join(" / ") : "-";
+  };
+
+  const reviewSnapshot = (m: DetailLogRow) => {
+    if (m.is_initial_state) {
+      return [t("retirement.table.initialStateReview")];
+    }
+    const corpSgovBefore = m.pre_review_corp_sgov_months;
+    const corpSgovAfter = m.corp_sgov_months;
+    const corpBondBefore = m.pre_review_corp_bond_months;
+    const corpBondAfter = m.corp_bond_months;
+    const pensionSgovBefore = m.pre_review_pension_sgov_months;
+    const pensionSgovAfter = m.pension_sgov_months;
+    const pensionBondBefore = m.pre_review_pension_bond_months;
+    const pensionBondAfter = m.pension_bond_months;
+    const hasMeaningfulChange = (before?: number, after?: number) =>
+      before !== undefined &&
+      after !== undefined &&
+      Math.abs(before - after) >= 0.01;
+
+    const corpChanged =
+      hasMeaningfulChange(corpSgovBefore, corpSgovAfter) ||
+      hasMeaningfulChange(corpBondBefore, corpBondAfter);
+    const pensionChanged =
+      hasMeaningfulChange(pensionSgovBefore, pensionSgovAfter) ||
+      hasMeaningfulChange(pensionBondBefore, pensionBondAfter);
+
+    if (!corpChanged && !pensionChanged) {
+      return [t("retirement.table.noReviewChange")];
+    }
+
+    const parts: string[] = [];
+    if (
+      corpChanged &&
+      corpSgovBefore !== undefined &&
+      corpSgovAfter !== undefined &&
+      corpBondBefore !== undefined &&
+      corpBondAfter !== undefined
+    ) {
+      parts.push(
+        `${t("retirement.table.reviewCorp")} SGOV ${corpSgovBefore.toFixed(0)}→${corpSgovAfter.toFixed(0)}${t("retirement.table.monthsSuffix")} / Bond ${corpBondBefore.toFixed(0)}→${corpBondAfter.toFixed(0)}${t("retirement.table.monthsSuffix")}`,
+      );
+    }
+    if (
+      pensionChanged &&
+      pensionSgovBefore !== undefined &&
+      pensionSgovAfter !== undefined &&
+      pensionBondBefore !== undefined &&
+      pensionBondAfter !== undefined
+    ) {
+      parts.push(
+        `${t("retirement.table.reviewPension")} SGOV ${pensionSgovBefore.toFixed(0)}→${pensionSgovAfter.toFixed(0)}${t("retirement.table.monthsSuffix")} / Bond ${pensionBondBefore.toFixed(0)}→${pensionBondAfter.toFixed(0)}${t("retirement.table.monthsSuffix")}`,
+      );
+    }
+    return parts;
   };
 
   return (
@@ -946,9 +1055,7 @@ export function RetirementTab() {
           />
           <ResultSnapshotCard
             label={t("retirement.snapshotMonthlyTarget")}
-            value={`₩${(
-              config.simulation_params.target_monthly_cashflow || 0
-            ).toLocaleString()}`}
+            value={`₩${(householdMonthlyNeed || 0).toLocaleString()}`}
           />
           <ResultSnapshotCard
             label={t("retirement.snapshotMaster")}
@@ -1095,7 +1202,7 @@ export function RetirementTab() {
                       <RuleBadge
                         label={t("retirement.monthlyCost")}
                         value={`₩${(
-                          config.simulation_params.target_monthly_cashflow || 0
+                          householdMonthlyNeed || 0
                         ).toLocaleString()}`}
                         testId="rule-badge-monthly-cost"
                       />
@@ -1329,47 +1436,111 @@ export function RetirementTab() {
                 <thead className="sticky top-0 z-10 bg-white/95 text-[11px] font-semibold tracking-[0.08em] text-slate-500 backdrop-blur-md">
                   <tr className="border-b border-slate-200">
                     <th className="px-6 py-5 text-center">
-                      {t("retirement.table.dateAge")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.dateAge")}
+                        tooltip={t("retirement.table.dateAgeTooltip")}
+                        align="center"
+                      />
                     </th>
-                    <th className="px-6 py-5">{t("retirement.table.phase")}</th>
-                    <th className="px-6 py-5">{t("retirement.table.ops")}</th>
+                    <th className="px-6 py-5">
+                      <TableHeaderLabel
+                        label={t("retirement.table.phase")}
+                        tooltip={t("retirement.table.phaseTooltip")}
+                      />
+                    </th>
+                    <th className="px-6 py-5">
+                      <TableHeaderLabel
+                        label={t("retirement.table.ops")}
+                        tooltip={t("retirement.table.opsTooltip")}
+                      />
+                    </th>
+                    <th className="px-6 py-5">
+                      <TableHeaderLabel
+                        label={t("retirement.table.reviewSnapshot")}
+                        tooltip={t("retirement.table.reviewSnapshotTooltip")}
+                      />
+                    </th>
                     <th className="px-6 py-5 text-right text-rose-500/70">
-                      {t("retirement.table.targetCf")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.targetCf")}
+                        tooltip={t("retirement.table.targetCfTooltip")}
+                        align="right"
+                      />
                     </th>
                     <th className="px-6 py-5 text-right text-emerald-500/70">
-                      {t("retirement.table.totalDraw")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.totalDraw")}
+                        tooltip={t("retirement.table.totalDrawTooltip")}
+                        align="right"
+                      />
                     </th>
                     <th className="border-l border-slate-200 px-6 py-5 text-right text-blue-400/70">
-                      {t("retirement.table.corpBal")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.corpBal")}
+                        tooltip={t("retirement.table.corpBalTooltip")}
+                        align="right"
+                      />
                     </th>
                     <th className="px-6 py-5 text-right text-blue-400/70">
-                      {t("retirement.table.penBal")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.penBal")}
+                        tooltip={t("retirement.table.penBalTooltip")}
+                        align="right"
+                      />
                     </th>
                     <th className="border-l border-slate-200 px-6 py-5 text-right text-slate-200">
-                      {t("retirement.table.netWorth")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.netWorth")}
+                        tooltip={t("retirement.table.netWorthTooltip")}
+                        align="right"
+                      />
                     </th>
                     <th className="px-6 py-5 text-right text-emerald-400/50">
-                      {t("retirement.table.loanBal")}
+                      <TableHeaderLabel
+                        label={t("retirement.table.loanBal")}
+                        tooltip={t("retirement.table.loanBalTooltip")}
+                        align="right"
+                      />
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/80">
-                  {monthlyData.map((m, idx) => (
+                  {detailLogRows.map((m, idx) => (
                     <tr
-                      key={idx}
+                      key={
+                        m.is_initial_state
+                          ? "initial-state"
+                          : `${m.year}-${m.month}-${idx}`
+                      }
                       className={cn(
                         "group transition-colors hover:bg-slate-50",
+                        m.is_initial_state ? "bg-amber-50/70" : "",
                         m.event ? "bg-emerald-50/60" : "",
                       )}
                     >
                       <td className="px-6 py-4 text-center text-xs font-medium text-slate-500">
-                        {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
-                        {t("retirement.table.ageSuffix")})
+                        {m.is_initial_state ? (
+                          <div className="space-y-1">
+                            <div className="font-semibold text-amber-700">
+                              {t("retirement.table.initialStateLabel")}
+                            </div>
+                            <div>
+                              {m.year}-{String(m.month).padStart(2, "0")} (
+                              {m.age}
+                              {t("retirement.table.ageSuffix")})
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {m.year}-{String(m.month).padStart(2, "0")} ({m.age}
+                            {t("retirement.table.ageSuffix")})
+                          </>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-left">
                         <span
                           className={cn(
-                            "rounded-lg px-2.5 py-1 text-[11px] font-semibold shadow-sm",
+                            "inline-flex whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-semibold shadow-sm",
                             m.phase === "Phase 1"
                               ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                               : m.phase === "Phase 2"
@@ -1381,7 +1552,16 @@ export function RetirementTab() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-left text-[11px] font-medium text-slate-500">
-                        {opsBadge(m)}
+                        {m.is_initial_state
+                          ? t("retirement.table.initialStateOps")
+                          : opsBadge(m)}
+                      </td>
+                      <td className="px-6 py-4 text-left text-[11px] font-medium text-slate-500">
+                        <div className="space-y-1">
+                          {reviewSnapshot(m).map((line) => (
+                            <div key={line}>{line}</div>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right text-xs font-semibold text-rose-500">
                         {(m.target_cashflow / 10000).toFixed(0)}
@@ -1390,10 +1570,7 @@ export function RetirementTab() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right text-xs font-semibold text-emerald-700">
-                        {(
-                          (m.net_salary + (m.pension_draw || 0)) /
-                          10000
-                        ).toFixed(0)}
+                        {(householdReceiptAmount(m) / 10000).toFixed(0)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.tenThousand")}
                         </span>
@@ -1509,6 +1686,35 @@ function MetricCard({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+function TableHeaderLabel({
+  label,
+  tooltip,
+  align = "left",
+}: {
+  label: string;
+  tooltip: string;
+  align?: "left" | "right" | "center";
+}) {
+  const justifyClass =
+    align === "right"
+      ? "justify-end"
+      : align === "center"
+        ? "justify-center"
+        : "justify-start";
+
+  return (
+    <div className={cn("flex items-center gap-2", justifyClass)}>
+      <span>{label}</span>
+      <div className="group relative">
+        <Info size={12} className="text-slate-500 cursor-help" />
+        <div className="absolute left-0 top-full z-50 mt-2 hidden w-56 rounded-xl border border-white/80 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 normal-case tracking-normal shadow-lg group-hover:block">
+          {tooltip}
+        </div>
+      </div>
     </div>
   );
 }
