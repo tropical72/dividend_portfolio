@@ -429,6 +429,51 @@ def test_may_rebalance_keeps_corporate_bond_buffer_when_within_upper_band():
     assert month1["corp_sgov_months"] >= 30.0
 
 
+def test_corporate_rebalance_uses_overweight_asset_before_fixed_donor_order():
+    """법인 SGOV 복구 시 목표 대비 오버웨이트 자산을 고정 donor 순서보다 먼저 써야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["target_monthly_cashflow"] = 1000000
+    params["corp_bond_floor_months"] = 0
+    params["corp_bond_target_months"] = 0
+    params["corp_bond_upper_months"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.30,
+        "Bond Buffer": 0.00,
+        "High Income": 0.00,
+        "Dividend Growth": 0.40,
+        "Growth Engine": 0.30,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "High Income": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Dividend Growth": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.0, "pa": 4.0, "tr": 4.0},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["corp_sgov_months"] == pytest.approx(30.0)
+    assert month1["corp_high_income_balance"] == pytest.approx(0.0)
+    assert month1["corp_dividend_balance"] == pytest.approx(40000000.0)
+    assert month1["corp_growth_balance"] == pytest.approx(39000000.0)
+
+
 def test_may_rebalance_keeps_pension_bond_buffer_when_within_upper_band():
     """개인연금 Bond Buffer가 18~24개월 구간이면 5월 SGOV 복구 때 우선 소진되면 안 된다."""
     params = base_params()

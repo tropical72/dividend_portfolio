@@ -130,6 +130,8 @@ def test_update_retirement_config_strategy_rules():
     assert strategy_rules["rebalance_week"] == 2
     assert strategy_rules["corporate"]["sgov_target_months"] == 40
     assert strategy_rules["corporate"]["sgov_warn_months"] == 30
+    assert strategy_rules["corporate"]["bond_floor_months"] == 12
+    assert strategy_rules["pension"]["sgov_target_months"] == 24
 
 
 def test_update_retirement_config_rejects_inconsistent_corp_principal():
@@ -309,6 +311,89 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     assert month1["phase"] == "Phase 1"
     assert month1["corp_monthly_need"] == 1000
     assert month1["corp_balance"] > 0
+
+
+def test_run_retirement_simulation_uses_dynamic_strategy_rule_month_caps(tmp_path, monkeypatch):
+    """strategy_rules의 버퍼 개월수 설정이 실제 5월 리밸런싱 결과에 반영되어야 한다."""
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    _create_retirement_master(
+        backend,
+        name="Strategy Rule Caps",
+        corp_category="Bond Buffer",
+        pension_category="Bond Buffer",
+        dividend_yield=0.0,
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1970,
+                "birth_month": 1,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_fixed_cost": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 100000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 1000000,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 5,
+                "target_monthly_cashflow": 2000000,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "strategy_rules": {
+                "corporate": {
+                    "sgov_target_months": 40,
+                    "november_sgov_target_months": 29,
+                    "bond_floor_months": 10,
+                    "bond_target_months": 16,
+                    "bond_upper_months": 22,
+                },
+                "pension": {
+                    "sgov_min_years": 3,
+                    "sgov_floor_months": 10,
+                    "bond_floor_months": 10,
+                    "bond_target_months": 16,
+                    "bond_upper_months": 22,
+                },
+            },
+        },
+    )
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    month1 = payload["data"]["monthly_data"][0]
+    assert month1["month"] == 5
+    assert month1["corp_sgov_months"] == pytest.approx(40.0)
+    assert month1["corp_bond_months"] == pytest.approx(22.0)
+    assert month1["pension_sgov_months"] == pytest.approx(36.0)
+    assert month1["pension_bond_months"] == pytest.approx(22.0)
 
 
 def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path, monkeypatch):

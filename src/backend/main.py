@@ -415,16 +415,29 @@ async def run_retirement_simulation(
         "rebalance_month": strategy_rules.get("rebalance_month", 1),
         "rebalance_week": strategy_rules.get("rebalance_week", 2),
         "bear_market_freeze_enabled": strategy_rules.get("bear_market_freeze_enabled", True),
-        "sgov_target_months": corporate_rules.get("sgov_target_months", 36),
-        "sgov_warn_months": corporate_rules.get("sgov_warn_months", 30),
+        "sgov_target_months": corporate_rules.get("sgov_target_months", 30),
+        "sgov_warn_months": corporate_rules.get("sgov_warn_months", 27),
         "sgov_crisis_months": corporate_rules.get("sgov_crisis_months", 24),
+        "corp_november_sgov_target_months": corporate_rules.get(
+            "november_sgov_target_months", corporate_rules.get("sgov_warn_months", 27)
+        ),
+        "corp_bond_floor_months": corporate_rules.get("bond_floor_months", 12),
+        "corp_bond_target_months": corporate_rules.get("bond_target_months", 18),
+        "corp_bond_upper_months": corporate_rules.get("bond_upper_months", 24),
         "high_income_min_ratio": corporate_rules.get("high_income_min_ratio", 0.20),
         "high_income_max_ratio": corporate_rules.get("high_income_max_ratio", 0.35),
         "growth_sell_years_left_threshold": corporate_rules.get(
             "growth_sell_years_left_threshold", 10
         ),
         "sgov_min_years": pension_rules.get("sgov_min_years", 2),
+        "pension_sgov_target_months": pension_rules.get(
+            "sgov_target_months", pension_rules.get("sgov_min_years", 2) * 12
+        ),
+        "pension_sgov_floor_months": pension_rules.get("sgov_floor_months", 12),
         "bond_min_years": pension_rules.get("bond_min_years", 5),
+        "pension_bond_floor_months": pension_rules.get("bond_floor_months", 12),
+        "pension_bond_target_months": pension_rules.get("bond_target_months", 18),
+        "pension_bond_upper_months": pension_rules.get("bond_upper_months", 24),
         "bond_min_total_ratio": pension_rules.get("bond_min_total_ratio", 0.05),
         "dividend_min_ratio": pension_rules.get("dividend_min_ratio", 0.10),
     }

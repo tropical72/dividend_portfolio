@@ -26,13 +26,22 @@
             "sgov_target_months": 40,
             "sgov_warn_months": 30,
             "sgov_crisis_months": 24,
+            "november_sgov_target_months": 30,
+            "bond_floor_months": 12,
+            "bond_target_months": 18,
+            "bond_upper_months": 24,
             "high_income_min_ratio": 0.2,
             "high_income_max_ratio": 0.35,
             "growth_sell_years_left_threshold": 10
         },
         "pension": {
             "sgov_min_years": 2,
+            "sgov_target_months": 24,
+            "sgov_floor_months": 12,
             "bond_min_years": 5,
+            "bond_floor_months": 12,
+            "bond_target_months": 18,
+            "bond_upper_months": 24,
             "bond_min_total_ratio": 0.05,
             "dividend_min_ratio": 0.1
         }

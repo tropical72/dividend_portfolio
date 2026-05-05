@@ -11,14 +11,23 @@ def test_retirement_config_includes_default_strategy_rules(tmp_path):
     assert config["strategy_rules"]["rebalance_month"] == 1
     assert config["strategy_rules"]["rebalance_week"] == 2
     assert config["strategy_rules"]["bear_market_freeze_enabled"] is True
-    assert config["strategy_rules"]["corporate"]["sgov_target_months"] == 36
-    assert config["strategy_rules"]["corporate"]["sgov_warn_months"] == 30
+    assert config["strategy_rules"]["corporate"]["sgov_target_months"] == 30
+    assert config["strategy_rules"]["corporate"]["sgov_warn_months"] == 27
     assert config["strategy_rules"]["corporate"]["sgov_crisis_months"] == 24
+    assert config["strategy_rules"]["corporate"]["november_sgov_target_months"] == 27
+    assert config["strategy_rules"]["corporate"]["bond_floor_months"] == 12
+    assert config["strategy_rules"]["corporate"]["bond_target_months"] == 18
+    assert config["strategy_rules"]["corporate"]["bond_upper_months"] == 24
     assert config["strategy_rules"]["corporate"]["high_income_min_ratio"] == 0.2
     assert config["strategy_rules"]["corporate"]["high_income_max_ratio"] == 0.35
     assert config["strategy_rules"]["corporate"]["growth_sell_years_left_threshold"] == 10
     assert config["strategy_rules"]["pension"]["sgov_min_years"] == 2
+    assert config["strategy_rules"]["pension"]["sgov_target_months"] == 24
+    assert config["strategy_rules"]["pension"]["sgov_floor_months"] == 12
     assert config["strategy_rules"]["pension"]["bond_min_years"] == 5
+    assert config["strategy_rules"]["pension"]["bond_floor_months"] == 12
+    assert config["strategy_rules"]["pension"]["bond_target_months"] == 18
+    assert config["strategy_rules"]["pension"]["bond_upper_months"] == 24
     assert config["strategy_rules"]["pension"]["bond_min_total_ratio"] == 0.05
     assert config["strategy_rules"]["pension"]["dividend_min_ratio"] == 0.1
 
@@ -45,7 +54,11 @@ def test_retirement_config_strategy_rules_partial_update_keeps_defaults(tmp_path
     assert strategy_rules["rebalance_month"] == 3
     assert strategy_rules["rebalance_week"] == 2
     assert strategy_rules["corporate"]["sgov_target_months"] == 42
-    assert strategy_rules["corporate"]["sgov_warn_months"] == 30
+    assert strategy_rules["corporate"]["sgov_warn_months"] == 27
     assert strategy_rules["corporate"]["sgov_crisis_months"] == 24
+    assert strategy_rules["corporate"]["november_sgov_target_months"] == 27
+    assert strategy_rules["corporate"]["bond_floor_months"] == 12
     assert strategy_rules["pension"]["bond_min_years"] == 7
+    assert strategy_rules["pension"]["sgov_target_months"] == 24
+    assert strategy_rules["pension"]["sgov_floor_months"] == 12
     assert strategy_rules["pension"]["bond_min_total_ratio"] == 0.05

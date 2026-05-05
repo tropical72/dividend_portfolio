@@ -90,6 +90,8 @@
 - **[TEST-SUR-13] Pre/Post Review 관측값 검증 [NEW]:**
   - 월별 기본 개월수 필드가 `월말(post-review)` 기준인지 확인.
   - `11월 직전 24개월`, `다음 5월 직전 21개월` 같은 문서 기준선이 `pre_review_*` 필드로 별도 노출되는지 확인.
+- **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
+  - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
 
 ### [Structure 4] 설정 사용자화 및 UI 검증 (REQ-RAMS-8.1 ~ 8.5)
 

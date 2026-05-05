@@ -667,16 +667,25 @@ class DividendBackend:
             "rebalance_week": 2,
             "bear_market_freeze_enabled": True,
             "corporate": {
-                "sgov_target_months": 36,
-                "sgov_warn_months": 30,
+                "sgov_target_months": 30,
+                "sgov_warn_months": 27,
                 "sgov_crisis_months": 24,
+                "november_sgov_target_months": 27,
+                "bond_floor_months": 12,
+                "bond_target_months": 18,
+                "bond_upper_months": 24,
                 "high_income_min_ratio": 0.20,
                 "high_income_max_ratio": 0.35,
                 "growth_sell_years_left_threshold": 10,
             },
             "pension": {
                 "sgov_min_years": 2,
+                "sgov_target_months": 24,
+                "sgov_floor_months": 12,
                 "bond_min_years": 5,
+                "bond_floor_months": 12,
+                "bond_target_months": 18,
+                "bond_upper_months": 24,
                 "bond_min_total_ratio": 0.05,
                 "dividend_min_ratio": 0.10,
             },
@@ -2143,6 +2152,39 @@ class DividendBackend:
                         and "annual_corp_tax_adjustment_fee" not in value
                     ):
                         value["annual_corp_tax_adjustment_fee"] = 0.0
+                if key == "strategy_rules":
+                    value = dict(value)
+                    corporate_rules = dict(value.get("corporate") or {})
+                    if (
+                        "sgov_warn_months" in corporate_rules
+                        and "november_sgov_target_months" not in corporate_rules
+                    ):
+                        corporate_rules["november_sgov_target_months"] = corporate_rules[
+                            "sgov_warn_months"
+                        ]
+                    if (
+                        "november_sgov_target_months" in corporate_rules
+                        and "sgov_warn_months" not in corporate_rules
+                    ):
+                        corporate_rules["sgov_warn_months"] = corporate_rules[
+                            "november_sgov_target_months"
+                        ]
+                    if corporate_rules:
+                        value["corporate"] = corporate_rules
+
+                    pension_rules = dict(value.get("pension") or {})
+                    if (
+                        "sgov_min_years" in pension_rules
+                        and "sgov_target_months" not in pension_rules
+                    ):
+                        pension_rules["sgov_target_months"] = pension_rules["sgov_min_years"] * 12
+                    if (
+                        "sgov_target_months" in pension_rules
+                        and "sgov_min_years" not in pension_rules
+                    ):
+                        pension_rules["sgov_min_years"] = pension_rules["sgov_target_months"] / 12
+                    if pension_rules:
+                        value["pension"] = pension_rules
                 candidate_config[key] = self._deep_merge_dict(candidate_config[key], value)
             else:
                 candidate_config[key] = value
