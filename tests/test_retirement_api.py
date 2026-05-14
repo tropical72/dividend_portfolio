@@ -665,6 +665,278 @@ def test_retirement_simulation_november_rebalance_keeps_bond_at_upper_band_bound
     assert month1["corp_sgov_months"] == pytest.approx(27.0)
 
 
+def test_retirement_api_phase_two_reference_calendar_matches_document_buffer_months(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1970,
+                "birth_month": 1,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 600000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 120000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 2500000,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2027,
+                "simulation_start_month": 5,
+                "target_monthly_cashflow": 11500000,
+                "national_pension_amount": 0,
+                "simulation_years": 2,
+            },
+        },
+    )
+
+    backend.get_active_master_portfolio = lambda: None
+    backend.get_portfolio_by_id = lambda _portfolio_id: None
+    backend.portfolios = []
+    backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+    backend.get_appreciation_rates_for_scenario = lambda *_args, **_kwargs: {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.0,
+    }
+
+    def _stats(_portfolio_id, *_args, **_kwargs):
+        if _portfolio_id is None:
+            return {
+                "dividend_yield": 0.0,
+                "expected_return": 0.0,
+                "weights": {},
+                "strategy_weights": {},
+                "category_return_rates": {},
+            }
+        return {
+            "dividend_yield": 0.0,
+            "expected_return": 0.0,
+            "weights": {},
+            "strategy_weights": (
+                {
+                    "SGOV Buffer": 0.0,
+                    "Bond Buffer": 0.0,
+                    "High Income": 1.0,
+                    "Dividend Growth": 0.0,
+                    "Growth Engine": 0.0,
+                }
+                if _portfolio_id == "corp"
+                else {
+                    "SGOV Buffer": 0.0,
+                    "Bond Buffer": 0.0,
+                    "High Income": 0.0,
+                    "Dividend Growth": 1.0,
+                    "Growth Engine": 0.0,
+                }
+            ),
+            "category_return_rates": {},
+        }
+
+    backend.get_portfolio_stats_by_id = _stats
+    backend.portfolios = [
+        {
+            "id": "corp",
+            "name": "Reference Corporate",
+            "account_type": "Corporate",
+            "total_capital": 600000000,
+        },
+        {
+            "id": "pension",
+            "name": "Reference Pension",
+            "account_type": "Pension",
+            "total_capital": 120000000,
+        },
+    ]
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    monthly = {
+        (m["year"], m["month"]): m for m in payload["data"]["monthly_data"]
+    }
+
+    may_2027 = monthly[(2027, 5)]
+    oct_2027 = monthly[(2027, 10)]
+    nov_2027 = monthly[(2027, 11)]
+    apr_2028 = monthly[(2028, 4)]
+    may_2028 = monthly[(2028, 5)]
+
+    assert may_2027["phase"] == "Phase 2"
+    assert may_2027["corp_monthly_need"] == 9000000
+    assert may_2027["corp_sgov_months"] == pytest.approx(30.0)
+    assert may_2027["pension_sgov_months"] == pytest.approx(24.0)
+    assert oct_2027["corp_sgov_months"] == pytest.approx(25.0)
+    assert nov_2027["pre_review_corp_sgov_months"] == pytest.approx(24.0)
+    assert nov_2027["corp_sgov_months"] == pytest.approx(27.0)
+    assert nov_2027["pension_sgov_months"] == pytest.approx(18.0)
+    assert apr_2028["corp_sgov_months"] == pytest.approx(22.0)
+    assert may_2028["pre_review_corp_sgov_months"] == pytest.approx(21.0)
+    assert may_2028["corp_sgov_months"] == pytest.approx(30.0)
+    assert may_2028["pension_sgov_months"] == pytest.approx(24.0)
+
+
+def test_retirement_api_shock_flag_freezes_next_may_inflation_even_when_assets_are_healthy(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1980,
+                "birth_month": 1,
+                "private_pension_start_age": 65,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.10,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 120000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 60000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 5,
+                "target_monthly_cashflow": 1000000,
+                "national_pension_amount": 0,
+                "simulation_years": 2,
+            },
+        },
+    )
+
+    backend.get_active_master_portfolio = lambda: None
+    backend.get_portfolio_by_id = lambda _portfolio_id: None
+    backend.portfolios = [
+        {
+            "id": "corp",
+            "name": "Shock Corporate",
+            "account_type": "Corporate",
+            "total_capital": 120000000,
+        },
+        {
+            "id": "pension",
+            "name": "Shock Pension",
+            "account_type": "Pension",
+            "total_capital": 60000000,
+        },
+    ]
+    backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+    backend.get_appreciation_rates_for_scenario = lambda *_args, **_kwargs: {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.0,
+    }
+
+    def _stats(_portfolio_id, *_args, **_kwargs):
+        return {
+            "dividend_yield": 0.0,
+            "expected_return": 0.0,
+            "weights": {},
+            "strategy_weights": (
+                {
+                    "SGOV Buffer": 0.30,
+                    "Bond Buffer": 0.20,
+                    "High Income": 0.0,
+                    "Dividend Growth": 0.0,
+                    "Growth Engine": 0.50,
+                }
+                if _portfolio_id == "corp"
+                else {
+                    "SGOV Buffer": 1.0,
+                    "Bond Buffer": 0.0,
+                    "High Income": 0.0,
+                    "Dividend Growth": 0.0,
+                    "Growth Engine": 0.0,
+                }
+            ),
+            "category_return_rates": {},
+        }
+
+    backend.get_portfolio_stats_by_id = _stats
+    original_run = main_module.projection_engine.run_30yr_simulation
+
+    def _run_with_override(initial_assets, params):
+        params = dict(params)
+        params["monthly_return_overrides"] = {
+            "corp": {
+                "Growth Engine": {
+                    "2026-06": {"pa": -2.5, "dy": 0.0},
+                }
+            }
+        }
+        return original_run(initial_assets, params)
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _run_with_override)
+
+    response = local_client.get("/api/retirement/simulate")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    monthly = {
+        (m["year"], m["month"]): m for m in payload["data"]["monthly_data"]
+    }
+
+    june = monthly[(2026, 6)]
+    april_next = monthly[(2027, 4)]
+    may_next = monthly[(2027, 5)]
+
+    assert june["shock_flag"] is True
+    assert april_next["shock_flag"] is True
+    assert may_next["inflation_action"] == "frozen"
+    assert may_next["shock_flag"] is False
+
+
 def test_retirement_simulation_meta_pa_rate_follows_master_category_mix(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     growth_master_id = _create_retirement_master(
