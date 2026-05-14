@@ -69,7 +69,7 @@
   - 문서에 기재된 Phase 2/3 시작월은 특정 사용자 사례를 설명하는 값일 뿐이며, 실제 엔진은 `birth_year`, `birth_month`, `private_pension_start_age`, `national_pension_start_age`, `simulation_start_year`, `simulation_start_month`를 사용해 동적으로 동일 시점을 계산해야 한다.
 - **[REQ-RAMS-3.2] 동적 인출 및 리밸런싱 알고리즘:**
   - **[REQ-RAMS-3.2.1] OS v11.1 공통 원칙:** 월 인출은 항상 `SGOV Buffer`에서만 발생해야 하며, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`은 정기점검 또는 명시된 보충 이벤트에서만 재배치/매도된다.
-  - **[REQ-RAMS-3.2.2] 필요금액 2계층 분리:** 시뮬레이션은 `월 가계필요비용(household_monthly_need)`을 독립 입력으로 관리해야 하며, `법인필요비용(corporate_monthly_operating_cost)`은 `월 기장비 + 연 세무조정료/12` 파생값으로 계산해야 한다. 기존 단일 `target_monthly_cashflow`는 두 금액을 섞어 표현해서는 안 된다.
+  - **[REQ-RAMS-3.2.2] 필요금액 2계층 분리:** 시뮬레이션은 `월 가계필요비용(household_monthly_need)`을 독립 입력으로 관리해야 한다. 법인 비용은 평균값으로 뭉개지지 않아야 하며, `월 기장비(monthly_bookkeeping_fee)`는 매월, `연 세무조정료(annual_corp_tax_adjustment_fee)`는 매년 3월에 실제 현금유출로 반영해야 한다. 기존 단일 `target_monthly_cashflow`는 두 금액을 섞어 표현해서는 안 된다.
   - **[REQ-RAMS-3.2.3] 가계 지급 우선 공식:** 매월 가계에 필요한 세후 현금은 `household_monthly_need`를 기준으로 계산하며, 이를 `개인연금`, `국민연금`, `법인 급여 실수령`, `주주대여금 상환`으로 채워야 한다.
   - **[REQ-RAMS-3.2.4] 법인 월 현금 생성 공식:** 법인이 매월 `SGOV Buffer`에서 마련해야 할 총 현금은 `법인 급여 총액 + 법인필요비용 + 주주대여금 상환액`이다. 이때 주주대여금 상환액은 세후 부족분 공식으로 계산된 값이어야 한다.
   - **[REQ-RAMS-3.2.5] 개인연금 월 인출:** 개인연금 계좌는 Phase 2부터 `monthly_withdrawal_target`을 `SGOV Buffer`에서 인출한다. Stress/Crash20 BOOST가 활성화되면 추가 인출액을 같은 계좌에서 한시적으로 더 인출할 수 있다.
@@ -79,6 +79,9 @@
   - **[REQ-RAMS-3.2.9] 개인연금 중간 점검:** 개인연금 `SGOV Buffer`가 12개월 floor 미만으로 내려가면, 우선 `Bond Buffer`에서 `SGOV Buffer`를 보충한다. 그래도 부족하면 다음 5월 정기점검에서 전면 조정한다.
   - **[REQ-RAMS-3.2.10] donor 규칙 일반화:** 정기점검 시 `SGOV Buffer`와 `Bond Buffer` 보강은 문서의 donor 우선순위를 따르되, `High Income`, `Dividend Growth`, `Growth Engine`은 서로 다른 버킷으로 독립 유지해야 한다.
   - **[REQ-RAMS-3.2.11] 카테고리 혼합 금지:** `Bond Buffer`와 `High Income`, `Dividend Growth`, `Growth Engine`은 계산 과정에서 동일 자산군으로 합산하거나 동일 성장률/하한선 규칙을 공유해서는 안 된다.
+  - **[REQ-RAMS-3.2.12] 법인 실현소득 과세 기준:** 법인세 과세표준은 월별 배당/이자/인컴 등 `실현소득`만 누적하여 계산해야 하며, `PA`로 반영되는 미실현 자산가격 상승분은 법인세 과세표준에 포함하면 안 된다.
+  - **[REQ-RAMS-3.2.13] 8월 중간예납:** 법인은 매년 8월에 `직전 연도 확정 법인세의 50%`를 중간예납으로 납부해야 한다. 이 금액은 해당 연도의 법인 `SGOV Buffer` 현금유출로 반영되어야 한다.
+  - **[REQ-RAMS-3.2.14] 3월 확정 납부:** 법인은 매년 3월에 `직전 연도 1월~12월 실현소득 - 해당 연도 급여/월 기장비 등 비용` 기준으로 법인세를 산출하고, `직전 8월에 낸 중간예납`을 차감한 잔액만 추가 납부해야 한다. 같은 3월에는 `연 세무조정료`도 별도 현금유출로 반영해야 한다.
 - **[REQ-RAMS-3.3] 자산군별 PA/DY/TR 적용 엔진:**
   - **[REQ-RAMS-3.3.1] 자산군별 독립 성장률:** 월 수익 계산은 계정 평균 수익률 1개가 아니라 전략 카테고리별 `PA`, `DY`, `TR`을 독립 적용해야 한다.
   - **[REQ-RAMS-3.3.2] 수식 정합성:** 각 카테고리는 `TR = DY + PA`를 만족해야 하며, 월 변환은 단순 월 분할 또는 복리 월 변환 중 하나를 일관되게 사용해야 한다.

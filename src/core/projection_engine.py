@@ -67,9 +67,8 @@ class ProjectionEngine:
         loan_balance = float(p("initial_shareholder_loan", 0.0))
         corp_salary = float(p("corp_salary", 0.0))
         corp_fixed_cost = float(p("corp_fixed_cost", 0.0))
-        corporate_monthly_operating_cost = float(
-            p("corporate_monthly_operating_cost", corp_fixed_cost)
-        )
+        monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", corp_fixed_cost))
+        annual_corp_tax_adjustment_fee = float(p("annual_corp_tax_adjustment_fee", 0.0))
         employee_count = int(p("employee_count", 0))
         corporate_rules = {
             "may_sgov_target_months": float(p("sgov_target_months", 30.0)),
@@ -102,6 +101,10 @@ class ProjectionEngine:
         survival_m = 0
         crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
         previous_may_total_assets = None
+        corp_realized_income_by_year: Dict[int, float] = {}
+        corp_deductible_expenses_by_year: Dict[int, float] = {}
+        corp_tax_assessed_by_year: Dict[int, float] = {}
+        corp_tax_prepay_by_year: Dict[int, float] = {}
         monthly_data = []
 
         for index in range(1, months + 1):
@@ -113,11 +116,14 @@ class ProjectionEngine:
             self._apply_planned_cashflows(
                 corp_assets, pension_assets, planned_cashflows, sim_year, sim_month
             )
-            self._apply_monthly_returns(
+            corp_realized_income = self._apply_monthly_returns(
                 "corp", corp_assets, corp_stats, params, sim_year, sim_month
             )
             self._apply_monthly_returns(
                 "pension", pension_assets, pension_stats, params, sim_year, sim_month
+            )
+            corp_realized_income_by_year[sim_year] = (
+                corp_realized_income_by_year.get(sim_year, 0.0) + corp_realized_income
             )
 
             current_total_need = approved_total_need
@@ -133,6 +139,21 @@ class ProjectionEngine:
                 0.0, current_total_need - pension_income - national_income - target_net_salary
             )
             target_shareholder_loan_payment = min(loan_balance, household_shortfall)
+            corp_bookkeeping_target = monthly_bookkeeping_fee
+            corp_tax_adjustment_fee_target = (
+                annual_corp_tax_adjustment_fee if sim_month == 3 else 0.0
+            )
+            corp_tax_payment_target, corp_tax_assessed_for_year = self._corporate_tax_payment_plan(
+                sim_year=sim_year,
+                sim_month=sim_month,
+                realized_income_by_year=corp_realized_income_by_year,
+                deductible_expenses_by_year=corp_deductible_expenses_by_year,
+                assessed_tax_by_year=corp_tax_assessed_by_year,
+                prepay_tax_by_year=corp_tax_prepay_by_year,
+            )
+            corporate_monthly_operating_cost = (
+                corp_bookkeeping_target + corp_tax_adjustment_fee_target + corp_tax_payment_target
+            )
             corp_monthly_need = self._corporate_cash_need(
                 household_need=current_total_need,
                 phase=phase,
@@ -162,13 +183,29 @@ class ProjectionEngine:
                 actual_gross_salary / total_gross_salary if total_gross_salary > 0 else 1.0
             )
             actual_net_salary = target_net_salary * salary_ratio
-            actual_corporate_cost = min(corporate_monthly_operating_cost, remaining_corp_cash)
-            remaining_corp_cash -= actual_corporate_cost
+            actual_bookkeeping_paid = min(corp_bookkeeping_target, remaining_corp_cash)
+            remaining_corp_cash -= actual_bookkeeping_paid
+            actual_tax_adjustment_fee_paid = min(
+                corp_tax_adjustment_fee_target, remaining_corp_cash
+            )
+            remaining_corp_cash -= actual_tax_adjustment_fee_paid
+            actual_corp_tax_payment = min(corp_tax_payment_target, remaining_corp_cash)
+            remaining_corp_cash -= actual_corp_tax_payment
             shareholder_loan_payment = min(
                 loan_balance, target_shareholder_loan_payment, remaining_corp_cash
             )
             remaining_corp_cash -= shareholder_loan_payment
             loan_balance -= shareholder_loan_payment
+            corp_deductible_expenses_by_year[sim_year] = (
+                corp_deductible_expenses_by_year.get(sim_year, 0.0)
+                + actual_gross_salary
+                + actual_bookkeeping_paid
+                + actual_tax_adjustment_fee_paid
+            )
+            if sim_month == 8 and actual_corp_tax_payment > 0:
+                corp_tax_prepay_by_year[sim_year] = (
+                    corp_tax_prepay_by_year.get(sim_year, 0.0) + actual_corp_tax_payment
+                )
 
             pre_review_corp_sgov_months = self._months_cover(
                 corp_assets["SGOV Buffer"], corp_monthly_need
@@ -219,7 +256,7 @@ class ProjectionEngine:
                         national_pension_amount=national_pension_amount,
                         corp_salary=corp_salary,
                         employee_count=employee_count,
-                        corporate_monthly_operating_cost=corporate_monthly_operating_cost,
+                        corporate_monthly_operating_cost=monthly_bookkeeping_fee,
                         loan_balance=loan_balance,
                     ),
                     pension_withdrawal_target=pension_withdrawal_target,
@@ -286,6 +323,11 @@ class ProjectionEngine:
                     "net_salary": actual_net_salary,
                     "corp_draw": corp_draw,
                     "pension_draw": pension_draw,
+                    "corp_bookkeeping_paid": actual_bookkeeping_paid,
+                    "corp_tax_adjustment_fee_paid": actual_tax_adjustment_fee_paid,
+                    "corp_tax_payment": actual_corp_tax_payment,
+                    "corp_tax_assessed_for_year": corp_tax_assessed_for_year,
+                    "corp_realized_income": corp_realized_income,
                     "shareholder_loan_payment": shareholder_loan_payment,
                     "household_shortfall": household_shortfall,
                     "boost_amount": boost_amount if boost_months_remaining > 0 else 0.0,
@@ -415,7 +457,8 @@ class ProjectionEngine:
         params: Dict[str, Any],
         sim_year: int,
         sim_month: int,
-    ) -> None:
+    ) -> float:
+        realized_income = 0.0
         for category in self.CATEGORY_ORDER:
             balance = account_assets[category]
             if balance <= 0:
@@ -428,12 +471,16 @@ class ProjectionEngine:
             monthly_pa = float(category_rates["pa"]) / 12.0
 
             if category == "SGOV Buffer":
+                income = balance * monthly_dy
                 account_assets[category] = balance * (1 + monthly_dy + monthly_pa)
+                realized_income += income
                 continue
 
             income_to_sgov = balance * monthly_dy
             account_assets[category] = balance * (1 + monthly_pa)
             account_assets["SGOV Buffer"] += income_to_sgov
+            realized_income += income_to_sgov
+        return realized_income
 
     def _category_rate_spec(
         self,
@@ -547,6 +594,64 @@ class ProjectionEngine:
             self._corp_operating_cost(corp_salary, corporate_monthly_operating_cost, employee_count)
             + target_shareholder_loan_payment
         )
+
+    def _annual_corp_tax_for_year(
+        self,
+        tax_year: int,
+        realized_income_by_year: Dict[int, float],
+        deductible_expenses_by_year: Dict[int, float],
+        assessed_tax_by_year: Dict[int, float],
+    ) -> float:
+        if tax_year in assessed_tax_by_year:
+            return assessed_tax_by_year[tax_year]
+        realized_income = realized_income_by_year.get(tax_year, 0.0)
+        deductible_expenses = deductible_expenses_by_year.get(tax_year, 0.0)
+        tax_base = max(0.0, realized_income - deductible_expenses)
+        assessed_tax = self.tax_engine.calculate_corp_tax(tax_base)
+        assessed_tax_by_year[tax_year] = assessed_tax
+        return assessed_tax
+
+    def _corporate_tax_payment_plan(
+        self,
+        sim_year: int,
+        sim_month: int,
+        realized_income_by_year: Dict[int, float],
+        deductible_expenses_by_year: Dict[int, float],
+        assessed_tax_by_year: Dict[int, float],
+        prepay_tax_by_year: Dict[int, float],
+    ) -> tuple[float, float]:
+        if sim_month == 8:
+            reference_year = sim_year - 1
+            if (
+                reference_year not in realized_income_by_year
+                and reference_year not in assessed_tax_by_year
+            ):
+                return 0.0, 0.0
+            assessed_tax = self._annual_corp_tax_for_year(
+                reference_year,
+                realized_income_by_year,
+                deductible_expenses_by_year,
+                assessed_tax_by_year,
+            )
+            return assessed_tax * 0.5, assessed_tax
+
+        if sim_month == 3:
+            settlement_year = sim_year - 1
+            if (
+                settlement_year not in realized_income_by_year
+                and settlement_year not in assessed_tax_by_year
+            ):
+                return 0.0, 0.0
+            assessed_tax = self._annual_corp_tax_for_year(
+                settlement_year,
+                realized_income_by_year,
+                deductible_expenses_by_year,
+                assessed_tax_by_year,
+            )
+            payment = max(0.0, assessed_tax - prepay_tax_by_year.get(settlement_year, 0.0))
+            return payment, assessed_tax
+
+        return 0.0, 0.0
 
     def _run_may_review(
         self,

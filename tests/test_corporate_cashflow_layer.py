@@ -152,6 +152,76 @@ def test_shareholder_loan_payment_only_covers_household_net_shortfall():
     assert month1["loan_balance"] == pytest.approx(92151375.0)
 
 
+def test_corporate_bookkeeping_runs_monthly_and_tax_adjustment_fee_hits_only_in_march():
+    """월 기장비는 매달, 연 세무조정료는 3월에만 현금유출로 반영되어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_month"] = 1
+    params["target_monthly_cashflow"] = 0
+    params["monthly_bookkeeping_fee"] = 500000
+    params["annual_corp_tax_adjustment_fee"] = 1200000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 50000000, "pension": 0},
+        params=params,
+        months=15,
+    )
+
+    feb_2027 = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 2)
+    mar_2027 = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 3)
+
+    assert feb_2027["corp_bookkeeping_paid"] == pytest.approx(500000.0)
+    assert feb_2027["corp_tax_adjustment_fee_paid"] == pytest.approx(0.0)
+    assert mar_2027["corp_bookkeeping_paid"] == pytest.approx(500000.0)
+    assert mar_2027["corp_tax_adjustment_fee_paid"] == pytest.approx(1200000.0)
+
+
+def test_corporate_tax_uses_realized_income_and_pays_august_prepay_then_march_settlement():
+    """법인세는 실현소득만 과세표준에 포함하고 8월 50% 선납 후 다음 해 3월 정산해야 한다."""
+    params = base_params()
+    params["simulation_years"] = 3
+    params["simulation_start_month"] = 1
+    params["target_monthly_cashflow"] = 0
+    params["monthly_bookkeeping_fee"] = 0
+    params["annual_corp_tax_adjustment_fee"] = 0
+    params["corp_salary"] = 0
+    params["portfolio_stats"]["corp"]["dividend_yield"] = 0.0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 1.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "Dividend Growth": {"dy": 0.12, "pa": 0.0, "tr": 0.12},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000000, "pension": 0},
+        params=params,
+        months=27,
+    )
+
+    aug_2027 = next(m for m in result["monthly_data"] if m["year"] == 2027 and m["month"] == 8)
+    mar_2028 = next(m for m in result["monthly_data"] if m["year"] == 2028 and m["month"] == 3)
+
+    expected_final_2026_tax = pytest.approx(1584000.0)
+    assert aug_2027["corp_tax_payment"] == pytest.approx(792000.0)
+    assert aug_2027["corp_tax_assessed_for_year"] == expected_final_2026_tax
+    assert mar_2028["corp_tax_payment"] == pytest.approx(792000.0)
+    assert mar_2028["corp_tax_assessed_for_year"] == expected_final_2026_tax
+
+
 def test_corporate_may_rebalance_refills_sgov_to_thirty_months():
     """5월 정기점검에서는 적자 여부와 무관하게 법인 SGOV를 30개월 목표로 복구해야 한다."""
     params = base_params()
