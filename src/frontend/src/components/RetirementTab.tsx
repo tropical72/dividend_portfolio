@@ -82,6 +82,18 @@ function normalizeVisibleAssumptionId(
   return getVisibleAssumptions(config)[0]?.[0] || "v1";
 }
 
+function estimateNetSalary(
+  monthlySalary: number,
+  rates?: RetirementConfig["tax_and_insurance"],
+) {
+  const pensionRate = rates?.pension_rate ?? 0.045;
+  const healthRate = rates?.health_rate ?? 0.035;
+  const employmentRate = rates?.employment_rate ?? 0.009;
+  const incomeTaxRate = rates?.income_tax_estimate_rate ?? 0.05;
+  const totalRate = pensionRate + healthRate + employmentRate + incomeTaxRate;
+  return Math.max(0, monthlySalary * (1 - totalRate));
+}
+
 /** 은퇴 전략 시뮬레이션 결과 및 시각화 탭 [REQ-RAMS-07, REQ-GLB-13] */
 export function RetirementTab() {
   const { isKorean, t } = useI18n();
@@ -272,6 +284,15 @@ export function RetirementTab() {
   const householdMonthlyNeed =
     config.simulation_params.household_monthly_need ??
     config.simulation_params.target_monthly_cashflow;
+  const estimatedNetSalaryValue = estimateNetSalary(
+    config.corp_params.monthly_salary,
+    config.tax_and_insurance,
+  );
+  const corporateOperatingCost =
+    (config.corp_params.monthly_bookkeeping_fee ??
+      config.corp_params.monthly_fixed_cost ??
+      0) +
+    (config.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
   const startYear = config.simulation_params.simulation_start_year;
   const startMonth = config.simulation_params.simulation_start_month;
   const startAge = Math.floor(
@@ -1206,6 +1227,20 @@ export function RetirementTab() {
                         ).toLocaleString()}`}
                         testId="rule-badge-monthly-cost"
                       />
+                      <RuleBadge
+                        label={t("settings.corporateNeedEstimate")}
+                        value={`₩${Math.round(
+                          corporateOperatingCost,
+                        ).toLocaleString()}`}
+                        testId="rule-badge-corp-operating-cost"
+                      />
+                      <RuleBadge
+                        label={t("settings.netSalaryEstimate")}
+                        value={`₩${Math.round(
+                          estimatedNetSalaryValue,
+                        ).toLocaleString()}`}
+                        testId="rule-badge-estimated-net-salary"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1440,24 +1475,28 @@ export function RetirementTab() {
                         label={t("retirement.table.dateAge")}
                         tooltip={t("retirement.table.dateAgeTooltip")}
                         align="center"
+                        tooltipTestId="retirement-detail-header-date-age"
                       />
                     </th>
                     <th className="px-6 py-5">
                       <TableHeaderLabel
                         label={t("retirement.table.phase")}
                         tooltip={t("retirement.table.phaseTooltip")}
+                        tooltipTestId="retirement-detail-header-phase"
                       />
                     </th>
                     <th className="px-6 py-5">
                       <TableHeaderLabel
                         label={t("retirement.table.ops")}
                         tooltip={t("retirement.table.opsTooltip")}
+                        tooltipTestId="retirement-detail-header-ops"
                       />
                     </th>
                     <th className="px-6 py-5">
                       <TableHeaderLabel
                         label={t("retirement.table.reviewSnapshot")}
                         tooltip={t("retirement.table.reviewSnapshotTooltip")}
+                        tooltipTestId="retirement-detail-header-review-snapshot"
                       />
                     </th>
                     <th className="px-6 py-5 text-right text-rose-500/70">
@@ -1465,6 +1504,7 @@ export function RetirementTab() {
                         label={t("retirement.table.targetCf")}
                         tooltip={t("retirement.table.targetCfTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-target-cf"
                       />
                     </th>
                     <th className="px-6 py-5 text-right text-emerald-500/70">
@@ -1472,6 +1512,7 @@ export function RetirementTab() {
                         label={t("retirement.table.totalDraw")}
                         tooltip={t("retirement.table.totalDrawTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-total-draw"
                       />
                     </th>
                     <th className="border-l border-slate-200 px-6 py-5 text-right text-blue-400/70">
@@ -1479,6 +1520,7 @@ export function RetirementTab() {
                         label={t("retirement.table.corpBal")}
                         tooltip={t("retirement.table.corpBalTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-corp-bal"
                       />
                     </th>
                     <th className="px-6 py-5 text-right text-blue-400/70">
@@ -1486,6 +1528,7 @@ export function RetirementTab() {
                         label={t("retirement.table.penBal")}
                         tooltip={t("retirement.table.penBalTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-pen-bal"
                       />
                     </th>
                     <th className="border-l border-slate-200 px-6 py-5 text-right text-slate-200">
@@ -1493,6 +1536,7 @@ export function RetirementTab() {
                         label={t("retirement.table.netWorth")}
                         tooltip={t("retirement.table.netWorthTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-net-worth"
                       />
                     </th>
                     <th className="px-6 py-5 text-right text-emerald-400/50">
@@ -1500,6 +1544,7 @@ export function RetirementTab() {
                         label={t("retirement.table.loanBal")}
                         tooltip={t("retirement.table.loanBalTooltip")}
                         align="right"
+                        tooltipTestId="retirement-detail-header-loan-bal"
                       />
                     </th>
                   </tr>
@@ -1694,10 +1739,12 @@ function TableHeaderLabel({
   label,
   tooltip,
   align = "left",
+  tooltipTestId,
 }: {
   label: string;
   tooltip: string;
   align?: "left" | "right" | "center";
+  tooltipTestId: string;
 }) {
   const justifyClass =
     align === "right"
@@ -1705,13 +1752,33 @@ function TableHeaderLabel({
       : align === "center"
         ? "justify-center"
         : "justify-start";
+  const tooltipPositionClass =
+    align === "right"
+      ? "right-0"
+      : align === "center"
+        ? "left-1/2 -translate-x-1/2"
+        : "left-0";
 
   return (
     <div className={cn("flex items-center gap-2", justifyClass)}>
       <span>{label}</span>
-      <div className="group relative">
-        <Info size={12} className="text-slate-500 cursor-help" />
-        <div className="absolute left-0 top-full z-50 mt-2 hidden w-56 rounded-xl border border-white/80 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 normal-case tracking-normal shadow-lg group-hover:block">
+      <div className="group relative inline-flex">
+        <button
+          type="button"
+          className="text-slate-500 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          data-testid={tooltipTestId}
+          title={tooltip}
+          aria-label={`${label}: ${tooltip}`}
+        >
+          <Info size={12} />
+        </button>
+        <div
+          className={cn(
+            "absolute top-full z-50 mt-2 hidden w-56 rounded-xl border border-white/80 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 normal-case tracking-normal shadow-lg group-hover:block group-focus-within:block",
+            tooltipPositionClass,
+          )}
+          data-testid={`${tooltipTestId}-content`}
+        >
           {tooltip}
         </div>
       </div>

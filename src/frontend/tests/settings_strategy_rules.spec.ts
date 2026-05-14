@@ -8,6 +8,9 @@ import {
 import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
 
 test.describe("Settings Strategy Rules", () => {
+  test.describe.configure({ mode: "serial" });
+  test.setTimeout(120000);
+
   let originalState: BackendTestState;
 
   test.beforeEach(async ({ page, request }) => {
@@ -112,5 +115,65 @@ test.describe("Settings Strategy Rules", () => {
     await expect(page.locator('[data-testid^="cashflow-event-"]')).toHaveCount(
       initialCount,
     );
+  });
+
+  test("should persist household cashflow inputs and expose them in retirement summary", async ({
+    page,
+  }) => {
+    const monthlyLivingCostInput = page
+      .getByTestId("input-group-monthly-living-cost")
+      .locator("input");
+    const monthlySalaryInput = page
+      .getByTestId("input-group-monthly-salary")
+      .locator("input");
+    const bookkeepingInput = page
+      .getByTestId("input-group-monthly-bookkeeping-fee")
+      .locator("input");
+    const annualAdjustmentInput = page
+      .getByTestId("input-group-annual-tax-adjustment-fee")
+      .locator("input");
+
+    await monthlyLivingCostInput.fill("12300000");
+    await monthlySalaryInput.fill("3000000");
+    await bookkeepingInput.fill("500000");
+    await annualAdjustmentInput.fill("1200000");
+
+    const netSalaryEstimate = (
+      (await page.getByTestId("net-salary-estimate-value").textContent()) || ""
+    ).match(/[\d,]+/)?.[0];
+    const corporateNeedEstimate = (
+      (await page.getByTestId("corporate-need-estimate-value").textContent()) ||
+      ""
+    ).match(/[\d,]+/)?.[0];
+
+    await page.getByTestId("apply-settings-button").click();
+    await expect(
+      page.getByText(
+        /All strategy settings were saved\.|모든 전략 설정이 저장되었습니다\./,
+      ),
+    ).toBeVisible();
+
+    await page.reload();
+    await page.getByTestId("nav-strategy-settings").click();
+    await expect(page.getByTestId("settings-title")).toBeVisible();
+
+    await expect(monthlyLivingCostInput).toHaveValue("12,300,000");
+    await expect(monthlySalaryInput).toHaveValue("3,000,000");
+    await expect(bookkeepingInput).toHaveValue("500,000");
+    await expect(annualAdjustmentInput).toHaveValue("1,200,000");
+
+    await page.getByTestId("nav-retirement").click();
+    await expect(page.getByTestId("retirement-tab-content")).toBeVisible();
+    await expect(page.getByTestId("strategy-rules-summary")).toBeVisible();
+
+    await expect(page.getByTestId("rule-badge-monthly-cost")).toContainText(
+      "₩12,300,000",
+    );
+    await expect(
+      page.getByTestId("rule-badge-corp-operating-cost"),
+    ).toContainText(`₩${corporateNeedEstimate}`);
+    await expect(
+      page.getByTestId("rule-badge-estimated-net-salary"),
+    ).toContainText(`₩${netSalaryEstimate}`);
   });
 });

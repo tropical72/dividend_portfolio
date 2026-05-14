@@ -62,12 +62,55 @@ test.describe("Retirement Tab UX", () => {
   test("should keep detailed log collapsed until requested", async ({
     page,
   }) => {
-    const collapsedState = page.getByTestId("retirement-detail-collapsed");
     const toggleButton = page.getByTestId("retirement-detail-toggle");
+    await expect(toggleButton).toBeVisible({ timeout: 20000 });
+    await toggleButton.scrollIntoViewIfNeeded();
 
+    const collapsedState = page.getByTestId("retirement-detail-collapsed");
     await expect(collapsedState).toBeVisible();
     await toggleButton.click();
     await expect(collapsedState).toHaveCount(0);
     await expect(page.locator("table")).toBeVisible();
+  });
+
+  test("should show detailed log header tooltips on focus", async ({
+    page,
+  }) => {
+    const toggleButton = page.getByTestId("retirement-detail-toggle");
+
+    await expect(toggleButton).toBeVisible({ timeout: 20000 });
+    await toggleButton.scrollIntoViewIfNeeded();
+    await toggleButton.click();
+
+    const tooltipTrigger = page.getByTestId(
+      "retirement-detail-header-date-age",
+    );
+    await tooltipTrigger.focus();
+
+    await expect(
+      page.getByTestId("retirement-detail-header-date-age-content"),
+    ).toBeVisible();
+  });
+
+  test("should explain household receipt composition in the detailed log tooltip", async ({
+    page,
+  }) => {
+    const toggleButton = page.getByTestId("retirement-detail-toggle");
+
+    await expect(toggleButton).toBeVisible({ timeout: 20000 });
+    await toggleButton.scrollIntoViewIfNeeded();
+    await toggleButton.click();
+
+    const tooltipTrigger = page.getByTestId(
+      "retirement-detail-header-total-draw",
+    );
+    await tooltipTrigger.focus();
+
+    await expect(
+      page.getByTestId("retirement-detail-header-total-draw-content"),
+    ).toContainText(/net salary|급여 실수령액/i);
+    await expect(
+      page.getByTestId("retirement-detail-header-total-draw-content"),
+    ).toContainText(/shareholder-loan repayment|주주대여금 상환액/i);
   });
 });

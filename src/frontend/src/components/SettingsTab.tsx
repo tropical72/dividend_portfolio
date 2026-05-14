@@ -675,6 +675,7 @@ export function SettingsTab({
                 label={t("settings.salary")}
                 isCurrency
                 tooltip={t("settings.salaryTooltip")}
+                testId="input-group-monthly-salary"
                 value={retireConfig.corp_params.monthly_salary}
                 onChange={(v) =>
                   setRetireConfig({
@@ -686,7 +687,10 @@ export function SettingsTab({
                   })
                 }
               />
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+              <div
+                className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3"
+                data-testid="net-salary-estimate-card"
+              >
                 <p
                   className={cn(
                     isKorean
@@ -696,14 +700,20 @@ export function SettingsTab({
                 >
                   {t("settings.netSalaryEstimate")}
                 </p>
-                <p className="mt-2 text-sm font-bold text-emerald-300">
+                <p
+                  className="mt-2 text-sm font-bold text-emerald-300"
+                  data-testid="net-salary-estimate-value"
+                >
                   {Math.round(estimatedNetSalary).toLocaleString()}
                   <span className="ml-1 text-[11px] text-slate-500">
                     {t("settings.krwPerMonth")}
                   </span>
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+              <div
+                className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-3"
+                data-testid="corporate-need-estimate-card"
+              >
                 <p
                   className={cn(
                     isKorean
@@ -713,7 +723,10 @@ export function SettingsTab({
                 >
                   {t("settings.corporateNeedEstimate")}
                 </p>
-                <p className="mt-2 text-sm font-bold text-cyan-300">
+                <p
+                  className="mt-2 text-sm font-bold text-cyan-300"
+                  data-testid="corporate-need-estimate-value"
+                >
                   {Math.round(corporateOperatingCost).toLocaleString()}
                   <span className="ml-1 text-[11px] text-slate-500">
                     {t("settings.krwPerMonth")}
@@ -724,6 +737,7 @@ export function SettingsTab({
                 label={t("settings.monthlyBookkeepingFee")}
                 isCurrency
                 tooltip={t("settings.monthlyBookkeepingFeeTooltip")}
+                testId="input-group-monthly-bookkeeping-fee"
                 value={
                   retireConfig.corp_params.monthly_bookkeeping_fee ??
                   retireConfig.corp_params.monthly_fixed_cost ??
@@ -743,6 +757,7 @@ export function SettingsTab({
                 label={t("settings.annualTaxAdjustmentFee")}
                 isCurrency
                 tooltip={t("settings.annualTaxAdjustmentFeeTooltip")}
+                testId="input-group-annual-tax-adjustment-fee"
                 value={
                   retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0
                 }
