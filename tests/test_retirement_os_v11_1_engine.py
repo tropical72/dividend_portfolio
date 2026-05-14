@@ -689,6 +689,47 @@ def test_august_corporate_mini_review_uses_bond_only_for_sgov_adjustment():
     assert month1["corp_growth_balance"] == 0.0
 
 
+def test_august_corporate_mini_review_does_not_sell_equity_when_bond_is_insufficient():
+    """8월 법인 미니점검은 Bond가 부족해도 주식/고인컴을 donor로 쓰면 안 된다."""
+    params = base_params()
+    params["simulation_start_month"] = 8
+    params["target_monthly_cashflow"] = 4000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.05,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.95,
+    }
+    params["planned_cashflows"] = [
+        {
+            "year": 2026,
+            "month": 8,
+            "amount": 1000000,
+            "type": "OUTFLOW",
+            "entity": "CORP",
+        }
+    ]
+    params["category_return_rates"] = {
+        "corp": {
+            "Bond Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["corp_sgov_balance"] == pytest.approx(4000000.0)
+    assert month1["corp_bond_balance"] == pytest.approx(1000000.0)
+    assert month1["corp_growth_balance"] == pytest.approx(95000000.0)
+
+
 def test_phase_two_reference_calendar_matches_document_buffer_months():
     """OS v11.1 대표 Phase 2 시나리오에서 문서의 구조적 SGOV 기준선이 재현되어야 한다."""
     params = base_params()
@@ -810,6 +851,46 @@ def test_shock_flag_freezes_may_inflation_even_when_assets_are_otherwise_healthy
     assert april_next["shock_flag"] is True
     assert may_next["inflation_action"] == "frozen"
     assert may_next["shock_flag"] is False
+
+
+def test_november_corporate_rebalance_keeps_bond_at_upper_band_boundary():
+    """11월 법인 반기점검에서 Bond가 정확히 24개월이면 자동 donor로 줄면 안 된다."""
+    params = base_params()
+    params["simulation_start_month"] = 11
+    params["target_monthly_cashflow"] = 1000000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.03,
+        "Bond Buffer": 0.24,
+        "High Income": 0.0,
+        "Dividend Growth": 0.73,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Bond Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Dividend Growth": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["pre_review_corp_bond_months"] == pytest.approx(24.0)
+    assert month1["corp_bond_months"] == pytest.approx(24.0)
+    assert month1["corp_sgov_months"] == pytest.approx(27.0)
 
 
 @pytest.mark.parametrize(
