@@ -124,6 +124,80 @@ def test_monthly_output_exposes_all_five_strategy_buckets_separately():
     assert month1["corp_growth_balance"] == 25000000
 
 
+def test_document_default_initial_bucket_setup_is_used_when_no_strategy_weights_exist():
+    """전략 비중이 비어 있으면 문서의 초기 세팅 규칙을 사용해야 한다."""
+    engine = make_engine()
+    corp_stats = {"strategy_weights": {}}
+    pension_stats = {"strategy_weights": {}}
+
+    corp_assets = engine._build_account_state(
+        initial_balance=800000000,
+        account_type="corp",
+        account_stats=corp_stats,
+        phase="Phase 1",
+        household_monthly_need=11500000,
+        pension_withdrawal_target=2500000,
+        national_pension_amount=0,
+        corp_salary=0,
+        employee_count=0,
+        loan_balance=0,
+        monthly_bookkeeping_fee=0,
+    )
+    pension_assets = engine._build_account_state(
+        initial_balance=200000000,
+        account_type="pension",
+        account_stats=pension_stats,
+        phase="Phase 1",
+        household_monthly_need=11500000,
+        pension_withdrawal_target=2500000,
+        national_pension_amount=0,
+        corp_salary=0,
+        employee_count=0,
+        loan_balance=0,
+        monthly_bookkeeping_fee=0,
+    )
+
+    assert corp_assets["SGOV Buffer"] == pytest.approx(345000000.0)
+    assert corp_assets["Bond Buffer"] == pytest.approx(207000000.0)
+    assert corp_assets["High Income"] == pytest.approx(0.0)
+    assert corp_assets["Dividend Growth"] == pytest.approx(210800000.0)
+    assert corp_assets["Growth Engine"] == pytest.approx(37200000.0)
+    assert pension_assets["SGOV Buffer"] == pytest.approx(60000000.0)
+    assert pension_assets["Bond Buffer"] == pytest.approx(45000000.0)
+    assert pension_assets["High Income"] == pytest.approx(0.0)
+    assert pension_assets["Dividend Growth"] == pytest.approx(71250000.0)
+    assert pension_assets["Growth Engine"] == pytest.approx(23750000.0)
+
+
+def test_explicit_legacy_weights_override_document_default_initial_bucket_setup():
+    """사용자가 저장한 legacy 비중이 있으면 문서 기본 초기세팅보다 그 비중을 우선해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 4
+    params["target_monthly_cashflow"] = 0
+    params["household_monthly_need"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {}
+    params["portfolio_stats"]["corp"]["weights"] = {
+        "Cash": 0.10,
+        "Fixed": 0.20,
+        "Dividend": 0.30,
+        "Growth": 0.40,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=1,
+    )
+
+    month1 = result["monthly_data"][0]
+
+    assert month1["corp_sgov_balance"] == pytest.approx(10000000.0)
+    assert month1["corp_bond_balance"] == pytest.approx(0.0)
+    assert month1["corp_high_income_balance"] == pytest.approx(20000000.0)
+    assert month1["corp_dividend_balance"] == pytest.approx(30000000.0)
+    assert month1["corp_growth_balance"] == pytest.approx(40000000.0)
+
+
 def test_corporate_may_rebalance_refills_sgov_even_without_same_month_deficit():
     """5월 정기점검은 적자 발생 여부와 무관하게 법인 SGOV를 목표 개월수로 복구해야 한다."""
     params = base_params()

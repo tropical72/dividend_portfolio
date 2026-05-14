@@ -15,6 +15,10 @@
   - 개인연금 개시 연령과 국민연금 수령 연령을 분리하여 마일스톤으로 관리한다.
 - **[REQ-RAMS-1.2] 계좌별 초기 자산 설정:**
   - 법인 계좌 및 **연금 계좌의 초기 자산 규모**를 사용자가 직접 설정한다. (코드 내 상수 제거)
+  - **[REQ-RAMS-1.2.1] 문서 기본 초기 버킷 배치:** 사용자가 계좌 총액만 제공하고 전략 카테고리별 초기 금액/비중을 명시하지 않은 문서 기본 모드에서는, 현재 Phase 기준으로 초기 버킷을 자동 배치해야 한다.
+    - 법인: `SGOV Buffer = 법인 부담 월지출 30개월`, `Bond Buffer = 법인 부담 월지출 18개월`, 나머지 주식 슬리브
+    - 개인연금: `SGOV Buffer = 월 2.5m 24개월`, `Bond Buffer = 월 2.5m 18개월`, 나머지 주식 슬리브
+  - **[REQ-RAMS-1.2.2] 초기 주식 슬리브 비율:** 문서 기본 초기 버킷 배치에서 남는 주식 슬리브는 법인 `Dividend Growth/Growth Engine`이 문서상 `VOO/QQQM = 85/15`를, 개인연금은 `75/25`를 재현하도록 배치되어야 한다. 사용자가 전략 카테고리 비중을 명시한 경우에는 자동 배치 대신 사용자 입력을 우선한다.
 - **[REQ-RAMS-1.3] 미래 확정 자금 이벤트 (Planned Cashflow):**
   - 향후 발생할 유입(예: 자산 매각) 및 지출(예: 대규모 비용) 계획을 복수개 등록하고 관리한다.
 - **[REQ-RAMS-1.4] 포트폴리오 매니저 통합 연동 (Portfolio Integration):**
@@ -73,11 +77,16 @@
   - **[REQ-RAMS-3.2.3] 가계 지급 우선 공식:** 매월 가계에 필요한 세후 현금은 `household_monthly_need`를 기준으로 계산하며, 이를 `개인연금`, `국민연금`, `법인 급여 실수령`, `주주대여금 상환`으로 채워야 한다.
   - **[REQ-RAMS-3.2.4] 법인 월 현금 생성 공식:** 법인이 매월 `SGOV Buffer`에서 마련해야 할 총 현금은 `법인 급여 총액 + 법인필요비용 + 주주대여금 상환액`이다. 이때 주주대여금 상환액은 세후 부족분 공식으로 계산된 값이어야 한다.
   - **[REQ-RAMS-3.2.5] 개인연금 월 인출:** 개인연금 계좌는 Phase 2부터 `monthly_withdrawal_target`을 `SGOV Buffer`에서 인출한다. Stress/Crash20 BOOST가 활성화되면 추가 인출액을 같은 계좌에서 한시적으로 더 인출할 수 있다.
+  - **[REQ-RAMS-3.2.5a] BOOST 발동 조건:** BOOST는 `Shock Flag = ON` 또는 5월 정기점검 결과 `Stress`인 상태에서, 법인 계정이 주식 저가매도로 밀릴 위험이 클 때만 검토한다.
+  - **[REQ-RAMS-3.2.5b] BOOST ladder 및 원복:** BOOST 추가 인출액은 주식 슬리브 drawdown 기준으로 `15~20% = +1.0m`, `20~30% = +2.0m`, `30% 초과 = +3.0m`을 사용하며, 발동 후 `6개월`만 유지되고 이후 자동으로 0으로 원복되어야 한다.
   - **[REQ-RAMS-3.2.6] 법인 5월 정기점검:** 5월에는 승인된 월 법인 현금 생성액을 기준으로 법인 `SGOV Buffer`를 30개월, `Bond Buffer`를 floor 12개월 / target 18개월 / upper 24개월 구조로 재구성한다.
+  - **[REQ-RAMS-3.2.6a] 법인 8월 미니점검:** 8월에는 법인세 중간예납 등 확정 현금이벤트를 반영한 뒤 필요한 경우 `SGOV Buffer`만 조정할 수 있다. 이 달에는 `Bond Buffer`와 주식성 카테고리의 비중 재정렬이나 강제 리밸런싱을 수행하면 안 된다.
   - **[REQ-RAMS-3.2.7] 법인 11월 반기정비:** 11월에는 법인 `SGOV Buffer`를 27개월 기준으로 복구하고 `Bond Buffer` 상태를 재점검한다. Shock Flag가 켜져 있으면 `Bond Buffer`와 `SGOV Buffer`를 주식성 카테고리보다 우선한다.
   - **[REQ-RAMS-3.2.8] 개인연금 5월 정기점검:** 5월에는 개인연금 `SGOV Buffer`를 24개월, `Bond Buffer`를 floor 12개월 / target 18개월 / upper 24개월 구조로 재구성한다.
   - **[REQ-RAMS-3.2.9] 개인연금 중간 점검:** 개인연금 `SGOV Buffer`가 12개월 floor 미만으로 내려가면, 우선 `Bond Buffer`에서 `SGOV Buffer`를 보충한다. 그래도 부족하면 다음 5월 정기점검에서 전면 조정한다.
   - **[REQ-RAMS-3.2.10] donor 규칙 일반화:** 정기점검 시 `SGOV Buffer`와 `Bond Buffer` 보강은 문서의 donor 우선순위를 따르되, `High Income`, `Dividend Growth`, `Growth Engine`은 서로 다른 버킷으로 독립 유지해야 한다.
+  - **[REQ-RAMS-3.2.10a] 법인 donor 순서:** 법인 정기점검에서 `SGOV Buffer`/`Bond Buffer` 보강 재원이 필요할 때는 `전술 슬리브 -> 목표 대비 오버웨이트 자산 -> Bond target 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다. `High Income` 카테고리를 별도로 쓰는 사용자 포트폴리오는 이를 전술 슬리브/우선 donor로 취급하되, 표준 v11.1 4자산 모드에서는 비중 0이어야 한다.
+  - **[REQ-RAMS-3.2.10b] 개인연금 donor 순서:** 개인연금 정기점검에서 `SGOV Buffer` 보강이 필요할 때는 `Bond target 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다.
   - **[REQ-RAMS-3.2.11] 카테고리 혼합 금지:** `Bond Buffer`와 `High Income`, `Dividend Growth`, `Growth Engine`은 계산 과정에서 동일 자산군으로 합산하거나 동일 성장률/하한선 규칙을 공유해서는 안 된다.
   - **[REQ-RAMS-3.2.12] 법인 실현소득 과세 기준:** 법인세 과세표준은 월별 배당/이자/인컴 등 `실현소득`만 누적하여 계산해야 하며, `PA`로 반영되는 미실현 자산가격 상승분은 법인세 과세표준에 포함하면 안 된다.
   - **[REQ-RAMS-3.2.13] 8월 중간예납:** 법인은 매년 8월에 `직전 연도 확정 법인세의 50%`를 중간예납으로 납부해야 한다. 이 금액은 해당 연도의 법인 `SGOV Buffer` 현금유출로 반영되어야 한다.

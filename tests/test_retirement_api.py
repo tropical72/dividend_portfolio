@@ -313,6 +313,94 @@ def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     assert month1["corp_balance"] > 0
 
 
+def test_run_retirement_simulation_uses_document_default_initial_bucket_setup_when_stats_are_empty(
+    tmp_path, monkeypatch
+):
+    """API 경로에서도 전략 비중이 비어 있으면 문서 기본 초기 세팅이 적용되어야 한다."""
+    local_backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1980,
+                "birth_month": 1,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 800000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "monthly_fixed_cost": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 200000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 2500000,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 11500000,
+                "household_monthly_need": 11500000,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+        },
+    )
+    local_backend.get_active_master_portfolio = lambda: None
+    local_backend.get_portfolio_by_id = lambda _portfolio_id: None
+    local_backend.portfolios = []
+    local_backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+    local_backend.get_appreciation_rates_for_scenario = lambda *_args, **_kwargs: {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.0,
+    }
+    local_backend.get_portfolio_stats_by_id = lambda _portfolio_id, *_args, **_kwargs: {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "weights": {},
+        "strategy_weights": {},
+        "category_return_rates": {},
+    }
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    month1 = payload["data"]["monthly_data"][0]
+    assert month1["corp_sgov_balance"] == pytest.approx(333500000.0)
+    assert month1["corp_bond_balance"] == pytest.approx(207000000.0)
+    assert month1["corp_high_income_balance"] == pytest.approx(0.0)
+    assert month1["corp_dividend_balance"] == pytest.approx(210800000.0)
+    assert month1["corp_growth_balance"] == pytest.approx(37200000.0)
+    assert month1["pension_sgov_balance"] == pytest.approx(60000000.0)
+    assert month1["pension_bond_balance"] == pytest.approx(45000000.0)
+    assert month1["pension_high_income_balance"] == pytest.approx(0.0)
+    assert month1["pension_dividend_balance"] == pytest.approx(71250000.0)
+    assert month1["pension_growth_balance"] == pytest.approx(23750000.0)
+
+
 def test_run_retirement_simulation_uses_dynamic_strategy_rule_month_caps(tmp_path, monkeypatch):
     """strategy_rules의 버퍼 개월수 설정이 실제 5월 리밸런싱 결과에 반영되어야 한다."""
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)

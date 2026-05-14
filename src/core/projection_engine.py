@@ -35,24 +35,12 @@ class ProjectionEngine:
     def _execute_loop(
         self, initial_assets: Dict[str, float], params: Dict[str, Any], months: int
     ) -> Dict[str, Any]:
-        stats = params.get("portfolio_stats", {})
-        corp_stats = stats.get("corp", {})
-        pension_stats = stats.get("pension", {})
-
-        corp_assets = self._build_account_state(
-            initial_balance=float(initial_assets.get("corp", 0.0)),
-            account_type="corp",
-            account_stats=corp_stats,
-        )
-        pension_assets = self._build_account_state(
-            initial_balance=float(initial_assets.get("pension", 0.0)),
-            account_type="pension",
-            account_stats=pension_stats,
-        )
-
         def p(key: str, default: Any) -> Any:
             return params.get(key, default)
 
+        stats = params.get("portfolio_stats", {})
+        corp_stats = stats.get("corp", {})
+        pension_stats = stats.get("pension", {})
         birth_year = int(p("birth_year", 1972))
         birth_month = int(p("birth_month", 8))
         private_pension_start_age = int(p("private_pension_start_age", 55))
@@ -91,6 +79,37 @@ class ProjectionEngine:
         planned_cashflows = params.get("planned_cashflows", [])
         start_year = int(p("simulation_start_year", 2026))
         start_month = int(p("simulation_start_month", 1))
+        start_age = ((start_year - birth_year) * 12 + (start_month - birth_month)) // 12
+        start_phase = self._resolve_phase(
+            start_age, private_pension_start_age, national_pension_start_age
+        )
+
+        corp_assets = self._build_account_state(
+            initial_balance=float(initial_assets.get("corp", 0.0)),
+            account_type="corp",
+            account_stats=corp_stats,
+            phase=start_phase,
+            household_monthly_need=household_monthly_need,
+            pension_withdrawal_target=pension_withdrawal_target,
+            national_pension_amount=national_pension_amount,
+            corp_salary=corp_salary,
+            employee_count=employee_count,
+            loan_balance=loan_balance,
+            monthly_bookkeeping_fee=monthly_bookkeeping_fee,
+        )
+        pension_assets = self._build_account_state(
+            initial_balance=float(initial_assets.get("pension", 0.0)),
+            account_type="pension",
+            account_stats=pension_stats,
+            phase=start_phase,
+            household_monthly_need=household_monthly_need,
+            pension_withdrawal_target=pension_withdrawal_target,
+            national_pension_amount=national_pension_amount,
+            corp_salary=corp_salary,
+            employee_count=employee_count,
+            loan_balance=loan_balance,
+            monthly_bookkeeping_fee=monthly_bookkeeping_fee,
+        )
 
         current_stress = False
         shock_flag = False
@@ -378,46 +397,134 @@ class ProjectionEngine:
         }
 
     def _build_account_state(
-        self, initial_balance: float, account_type: str, account_stats: Dict[str, Any]
+        self,
+        initial_balance: float,
+        account_type: str,
+        account_stats: Dict[str, Any],
+        *,
+        phase: str,
+        household_monthly_need: float,
+        pension_withdrawal_target: float,
+        national_pension_amount: float,
+        corp_salary: float,
+        employee_count: int,
+        loan_balance: float,
+        monthly_bookkeeping_fee: float,
     ) -> Dict[str, float]:
-        strategy_weights = account_stats.get("strategy_weights") or {}
+        strategy_weights = dict(account_stats.get("strategy_weights") or {})
         legacy_weights = account_stats.get("weights") or {}
+        if self._weight_total(strategy_weights) > 0:
+            normalized_weights = self._normalized_category_weights(strategy_weights)
+            account_stats["strategy_weights"] = normalized_weights
+            return self._state_from_weights(initial_balance, normalized_weights)
 
-        if not strategy_weights:
-            strategy_weights = {
-                "SGOV Buffer": float(legacy_weights.get("Cash", 0.0)),
-                "Bond Buffer": (
-                    float(legacy_weights.get("Fixed", 0.0)) if account_type == "pension" else 0.0
-                ),
-                "High Income": (
-                    float(legacy_weights.get("Fixed", 0.0)) if account_type == "corp" else 0.0
-                ),
-                "Dividend Growth": float(legacy_weights.get("Dividend", 0.0)),
-                "Growth Engine": float(legacy_weights.get("Growth", 0.0)),
-            }
+        mapped_legacy_weights = {
+            "SGOV Buffer": float(legacy_weights.get("Cash", 0.0)),
+            "Bond Buffer": (
+                float(legacy_weights.get("Fixed", 0.0)) if account_type == "pension" else 0.0
+            ),
+            "High Income": (
+                float(legacy_weights.get("Fixed", 0.0)) if account_type == "corp" else 0.0
+            ),
+            "Dividend Growth": float(legacy_weights.get("Dividend", 0.0)),
+            "Growth Engine": float(legacy_weights.get("Growth", 0.0)),
+        }
+        if self._weight_total(mapped_legacy_weights) > 0:
+            normalized_weights = self._normalized_category_weights(mapped_legacy_weights)
+            account_stats["strategy_weights"] = normalized_weights
+            return self._state_from_weights(initial_balance, normalized_weights)
 
-        if sum(float(v) for v in strategy_weights.values()) <= 0:
-            strategy_weights = (
-                {
-                    "SGOV Buffer": 0.30,
-                    "Bond Buffer": 0.00,
-                    "High Income": 0.00,
-                    "Dividend Growth": 0.00,
-                    "Growth Engine": 0.70,
-                }
-                if account_type == "corp"
-                else {
-                    "SGOV Buffer": 0.30,
-                    "Bond Buffer": 0.00,
-                    "High Income": 0.00,
-                    "Dividend Growth": 0.30,
-                    "Growth Engine": 0.40,
-                }
-            )
+        document_default_state = self._document_default_account_state(
+            initial_balance=initial_balance,
+            account_type=account_type,
+            phase=phase,
+            household_monthly_need=household_monthly_need,
+            pension_withdrawal_target=pension_withdrawal_target,
+            national_pension_amount=national_pension_amount,
+            corp_salary=corp_salary,
+            employee_count=employee_count,
+            loan_balance=loan_balance,
+            monthly_bookkeeping_fee=monthly_bookkeeping_fee,
+        )
+        account_stats["strategy_weights"] = self._weights_from_state(document_default_state)
+        return document_default_state
+
+    def _weight_total(self, weights: Dict[str, Any]) -> float:
+        return sum(float(weights.get(category, 0.0)) for category in self.CATEGORY_ORDER)
+
+    def _normalized_category_weights(self, strategy_weights: Dict[str, Any]) -> Dict[str, float]:
+        total = self._weight_total(strategy_weights)
+        if total <= 0:
+            return {}
+        return {
+            category: float(strategy_weights.get(category, 0.0)) / total
+            for category in self.CATEGORY_ORDER
+            if float(strategy_weights.get(category, 0.0)) > 0
+        }
+
+    def _state_from_weights(
+        self, initial_balance: float, strategy_weights: Dict[str, Any]
+    ) -> Dict[str, float]:
+        total = self._weight_total(strategy_weights)
+        if total <= 0:
+            return {category: 0.0 for category in self.CATEGORY_ORDER}
+        return {
+            category: initial_balance * (float(strategy_weights.get(category, 0.0)) / total)
+            for category in self.CATEGORY_ORDER
+        }
+
+    def _weights_from_state(self, account_state: Dict[str, float]) -> Dict[str, float]:
+        total = sum(float(account_state.get(category, 0.0)) for category in self.CATEGORY_ORDER)
+        if total <= 0:
+            return {}
+        return {
+            category: float(account_state.get(category, 0.0)) / total
+            for category in self.CATEGORY_ORDER
+            if float(account_state.get(category, 0.0)) > 0
+        }
+
+    def _document_default_account_state(
+        self,
+        *,
+        initial_balance: float,
+        account_type: str,
+        phase: str,
+        household_monthly_need: float,
+        pension_withdrawal_target: float,
+        national_pension_amount: float,
+        corp_salary: float,
+        employee_count: int,
+        loan_balance: float,
+        monthly_bookkeeping_fee: float,
+    ) -> Dict[str, float]:
+        if initial_balance <= 0:
+            return {category: 0.0 for category in self.CATEGORY_ORDER}
+
+        if account_type == "corp":
+            pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
+            national_income = national_pension_amount if phase == "Phase 3" else 0.0
+            monthly_need = max(0.0, household_monthly_need - pension_income - national_income)
+            stock_dividend_ratio = 0.85
+        else:
+            monthly_need = pension_withdrawal_target
+            stock_dividend_ratio = 0.75
+
+        sgov_target = max(0.0, monthly_need * (30.0 if account_type == "corp" else 24.0))
+        bond_target = max(0.0, monthly_need * 18.0)
+
+        sgov_balance = min(initial_balance, sgov_target)
+        remaining = max(0.0, initial_balance - sgov_balance)
+        bond_balance = min(remaining, bond_target)
+        remaining = max(0.0, remaining - bond_balance)
+        dividend_balance = remaining * stock_dividend_ratio
+        growth_balance = remaining - dividend_balance
 
         return {
-            category: initial_balance * float(strategy_weights.get(category, 0.0))
-            for category in self.CATEGORY_ORDER
+            "SGOV Buffer": sgov_balance,
+            "Bond Buffer": bond_balance,
+            "High Income": 0.0,
+            "Dividend Growth": dividend_balance,
+            "Growth Engine": growth_balance,
         }
 
     def _resolve_phase(

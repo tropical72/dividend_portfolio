@@ -14,6 +14,9 @@
   - 입력된 생년월일과 은퇴 시점이 엔진의 개월 수 계산에 정확히 반영되는지 확인.
 - **[TEST-RAMS-1.2] 초기 자산 설정:**
   - `retirement_config.json`의 초기 자산 값이 시뮬레이션 0개월 차 잔액과 일치하는지 확인.
+- **[TEST-RAMS-1.2.1] 문서 기본 초기 버킷 배치 검증 [NEW]:**
+  - 전략 카테고리별 초기 비중이 비어 있는 문서 기본 모드에서, 현재 Phase 기준으로 법인 `SGOV 30개월 / Bond 18개월`, 개인연금 `SGOV 24개월 / Bond 18개월` 초기 버킷이 계산되는지 확인.
+  - 사용자가 전략 카테고리 비중을 명시한 경우에는 문서 기본 자동 배치 대신 사용자 입력 비중이 그대로 우선되는지 확인.
 - **[TEST-RAMS-1.3] 미래 자금 이벤트:**
   - 특정 월(예: 60개월 후)에 설정된 지출 이벤트가 발생하여 해당 월의 잔액이 차감되는지 확인.
 - **[TEST-RAMS-1.4] 포트폴리오 통합 연동 (Portfolio Integration):**
@@ -61,6 +64,7 @@
 - **[TEST-SUR-02] 5월/11월 정기점검 게이트 검증 [NEW]:**
   - 법인 `SGOV 30개월` 복구가 5월에만, `SGOV 27개월` 복구가 11월에만 발생하는지 확인.
   - 개인연금 정기 리밸런싱은 5월에만 실행되고 11월에는 실행되지 않는지 확인.
+  - 8월 법인 미니점검은 확정 현금이벤트 반영 후 `SGOV Buffer`만 조정하고 `Bond Buffer`/주식성 카테고리 리밸런싱은 수행하지 않는지 확인.
 - **[TEST-SUR-03] Phase별 법인 부담 월지출 검증 [NEW]:**
   - Phase 1/2/3에서 가계 지급 부족분이 `가계 세후 필요금액 - 개인연금 - 국민연금 - 급여 실수령액` 공식대로 계산되는지 확인.
   - 법인 월 현금 생성액이 `급여 총액 + 법인필요비용 + 주주대여금 상환액`으로 연결되는지 확인.
@@ -88,13 +92,18 @@
   - 개인연금 `SGOV 24 -> 11월 말 18 -> 다음 5월 복구 24` 구조가 재현되는지 확인.
 - **[TEST-SUR-12] Shock / Inflation Freeze / BOOST Ladder 대표 시나리오 검증 [NEW]:**
   - 6월 Crash20 발생 후 다음 해 5월까지 `Shock Flag`가 유지되고, 해당 5월에는 인플레이션 승인이 동결되는지 확인.
+  - `BOOST`가 발동하려면 `Shock Flag = ON` 또는 5월 Stress가 전제되어야 하며, 법인 주식 저가매도 회피 목적의 보조 인출로만 쓰이는지 확인.
   - `BOOST`가 Shock drawdown 구간에 따라 `+2m`, `+3m`으로 발동하는지 확인.
   - `BOOST` ladder의 첫 구간(15~20%)이 `+1m`으로 계산되는지 확인.
+  - `BOOST`가 발동 후 정확히 6개월 유지되고 이후 자동 원복되는지 확인.
 - **[TEST-SUR-13] Pre/Post Review 관측값 검증 [NEW]:**
   - 월별 기본 개월수 필드가 `월말(post-review)` 기준인지 확인.
   - `11월 직전 24개월`, `다음 5월 직전 21개월` 같은 문서 기준선이 `pre_review_*` 필드로 별도 노출되는지 확인.
 - **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
   - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
+- **[TEST-SUR-15] donor 우선순위 재현 검증 [NEW]:**
+  - 법인 5월/11월 점검에서 `Bond target 초과분`이 `Dividend Growth/Growth Engine`보다 먼저 donor로 사용되고, `Bond floor 12개월` 아래로는 자동 침범하지 않는지 확인.
+  - 개인연금 5월 점검에서 `Bond target 초과분 -> Bond floor 12개월까지 -> Dividend Growth -> Growth Engine` 순서가 재현되는지 확인.
 
 ### [Structure 4] 설정 사용자화 및 UI 검증 (REQ-RAMS-8.1 ~ 8.5)
 
