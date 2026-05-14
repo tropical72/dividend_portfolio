@@ -85,8 +85,8 @@
   - **[REQ-RAMS-3.2.8] 개인연금 5월 정기점검:** 5월에는 개인연금 `SGOV Buffer`를 24개월, `Bond Buffer`를 floor 12개월 / target 18개월 / upper 24개월 구조로 재구성한다.
   - **[REQ-RAMS-3.2.9] 개인연금 중간 점검:** 개인연금 `SGOV Buffer`가 12개월 floor 미만으로 내려가면, 우선 `Bond Buffer`에서 `SGOV Buffer`를 보충한다. 그래도 부족하면 다음 5월 정기점검에서 전면 조정한다.
   - **[REQ-RAMS-3.2.10] donor 규칙 일반화:** 정기점검 시 `SGOV Buffer`와 `Bond Buffer` 보강은 문서의 donor 우선순위를 따르되, `High Income`, `Dividend Growth`, `Growth Engine`은 서로 다른 버킷으로 독립 유지해야 한다.
-  - **[REQ-RAMS-3.2.10a] 법인 donor 순서:** 법인 정기점검에서 `SGOV Buffer`/`Bond Buffer` 보강 재원이 필요할 때는 `전술 슬리브 -> 목표 대비 오버웨이트 자산 -> Bond target 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다. `High Income` 카테고리를 별도로 쓰는 사용자 포트폴리오는 이를 전술 슬리브/우선 donor로 취급하되, 표준 v11.1 4자산 모드에서는 비중 0이어야 한다.
-  - **[REQ-RAMS-3.2.10b] 개인연금 donor 순서:** 개인연금 정기점검에서 `SGOV Buffer` 보강이 필요할 때는 `Bond target 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다.
+  - **[REQ-RAMS-3.2.10a] 법인 donor 순서:** 법인 정기점검에서 `SGOV Buffer`/`Bond Buffer` 보강 재원이 필요할 때는 `전술 슬리브 -> 목표 대비 오버웨이트 자산 -> Bond upper band(24개월) 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다. `High Income` 카테고리를 별도로 쓰는 사용자 포트폴리오는 이를 전술 슬리브/우선 donor로 취급하되, 표준 v11.1 4자산 모드에서는 비중 0이어야 한다. 원문 내 `donor 규칙`과 `5월/11월 세부 운용 규칙`이 충돌할 때는, 더 구체적인 세부 운용 규칙인 `18~24개월 유지 / 24개월 초과분 활용 가능`을 우선 해석한다.
+  - **[REQ-RAMS-3.2.10b] 개인연금 donor 순서:** 개인연금 정기점검에서 `SGOV Buffer` 보강이 필요할 때는 `Bond upper band(24개월) 초과분 -> 필요 시 Bond floor 12개월까지 -> Dividend Growth(VOO 역할) -> Growth Engine(QQQM 역할)` 순서를 따라야 한다. 개인연금도 동일하게 `18~24개월은 정상 범위 유지, 24개월 초과분만 자동 donor 후보`로 해석한다.
   - **[REQ-RAMS-3.2.11] 카테고리 혼합 금지:** `Bond Buffer`와 `High Income`, `Dividend Growth`, `Growth Engine`은 계산 과정에서 동일 자산군으로 합산하거나 동일 성장률/하한선 규칙을 공유해서는 안 된다.
   - **[REQ-RAMS-3.2.12] 법인 실현소득 과세 기준:** 법인세 과세표준은 월별 배당/이자/인컴 등 `실현소득`만 누적하여 계산해야 하며, `PA`로 반영되는 미실현 자산가격 상승분은 법인세 과세표준에 포함하면 안 된다.
   - **[REQ-RAMS-3.2.13] 8월 중간예납:** 법인은 매년 8월에 `직전 연도 확정 법인세의 50%`를 중간예납으로 납부해야 한다. 이 금액은 해당 연도의 법인 `SGOV Buffer` 현금유출로 반영되어야 한다.

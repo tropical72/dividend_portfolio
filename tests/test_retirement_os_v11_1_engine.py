@@ -872,3 +872,55 @@ def test_boost_amount_first_ladder_is_one_million():
     engine = make_engine()
 
     assert engine._boost_amount_for_drawdown(85.0, 100.0) == 1000000.0
+
+
+def test_stress_without_crash20_still_triggers_first_boost_ladder():
+    """5월 Stress만으로도 15~20% drawdown이면 BOOST +1m이 발동해야 한다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["simulation_start_month"] = 5
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["national_pension_start_age"] = 80
+    params["target_monthly_cashflow"] = 10000000
+    params["pension_withdrawal_target"] = 2500000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+        "pension": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-05": {"pa": -1.8, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 50000000},
+        params=params,
+        months=2,
+    )
+
+    may = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 5)
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+
+    assert may["stress"] is True
+    assert may["crash20_triggered"] is False
+    assert may["boost_amount"] == 1000000.0
+    assert june["pension_draw"] == pytest.approx(3500000.0)

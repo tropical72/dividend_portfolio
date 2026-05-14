@@ -102,7 +102,8 @@
 - **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
   - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
 - **[TEST-SUR-15] donor 우선순위 재현 검증 [NEW]:**
-  - 법인 5월/11월 점검에서 `Bond target 초과분`이 `Dividend Growth/Growth Engine`보다 먼저 donor로 사용되고, `Bond floor 12개월` 아래로는 자동 침범하지 않는지 확인.
+  - 법인 5월/11월 점검에서 `Bond upper band(24개월) 초과분`이 `Dividend Growth/Growth Engine`보다 먼저 donor로 사용되고, `18~24개월` 구간은 자동 donor로 소진되지 않으며, `Bond floor 12개월` 아래로는 자동 침범하지 않는지 확인.
+  - 개인연금도 동일하게 `18~24개월 유지 / 24개월 초과분만 donor 후보` 해석이 재현되는지 확인.
   - 개인연금 5월 점검에서 `Bond target 초과분 -> Bond floor 12개월까지 -> Dividend Growth -> Growth Engine` 순서가 재현되는지 확인.
 
 ### [Structure 4] 설정 사용자화 및 UI 검증 (REQ-RAMS-8.1 ~ 8.5)
