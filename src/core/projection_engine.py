@@ -595,8 +595,7 @@ class ProjectionEngine:
             category_rates = self._category_rate_spec(
                 account_key, category, account_assets, account_stats, params, sim_year, sim_month
             )
-            monthly_dy = float(category_rates["dy"]) / 12.0
-            monthly_pa = float(category_rates["pa"]) / 12.0
+            monthly_dy, monthly_pa = self._monthly_return_components(category_rates)
 
             if category == "SGOV Buffer":
                 income = balance * monthly_dy
@@ -609,6 +608,19 @@ class ProjectionEngine:
             account_assets["SGOV Buffer"] += income_to_sgov
             realized_income += income_to_sgov
         return realized_income
+
+    def _monthly_return_components(self, category_rates: Dict[str, float]) -> tuple[float, float]:
+        annual_dy = float(category_rates["dy"])
+        annual_pa = float(category_rates["pa"])
+        monthly_dy = annual_dy / 12.0
+
+        # Prefer compound monthly PA conversion for long-horizon accuracy. Scenario shocks can
+        # intentionally pass <= -100% annualized PA; keep those stress inputs stable.
+        if annual_pa <= -1.0:
+            monthly_pa = annual_pa / 12.0
+        else:
+            monthly_pa = (1.0 + annual_pa) ** (1.0 / 12.0) - 1.0
+        return monthly_dy, monthly_pa
 
     def _category_rate_spec(
         self,

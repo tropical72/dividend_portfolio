@@ -585,7 +585,12 @@ def test_corporate_rebalance_uses_overweight_asset_before_fixed_donor_order():
     assert month1["corp_sgov_months"] == pytest.approx(30.0)
     assert month1["corp_high_income_balance"] == pytest.approx(0.0)
     assert month1["corp_dividend_balance"] == pytest.approx(40000000.0)
-    assert month1["corp_growth_balance"] == pytest.approx(39000000.0)
+    expected_growth_after_compound_return_and_sgov_refill = (
+        30000000 * ((1.0 + 4.0) ** (1.0 / 12.0)) - 1000000
+    )
+    assert month1["corp_growth_balance"] == pytest.approx(
+        expected_growth_after_compound_return_and_sgov_refill
+    )
 
 
 def test_may_rebalance_keeps_pension_bond_buffer_when_within_upper_band():

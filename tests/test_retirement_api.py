@@ -112,9 +112,13 @@ def test_update_retirement_config():
     assert response.status_code == 200
 
 
-def test_update_retirement_config_strategy_rules():
+def test_update_retirement_config_strategy_rules(tmp_path, monkeypatch):
     """전략 규칙이 API를 통해 저장되고 기본값과 병합되는지 검증한다."""
-    response = client.post(
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
         "/api/retirement/config",
         json={
             "strategy_rules": {
@@ -129,7 +133,7 @@ def test_update_retirement_config_strategy_rules():
     assert strategy_rules["rebalance_month"] == 4
     assert strategy_rules["rebalance_week"] == 2
     assert strategy_rules["corporate"]["sgov_target_months"] == 40
-    assert strategy_rules["corporate"]["sgov_warn_months"] == 30
+    assert strategy_rules["corporate"]["sgov_warn_months"] == 27
     assert strategy_rules["corporate"]["bond_floor_months"] == 12
     assert strategy_rules["pension"]["sgov_target_months"] == 24
 
@@ -1769,7 +1773,7 @@ def test_retirement_simulation_uses_category_return_rates_from_saved_portfolio(
 
     month1 = payload["data"]["monthly_data"][0]
     assert month1["corp_bond_balance"] == pytest.approx(59990.0)
-    assert month1["corp_growth_balance"] == pytest.approx(60375.0)
+    assert month1["corp_growth_balance"] == pytest.approx(60362.6951414575)
     assert month1["corp_sgov_balance"] == pytest.approx(275.0)
 
 

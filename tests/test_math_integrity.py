@@ -1,3 +1,5 @@
+import pytest
+
 from src.core.projection_engine import ProjectionEngine
 from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
@@ -69,6 +71,24 @@ def test_simulation_math_integrity():
     assert len(data) > 0
     for i in range(1, len(data)):
         assert data[i]["total_net_worth"] >= data[i - 1]["total_net_worth"]
+
+
+def test_annual_price_appreciation_uses_compound_monthly_conversion():
+    """연 PA 12%는 12개월 뒤 12.68%가 아니라 정확히 12% 누적 가격상승이어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.12, "tr": 0.12}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+
+    result = make_engine()._execute_loop(
+        {"corp": 100000000, "pension": 0},
+        params,
+        months=12,
+    )
+
+    assert result["monthly_data"][-1]["total_net_worth"] == pytest.approx(112000000)
 
 
 def test_higher_growth_profile_finishes_with_higher_net_worth():
