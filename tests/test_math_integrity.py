@@ -91,6 +91,70 @@ def test_annual_price_appreciation_uses_compound_monthly_conversion():
     assert result["monthly_data"][-1]["total_net_worth"] == pytest.approx(112000000)
 
 
+def test_distribution_run_rate_is_not_repriced_by_price_appreciation():
+    """가격 하락 PA만으로 다음 달 배당금 절대액이 자동 삭감되면 안 된다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": -0.50, "tr": -0.44}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+
+    result = make_engine()._execute_loop(
+        {"corp": 100000000, "pension": 0},
+        params,
+        months=2,
+    )
+
+    assert result["monthly_data"][0]["corp_realized_income"] == pytest.approx(500000)
+    assert result["monthly_data"][1]["corp_realized_income"] == pytest.approx(500000)
+
+
+def test_distribution_run_rate_compounds_with_growth_rule():
+    """분배금 run-rate 성장률은 가격 평가액과 별도로 복리 월 성장한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["distribution_rules"] = {
+        "corp": {"Growth Engine": {"growth_rate": 0.12}},
+    }
+
+    result = make_engine()._execute_loop(
+        {"corp": 120000000, "pension": 0},
+        params,
+        months=13,
+    )
+
+    assert result["monthly_data"][0]["corp_realized_income"] == pytest.approx(600000)
+    assert result["monthly_data"][12]["corp_realized_income"] == pytest.approx(672000)
+
+
+def test_distribution_run_rate_is_cut_after_crash20_when_configured():
+    """Crash20 발생 시 설정된 삭감률만큼 다음 달 분배금 run-rate가 줄어든다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": -3.0, "tr": -2.94}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["distribution_rules"] = {
+        "corp": {"Growth Engine": {"stress_cut_rate": 0.40}},
+    }
+
+    result = make_engine()._execute_loop(
+        {"corp": 100000000, "pension": 0},
+        params,
+        months=2,
+    )
+
+    assert result["monthly_data"][0]["crash20_triggered"] is True
+    assert result["monthly_data"][0]["corp_realized_income"] == pytest.approx(500000)
+    assert result["monthly_data"][1]["corp_realized_income"] == pytest.approx(300000)
+
+
 def test_higher_growth_profile_finishes_with_higher_net_worth():
     """같은 초기 조건이면 더 높은 Growth Engine PA가 더 큰 최종 순자산을 만들어야 한다."""
     conservative = base_params()

@@ -123,6 +123,12 @@ class ProjectionEngine:
             loan_balance=loan_balance,
             monthly_bookkeeping_fee=monthly_bookkeeping_fee,
         )
+        corp_distribution_run_rates = self._build_distribution_run_rates(
+            "corp", corp_assets, corp_stats, params, start_year, start_month
+        )
+        pension_distribution_run_rates = self._build_distribution_run_rates(
+            "pension", pension_assets, pension_stats, params, start_year, start_month
+        )
 
         current_stress = False
         shock_flag = False
@@ -149,10 +155,22 @@ class ProjectionEngine:
                 corp_assets, pension_assets, planned_cashflows, sim_year, sim_month
             )
             corp_realized_income = self._apply_monthly_returns(
-                "corp", corp_assets, corp_stats, params, sim_year, sim_month
+                "corp",
+                corp_assets,
+                corp_distribution_run_rates,
+                corp_stats,
+                params,
+                sim_year,
+                sim_month,
             )
             self._apply_monthly_returns(
-                "pension", pension_assets, pension_stats, params, sim_year, sim_month
+                "pension",
+                pension_assets,
+                pension_distribution_run_rates,
+                pension_stats,
+                params,
+                sim_year,
+                sim_month,
             )
             corp_realized_income_by_year[sim_year] = (
                 corp_realized_income_by_year.get(sim_year, 0.0) + corp_realized_income
@@ -326,11 +344,19 @@ class ProjectionEngine:
             if crash20_triggered:
                 boost_amount = self._boost_amount_for_drawdown(equity_value, boost_reference_base)
                 boost_months_remaining = 6 if boost_amount > 0 else 0
+                self._apply_distribution_stress_cut(corp_distribution_run_rates, params, "corp")
+                self._apply_distribution_stress_cut(
+                    pension_distribution_run_rates, params, "pension"
+                )
             elif sim_month == main_review_month and current_stress:
                 boost_amount = self._boost_amount_for_drawdown(
                     pre_review_equity_value, boost_reference_base
                 )
                 boost_months_remaining = 6 if boost_amount > 0 else 0
+                self._apply_distribution_stress_cut(corp_distribution_run_rates, params, "corp")
+                self._apply_distribution_stress_cut(
+                    pension_distribution_run_rates, params, "pension"
+                )
 
             corp_sgov_months = self._months_cover(corp_assets["SGOV Buffer"], corp_monthly_need)
             corp_bond_months = self._months_cover(corp_assets["Bond Buffer"], corp_monthly_need)
@@ -581,6 +607,7 @@ class ProjectionEngine:
         self,
         account_key: str,
         account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
         account_stats: Dict[str, Any],
         params: Dict[str, Any],
         sim_year: int,
@@ -603,11 +630,89 @@ class ProjectionEngine:
                 realized_income += income
                 continue
 
-            income_to_sgov = balance * monthly_dy
+            income_to_sgov = distribution_run_rates.get(category, 0.0) / 12.0
             account_assets[category] = balance * (1 + monthly_pa)
             account_assets["SGOV Buffer"] += income_to_sgov
             realized_income += income_to_sgov
+            self._grow_distribution_run_rate(distribution_run_rates, params, account_key, category)
         return realized_income
+
+    def _build_distribution_run_rates(
+        self,
+        account_key: str,
+        account_assets: Dict[str, float],
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
+    ) -> Dict[str, float]:
+        explicit_run_rates = params.get("distribution_run_rates", {}).get(account_key, {})
+        run_rates = {category: 0.0 for category in self.CATEGORY_ORDER}
+        for category in self.CATEGORY_ORDER:
+            if category == "SGOV Buffer":
+                continue
+            if category in explicit_run_rates:
+                run_rates[category] = max(0.0, float(explicit_run_rates[category]))
+                continue
+            balance = max(0.0, float(account_assets.get(category, 0.0)))
+            if balance <= 0:
+                continue
+            category_rates = self._category_rate_spec(
+                account_key, category, account_assets, account_stats, params, sim_year, sim_month
+            )
+            run_rates[category] = balance * max(0.0, float(category_rates["dy"]))
+        return run_rates
+
+    def _grow_distribution_run_rate(
+        self,
+        distribution_run_rates: Dict[str, float],
+        params: Dict[str, Any],
+        account_key: str,
+        category: str,
+    ) -> None:
+        annual_growth_rate = float(
+            self._distribution_rule(params, account_key, category).get("growth_rate", 0.0)
+        )
+        if annual_growth_rate == 0.0:
+            return
+        if annual_growth_rate <= -1.0:
+            monthly_growth_rate = annual_growth_rate / 12.0
+        else:
+            monthly_growth_rate = (1.0 + annual_growth_rate) ** (1.0 / 12.0) - 1.0
+        distribution_run_rates[category] = max(
+            0.0,
+            distribution_run_rates.get(category, 0.0) * (1.0 + monthly_growth_rate),
+        )
+
+    def _apply_distribution_stress_cut(
+        self,
+        distribution_run_rates: Dict[str, float],
+        params: Dict[str, Any],
+        account_key: str,
+    ) -> None:
+        for category in self.CATEGORY_ORDER:
+            if category == "SGOV Buffer":
+                continue
+            stress_cut_rate = float(
+                self._distribution_rule(params, account_key, category).get("stress_cut_rate", 0.0)
+            )
+            if stress_cut_rate <= 0:
+                continue
+            cut_rate = min(1.0, stress_cut_rate)
+            distribution_run_rates[category] = max(
+                0.0,
+                distribution_run_rates.get(category, 0.0) * (1.0 - cut_rate),
+            )
+
+    def _distribution_rule(
+        self, params: Dict[str, Any], account_key: str, category: str
+    ) -> Dict[str, Any]:
+        distribution_rules = params.get("distribution_rules", {})
+        account_rules = distribution_rules.get(account_key, {})
+        if category in account_rules:
+            return account_rules[category] or {}
+        default_rules = distribution_rules.get("default", {})
+        return default_rules.get(category, {}) or {}
 
     def _monthly_return_components(self, category_rates: Dict[str, float]) -> tuple[float, float]:
         annual_dy = float(category_rates["dy"])
