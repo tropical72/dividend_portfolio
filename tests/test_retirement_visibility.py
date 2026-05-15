@@ -38,8 +38,7 @@ def test_retirement_simulation_metadata_visibility():
     strategy_summary = meta["strategy_rules_summary"]
     assert strategy_summary["rebalance_month"] >= 1
     assert strategy_summary["corporate_sgov_target_months"] >= 1
-    assert strategy_summary["pension_sgov_min_years"] >= 1
-    assert isinstance(strategy_summary["bear_market_freeze_enabled"], bool)
+    assert strategy_summary["pension_sgov_target_months"] >= 1
 
     print(f"\n[Verified] Used Portfolio: {corp_info['name']} ({corp_info['yield']})")
 

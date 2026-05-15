@@ -65,11 +65,6 @@ test.describe("Settings Strategy Rules", () => {
       .locator("input");
     await pensionBondUpperInput.fill("22");
 
-    const bondMinRatioInput = page
-      .getByTestId("input-group-bond-min-ratio")
-      .locator("input");
-    await bondMinRatioInput.fill("7.5");
-
     const monthlyLivingCostInput = page
       .getByTestId("input-group-monthly-living-cost")
       .locator("input");
@@ -84,7 +79,6 @@ test.describe("Settings Strategy Rules", () => {
     const uiLanguageSelect = page.getByTestId("ui-language-select");
     await uiLanguageSelect.selectOption("en");
 
-    await page.getByTestId("toggle-bear-freeze").getByRole("button").click();
     await page.getByTestId("apply-settings-button").click();
 
     await expect(
@@ -101,12 +95,8 @@ test.describe("Settings Strategy Rules", () => {
     await expect(corpBondTargetInput).toHaveValue("16");
     await expect(pensionSgovTargetInput).toHaveValue("36");
     await expect(pensionBondUpperInput).toHaveValue("22");
-    await expect(bondMinRatioInput).toHaveValue("7.5");
     await expect(monthlyLivingCostInput).toHaveValue("10,000,000");
     await expect(uiLanguageSelect).toHaveValue("en");
-    await expect(page.getByTestId("toggle-bear-freeze")).toContainText(
-      "Disabled",
-    );
   });
 
   test("should delete a cashflow event and persist the removal", async ({

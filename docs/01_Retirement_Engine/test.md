@@ -107,7 +107,7 @@
   - 월별 기본 개월수 필드가 `월말(post-review)` 기준인지 확인.
   - `11월 직전 24개월`, `다음 5월 직전 21개월` 같은 문서 기준선이 `pre_review_*` 필드로 별도 노출되는지 확인.
 - **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
-  - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
+  - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_target_months`, `strategy_rules.pension.sgov_floor_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
   - `strategy_rules.rebalance_month`를 5월이 아닌 월로 변경하면 메인 정기점검/리밸런싱 실행 월이 함께 이동하고, 8월/11월에 해당하던 법인 미니점검/반기점검은 각각 `+3개월 / +6개월` 오프셋으로 이동하는지 확인.
   - 동적 메인 정기점검 월에서 승인된 인플레이션 조정액은 다음 달부터 적용되고, Crash20이 아닌 Stress 기반 BOOST도 동적 메인 정기점검 월에 발동하는지 확인.
 - **[TEST-SUR-15] donor 우선순위 재현 검증 [NEW]:**
@@ -126,9 +126,9 @@
 - **[TEST-UI-RULE-04] API 저장/기본값 병합:**
   - `strategy_rules` 일부 필드만 저장해도 백엔드가 나머지 기본값을 유지하는지 확인.
 - **[TEST-UI-RULE-05] 재로드 지속성:**
-  - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `corporate.november_sgov_target_months`, `corporate.bond_*_months`, `pension.sgov_target_months`, `pension.bond_*_months`, `pension.bond_min_total_ratio`, `bear_market_freeze_enabled` 값이 저장 후 재로드 시 유지되는지 확인.
+  - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `corporate.november_sgov_target_months`, `corporate.bond_*_months`, `pension.sgov_target_months`, `pension.sgov_floor_months`, `pension.bond_*_months` 값이 저장 후 재로드 시 유지되는지 확인.
 - **[TEST-UI-RULE-06] Step 2 규칙 요약 노출:**
-  - `Projection Result` 영역에 실제 적용된 `Rebalance`, `Corp SGOV`, `Pension SGOV`, `Bear Freeze` 요약 배지가 렌더링되는지 확인.
+  - `Projection Result` 영역에 실제 적용된 `Rebalance Month`, `Corp SGOV`, `Pension SGOV` 요약 배지가 렌더링되는지 확인.
 - **[TEST-UI-RULE-07] 사용자 노출 Assumption 프리셋 정규화 [NEW]:**
   - `retirement_config.json`에 테스트 전용 assumption(`test_event`, `test_zero`)이 남아 있어도 Settings/Retirement UI에는 `Standard Profile`, `Conservative Profile`만 노출되는지 확인.
   - `active_assumption_id`가 숨김 assumption을 가리킬 경우 백엔드가 `v1`로 정규화하여 시뮬레이션과 UI 상태가 깨지지 않는지 확인.

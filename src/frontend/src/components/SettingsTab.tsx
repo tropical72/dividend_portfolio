@@ -46,8 +46,13 @@ interface SettingsTabProps {
 
 type StrategyRulesUpdates = {
   rebalance_month?: number;
-  rebalance_week?: number;
-  bear_market_freeze_enabled?: boolean;
+  corporate?: Partial<StrategyRules["corporate"]>;
+  pension?: Partial<StrategyRules["pension"]>;
+};
+
+type NormalizableStrategyRules = Partial<
+  Omit<StrategyRules, "corporate" | "pension">
+> & {
   corporate?: Partial<StrategyRules["corporate"]>;
   pension?: Partial<StrategyRules["pension"]>;
 };
@@ -56,32 +61,64 @@ const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
 
 const DEFAULT_STRATEGY_RULES: StrategyRules = {
   rebalance_month: 5,
-  rebalance_week: 2,
-  bear_market_freeze_enabled: true,
   corporate: {
     sgov_target_months: 30,
-    sgov_warn_months: 27,
-    sgov_crisis_months: 24,
     november_sgov_target_months: 27,
     bond_floor_months: 12,
     bond_target_months: 18,
     bond_upper_months: 24,
-    high_income_min_ratio: 0.2,
-    high_income_max_ratio: 0.35,
-    growth_sell_years_left_threshold: 10,
   },
   pension: {
-    sgov_min_years: 2,
     sgov_target_months: 24,
     sgov_floor_months: 12,
-    bond_min_years: 5,
     bond_floor_months: 12,
     bond_target_months: 18,
     bond_upper_months: 24,
-    bond_min_total_ratio: 0.05,
-    dividend_min_ratio: 0.1,
   },
 };
+
+function normalizeStrategyRules(
+  rules?: NormalizableStrategyRules,
+): StrategyRules {
+  return {
+    rebalance_month:
+      rules?.rebalance_month ?? DEFAULT_STRATEGY_RULES.rebalance_month,
+    corporate: {
+      sgov_target_months:
+        rules?.corporate?.sgov_target_months ??
+        DEFAULT_STRATEGY_RULES.corporate.sgov_target_months,
+      november_sgov_target_months:
+        rules?.corporate?.november_sgov_target_months ??
+        DEFAULT_STRATEGY_RULES.corporate.november_sgov_target_months,
+      bond_floor_months:
+        rules?.corporate?.bond_floor_months ??
+        DEFAULT_STRATEGY_RULES.corporate.bond_floor_months,
+      bond_target_months:
+        rules?.corporate?.bond_target_months ??
+        DEFAULT_STRATEGY_RULES.corporate.bond_target_months,
+      bond_upper_months:
+        rules?.corporate?.bond_upper_months ??
+        DEFAULT_STRATEGY_RULES.corporate.bond_upper_months,
+    },
+    pension: {
+      sgov_target_months:
+        rules?.pension?.sgov_target_months ??
+        DEFAULT_STRATEGY_RULES.pension.sgov_target_months,
+      sgov_floor_months:
+        rules?.pension?.sgov_floor_months ??
+        DEFAULT_STRATEGY_RULES.pension.sgov_floor_months,
+      bond_floor_months:
+        rules?.pension?.bond_floor_months ??
+        DEFAULT_STRATEGY_RULES.pension.bond_floor_months,
+      bond_target_months:
+        rules?.pension?.bond_target_months ??
+        DEFAULT_STRATEGY_RULES.pension.bond_target_months,
+      bond_upper_months:
+        rules?.pension?.bond_upper_months ??
+        DEFAULT_STRATEGY_RULES.pension.bond_upper_months,
+    },
+  };
+}
 
 const CORPORATE_TAX_RATE_OPTIONS = [0.1, 0.2, 0.22, 0.25];
 
@@ -223,50 +260,36 @@ export function SettingsTab({
           corp_tax_nominal_rate:
             globalRetireConfig.tax_and_insurance?.corp_tax_nominal_rate ?? 0.1,
         },
-        strategy_rules: {
-          ...DEFAULT_STRATEGY_RULES,
-          ...globalRetireConfig.strategy_rules,
-          corporate: {
-            ...DEFAULT_STRATEGY_RULES.corporate,
-            ...globalRetireConfig.strategy_rules?.corporate,
-          },
-          pension: {
-            ...DEFAULT_STRATEGY_RULES.pension,
-            ...globalRetireConfig.strategy_rules?.pension,
-          },
-        },
+        strategy_rules: normalizeStrategyRules(
+          globalRetireConfig.strategy_rules,
+        ),
       });
     }
   }, [globalSettings, globalRetireConfig]);
 
   const updateStrategyRules = (updates: StrategyRulesUpdates) => {
     if (!retireConfig) return;
+    const currentRules = normalizeStrategyRules(retireConfig.strategy_rules);
     setRetireConfig({
       ...retireConfig,
-      strategy_rules: {
-        ...DEFAULT_STRATEGY_RULES,
-        ...retireConfig.strategy_rules,
+      strategy_rules: normalizeStrategyRules({
+        ...currentRules,
         ...updates,
         corporate: {
-          ...DEFAULT_STRATEGY_RULES.corporate,
-          ...retireConfig.strategy_rules?.corporate,
+          ...currentRules.corporate,
           ...updates.corporate,
         },
         pension: {
-          ...DEFAULT_STRATEGY_RULES.pension,
-          ...retireConfig.strategy_rules?.pension,
+          ...currentRules.pension,
           ...updates.pension,
         },
-      },
+      }),
     });
   };
 
   const resetExecutionPolicy = () => {
     updateStrategyRules({
       rebalance_month: DEFAULT_STRATEGY_RULES.rebalance_month,
-      rebalance_week: DEFAULT_STRATEGY_RULES.rebalance_week,
-      bear_market_freeze_enabled:
-        DEFAULT_STRATEGY_RULES.bear_market_freeze_enabled,
     });
   };
 
@@ -888,31 +911,6 @@ export function SettingsTab({
                     })
                   }
                 />
-                <InputGroup
-                  label={t("settings.rebalanceWeek")}
-                  unit="Week"
-                  tooltip={t("settings.rebalanceWeekTooltip")}
-                  value={retireConfig.strategy_rules.rebalance_week}
-                  onChange={(v) =>
-                    updateStrategyRules({
-                      rebalance_week: Math.max(
-                        1,
-                        Math.min(5, parseInt(v) || 1),
-                      ),
-                    })
-                  }
-                />
-                <BooleanRuleCard
-                  label={t("settings.bearFreeze")}
-                  tooltip={t("settings.bearFreezeTooltip")}
-                  testId="toggle-bear-freeze"
-                  checked={
-                    retireConfig.strategy_rules.bear_market_freeze_enabled
-                  }
-                  onChange={(checked) =>
-                    updateStrategyRules({ bear_market_freeze_enabled: checked })
-                  }
-                />
               </div>
             </div>
 
@@ -938,24 +936,6 @@ export function SettingsTab({
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputGroup
-                    label={t("settings.sgovBuffer")}
-                    unit="Mo"
-                    tooltip={t("settings.sgovBufferTooltip")}
-                    value={
-                      retireConfig.trigger_thresholds?.target_buffer_months ||
-                      24
-                    }
-                    onChange={(v) =>
-                      setRetireConfig({
-                        ...retireConfig,
-                        trigger_thresholds: {
-                          ...retireConfig.trigger_thresholds,
-                          target_buffer_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
                   <InputGroup
                     label={t("settings.corpTargetBuffer")}
                     unit="Mo"
@@ -985,52 +965,6 @@ export function SettingsTab({
                       updateStrategyRules({
                         corporate: {
                           november_sgov_target_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <InputGroup
-                    label={t("settings.corpWarnBuffer")}
-                    unit="Mo"
-                    tooltip={t("settings.corpWarnBufferTooltip")}
-                    value={
-                      retireConfig.strategy_rules.corporate.sgov_warn_months
-                    }
-                    onChange={(v) =>
-                      updateStrategyRules({
-                        corporate: {
-                          sgov_warn_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <InputGroup
-                    label={t("settings.corpCrisisBuffer")}
-                    unit="Mo"
-                    tooltip={t("settings.corpCrisisBufferTooltip")}
-                    value={
-                      retireConfig.strategy_rules.corporate.sgov_crisis_months
-                    }
-                    onChange={(v) =>
-                      updateStrategyRules({
-                        corporate: {
-                          sgov_crisis_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <InputGroup
-                    label={t("settings.growthSellYears")}
-                    unit="Years"
-                    tooltip={t("settings.growthSellYearsTooltip")}
-                    value={
-                      retireConfig.strategy_rules.corporate
-                        .growth_sell_years_left_threshold
-                    }
-                    onChange={(v) =>
-                      updateStrategyRules({
-                        corporate: {
-                          growth_sell_years_left_threshold: parseInt(v) || 0,
                         },
                       })
                     }
@@ -1086,36 +1020,6 @@ export function SettingsTab({
                       })
                     }
                   />
-                  <PercentRuleInput
-                    label={t("settings.highIncomeMin")}
-                    tooltip={t("settings.highIncomeMinTooltip")}
-                    value={
-                      retireConfig.strategy_rules.corporate
-                        .high_income_min_ratio * 100
-                    }
-                    onChange={(value) =>
-                      updateStrategyRules({
-                        corporate: {
-                          high_income_min_ratio: value / 100,
-                        },
-                      })
-                    }
-                  />
-                  <PercentRuleInput
-                    label={t("settings.highIncomeMax")}
-                    tooltip={t("settings.highIncomeMaxTooltip")}
-                    value={
-                      retireConfig.strategy_rules.corporate
-                        .high_income_max_ratio * 100
-                    }
-                    onChange={(value) =>
-                      updateStrategyRules({
-                        corporate: {
-                          high_income_max_ratio: value / 100,
-                        },
-                      })
-                    }
-                  />
                 </div>
               </div>
 
@@ -1140,19 +1044,6 @@ export function SettingsTab({
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputGroup
-                    label={t("settings.pensionSgovMin")}
-                    unit="Years"
-                    tooltip={t("settings.pensionSgovMinTooltip")}
-                    value={retireConfig.strategy_rules.pension.sgov_min_years}
-                    onChange={(v) =>
-                      updateStrategyRules({
-                        pension: {
-                          sgov_min_years: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
                   <InputGroup
                     label={t("settings.pensionSgovTarget")}
                     unit="Mo"
@@ -1183,19 +1074,6 @@ export function SettingsTab({
                       updateStrategyRules({
                         pension: {
                           sgov_floor_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <InputGroup
-                    label={t("settings.bondMinYears")}
-                    unit="Years"
-                    tooltip={t("settings.bondMinYearsTooltip")}
-                    value={retireConfig.strategy_rules.pension.bond_min_years}
-                    onChange={(v) =>
-                      updateStrategyRules({
-                        pension: {
-                          bond_min_years: parseInt(v) || 0,
                         },
                       })
                     }
@@ -1247,37 +1125,6 @@ export function SettingsTab({
                       updateStrategyRules({
                         pension: {
                           bond_upper_months: parseInt(v) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <PercentRuleInput
-                    label={t("settings.bondMinRatio")}
-                    tooltip={t("settings.bondMinRatioTooltip")}
-                    testId="input-group-bond-min-ratio"
-                    value={
-                      retireConfig.strategy_rules.pension.bond_min_total_ratio *
-                      100
-                    }
-                    onChange={(value) =>
-                      updateStrategyRules({
-                        pension: {
-                          bond_min_total_ratio: value / 100,
-                        },
-                      })
-                    }
-                  />
-                  <PercentRuleInput
-                    label={t("settings.dividendMinRatio")}
-                    tooltip={t("settings.dividendMinRatioTooltip")}
-                    value={
-                      retireConfig.strategy_rules.pension.dividend_min_ratio *
-                      100
-                    }
-                    onChange={(value) =>
-                      updateStrategyRules({
-                        pension: {
-                          dividend_min_ratio: value / 100,
                         },
                       })
                     }
@@ -2386,157 +2233,6 @@ function EditableInput({
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function PercentRuleInput({
-  label,
-  tooltip,
-  value,
-  onChange,
-  testId,
-}: {
-  label: string;
-  tooltip: string;
-  value: number;
-  onChange: (value: number) => void;
-  testId?: string;
-}) {
-  const { isKorean } = useI18n();
-  const [draft, setDraft] = useState(() => formatDecimalDraft(value, 1));
-
-  useEffect(() => {
-    setDraft(formatDecimalDraft(value, 1));
-  }, [value]);
-
-  const commitDraft = () => {
-    const trimmed = draft.trim();
-    if (!trimmed) {
-      setDraft(formatDecimalDraft(value, 1));
-      return;
-    }
-    const parsed = Number(trimmed);
-    if (!Number.isFinite(parsed)) {
-      setDraft(formatDecimalDraft(value, 1));
-      return;
-    }
-    onChange(parsed);
-    setDraft(formatDecimalDraft(parsed, 1));
-  };
-
-  return (
-    <div
-      className="space-y-1.5"
-      data-testid={
-        testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`
-      }
-    >
-      <div className="flex items-center gap-1.5 ml-1">
-        <label
-          className={cn(
-            isKorean
-              ? "text-xs font-bold text-slate-400 tracking-normal"
-              : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-          )}
-        >
-          {label}
-        </label>
-        <div className="group relative">
-          <Info
-            size={12}
-            className="text-slate-600 cursor-help"
-            data-testid="tooltip-icon"
-          />
-          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-            {tooltip}
-          </div>
-        </div>
-      </div>
-      <div className="relative">
-        <input
-          type="number"
-          step="0.1"
-          inputMode="decimal"
-          data-testid={testId ? `${testId}-input` : undefined}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commitDraft}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              (e.target as HTMLInputElement).blur();
-            }
-          }}
-          className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
-        />
-        <span
-          className={cn(
-            "absolute right-4 top-1/2 -translate-y-1/2",
-            isKorean
-              ? "text-xs font-bold text-slate-500"
-              : "text-[11px] font-black text-slate-600",
-          )}
-        >
-          %
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function BooleanRuleCard({
-  label,
-  tooltip,
-  checked,
-  onChange,
-  testId,
-}: {
-  label: string;
-  tooltip: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  testId?: string;
-}) {
-  const { isKorean, t } = useI18n();
-  return (
-    <div
-      className="space-y-3 border border-slate-800 rounded-2xl bg-slate-950/40 p-4"
-      data-testid={
-        testId ?? `toggle-${label.toLowerCase().replace(/\s+/g, "-")}`
-      }
-    >
-      <div className="flex items-center gap-1.5">
-        <label
-          className={cn(
-            isKorean
-              ? "text-xs font-bold text-slate-400 tracking-normal"
-              : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-          )}
-        >
-          {label}
-        </label>
-        <div className="group relative">
-          <Info size={12} className="text-slate-600 cursor-help" />
-          <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-            {tooltip}
-          </div>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "w-full h-11 rounded-xl border text-sm transition-all",
-          isKorean
-            ? "font-bold tracking-normal"
-            : "font-black uppercase tracking-widest",
-          checked
-            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-            : "bg-slate-900 border-slate-800 text-slate-400",
-        )}
-      >
-        {checked ? t("settings.enabled") : t("settings.disabled")}
-      </button>
     </div>
   );
 }

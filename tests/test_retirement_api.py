@@ -131,9 +131,7 @@ def test_update_retirement_config_strategy_rules(tmp_path, monkeypatch):
     assert response.status_code == 200
     strategy_rules = response.json()["data"]["strategy_rules"]
     assert strategy_rules["rebalance_month"] == 4
-    assert strategy_rules["rebalance_week"] == 2
     assert strategy_rules["corporate"]["sgov_target_months"] == 40
-    assert strategy_rules["corporate"]["sgov_warn_months"] == 27
     assert strategy_rules["corporate"]["bond_floor_months"] == 12
     assert strategy_rules["pension"]["sgov_target_months"] == 24
 
@@ -464,7 +462,7 @@ def test_run_retirement_simulation_uses_dynamic_strategy_rule_month_caps(tmp_pat
                     "bond_upper_months": 22,
                 },
                 "pension": {
-                    "sgov_min_years": 3,
+                    "sgov_target_months": 36,
                     "sgov_floor_months": 10,
                     "bond_floor_months": 10,
                     "bond_target_months": 16,

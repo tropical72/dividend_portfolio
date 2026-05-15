@@ -121,30 +121,19 @@ export interface PlannedCashflow {
 
 export interface StrategyRules {
   rebalance_month: number;
-  rebalance_week: number;
-  bear_market_freeze_enabled: boolean;
   corporate: {
     sgov_target_months: number;
-    sgov_warn_months: number;
-    sgov_crisis_months: number;
     november_sgov_target_months?: number;
     bond_floor_months?: number;
     bond_target_months?: number;
     bond_upper_months?: number;
-    high_income_min_ratio: number;
-    high_income_max_ratio: number;
-    growth_sell_years_left_threshold: number;
   };
   pension: {
-    sgov_min_years: number;
     sgov_target_months?: number;
     sgov_floor_months?: number;
-    bond_min_years: number;
     bond_floor_months?: number;
     bond_target_months?: number;
     bond_upper_months?: number;
-    bond_min_total_ratio: number;
-    dividend_min_ratio: number;
   };
 }
 
@@ -282,10 +271,8 @@ export interface SimulationResult {
     pa_scenario?: PaScenarioKey;
     strategy_rules_summary?: {
       rebalance_month: number;
-      rebalance_week: number;
       corporate_sgov_target_months: number;
-      pension_sgov_min_years: number;
-      bear_market_freeze_enabled: boolean;
+      pension_sgov_target_months: number;
     };
     used_portfolios?: {
       corp?: { name: string; yield: string; expected_return?: number };

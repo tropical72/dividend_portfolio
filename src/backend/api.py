@@ -664,30 +664,68 @@ class DividendBackend:
         """stock-plan 기본값 기반 전략 규칙 기본 스키마를 반환합니다."""
         return {
             "rebalance_month": 5,
-            "rebalance_week": 2,
-            "bear_market_freeze_enabled": True,
             "corporate": {
                 "sgov_target_months": 30,
-                "sgov_warn_months": 27,
-                "sgov_crisis_months": 24,
                 "november_sgov_target_months": 27,
                 "bond_floor_months": 12,
                 "bond_target_months": 18,
                 "bond_upper_months": 24,
-                "high_income_min_ratio": 0.20,
-                "high_income_max_ratio": 0.35,
-                "growth_sell_years_left_threshold": 10,
             },
             "pension": {
-                "sgov_min_years": 2,
                 "sgov_target_months": 24,
                 "sgov_floor_months": 12,
-                "bond_min_years": 5,
                 "bond_floor_months": 12,
                 "bond_target_months": 18,
                 "bond_upper_months": 24,
-                "bond_min_total_ratio": 0.05,
-                "dividend_min_ratio": 0.10,
+            },
+        }
+
+    def _normalize_strategy_rules(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """현재 엔진이 실제로 사용하는 strategy_rules만 유지합니다."""
+        defaults = self._get_default_strategy_rules()
+        source = dict(section or {})
+        corporate_source = dict(source.get("corporate") or {})
+        pension_source = dict(source.get("pension") or {})
+        return {
+            "rebalance_month": source.get("rebalance_month", defaults["rebalance_month"]),
+            "corporate": {
+                "sgov_target_months": corporate_source.get(
+                    "sgov_target_months", defaults["corporate"]["sgov_target_months"]
+                ),
+                "november_sgov_target_months": corporate_source.get(
+                    "november_sgov_target_months",
+                    corporate_source.get(
+                        "sgov_warn_months",
+                        defaults["corporate"]["november_sgov_target_months"],
+                    ),
+                ),
+                "bond_floor_months": corporate_source.get(
+                    "bond_floor_months", defaults["corporate"]["bond_floor_months"]
+                ),
+                "bond_target_months": corporate_source.get(
+                    "bond_target_months", defaults["corporate"]["bond_target_months"]
+                ),
+                "bond_upper_months": corporate_source.get(
+                    "bond_upper_months", defaults["corporate"]["bond_upper_months"]
+                ),
+            },
+            "pension": {
+                "sgov_target_months": pension_source.get(
+                    "sgov_target_months",
+                    pension_source.get("sgov_min_years", 2) * 12,
+                ),
+                "sgov_floor_months": pension_source.get(
+                    "sgov_floor_months", defaults["pension"]["sgov_floor_months"]
+                ),
+                "bond_floor_months": pension_source.get(
+                    "bond_floor_months", defaults["pension"]["bond_floor_months"]
+                ),
+                "bond_target_months": pension_source.get(
+                    "bond_target_months", defaults["pension"]["bond_target_months"]
+                ),
+                "bond_upper_months": pension_source.get(
+                    "bond_upper_months", defaults["pension"]["bond_upper_months"]
+                ),
             },
         }
 
@@ -891,6 +929,9 @@ class DividendBackend:
         )
         self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
             cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
+        )
+        self.retirement_config["strategy_rules"] = self._normalize_strategy_rules(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("strategy_rules"))
         )
         self._sanitize_retirement_assumptions()
         assumptions = self.retirement_config.get("assumptions", {})
@@ -2153,38 +2194,7 @@ class DividendBackend:
                     ):
                         value["annual_corp_tax_adjustment_fee"] = 0.0
                 if key == "strategy_rules":
-                    value = dict(value)
-                    corporate_rules = dict(value.get("corporate") or {})
-                    if (
-                        "sgov_warn_months" in corporate_rules
-                        and "november_sgov_target_months" not in corporate_rules
-                    ):
-                        corporate_rules["november_sgov_target_months"] = corporate_rules[
-                            "sgov_warn_months"
-                        ]
-                    if (
-                        "november_sgov_target_months" in corporate_rules
-                        and "sgov_warn_months" not in corporate_rules
-                    ):
-                        corporate_rules["sgov_warn_months"] = corporate_rules[
-                            "november_sgov_target_months"
-                        ]
-                    if corporate_rules:
-                        value["corporate"] = corporate_rules
-
-                    pension_rules = dict(value.get("pension") or {})
-                    if (
-                        "sgov_min_years" in pension_rules
-                        and "sgov_target_months" not in pension_rules
-                    ):
-                        pension_rules["sgov_target_months"] = pension_rules["sgov_min_years"] * 12
-                    if (
-                        "sgov_target_months" in pension_rules
-                        and "sgov_min_years" not in pension_rules
-                    ):
-                        pension_rules["sgov_min_years"] = pension_rules["sgov_target_months"] / 12
-                    if pension_rules:
-                        value["pension"] = pension_rules
+                    value = self._normalize_strategy_rules(cast(Dict[str, Any], value))
                 candidate_config[key] = self._deep_merge_dict(candidate_config[key], value)
             else:
                 candidate_config[key] = value

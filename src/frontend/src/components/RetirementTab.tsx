@@ -1203,7 +1203,7 @@ export function RetirementTab() {
                     <div className="grid grid-cols-2 gap-3">
                       <RuleBadge
                         label={t("retirement.rebalance")}
-                        value={`${strategyRulesSummary.rebalance_month}M / ${strategyRulesSummary.rebalance_week}W`}
+                        value={`${strategyRulesSummary.rebalance_month}M`}
                       />
                       <RuleBadge
                         label={t("retirement.corpSgov")}
@@ -1211,15 +1211,7 @@ export function RetirementTab() {
                       />
                       <RuleBadge
                         label={t("retirement.pensionSgov")}
-                        value={`${strategyRulesSummary.pension_sgov_min_years} Yr`}
-                      />
-                      <RuleBadge
-                        label={t("retirement.bearFreeze")}
-                        value={
-                          strategyRulesSummary.bear_market_freeze_enabled
-                            ? t("retirement.enabled")
-                            : t("retirement.disabled")
-                        }
+                        value={`${strategyRulesSummary.pension_sgov_target_months} Mo`}
                       />
                       <RuleBadge
                         label={t("retirement.monthlyCost")}
