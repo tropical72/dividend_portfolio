@@ -98,6 +98,7 @@
   - **[REQ-RAMS-3.3.4] 분배금 run-rate 분리:** `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`의 월 배당/이자/인컴은 현재 월 평가액에 고정 DY를 다시 곱하는 방식만으로 계산해서는 안 된다. 엔진은 카테고리별 연간 분배금 run-rate를 별도 상태로 보유하고, 월 분배금은 `연간 run-rate / 12`로 `SGOV Buffer`에 현금 수확해야 한다. 단, `SGOV Buffer`는 현금성 자산이므로 기존처럼 DY가 해당 잔고에 머무르는 재투자형 처리를 유지한다.
   - **[REQ-RAMS-3.3.5] 가격-분배금 독립성:** `PA` 충격이나 가격 하락은 해당 월 평가액을 조정하지만, 별도 분배금 삭감 이벤트가 없으면 다음 달 분배금 절대액을 기계적으로 줄이면 안 된다. 분배금 run-rate는 선택적 `growth_rate`로 성장할 수 있고, Crash20 또는 정기점검 Stress 발생 시 선택적 `stress_cut_rate`만큼 삭감될 수 있어야 한다.
   - **[REQ-RAMS-3.3.6] run-rate 호환성:** 명시적 분배금 run-rate 입력이 없으면 초기 run-rate는 `초기 카테고리 평가액 * 연 DY`로 산정하여 기존 DY 기반 설정과 호환되어야 한다. 이 모델은 카테고리 단위 평가액/현금흐름 모델이며, 종목별 주식 수와 정확한 미래 체결 가격 장부를 대체하지 않는다.
+  - **[REQ-RAMS-3.3.7] 리밸런싱 run-rate 동기화:** 리밸런싱, floor refill, surplus deploy 등 카테고리 간 자산 이동은 평가액뿐 아니라 분배금 run-rate도 함께 조정해야 한다. Source 비현금 카테고리는 `이동금액 / 이동 전 source 평가액` 비율로 run-rate를 줄이고, Target 비현금 카테고리는 target 카테고리의 연 DY 기준으로 `이동금액 * target DY`만큼 run-rate를 생성해야 한다.
 - **[REQ-RAMS-3.4] Shock / Stress / Inflation 운영 규칙:**
   - **[REQ-RAMS-3.4.1] Crash20:** 월말 기준 주식성 슬리브 평가액이 직전 5월 기준값의 80% 이하가 되면 Shock Flag를 활성화한다.
   - **[REQ-RAMS-3.4.2] Stress 판정:** Stress는 월말 숫자로 즉시 판정하지 않고 5월 정기점검의 A/B/C 테스트 결과로만 판정한다.

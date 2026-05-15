@@ -300,8 +300,13 @@ class ProjectionEngine:
                 growth_used = self._run_may_rebalance(
                     corp_assets=corp_assets,
                     pension_assets=pension_assets,
+                    corp_distribution_run_rates=corp_distribution_run_rates,
+                    pension_distribution_run_rates=pension_distribution_run_rates,
                     corp_stats=corp_stats,
                     pension_stats=pension_stats,
+                    params=params,
+                    sim_year=sim_year,
+                    sim_month=sim_month,
                     corp_monthly_need=self._corporate_cash_need(
                         household_need=next_target_cashflow,
                         phase=phase,
@@ -322,15 +327,39 @@ class ProjectionEngine:
                 previous_may_total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
                 shock_flag = False
             elif sim_month == corporate_mini_review_month:
-                self._run_august_corporate_review(corp_assets, corp_monthly_need)
+                self._run_august_corporate_review(
+                    corp_assets,
+                    corp_distribution_run_rates,
+                    corp_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    corp_monthly_need,
+                )
             elif sim_month == corporate_semi_review_month:
                 growth_used = self._run_november_rebalance(
-                    corp_assets, corp_stats, corp_monthly_need, corporate_rules
+                    corp_assets,
+                    corp_distribution_run_rates,
+                    corp_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    corp_monthly_need,
+                    corporate_rules,
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
 
-            self._run_pension_floor_refill(pension_assets, pension_withdrawal_target, pension_rules)
+            self._run_pension_floor_refill(
+                pension_assets,
+                pension_distribution_run_rates,
+                pension_stats,
+                params,
+                sim_year,
+                sim_month,
+                pension_withdrawal_target,
+                pension_rules,
+            )
 
             total_net_worth = sum(corp_assets.values()) + sum(pension_assets.values())
             if total_net_worth <= 0:
@@ -995,8 +1024,13 @@ class ProjectionEngine:
         self,
         corp_assets: Dict[str, float],
         pension_assets: Dict[str, float],
+        corp_distribution_run_rates: Dict[str, float],
+        pension_distribution_run_rates: Dict[str, float],
         corp_stats: Dict[str, Any],
         pension_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         corp_monthly_need: float,
         pension_withdrawal_target: float,
         corporate_rules: Dict[str, float],
@@ -1005,43 +1039,74 @@ class ProjectionEngine:
         growth_used = 0.0
         growth_used += self._fill_corp_sgov(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             corp_monthly_need * corporate_rules["may_sgov_target_months"],
             corp_monthly_need,
             corporate_rules["bond_upper_months"],
             corporate_rules["bond_floor_months"],
-            corp_stats,
         )
         growth_used += self._fill_bucket(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             target_category="Bond Buffer",
             target_amount=corp_monthly_need * corporate_rules["bond_target_months"],
             floor_amount=corp_monthly_need * corporate_rules["bond_floor_months"],
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
-            account_stats=corp_stats,
         )
         growth_used += self._fill_pension_sgov(
             pension_assets,
+            pension_distribution_run_rates,
+            pension_stats,
+            params,
+            sim_year,
+            sim_month,
             target_amount=pension_withdrawal_target * pension_rules["sgov_target_months"],
             monthly_need=pension_withdrawal_target,
             bond_upper_months=pension_rules["bond_upper_months"],
             bond_floor_months=pension_rules["bond_floor_months"],
-            account_stats=pension_stats,
         )
         growth_used += self._fill_bucket(
             pension_assets,
+            pension_distribution_run_rates,
+            "pension",
+            pension_stats,
+            params,
+            sim_year,
+            sim_month,
             target_category="Bond Buffer",
             target_amount=pension_withdrawal_target * pension_rules["bond_target_months"],
             floor_amount=pension_withdrawal_target * pension_rules["bond_floor_months"],
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
-            account_stats=pension_stats,
         )
         self._cap_buffer_and_deploy_surplus(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             sgov_cap=corp_monthly_need * corporate_rules["may_sgov_target_months"],
             bond_cap=corp_monthly_need * corporate_rules["bond_upper_months"],
         )
         self._cap_buffer_and_deploy_surplus(
             pension_assets,
+            pension_distribution_run_rates,
+            "pension",
+            pension_stats,
+            params,
+            sim_year,
+            sim_month,
             sgov_cap=pension_withdrawal_target * pension_rules["sgov_target_months"],
             bond_cap=pension_withdrawal_target * pension_rules["bond_upper_months"],
         )
@@ -1050,35 +1115,62 @@ class ProjectionEngine:
     def _run_november_rebalance(
         self,
         corp_assets: Dict[str, float],
+        corp_distribution_run_rates: Dict[str, float],
         corp_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         corp_monthly_need: float,
         corporate_rules: Dict[str, float],
     ) -> float:
         growth_used = self._fill_corp_sgov(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             corp_monthly_need * corporate_rules["november_sgov_target_months"],
             corp_monthly_need,
             corporate_rules["bond_upper_months"],
             corporate_rules["bond_floor_months"],
-            corp_stats,
         )
         growth_used += self._fill_bucket(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             target_category="Bond Buffer",
             target_amount=corp_monthly_need * corporate_rules["bond_target_months"],
             floor_amount=corp_monthly_need * corporate_rules["bond_floor_months"],
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
-            account_stats=corp_stats,
         )
         self._cap_buffer_and_deploy_surplus(
             corp_assets,
+            corp_distribution_run_rates,
+            "corp",
+            corp_stats,
+            params,
+            sim_year,
+            sim_month,
             sgov_cap=corp_monthly_need * corporate_rules["november_sgov_target_months"],
             bond_cap=corp_monthly_need * corporate_rules["bond_upper_months"],
         )
         return growth_used
 
     def _run_august_corporate_review(
-        self, corp_assets: Dict[str, float], corp_monthly_need: float
+        self,
+        corp_assets: Dict[str, float],
+        corp_distribution_run_rates: Dict[str, float],
+        corp_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
+        corp_monthly_need: float,
     ) -> None:
         if corp_monthly_need <= 0 or corp_assets["SGOV Buffer"] >= corp_monthly_need:
             return
@@ -1087,16 +1179,27 @@ class ProjectionEngine:
             "Bond Buffer",
             "SGOV Buffer",
             corp_monthly_need - corp_assets["SGOV Buffer"],
+            distribution_run_rates=corp_distribution_run_rates,
+            account_key="corp",
+            account_stats=corp_stats,
+            params=params,
+            sim_year=sim_year,
+            sim_month=sim_month,
         )
 
     def _fill_corp_sgov(
         self,
         corp_assets: Dict[str, float],
+        corp_distribution_run_rates: Dict[str, float],
+        account_key: str,
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         target_amount: float,
         monthly_need: float,
         bond_upper_months: float,
         bond_floor_months: float,
-        account_stats: Dict[str, Any] | None = None,
     ) -> float:
         if target_amount <= 0:
             return 0.0
@@ -1108,9 +1211,21 @@ class ProjectionEngine:
             "Bond Buffer",
             "SGOV Buffer",
             max(0.0, corp_assets["Bond Buffer"] - bond_upper),
+            distribution_run_rates=corp_distribution_run_rates,
+            account_key=account_key,
+            account_stats=account_stats,
+            params=params,
+            sim_year=sim_year,
+            sim_month=sim_month,
         )
         growth_used += self._transfer_from_sequence(
             corp_assets,
+            corp_distribution_run_rates,
+            account_key,
+            account_stats,
+            params,
+            sim_year,
+            sim_month,
             "SGOV Buffer",
             max(0.0, target_amount - corp_assets["SGOV Buffer"]),
             (
@@ -1119,18 +1234,22 @@ class ProjectionEngine:
                 ("Growth Engine", 0.0),
                 ("Bond Buffer", bond_floor),
             ),
-            account_stats=account_stats,
         )
         return growth_used
 
     def _fill_bucket(
         self,
         account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
+        account_key: str,
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         target_category: str,
         target_amount: float,
         floor_amount: float,
         donor_order: tuple,
-        account_stats: Dict[str, Any] | None = None,
     ) -> float:
         if target_amount <= account_assets[target_category]:
             return 0.0
@@ -1140,20 +1259,29 @@ class ProjectionEngine:
         )
         return self._transfer_from_sequence(
             account_assets,
+            distribution_run_rates,
+            account_key,
+            account_stats,
+            params,
+            sim_year,
+            sim_month,
             target_category,
             needed,
             donor_sequence,
-            account_stats=account_stats,
         )
 
     def _fill_pension_sgov(
         self,
         pension_assets: Dict[str, float],
+        pension_distribution_run_rates: Dict[str, float],
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         target_amount: float,
         monthly_need: float,
         bond_upper_months: float,
         bond_floor_months: float,
-        account_stats: Dict[str, Any] | None = None,
     ) -> float:
         if target_amount <= 0:
             return 0.0
@@ -1165,9 +1293,21 @@ class ProjectionEngine:
             "Bond Buffer",
             "SGOV Buffer",
             max(0.0, pension_assets["Bond Buffer"] - bond_upper),
+            distribution_run_rates=pension_distribution_run_rates,
+            account_key="pension",
+            account_stats=account_stats,
+            params=params,
+            sim_year=sim_year,
+            sim_month=sim_month,
         )
         growth_used += self._transfer_from_sequence(
             pension_assets,
+            pension_distribution_run_rates,
+            "pension",
+            account_stats,
+            params,
+            sim_year,
+            sim_month,
             "SGOV Buffer",
             max(0.0, target_amount - pension_assets["SGOV Buffer"]),
             (
@@ -1176,13 +1316,17 @@ class ProjectionEngine:
                 ("Growth Engine", 0.0),
                 ("Bond Buffer", bond_floor),
             ),
-            account_stats=account_stats,
         )
         return growth_used
 
     def _run_pension_floor_refill(
         self,
         pension_assets: Dict[str, float],
+        pension_distribution_run_rates: Dict[str, float],
+        pension_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         pension_withdrawal_target: float,
         pension_rules: Dict[str, float],
     ) -> None:
@@ -1190,15 +1334,31 @@ class ProjectionEngine:
         if pension_withdrawal_target <= 0 or pension_assets["SGOV Buffer"] >= floor_amount:
             return
         needed = floor_amount - pension_assets["SGOV Buffer"]
-        self._transfer(pension_assets, "Bond Buffer", "SGOV Buffer", needed)
+        self._transfer(
+            pension_assets,
+            "Bond Buffer",
+            "SGOV Buffer",
+            needed,
+            distribution_run_rates=pension_distribution_run_rates,
+            account_key="pension",
+            account_stats=pension_stats,
+            params=params,
+            sim_year=sim_year,
+            sim_month=sim_month,
+        )
 
     def _transfer_from_sequence(
         self,
         account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
+        account_key: str,
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         target_category: str,
         needed: float,
         donor_sequence: tuple,
-        account_stats: Dict[str, Any] | None = None,
     ) -> float:
         growth_used = 0.0
         remaining = needed
@@ -1225,6 +1385,12 @@ class ProjectionEngine:
                     donor,
                     target_category,
                     min(overweight_available, remaining),
+                    distribution_run_rates=distribution_run_rates,
+                    account_key=account_key,
+                    account_stats=account_stats,
+                    params=params,
+                    sim_year=sim_year,
+                    sim_month=sim_month,
                 )
                 remaining -= moved
                 if donor == "Growth Engine":
@@ -1239,7 +1405,16 @@ class ProjectionEngine:
                     0.0, min(account_assets[donor] - floor, account_assets[donor] - target_balance)
                 )
                 moved = self._transfer(
-                    account_assets, donor, target_category, min(overweight_available, remaining)
+                    account_assets,
+                    donor,
+                    target_category,
+                    min(overweight_available, remaining),
+                    distribution_run_rates=distribution_run_rates,
+                    account_key=account_key,
+                    account_stats=account_stats,
+                    params=params,
+                    sim_year=sim_year,
+                    sim_month=sim_month,
                 )
                 remaining -= moved
                 if donor == "Growth Engine":
@@ -1248,7 +1423,16 @@ class ProjectionEngine:
                     break
             available = max(0.0, account_assets[donor] - floor)
             moved = self._transfer(
-                account_assets, donor, target_category, min(available, remaining)
+                account_assets,
+                donor,
+                target_category,
+                min(available, remaining),
+                distribution_run_rates=distribution_run_rates,
+                account_key=account_key,
+                account_stats=account_stats,
+                params=params,
+                sim_year=sim_year,
+                sim_month=sim_month,
             )
             remaining -= moved
             if donor == "Growth Engine":
@@ -1271,18 +1455,53 @@ class ProjectionEngine:
     def _cap_buffer_and_deploy_surplus(
         self,
         account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
+        account_key: str,
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
         sgov_cap: float,
         bond_cap: float,
     ) -> None:
         if sgov_cap > 0 and account_assets["SGOV Buffer"] > sgov_cap:
             surplus = account_assets["SGOV Buffer"] - sgov_cap
-            self._deploy_to_risk_sleeves(account_assets, "SGOV Buffer", surplus)
+            self._deploy_to_risk_sleeves(
+                account_assets,
+                distribution_run_rates,
+                account_key,
+                account_stats,
+                params,
+                sim_year,
+                sim_month,
+                "SGOV Buffer",
+                surplus,
+            )
         if bond_cap > 0 and account_assets["Bond Buffer"] > bond_cap:
             surplus = account_assets["Bond Buffer"] - bond_cap
-            self._deploy_to_risk_sleeves(account_assets, "Bond Buffer", surplus)
+            self._deploy_to_risk_sleeves(
+                account_assets,
+                distribution_run_rates,
+                account_key,
+                account_stats,
+                params,
+                sim_year,
+                sim_month,
+                "Bond Buffer",
+                surplus,
+            )
 
     def _deploy_to_risk_sleeves(
-        self, account_assets: Dict[str, float], source_category: str, amount: float
+        self,
+        account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
+        account_key: str,
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
+        source_category: str,
+        amount: float,
     ) -> None:
         movable = min(max(0.0, amount), account_assets[source_category])
         if movable <= 0:
@@ -1295,9 +1514,19 @@ class ProjectionEngine:
         ]
         existing_total = sum(max(0.0, account_assets[category]) for category in risk_categories)
 
-        account_assets[source_category] -= movable
         if existing_total <= 0:
-            account_assets["Growth Engine"] += movable
+            self._transfer(
+                account_assets,
+                source_category,
+                "Growth Engine",
+                movable,
+                distribution_run_rates=distribution_run_rates,
+                account_key=account_key,
+                account_stats=account_stats,
+                params=params,
+                sim_year=sim_year,
+                sim_month=sim_month,
+            )
             return
 
         remaining = movable
@@ -1311,7 +1540,18 @@ class ProjectionEngine:
                 ratio = account_assets[category] / existing_total
                 allocation = movable * ratio
                 remaining -= allocation
-            account_assets[category] += allocation
+            self._transfer(
+                account_assets,
+                source_category,
+                category,
+                allocation,
+                distribution_run_rates=distribution_run_rates,
+                account_key=account_key,
+                account_stats=account_stats,
+                params=params,
+                sim_year=sim_year,
+                sim_month=sim_month,
+            )
 
     def _transfer(
         self,
@@ -1319,11 +1559,69 @@ class ProjectionEngine:
         from_category: str,
         to_category: str,
         amount: float,
+        *,
+        distribution_run_rates: Dict[str, float] | None = None,
+        account_key: str | None = None,
+        account_stats: Dict[str, Any] | None = None,
+        params: Dict[str, Any] | None = None,
+        sim_year: int | None = None,
+        sim_month: int | None = None,
     ) -> float:
         moved = min(max(0.0, amount), account_assets[from_category])
+        pre_from_balance = account_assets[from_category]
         account_assets[from_category] -= moved
         account_assets[to_category] += moved
+        if moved > 0 and distribution_run_rates is not None:
+            self._move_distribution_run_rate(
+                account_assets,
+                distribution_run_rates,
+                from_category,
+                to_category,
+                moved,
+                pre_from_balance,
+                account_key,
+                account_stats,
+                params,
+                sim_year,
+                sim_month,
+            )
         return moved
+
+    def _move_distribution_run_rate(
+        self,
+        account_assets: Dict[str, float],
+        distribution_run_rates: Dict[str, float],
+        from_category: str,
+        to_category: str,
+        moved: float,
+        pre_from_balance: float,
+        account_key: str | None,
+        account_stats: Dict[str, Any] | None,
+        params: Dict[str, Any] | None,
+        sim_year: int | None,
+        sim_month: int | None,
+    ) -> None:
+        if from_category != "SGOV Buffer" and pre_from_balance > 0:
+            source_rate = distribution_run_rates.get(from_category, 0.0)
+            removed_rate = source_rate * min(1.0, moved / pre_from_balance)
+            distribution_run_rates[from_category] = max(0.0, source_rate - removed_rate)
+
+        if (
+            to_category == "SGOV Buffer"
+            or account_key is None
+            or account_stats is None
+            or params is None
+            or sim_year is None
+            or sim_month is None
+        ):
+            return
+
+        target_rates = self._category_rate_spec(
+            account_key, to_category, account_assets, account_stats, params, sim_year, sim_month
+        )
+        distribution_run_rates[to_category] = distribution_run_rates.get(
+            to_category, 0.0
+        ) + moved * max(0.0, float(target_rates["dy"]))
 
     def _months_cover(self, balance: float, monthly_need: float) -> float:
         if monthly_need <= 0:

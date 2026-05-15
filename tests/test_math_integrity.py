@@ -155,6 +155,90 @@ def test_distribution_run_rate_is_cut_after_crash20_when_configured():
     assert result["monthly_data"][1]["corp_realized_income"] == pytest.approx(300000)
 
 
+def test_distribution_run_rate_scales_down_after_partial_transfer():
+    """비현금 카테고리 일부 매도 후 다음 달 분배금은 남은 포지션 비율만큼 감소해야 한다."""
+    engine = make_engine()
+    params = base_params()
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06}},
+    }
+    assets = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 100000000.0,
+    }
+    run_rates = {"Growth Engine": 6000000.0}
+
+    engine._transfer(
+        assets,
+        "Growth Engine",
+        "SGOV Buffer",
+        80000000.0,
+        distribution_run_rates=run_rates,
+        account_key="corp",
+        account_stats=params["portfolio_stats"]["corp"],
+        params=params,
+        sim_year=2026,
+        sim_month=5,
+    )
+    realized_income = engine._apply_monthly_returns(
+        "corp",
+        assets,
+        run_rates,
+        params["portfolio_stats"]["corp"],
+        params,
+        2026,
+        6,
+    )
+
+    assert run_rates["Growth Engine"] == pytest.approx(1200000)
+    assert realized_income == pytest.approx(100000)
+
+
+def test_distribution_run_rate_is_created_after_new_risk_deployment():
+    """현금성 자산에서 비현금 카테고리를 새로 매수하면 target DY 기반 run-rate가 생겨야 한다."""
+    engine = make_engine()
+    params = base_params()
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06}},
+    }
+    assets = {
+        "SGOV Buffer": 100000000.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    run_rates = {"Growth Engine": 0.0}
+
+    engine._transfer(
+        assets,
+        "SGOV Buffer",
+        "Growth Engine",
+        50000000.0,
+        distribution_run_rates=run_rates,
+        account_key="corp",
+        account_stats=params["portfolio_stats"]["corp"],
+        params=params,
+        sim_year=2026,
+        sim_month=5,
+    )
+    realized_income = engine._apply_monthly_returns(
+        "corp",
+        assets,
+        run_rates,
+        params["portfolio_stats"]["corp"],
+        params,
+        2026,
+        6,
+    )
+
+    assert run_rates["Growth Engine"] == pytest.approx(3000000)
+    assert realized_income == pytest.approx(250000)
+
+
 def test_higher_growth_profile_finishes_with_higher_net_worth():
     """같은 초기 조건이면 더 높은 Growth Engine PA가 더 큰 최종 순자산을 만들어야 한다."""
     conservative = base_params()
