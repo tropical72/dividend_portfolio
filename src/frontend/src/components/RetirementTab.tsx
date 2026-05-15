@@ -601,6 +601,7 @@ export function RetirementTab() {
                   <button
                     key={scenario}
                     type="button"
+                    data-testid={`retirement-pa-scenario-${scenario}`}
                     onClick={() => setPaScenario(scenario)}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-normal transition-all",

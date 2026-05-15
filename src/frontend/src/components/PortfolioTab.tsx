@@ -644,6 +644,7 @@ export function PortfolioTab({
               <button
                 key={scenario}
                 type="button"
+                data-testid={`portfolio-pa-scenario-${scenario}`}
                 onClick={() => setPaScenario(scenario)}
                 className={cn(
                   "rounded-xl px-4 py-2 text-xs font-black tracking-wide transition-all",

@@ -1181,6 +1181,7 @@ export function PortfolioDashboard({
           return (
             <div
               key={p.id}
+              data-testid={`portfolio-card-${p.id}`}
               className={cn(
                 "portfolio-card group overflow-hidden rounded-[2rem] border transition-all duration-300",
                 isExpanded
@@ -1322,7 +1323,10 @@ export function PortfolioDashboard({
                         합산한 총수익률입니다.
                       </div>
                     </div>
-                    <p className="text-2xl font-bold tabular-nums text-emerald-700">
+                    <p
+                      className="text-2xl font-bold tabular-nums text-emerald-700"
+                      data-testid={`portfolio-tr-${p.id}`}
+                    >
                       {getTR(p).toFixed(2)}%
                     </p>
                   </div>

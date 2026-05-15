@@ -1477,6 +1477,7 @@ export function SettingsTab({
                   </div>
                 </div>
                 <select
+                  data-testid="settings-default-pa-scenario"
                   value={settings.default_pa_scenario || DEFAULT_PA_SCENARIO}
                   onChange={(e) =>
                     setSettings({
@@ -1503,6 +1504,7 @@ export function SettingsTab({
                     <button
                       key={scenario}
                       type="button"
+                      data-testid={`settings-pa-scenario-${scenario}`}
                       onClick={() => setEditingPaScenario(scenario)}
                       className={cn(
                         "rounded-xl border px-4 py-2 text-xs font-black tracking-wide transition-all",
@@ -1525,6 +1527,7 @@ export function SettingsTab({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <InputGroup
+                testId="input-group-pa-cash-sgov"
                 label={t("settings.catCash")}
                 unit="%"
                 tooltip={t("settings.catCashTooltip")}
@@ -1547,6 +1550,7 @@ export function SettingsTab({
                 }
               />
               <InputGroup
+                testId="input-group-pa-bond-buffer"
                 label={t("settings.catBond")}
                 unit="%"
                 tooltip={t("settings.catBondTooltip")}
@@ -1569,6 +1573,7 @@ export function SettingsTab({
                 }
               />
               <InputGroup
+                testId="input-group-pa-high-income"
                 label={t("settings.catHighIncome")}
                 unit="%"
                 tooltip={t("settings.catHighIncomeTooltip")}
@@ -1591,6 +1596,7 @@ export function SettingsTab({
                 }
               />
               <InputGroup
+                testId="input-group-pa-dividend-stocks"
                 label={t("settings.catDividend")}
                 unit="%"
                 tooltip={t("settings.catDividendTooltip")}
@@ -1613,6 +1619,7 @@ export function SettingsTab({
                 }
               />
               <InputGroup
+                testId="input-group-pa-growth-stocks"
                 label={t("settings.catGrowth")}
                 unit="%"
                 tooltip={t("settings.catGrowthTooltip")}
