@@ -414,7 +414,7 @@ async def run_retirement_simulation(
         "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
         "employee_count": corp_params["employee_count"],
         "real_estate_price": config.get("personal_params", {}).get("real_estate_price") or 0,
-        "rebalance_month": strategy_rules.get("rebalance_month", 1),
+        "rebalance_month": strategy_rules.get("rebalance_month", 5),
         "rebalance_week": strategy_rules.get("rebalance_week", 2),
         "bear_market_freeze_enabled": strategy_rules.get("bear_market_freeze_enabled", True),
         "sgov_target_months": corporate_rules.get("sgov_target_months", 30),
@@ -517,7 +517,7 @@ async def run_retirement_simulation(
         "pa_rate": combined_tr - combined_dy if (combined_tr and combined_dy) else 0.0,
         "pa_scenario": backend._normalize_pa_scenario(pa_scenario),
         "strategy_rules_summary": {
-            "rebalance_month": strategy_rules.get("rebalance_month", 1),
+            "rebalance_month": strategy_rules.get("rebalance_month", 5),
             "rebalance_week": strategy_rules.get("rebalance_week", 2),
             "corporate_sgov_target_months": corporate_rules.get("sgov_target_months", 36),
             "pension_sgov_min_years": pension_rules.get("sgov_min_years", 2),

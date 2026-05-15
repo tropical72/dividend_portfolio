@@ -101,6 +101,7 @@
   - `11월 직전 24개월`, `다음 5월 직전 21개월` 같은 문서 기준선이 `pre_review_*` 필드로 별도 노출되는지 확인.
 - **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
   - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
+  - `strategy_rules.rebalance_month`를 5월이 아닌 월로 변경하면 메인 정기점검/리밸런싱 실행 월이 함께 이동하고, 8월/11월에 해당하던 법인 미니점검/반기점검은 각각 `+3개월 / +6개월` 오프셋으로 이동하는지 확인.
 - **[TEST-SUR-15] donor 우선순위 재현 검증 [NEW]:**
   - 법인 5월/11월 점검에서 `Bond upper band(24개월) 초과분`이 `Dividend Growth/Growth Engine`보다 먼저 donor로 사용되고, `18~24개월` 구간은 자동 donor로 소진되지 않으며, `Bond floor 12개월` 아래로는 자동 침범하지 않는지 확인.
   - 개인연금도 동일하게 `18~24개월 유지 / 24개월 초과분만 donor 후보` 해석이 재현되는지 확인.
@@ -117,7 +118,7 @@
 - **[TEST-UI-RULE-04] API 저장/기본값 병합:**
   - `strategy_rules` 일부 필드만 저장해도 백엔드가 나머지 기본값을 유지하는지 확인.
 - **[TEST-UI-RULE-05] 재로드 지속성:**
-  - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `pension.bond_min_total_ratio`, `bear_market_freeze_enabled` 값이 저장 후 재로드 시 유지되는지 확인.
+  - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `corporate.november_sgov_target_months`, `corporate.bond_*_months`, `pension.sgov_target_months`, `pension.bond_*_months`, `pension.bond_min_total_ratio`, `bear_market_freeze_enabled` 값이 저장 후 재로드 시 유지되는지 확인.
 - **[TEST-UI-RULE-06] Step 2 규칙 요약 노출:**
   - `Projection Result` 영역에 실제 적용된 `Rebalance`, `Corp SGOV`, `Pension SGOV`, `Bear Freeze` 요약 배지가 렌더링되는지 확인.
 - **[TEST-UI-RULE-07] 사용자 노출 Assumption 프리셋 정규화 [NEW]:**

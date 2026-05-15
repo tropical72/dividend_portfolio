@@ -266,6 +266,9 @@ const translations = {
     "settings.corpTargetBuffer": "Corp Target Buffer",
     "settings.corpTargetBufferTooltip":
       "Target months for the corporate SGOV buffer.",
+    "settings.corpNovemberSgovTarget": "Corp November SGOV",
+    "settings.corpNovemberSgovTargetTooltip":
+      "Corporate SGOV target months for the semiannual review.",
     "settings.corpWarnBuffer": "Corp Warn Buffer",
     "settings.corpWarnBufferTooltip":
       "Warning months for the corporate SGOV buffer.",
@@ -275,6 +278,15 @@ const translations = {
     "settings.growthSellYears": "Growth Sell Years",
     "settings.growthSellYearsTooltip":
       "Remaining life threshold that allows Growth Engine selling.",
+    "settings.corpBondFloor": "Corp Bond Floor",
+    "settings.corpBondFloorTooltip":
+      "Minimum months for the corporate Bond Buffer.",
+    "settings.corpBondTarget": "Corp Bond Target",
+    "settings.corpBondTargetTooltip":
+      "Target months for the corporate Bond Buffer.",
+    "settings.corpBondUpper": "Corp Bond Upper",
+    "settings.corpBondUpperTooltip":
+      "Upper months for the corporate Bond Buffer before donor rules apply.",
     "settings.highIncomeMin": "High Income Min",
     "settings.highIncomeMinTooltip":
       "Minimum allocation for High Income assets.",
@@ -285,9 +297,24 @@ const translations = {
     "settings.pensionSgovMin": "Pension SGOV Min",
     "settings.pensionSgovMinTooltip":
       "Minimum years to maintain the pension SGOV buffer.",
+    "settings.pensionSgovTarget": "Pension SGOV Target",
+    "settings.pensionSgovTargetTooltip":
+      "Target months for the pension SGOV buffer at the main annual review.",
+    "settings.pensionSgovFloor": "Pension SGOV Floor",
+    "settings.pensionSgovFloorTooltip":
+      "Floor months that trigger pension SGOV refill.",
     "settings.bondMinYears": "Bond Min Years",
     "settings.bondMinYearsTooltip":
       "Minimum years to maintain the pension bond buffer.",
+    "settings.pensionBondFloor": "Pension Bond Floor",
+    "settings.pensionBondFloorTooltip":
+      "Minimum months for the pension Bond Buffer.",
+    "settings.pensionBondTarget": "Pension Bond Target",
+    "settings.pensionBondTargetTooltip":
+      "Target months for the pension Bond Buffer.",
+    "settings.pensionBondUpper": "Pension Bond Upper",
+    "settings.pensionBondUpperTooltip":
+      "Upper months for the pension Bond Buffer before donor rules apply.",
     "settings.bondMinRatio": "Bond Min Ratio",
     "settings.bondMinRatioTooltip":
       "Minimum total asset ratio for the pension bond buffer.",
@@ -910,6 +937,9 @@ const translations = {
     "settings.corporateRules": "법인 규칙",
     "settings.corpTargetBuffer": "법인 목표 버퍼",
     "settings.corpTargetBufferTooltip": "법인 SGOV 버퍼 목표 개월수입니다.",
+    "settings.corpNovemberSgovTarget": "법인 11월 SGOV",
+    "settings.corpNovemberSgovTargetTooltip":
+      "법인 반기점검 SGOV 목표 개월수입니다.",
     "settings.corpWarnBuffer": "법인 경고 버퍼",
     "settings.corpWarnBufferTooltip": "법인 SGOV 버퍼 경고 개월수입니다.",
     "settings.corpCrisisBuffer": "법인 위기 버퍼",
@@ -918,6 +948,13 @@ const translations = {
     "settings.growthSellYears": "성장자산 매도 연수",
     "settings.growthSellYearsTooltip":
       "Growth Engine 매도를 허용할 남은 기대수명 임계값입니다.",
+    "settings.corpBondFloor": "법인 채권 Floor",
+    "settings.corpBondFloorTooltip": "법인 Bond Buffer 최소 개월수입니다.",
+    "settings.corpBondTarget": "법인 채권 Target",
+    "settings.corpBondTargetTooltip": "법인 Bond Buffer 목표 개월수입니다.",
+    "settings.corpBondUpper": "법인 채권 Upper",
+    "settings.corpBondUpperTooltip":
+      "자동 donor 규칙 적용 전 법인 Bond Buffer 상단 개월수입니다.",
     "settings.highIncomeMin": "고소득 최소 비중",
     "settings.highIncomeMinTooltip": "High Income 최소 비중입니다.",
     "settings.highIncomeMax": "고소득 최대 비중",
@@ -925,8 +962,21 @@ const translations = {
     "settings.pensionRules": "연금 규칙",
     "settings.pensionSgovMin": "연금 SGOV 최소",
     "settings.pensionSgovMinTooltip": "연금 SGOV 버퍼 최소 유지 연수입니다.",
+    "settings.pensionSgovTarget": "연금 SGOV Target",
+    "settings.pensionSgovTargetTooltip":
+      "연금 메인 정기점검 SGOV 목표 개월수입니다.",
+    "settings.pensionSgovFloor": "연금 SGOV Floor",
+    "settings.pensionSgovFloorTooltip":
+      "연금 SGOV 중간 보충을 트리거하는 하한 개월수입니다.",
     "settings.bondMinYears": "채권 최소 연수",
     "settings.bondMinYearsTooltip": "연금 채권 버퍼 최소 유지 연수입니다.",
+    "settings.pensionBondFloor": "연금 채권 Floor",
+    "settings.pensionBondFloorTooltip": "연금 Bond Buffer 최소 개월수입니다.",
+    "settings.pensionBondTarget": "연금 채권 Target",
+    "settings.pensionBondTargetTooltip": "연금 Bond Buffer 목표 개월수입니다.",
+    "settings.pensionBondUpper": "연금 채권 Upper",
+    "settings.pensionBondUpperTooltip":
+      "자동 donor 규칙 적용 전 연금 Bond Buffer 상단 개월수입니다.",
     "settings.bondMinRatio": "채권 최소 비중",
     "settings.bondMinRatioTooltip": "연금 채권 버퍼 최소 총자산 비중입니다.",
     "settings.dividendMinRatio": "배당 최소 비중",

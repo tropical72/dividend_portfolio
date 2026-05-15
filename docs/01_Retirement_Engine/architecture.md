@@ -44,20 +44,29 @@
     "ltc_rate": "number (System Default)"
   },
   "strategy_rules": {
-    "rebalance_month": "number (Default: 1)",
+    "rebalance_month": "number (Default: 5)",
     "rebalance_week": "number (Default: 2)",
     "bear_market_freeze_enabled": "boolean",
     "corporate": {
-      "sgov_target_months": "number (Default: 36)",
-      "sgov_warn_months": "number (Default: 30)",
+      "sgov_target_months": "number (Default: 30)",
+      "sgov_warn_months": "number (Default: 27)",
       "sgov_crisis_months": "number (Default: 24)",
+      "november_sgov_target_months": "number (Default: 27)",
+      "bond_floor_months": "number (Default: 12)",
+      "bond_target_months": "number (Default: 18)",
+      "bond_upper_months": "number (Default: 24)",
       "high_income_min_ratio": "number (Default: 0.20)",
       "high_income_max_ratio": "number (Default: 0.35)",
       "growth_sell_years_left_threshold": "number (Default: 10)"
     },
     "pension": {
       "sgov_min_years": "number (Default: 2)",
+      "sgov_target_months": "number (Default: 24)",
+      "sgov_floor_months": "number (Default: 12)",
       "bond_min_years": "number (Default: 5)",
+      "bond_floor_months": "number (Default: 12)",
+      "bond_target_months": "number (Default: 18)",
+      "bond_upper_months": "number (Default: 24)",
       "bond_min_total_ratio": "number (Default: 0.05)",
       "dividend_min_ratio": "number (Default: 0.10)"
     }

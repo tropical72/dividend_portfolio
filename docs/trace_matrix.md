@@ -37,6 +37,7 @@
 | D-RAMS-8.1.1    | Settings Assumptions 영역의 테스트 전용 프리셋 노출 제거 및 활성 프리셋 정규화                       | T-01-9.4.2            | TEST-UI-RULE-07                                                                                                 | Done        | 1abf653    | 2026.04.16-21.46 |
 | D-RAMS-8.1.2    | 월 필요 생활비 입력 누락으로 인한 저지출 시뮬레이션 오인 방지 및 Settings 노출 보강                  | T-01-9.4.4            | TEST-UI-RULE-08                                                                                                 | Done        | 1f34368    | 2026.04.16-22.00 |
 | D-RAMS-8.1.3    | Projection Result에서 실제 적용 중인 월 필요 생활비 배지 노출                                        | T-01-9.4.5            | TEST-UI-RULE-09                                                                                                 | Done        | dffc4e6    | 2026.04.16-22.10 |
+| D-RAMS-8.1.4    | v11.1 전략 설정 전체 노출 및 `rebalance_month` 동적 캘린더 연동                                     | T-01-13.1 ~ T-01-13.2 | TEST-SUR-14 / TEST-UI-RULE-05                                                                                   | Done        | -          | 2026.05.15 |
 
 ---
 

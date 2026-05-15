@@ -663,7 +663,7 @@ class DividendBackend:
     def _get_default_strategy_rules(self) -> Dict[str, Any]:
         """stock-plan 기본값 기반 전략 규칙 기본 스키마를 반환합니다."""
         return {
-            "rebalance_month": 1,
+            "rebalance_month": 5,
             "rebalance_week": 2,
             "bear_market_freeze_enabled": True,
             "corporate": {

@@ -45,6 +45,26 @@ test.describe("Settings Strategy Rules", () => {
       .locator("input");
     await corpTargetInput.fill("40");
 
+    const corpNovemberInput = page
+      .getByTestId("input-group-corp-november-sgov-target")
+      .locator("input");
+    await corpNovemberInput.fill("29");
+
+    const corpBondTargetInput = page
+      .getByTestId("input-group-corp-bond-target")
+      .locator("input");
+    await corpBondTargetInput.fill("16");
+
+    const pensionSgovTargetInput = page
+      .getByTestId("input-group-pension-sgov-target")
+      .locator("input");
+    await pensionSgovTargetInput.fill("36");
+
+    const pensionBondUpperInput = page
+      .getByTestId("input-group-pension-bond-upper")
+      .locator("input");
+    await pensionBondUpperInput.fill("22");
+
     const bondMinRatioInput = page
       .getByTestId("input-group-bond-min-ratio")
       .locator("input");
@@ -77,6 +97,10 @@ test.describe("Settings Strategy Rules", () => {
 
     await expect(rebalanceMonthInput).toHaveValue("3");
     await expect(corpTargetInput).toHaveValue("40");
+    await expect(corpNovemberInput).toHaveValue("29");
+    await expect(corpBondTargetInput).toHaveValue("16");
+    await expect(pensionSgovTargetInput).toHaveValue("36");
+    await expect(pensionBondUpperInput).toHaveValue("22");
     await expect(bondMinRatioInput).toHaveValue("7.5");
     await expect(monthlyLivingCostInput).toHaveValue("10,000,000");
     await expect(uiLanguageSelect).toHaveValue("en");

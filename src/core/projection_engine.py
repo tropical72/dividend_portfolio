@@ -38,6 +38,16 @@ class ProjectionEngine:
         def p(key: str, default: Any) -> Any:
             return params.get(key, default)
 
+        def normalize_month(value: Any, default: int = 5) -> int:
+            try:
+                month = int(value)
+            except (TypeError, ValueError):
+                return default
+            return max(1, min(12, month))
+
+        def offset_month(month: int, offset: int) -> int:
+            return ((month - 1 + offset) % 12) + 1
+
         stats = params.get("portfolio_stats", {})
         corp_stats = stats.get("corp", {})
         pension_stats = stats.get("pension", {})
@@ -79,6 +89,9 @@ class ProjectionEngine:
         planned_cashflows = params.get("planned_cashflows", [])
         start_year = int(p("simulation_start_year", 2026))
         start_month = int(p("simulation_start_month", 1))
+        main_review_month = normalize_month(p("rebalance_month", 5), 5)
+        corporate_mini_review_month = offset_month(main_review_month, 3)
+        corporate_semi_review_month = offset_month(main_review_month, 6)
         start_age = ((start_year - birth_year) * 12 + (start_month - birth_month)) // 12
         start_phase = self._resolve_phase(
             start_age, private_pension_start_age, national_pension_start_age
@@ -245,7 +258,7 @@ class ProjectionEngine:
             pre_review_equity_value = self._equity_value(corp_assets) + self._equity_value(
                 pension_assets
             )
-            if sim_month == 5:
+            if sim_month == main_review_month:
                 (
                     current_stress,
                     inflation_action,
@@ -290,9 +303,9 @@ class ProjectionEngine:
                 crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
                 previous_may_total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
                 shock_flag = False
-            elif sim_month == 8:
+            elif sim_month == corporate_mini_review_month:
                 self._run_august_corporate_review(corp_assets, corp_monthly_need)
-            elif sim_month == 11:
+            elif sim_month == corporate_semi_review_month:
                 growth_used = self._run_november_rebalance(
                     corp_assets, corp_stats, corp_monthly_need, corporate_rules
                 )

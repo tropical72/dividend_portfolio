@@ -8,7 +8,7 @@ def test_retirement_config_includes_default_strategy_rules(tmp_path):
     config = backend.get_retirement_config()
 
     assert "strategy_rules" in config
-    assert config["strategy_rules"]["rebalance_month"] == 1
+    assert config["strategy_rules"]["rebalance_month"] == 5
     assert config["strategy_rules"]["rebalance_week"] == 2
     assert config["strategy_rules"]["bear_market_freeze_enabled"] is True
     assert config["strategy_rules"]["corporate"]["sgov_target_months"] == 30

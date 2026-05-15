@@ -55,7 +55,7 @@ type StrategyRulesUpdates = {
 const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
 
 const DEFAULT_STRATEGY_RULES: StrategyRules = {
-  rebalance_month: 1,
+  rebalance_month: 5,
   rebalance_week: 2,
   bear_market_freeze_enabled: true,
   corporate: {
@@ -973,6 +973,23 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
+                    label={t("settings.corpNovemberSgovTarget")}
+                    unit="Mo"
+                    tooltip={t("settings.corpNovemberSgovTargetTooltip")}
+                    testId="input-group-corp-november-sgov-target"
+                    value={
+                      retireConfig.strategy_rules.corporate
+                        .november_sgov_target_months ?? 27
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        corporate: {
+                          november_sgov_target_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
                     label={t("settings.corpWarnBuffer")}
                     unit="Mo"
                     tooltip={t("settings.corpWarnBufferTooltip")}
@@ -1014,6 +1031,57 @@ export function SettingsTab({
                       updateStrategyRules({
                         corporate: {
                           growth_sell_years_left_threshold: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.corpBondFloor")}
+                    unit="Mo"
+                    tooltip={t("settings.corpBondFloorTooltip")}
+                    testId="input-group-corp-bond-floor"
+                    value={
+                      retireConfig.strategy_rules.corporate.bond_floor_months ??
+                      12
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        corporate: {
+                          bond_floor_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.corpBondTarget")}
+                    unit="Mo"
+                    tooltip={t("settings.corpBondTargetTooltip")}
+                    testId="input-group-corp-bond-target"
+                    value={
+                      retireConfig.strategy_rules.corporate
+                        .bond_target_months ?? 18
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        corporate: {
+                          bond_target_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.corpBondUpper")}
+                    unit="Mo"
+                    tooltip={t("settings.corpBondUpperTooltip")}
+                    testId="input-group-corp-bond-upper"
+                    value={
+                      retireConfig.strategy_rules.corporate.bond_upper_months ??
+                      24
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        corporate: {
+                          bond_upper_months: parseInt(v) || 0,
                         },
                       })
                     }
@@ -1086,6 +1154,40 @@ export function SettingsTab({
                     }
                   />
                   <InputGroup
+                    label={t("settings.pensionSgovTarget")}
+                    unit="Mo"
+                    tooltip={t("settings.pensionSgovTargetTooltip")}
+                    testId="input-group-pension-sgov-target"
+                    value={
+                      retireConfig.strategy_rules.pension.sgov_target_months ??
+                      24
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        pension: {
+                          sgov_target_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.pensionSgovFloor")}
+                    unit="Mo"
+                    tooltip={t("settings.pensionSgovFloorTooltip")}
+                    testId="input-group-pension-sgov-floor"
+                    value={
+                      retireConfig.strategy_rules.pension.sgov_floor_months ??
+                      12
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        pension: {
+                          sgov_floor_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
                     label={t("settings.bondMinYears")}
                     unit="Years"
                     tooltip={t("settings.bondMinYearsTooltip")}
@@ -1094,6 +1196,57 @@ export function SettingsTab({
                       updateStrategyRules({
                         pension: {
                           bond_min_years: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.pensionBondFloor")}
+                    unit="Mo"
+                    tooltip={t("settings.pensionBondFloorTooltip")}
+                    testId="input-group-pension-bond-floor"
+                    value={
+                      retireConfig.strategy_rules.pension.bond_floor_months ??
+                      12
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        pension: {
+                          bond_floor_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.pensionBondTarget")}
+                    unit="Mo"
+                    tooltip={t("settings.pensionBondTargetTooltip")}
+                    testId="input-group-pension-bond-target"
+                    value={
+                      retireConfig.strategy_rules.pension.bond_target_months ??
+                      18
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        pension: {
+                          bond_target_months: parseInt(v) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <InputGroup
+                    label={t("settings.pensionBondUpper")}
+                    unit="Mo"
+                    tooltip={t("settings.pensionBondUpperTooltip")}
+                    testId="input-group-pension-bond-upper"
+                    value={
+                      retireConfig.strategy_rules.pension.bond_upper_months ??
+                      24
+                    }
+                    onChange={(v) =>
+                      updateStrategyRules({
+                        pension: {
+                          bond_upper_months: parseInt(v) || 0,
                         },
                       })
                     }

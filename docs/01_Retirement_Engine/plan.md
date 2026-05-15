@@ -136,6 +136,16 @@
   - [x] **T-01-12.4.2** Settings 저장/재로드 및 실수령/파생 운영비 표시 UI 테스트를 추가한다.
   - [x] **T-01-12.4.3** 관련 `pytest`, `ruff`, `black --check`, `npm run build`, `prettier`를 통과시킨다.
 
+### [Phase 13] strategy_rules 동적 캘린더 및 Settings 노출 보정 (T-01-13) - DONE
+
+- **T-01-13.1: 리밸런싱 월 정책 정합화**
+  - [x] **T-01-13.1.1** v11.1 기본 메인 정기점검 월을 `rebalance_month=5`로 고정하고 백엔드/프론트 기본값 및 테스트를 갱신한다.
+  - [x] **T-01-13.1.2** `ProjectionEngine`이 `rebalance_month`를 기준으로 메인 정기점검을 실행하고, 법인 미니점검/반기점검은 `+3개월 / +6개월` 오프셋으로 실행하도록 연결한다.
+- **T-01-13.2: Settings 전략 파라미터 노출 완성**
+  - [x] **T-01-13.2.1** 법인 `november_sgov_target_months`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
+  - [x] **T-01-13.2.2** 연금 `sgov_target/floor`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
+  - [x] **T-01-13.2.3** Settings 저장/재로드 E2E가 신규 노출 필드를 검증하도록 확장한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**
