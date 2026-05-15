@@ -255,72 +255,73 @@ const translations = {
     "settings.rebalanceMonth": "Rebalance Month",
     "settings.rebalanceMonthTooltip":
       "Month when mechanical rebalancing and planned strategy sales execute.",
-    "settings.rebalanceWeek": "Rebalance Week",
-    "settings.rebalanceWeekTooltip": "Week of the month when rebalancing runs.",
-    "settings.bearFreeze": "Bear Freeze",
+    "settings.rebalanceWeek": "Rebalance Week (saved only)",
+    "settings.rebalanceWeekTooltip":
+      "Saved for future scheduling UI. The current simulation engine uses only Rebalance Month, not the week number.",
+    "settings.bearFreeze": "Bear Freeze (saved only)",
     "settings.bearFreezeTooltip":
-      "Freeze Dividend Growth and Growth Engine selling during bear markets.",
+      "Saved and shown in summaries, but the current v11.1 engine does not directly read this toggle. Shock/Stress behavior is controlled by the engine review rules.",
     "settings.enabled": "Enabled",
     "settings.disabled": "Disabled",
     "settings.corporateRules": "Corporate Rules",
-    "settings.corpTargetBuffer": "Corp Target Buffer",
+    "settings.corpTargetBuffer": "Corp SGOV Main Target",
     "settings.corpTargetBufferTooltip":
-      "Target months for the corporate SGOV buffer.",
+      "Engine-active. At the main annual review month, refill corporate SGOV Buffer up to this many months of corporate monthly cash need. Default: 30 months.",
     "settings.corpNovemberSgovTarget": "Corp November SGOV",
     "settings.corpNovemberSgovTargetTooltip":
-      "Corporate SGOV target months for the semiannual review.",
-    "settings.corpWarnBuffer": "Corp Warn Buffer",
+      "Engine-active. At the corporate semiannual review, six months after the main review month, refill corporate SGOV Buffer up to this many months. Default: 27 months.",
+    "settings.corpWarnBuffer": "Corp Warn Buffer (legacy)",
     "settings.corpWarnBufferTooltip":
-      "Warning months for the corporate SGOV buffer.",
-    "settings.corpCrisisBuffer": "Corp Crisis Buffer",
+      "Legacy compatibility value. It is used only as a fallback default for Corp November SGOV when that field is missing; changing it does not otherwise change the current engine.",
+    "settings.corpCrisisBuffer": "Corp Crisis Buffer (saved only)",
     "settings.corpCrisisBufferTooltip":
-      "Crisis threshold in months that blocks Growth Engine sales.",
-    "settings.growthSellYears": "Growth Sell Years",
+      "Saved for a future crisis policy. The current v11.1 engine does not directly read this value.",
+    "settings.growthSellYears": "Growth Sell Years (saved only)",
     "settings.growthSellYearsTooltip":
-      "Remaining life threshold that allows Growth Engine selling.",
+      "Saved for a future life-expectancy sale gate. The current v11.1 engine does not directly read this value.",
     "settings.corpBondFloor": "Corp Bond Floor",
     "settings.corpBondFloorTooltip":
-      "Minimum months for the corporate Bond Buffer.",
+      "Engine-active. Rebalancing may use Bond Buffer as a donor only above this floor. Default: 12 months.",
     "settings.corpBondTarget": "Corp Bond Target",
     "settings.corpBondTargetTooltip":
-      "Target months for the corporate Bond Buffer.",
+      "Engine-active. At corporate reviews, refill Bond Buffer toward this target after SGOV is handled. Default: 18 months.",
     "settings.corpBondUpper": "Corp Bond Upper",
     "settings.corpBondUpperTooltip":
-      "Upper months for the corporate Bond Buffer before donor rules apply.",
-    "settings.highIncomeMin": "High Income Min",
+      "Engine-active. Bond above this upper band can be redeployed as surplus before other donor rules. Default: 24 months.",
+    "settings.highIncomeMin": "High Income Min (saved only)",
     "settings.highIncomeMinTooltip":
-      "Minimum allocation for High Income assets.",
-    "settings.highIncomeMax": "High Income Max",
+      "Saved allocation guide only. The current v11.1 engine does not enforce a High Income minimum.",
+    "settings.highIncomeMax": "High Income Max (saved only)",
     "settings.highIncomeMaxTooltip":
-      "Maximum guide allocation for High Income assets.",
+      "Saved allocation guide only. The current v11.1 engine does not enforce a High Income maximum.",
     "settings.pensionRules": "Pension Rules",
-    "settings.pensionSgovMin": "Pension SGOV Min",
+    "settings.pensionSgovMin": "Pension SGOV Years (legacy)",
     "settings.pensionSgovMinTooltip":
-      "Minimum years to maintain the pension SGOV buffer.",
+      "Legacy compatibility value. If Pension SGOV Target is missing, this value is converted to months and used as the target. With the target field present, the engine uses Pension SGOV Target and Pension SGOV Floor.",
     "settings.pensionSgovTarget": "Pension SGOV Target",
     "settings.pensionSgovTargetTooltip":
-      "Target months for the pension SGOV buffer at the main annual review.",
+      "Engine-active. At the main annual review, refill pension SGOV Buffer up to this many months of pension withdrawal target. Default: 24 months.",
     "settings.pensionSgovFloor": "Pension SGOV Floor",
     "settings.pensionSgovFloorTooltip":
-      "Floor months that trigger pension SGOV refill.",
-    "settings.bondMinYears": "Bond Min Years",
+      "Engine-active. If pension SGOV falls below this floor, the engine refills it from Bond Buffer outside the annual review. Default: 12 months.",
+    "settings.bondMinYears": "Bond Min Years (saved only)",
     "settings.bondMinYearsTooltip":
-      "Minimum years to maintain the pension bond buffer.",
+      "Saved legacy guide only. The current v11.1 engine uses Pension Bond Floor/Target/Upper months instead.",
     "settings.pensionBondFloor": "Pension Bond Floor",
     "settings.pensionBondFloorTooltip":
-      "Minimum months for the pension Bond Buffer.",
+      "Engine-active. Rebalancing may use pension Bond Buffer as a donor only above this floor. Default: 12 months.",
     "settings.pensionBondTarget": "Pension Bond Target",
     "settings.pensionBondTargetTooltip":
-      "Target months for the pension Bond Buffer.",
+      "Engine-active. At the main annual review, refill pension Bond Buffer toward this target after SGOV is handled. Default: 18 months.",
     "settings.pensionBondUpper": "Pension Bond Upper",
     "settings.pensionBondUpperTooltip":
-      "Upper months for the pension Bond Buffer before donor rules apply.",
-    "settings.bondMinRatio": "Bond Min Ratio",
+      "Engine-active. Bond above this upper band can be redeployed as surplus. Default: 24 months.",
+    "settings.bondMinRatio": "Bond Min Ratio (saved only)",
     "settings.bondMinRatioTooltip":
-      "Minimum total asset ratio for the pension bond buffer.",
-    "settings.dividendMinRatio": "Dividend Min Ratio",
+      "Saved allocation guide only. The current v11.1 engine does not enforce this ratio; it uses Bond Floor/Target/Upper months.",
+    "settings.dividendMinRatio": "Dividend Min Ratio (saved only)",
     "settings.dividendMinRatioTooltip":
-      "Minimum total asset ratio for pension dividend growth assets.",
+      "Saved allocation guide only. The current v11.1 engine does not enforce a Dividend Growth minimum ratio.",
     "settings.cashflowEvents": "Cashflow Events",
     "settings.cashflowEventsTooltip":
       "Register future one-time inflows or large expenses.",
@@ -372,9 +373,9 @@ const translations = {
     "settings.healthUnitPrice": "Health Unit Price",
     "settings.healthUnitPriceTooltip":
       "Unit price per score used to estimate national health insurance premiums.",
-    "settings.sgovBuffer": "SGOV Buffer",
+    "settings.sgovBuffer": "Legacy Trigger Buffer",
     "settings.sgovBufferTooltip":
-      "Target months of safe assets reserved for corporate operations and spending.",
+      "Legacy trigger threshold stored under trigger_thresholds. It is not the v11.1 corporate SGOV rebalancing target; use Corp SGOV Main Target below for the engine-active setting.",
     "settings.assumptions": "Assumptions",
     "settings.assumptionsTooltip":
       "Define future scenarios for market return and inflation.",
@@ -927,61 +928,73 @@ const translations = {
     "settings.rebalanceMonth": "리밸런싱 월",
     "settings.rebalanceMonthTooltip":
       "기계적 리밸런싱과 계획된 매도를 실행할 기준 월입니다.",
-    "settings.rebalanceWeek": "리밸런싱 주차",
-    "settings.rebalanceWeekTooltip": "리밸런싱을 실행할 주차입니다.",
-    "settings.bearFreeze": "하락장 동결",
+    "settings.rebalanceWeek": "리밸런싱 주차(저장 전용)",
+    "settings.rebalanceWeekTooltip":
+      "향후 일정 UI를 위해 저장하는 값입니다. 현재 시뮬레이션 엔진은 리밸런싱 월만 사용하고 주차 값은 직접 사용하지 않습니다.",
+    "settings.bearFreeze": "하락장 동결(저장 전용)",
     "settings.bearFreezeTooltip":
-      "하락장에서는 Dividend Growth와 Growth Engine 매도를 잠급니다.",
+      "저장 및 요약 표시에만 쓰입니다. 현재 v11.1 엔진은 이 토글을 직접 읽지 않고, Shock/Stress 판단과 정기점검 규칙으로 매도 여부를 결정합니다.",
     "settings.enabled": "활성",
     "settings.disabled": "비활성",
     "settings.corporateRules": "법인 규칙",
-    "settings.corpTargetBuffer": "법인 목표 버퍼",
-    "settings.corpTargetBufferTooltip": "법인 SGOV 버퍼 목표 개월수입니다.",
+    "settings.corpTargetBuffer": "법인 SGOV 메인 목표",
+    "settings.corpTargetBufferTooltip":
+      "엔진 반영 항목입니다. 메인 정기점검 월에 법인 SGOV Buffer를 법인 월 필요현금의 이 개월수까지 채웁니다. 기본값은 30개월입니다.",
     "settings.corpNovemberSgovTarget": "법인 11월 SGOV",
     "settings.corpNovemberSgovTargetTooltip":
-      "법인 반기점검 SGOV 목표 개월수입니다.",
-    "settings.corpWarnBuffer": "법인 경고 버퍼",
-    "settings.corpWarnBufferTooltip": "법인 SGOV 버퍼 경고 개월수입니다.",
-    "settings.corpCrisisBuffer": "법인 위기 버퍼",
+      "엔진 반영 항목입니다. 메인 정기점검 6개월 뒤 법인 반기점검에서 SGOV Buffer를 이 개월수까지 채웁니다. 기본값은 27개월입니다.",
+    "settings.corpWarnBuffer": "법인 경고 버퍼(레거시)",
+    "settings.corpWarnBufferTooltip":
+      "호환성용 값입니다. 법인 11월 SGOV 값이 없을 때 기본값으로만 사용되며, 그 외에는 현재 엔진 판단을 직접 바꾸지 않습니다.",
+    "settings.corpCrisisBuffer": "법인 위기 버퍼(저장 전용)",
     "settings.corpCrisisBufferTooltip":
-      "Growth Engine 매도 예외를 판단하는 위기 개월수입니다.",
-    "settings.growthSellYears": "성장자산 매도 연수",
+      "향후 위기 정책을 위해 저장하는 값입니다. 현재 v11.1 엔진은 이 값을 직접 사용하지 않습니다.",
+    "settings.growthSellYears": "성장자산 매도 연수(저장 전용)",
     "settings.growthSellYearsTooltip":
-      "Growth Engine 매도를 허용할 남은 기대수명 임계값입니다.",
+      "향후 기대수명 기반 성장자산 매도 게이트를 위해 저장하는 값입니다. 현재 v11.1 엔진은 이 값을 직접 사용하지 않습니다.",
     "settings.corpBondFloor": "법인 채권 Floor",
-    "settings.corpBondFloorTooltip": "법인 Bond Buffer 최소 개월수입니다.",
+    "settings.corpBondFloorTooltip":
+      "엔진 반영 항목입니다. 리밸런싱에서 법인 Bond Buffer는 이 개월수 아래로 자동 매도하지 않습니다. 기본값은 12개월입니다.",
     "settings.corpBondTarget": "법인 채권 Target",
-    "settings.corpBondTargetTooltip": "법인 Bond Buffer 목표 개월수입니다.",
+    "settings.corpBondTargetTooltip":
+      "엔진 반영 항목입니다. 법인 점검에서 SGOV를 처리한 뒤 Bond Buffer를 이 목표까지 채웁니다. 기본값은 18개월입니다.",
     "settings.corpBondUpper": "법인 채권 Upper",
     "settings.corpBondUpperTooltip":
-      "자동 donor 규칙 적용 전 법인 Bond Buffer 상단 개월수입니다.",
-    "settings.highIncomeMin": "고소득 최소 비중",
-    "settings.highIncomeMinTooltip": "High Income 최소 비중입니다.",
-    "settings.highIncomeMax": "고소득 최대 비중",
-    "settings.highIncomeMaxTooltip": "High Income 최대 비중 가이드입니다.",
+      "엔진 반영 항목입니다. 이 상단을 넘는 법인 Bond Buffer는 초과분으로 보고 위험자산 쪽으로 재배치될 수 있습니다. 기본값은 24개월입니다.",
+    "settings.highIncomeMin": "고소득 최소 비중(저장 전용)",
+    "settings.highIncomeMinTooltip":
+      "저장되는 배분 가이드입니다. 현재 v11.1 엔진은 High Income 최소 비중을 강제하지 않습니다.",
+    "settings.highIncomeMax": "고소득 최대 비중(저장 전용)",
+    "settings.highIncomeMaxTooltip":
+      "저장되는 배분 가이드입니다. 현재 v11.1 엔진은 High Income 최대 비중을 강제하지 않습니다.",
     "settings.pensionRules": "연금 규칙",
-    "settings.pensionSgovMin": "연금 SGOV 최소",
-    "settings.pensionSgovMinTooltip": "연금 SGOV 버퍼 최소 유지 연수입니다.",
+    "settings.pensionSgovMin": "연금 SGOV 연수(레거시)",
+    "settings.pensionSgovMinTooltip":
+      "호환성용 값입니다. 연금 SGOV Target 값이 없을 때 이 연수를 개월수로 바꿔 목표값으로 사용합니다. Target이 있으면 현재 엔진은 연금 SGOV Target과 Floor를 사용합니다.",
     "settings.pensionSgovTarget": "연금 SGOV Target",
     "settings.pensionSgovTargetTooltip":
-      "연금 메인 정기점검 SGOV 목표 개월수입니다.",
+      "엔진 반영 항목입니다. 메인 정기점검에서 연금 SGOV Buffer를 월 연금 인출 목표의 이 개월수까지 채웁니다. 기본값은 24개월입니다.",
     "settings.pensionSgovFloor": "연금 SGOV Floor",
     "settings.pensionSgovFloorTooltip":
-      "연금 SGOV 중간 보충을 트리거하는 하한 개월수입니다.",
-    "settings.bondMinYears": "채권 최소 연수",
-    "settings.bondMinYearsTooltip": "연금 채권 버퍼 최소 유지 연수입니다.",
+      "엔진 반영 항목입니다. 연금 SGOV가 이 하한 아래로 내려가면 정기점검 외에도 Bond Buffer에서 우선 보충합니다. 기본값은 12개월입니다.",
+    "settings.bondMinYears": "채권 최소 연수(저장 전용)",
+    "settings.bondMinYearsTooltip":
+      "저장되는 레거시 가이드입니다. 현재 v11.1 엔진은 연금 Bond Floor/Target/Upper 개월수를 사용합니다.",
     "settings.pensionBondFloor": "연금 채권 Floor",
-    "settings.pensionBondFloorTooltip": "연금 Bond Buffer 최소 개월수입니다.",
+    "settings.pensionBondFloorTooltip":
+      "엔진 반영 항목입니다. 리밸런싱에서 연금 Bond Buffer는 이 개월수 아래로 자동 매도하지 않습니다. 기본값은 12개월입니다.",
     "settings.pensionBondTarget": "연금 채권 Target",
-    "settings.pensionBondTargetTooltip": "연금 Bond Buffer 목표 개월수입니다.",
+    "settings.pensionBondTargetTooltip":
+      "엔진 반영 항목입니다. 메인 정기점검에서 SGOV를 처리한 뒤 연금 Bond Buffer를 이 목표까지 채웁니다. 기본값은 18개월입니다.",
     "settings.pensionBondUpper": "연금 채권 Upper",
     "settings.pensionBondUpperTooltip":
-      "자동 donor 규칙 적용 전 연금 Bond Buffer 상단 개월수입니다.",
-    "settings.bondMinRatio": "채권 최소 비중",
-    "settings.bondMinRatioTooltip": "연금 채권 버퍼 최소 총자산 비중입니다.",
-    "settings.dividendMinRatio": "배당 최소 비중",
+      "엔진 반영 항목입니다. 이 상단을 넘는 연금 Bond Buffer는 초과분으로 보고 위험자산 쪽으로 재배치될 수 있습니다. 기본값은 24개월입니다.",
+    "settings.bondMinRatio": "채권 최소 비중(저장 전용)",
+    "settings.bondMinRatioTooltip":
+      "저장되는 배분 가이드입니다. 현재 v11.1 엔진은 이 비중을 강제하지 않고 Bond Floor/Target/Upper 개월수를 사용합니다.",
+    "settings.dividendMinRatio": "배당 최소 비중(저장 전용)",
     "settings.dividendMinRatioTooltip":
-      "연금 Dividend Growth 최소 총자산 비중입니다.",
+      "저장되는 배분 가이드입니다. 현재 v11.1 엔진은 Dividend Growth 최소 비중을 강제하지 않습니다.",
     "settings.cashflowEvents": "현금흐름 이벤트",
     "settings.cashflowEventsTooltip":
       "미래의 일회성 자산 유입이나 큰 지출을 등록합니다.",
@@ -1032,9 +1045,9 @@ const translations = {
     "settings.healthUnitPrice": "건보 점수 단가",
     "settings.healthUnitPriceTooltip":
       "건강보험료 계산에 사용하는 점수당 단가입니다.",
-    "settings.sgovBuffer": "SGOV 버퍼",
+    "settings.sgovBuffer": "레거시 트리거 버퍼",
     "settings.sgovBufferTooltip":
-      "법인 운영비와 지출을 위해 확보할 안전자산 목표 개월수입니다.",
+      "trigger_thresholds에 저장되는 레거시 임계값입니다. v11.1 법인 SGOV 리밸런싱 목표가 아니며, 실제 엔진 반영 값은 아래의 법인 SGOV 메인 목표를 사용하세요.",
     "settings.assumptions": "가정 시나리오",
     "settings.assumptionsTooltip":
       "시장 수익률과 인플레이션에 대한 미래 시나리오를 정의합니다.",
