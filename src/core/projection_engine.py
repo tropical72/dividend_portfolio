@@ -326,7 +326,7 @@ class ProjectionEngine:
             if crash20_triggered:
                 boost_amount = self._boost_amount_for_drawdown(equity_value, boost_reference_base)
                 boost_months_remaining = 6 if boost_amount > 0 else 0
-            elif sim_month == 5 and current_stress:
+            elif sim_month == main_review_month and current_stress:
                 boost_amount = self._boost_amount_for_drawdown(
                     pre_review_equity_value, boost_reference_base
                 )
@@ -400,7 +400,7 @@ class ProjectionEngine:
                 boost_months_remaining -= 1
                 if boost_months_remaining == 0:
                     boost_amount = 0.0
-            if sim_month == 5:
+            if sim_month == main_review_month:
                 approved_total_need = next_target_cashflow
 
         return {

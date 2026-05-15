@@ -102,6 +102,7 @@
 - **[TEST-SUR-14] strategy_rules 동적 버퍼 연동 검증 [NEW]:**
   - API에서 `strategy_rules.corporate.sgov_target_months`, `strategy_rules.corporate.november_sgov_target_months`, `strategy_rules.corporate.bond_*_months`, `strategy_rules.pension.sgov_min_years/sgov_target_months`, `strategy_rules.pension.bond_*_months`를 변경하면 5월 리밸런싱 결과 개월수가 즉시 달라지는지 확인.
   - `strategy_rules.rebalance_month`를 5월이 아닌 월로 변경하면 메인 정기점검/리밸런싱 실행 월이 함께 이동하고, 8월/11월에 해당하던 법인 미니점검/반기점검은 각각 `+3개월 / +6개월` 오프셋으로 이동하는지 확인.
+  - 동적 메인 정기점검 월에서 승인된 인플레이션 조정액은 다음 달부터 적용되고, Crash20이 아닌 Stress 기반 BOOST도 동적 메인 정기점검 월에 발동하는지 확인.
 - **[TEST-SUR-15] donor 우선순위 재현 검증 [NEW]:**
   - 법인 5월/11월 점검에서 `Bond upper band(24개월) 초과분`이 `Dividend Growth/Growth Engine`보다 먼저 donor로 사용되고, `18~24개월` 구간은 자동 donor로 소진되지 않으며, `Bond floor 12개월` 아래로는 자동 침범하지 않는지 확인.
   - 개인연금도 동일하게 `18~24개월 유지 / 24개월 초과분만 donor 후보` 해석이 재현되는지 확인.

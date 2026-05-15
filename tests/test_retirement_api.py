@@ -568,6 +568,81 @@ def test_run_retirement_simulation_uses_dynamic_rebalance_month(tmp_path, monkey
     assert month1["pension_bond_months"] == pytest.approx(22.0)
 
 
+def test_retirement_api_dynamic_rebalance_month_applies_inflation_from_next_month(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1970,
+                "birth_month": 1,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.10,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 120000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_fixed_cost": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 6,
+                "target_monthly_cashflow": 1000000,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "strategy_rules": {"rebalance_month": 6},
+        },
+    )
+
+    backend.get_active_master_portfolio = lambda: None
+    backend.get_portfolio_by_id = lambda _portfolio_id: None
+    backend.portfolios = []
+    backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+    backend.get_appreciation_rates_for_scenario = lambda *_args, **_kwargs: {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.0,
+    }
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    monthly = {(m["year"], m["month"]): m for m in payload["data"]["monthly_data"]}
+    june = monthly[(2026, 6)]
+    july = monthly[(2026, 7)]
+
+    assert june["inflation_action"] == "approved"
+    assert june["next_target_cashflow"] == pytest.approx(1100000.0)
+    assert july["target_cashflow"] == pytest.approx(1100000.0)
+
+
 def test_retirement_simulation_august_review_does_not_sell_equity_when_bond_is_insufficient(
     tmp_path, monkeypatch
 ):
@@ -1273,6 +1348,130 @@ def test_retirement_api_stress_without_crash20_still_triggers_first_boost_ladder
     assert may["crash20_triggered"] is False
     assert may["boost_amount"] == 1000000.0
     assert june["pension_draw"] == pytest.approx(3500000.0)
+
+
+def test_retirement_api_stress_boost_follows_dynamic_rebalance_month(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "user_profile": {
+                "birth_year": 1970,
+                "birth_month": 1,
+                "private_pension_start_age": 55,
+                "national_pension_start_age": 80,
+            },
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "inflation_rate": 0.0,
+                    "expected_return": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 50000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 2500000,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 6,
+                "target_monthly_cashflow": 10000000,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "strategy_rules": {"rebalance_month": 6},
+        },
+    )
+
+    backend.get_active_master_portfolio = lambda: None
+    backend.get_portfolio_by_id = lambda _portfolio_id: None
+    backend.portfolios = [
+        {
+            "id": "corp",
+            "name": "Dynamic Stress Boost Corporate",
+            "account_type": "Corporate",
+            "total_capital": 100000000,
+        },
+        {
+            "id": "pension",
+            "name": "Dynamic Stress Boost Pension",
+            "account_type": "Pension",
+            "total_capital": 50000000,
+        },
+    ]
+    backend.get_standard_profile_return = lambda *_args, **_kwargs: 0.0
+    backend.get_appreciation_rates_for_scenario = lambda *_args, **_kwargs: {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.0,
+    }
+    backend.get_portfolio_stats_by_id = lambda _portfolio_id, *_args, **_kwargs: {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "weights": {},
+        "strategy_weights": (
+            {
+                "SGOV Buffer": 0.0,
+                "Bond Buffer": 0.0,
+                "High Income": 0.0,
+                "Dividend Growth": 0.0,
+                "Growth Engine": 1.0,
+            }
+            if _portfolio_id == "corp"
+            else {
+                "SGOV Buffer": 1.0,
+                "Bond Buffer": 0.0,
+                "High Income": 0.0,
+                "Dividend Growth": 0.0,
+                "Growth Engine": 0.0,
+            }
+        ),
+        "category_return_rates": {},
+    }
+    original_run = main_module.projection_engine.run_30yr_simulation
+
+    def _run_with_override(initial_assets, params):
+        params = dict(params)
+        params["monthly_return_overrides"] = {
+            "corp": {
+                "Growth Engine": {
+                    "2026-06": {"pa": -1.8, "dy": 0.0},
+                }
+            }
+        }
+        return original_run(initial_assets, params)
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _run_with_override)
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+
+    june = next(m for m in payload["data"]["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    july = next(m for m in payload["data"]["monthly_data"] if m["year"] == 2026 and m["month"] == 7)
+
+    assert june["stress"] is True
+    assert june["crash20_triggered"] is False
+    assert june["boost_amount"] == 1000000.0
+    assert july["pension_draw"] == pytest.approx(3500000.0)
 
 
 def test_retirement_api_boost_persists_for_six_months_and_then_reverts(tmp_path, monkeypatch):

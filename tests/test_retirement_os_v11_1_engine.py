@@ -419,6 +419,46 @@ def test_inflation_change_is_approved_in_may_and_applied_from_june():
     assert july["target_cashflow"] == 1100000
 
 
+def test_inflation_change_follows_dynamic_main_review_month():
+    """rebalance_month가 5월이 아니어도 인플레이션 승인액은 다음 달부터 적용되어야 한다."""
+    params = base_params()
+    params["simulation_years"] = 2
+    params["simulation_start_month"] = 6
+    params["rebalance_month"] = 6
+    params["target_monthly_cashflow"] = 1000000
+    params["inflation_rate"] = 0.10
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.30,
+        "Bond Buffer": 0.20,
+        "High Income": 0.00,
+        "Dividend Growth": 0.00,
+        "Growth Engine": 0.50,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000000, "pension": 0},
+        params=params,
+        months=3,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    july = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 7)
+    august = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 8)
+
+    assert june["target_cashflow"] == 1000000
+    assert june["next_target_cashflow"] == 1100000
+    assert june["inflation_action"] == "approved"
+    assert july["target_cashflow"] == 1100000
+    assert august["target_cashflow"] == 1100000
+
+
 def test_boost_temporarily_increases_pension_draw_for_six_months():
     """Shock 또는 Stress가 발생하면 개인연금 BOOST가 6개월 동안 추가 인출을 적용해야 한다."""
     params = base_params()
@@ -1005,3 +1045,56 @@ def test_stress_without_crash20_still_triggers_first_boost_ladder():
     assert may["crash20_triggered"] is False
     assert may["boost_amount"] == 1000000.0
     assert june["pension_draw"] == pytest.approx(3500000.0)
+
+
+def test_stress_boost_follows_dynamic_main_review_month():
+    """Stress 기반 BOOST는 5월 고정이 아니라 메인 정기점검 월을 따라야 한다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["simulation_start_month"] = 6
+    params["rebalance_month"] = 6
+    params["birth_year"] = 1970
+    params["birth_month"] = 1
+    params["private_pension_start_age"] = 55
+    params["national_pension_start_age"] = 80
+    params["target_monthly_cashflow"] = 10000000
+    params["pension_withdrawal_target"] = 2500000
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+        "pension": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {
+            "Growth Engine": {
+                "2026-06": {"pa": -1.8, "dy": 0.0},
+            }
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 50000000},
+        params=params,
+        months=2,
+    )
+
+    june = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 6)
+    july = next(m for m in result["monthly_data"] if m["year"] == 2026 and m["month"] == 7)
+
+    assert june["stress"] is True
+    assert june["crash20_triggered"] is False
+    assert june["boost_amount"] == 1000000.0
+    assert july["pension_draw"] == pytest.approx(3500000.0)

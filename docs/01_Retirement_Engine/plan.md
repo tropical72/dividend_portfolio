@@ -141,6 +141,7 @@
 - **T-01-13.1: 리밸런싱 월 정책 정합화**
   - [x] **T-01-13.1.1** v11.1 기본 메인 정기점검 월을 `rebalance_month=5`로 고정하고 백엔드/프론트 기본값 및 테스트를 갱신한다.
   - [x] **T-01-13.1.2** `ProjectionEngine`이 `rebalance_month`를 기준으로 메인 정기점검을 실행하고, 법인 미니점검/반기점검은 `+3개월 / +6개월` 오프셋으로 실행하도록 연결한다.
+  - [x] **T-01-13.1.3** 동적 메인 정기점검 월에서 인플레이션 승인액 적용과 Stress 기반 BOOST가 동일한 캘린더를 따르도록 회귀 테스트와 엔진 조건을 보강한다.
 - **T-01-13.2: Settings 전략 파라미터 노출 완성**
   - [x] **T-01-13.2.1** 법인 `november_sgov_target_months`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
   - [x] **T-01-13.2.2** 연금 `sgov_target/floor`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
