@@ -103,9 +103,9 @@
 
 ### [Phase 16] 자산군별 PA 시나리오 3중화 (Phase 1) [NEW]
 - **T-GLB-16.1: [Backend] 설정 스키마 및 계산 경로 시나리오화**
-    - [ ] **T-GLB-16.1.1** `settings.json`의 `appreciation_rates`를 `conservative / base / optimistic` 중첩 구조로 확장하고 `default_pa_scenario`를 추가한다.
-    - [ ] **T-GLB-16.1.2** 레거시 단일 PA 구조를 `base` 시나리오로 정규화하는 호환 계층을 추가한다.
-    - [ ] **T-GLB-16.1.3** `get_portfolio_stats_by_id`, `calculate_master_portfolio_tr`, `retirement simulate`, `cost comparison`이 선택된 PA 시나리오를 받아 계산하도록 수정한다.
+    - [x] **T-GLB-16.1.1** `settings.json`의 `appreciation_rates`를 `conservative / base / optimistic` 중첩 구조로 확장하고 `default_pa_scenario`를 추가한다.
+    - [x] **T-GLB-16.1.2** 레거시 단일 PA 구조를 `base` 시나리오로 정규화하는 호환 계층을 추가한다.
+    - [x] **T-GLB-16.1.3** `get_portfolio_stats_by_id`, `calculate_master_portfolio_tr`, `retirement simulate`, `cost comparison`이 선택된 PA 시나리오를 받아 계산하도록 수정한다.
 - **T-GLB-16.2: [Frontend] Settings 시나리오 편집 UI**
     - [ ] **T-GLB-16.2.1** Settings에 3개 시나리오 선택/편집 UI와 기본 시나리오 선택 UI를 추가한다.
     - [ ] **T-GLB-16.2.2** 각 자산군 툴팁에 기준 종목(SGOV/VGIT/JEPI-Syle/SCHD/S&P500)을 명시한다.
@@ -114,8 +114,8 @@
     - [ ] **T-GLB-16.3.2** Retirement 탭에 시나리오 선택기를 추가하고 시뮬레이션/메타/TR 표시가 선택값을 따르도록 연결한다.
     - [ ] **T-GLB-16.3.3** Cost Comparison 탭에 시나리오 선택기를 추가하고 결과 `DY / PA / TR` 및 비교 계산이 선택값을 따르도록 연결한다.
 - **T-GLB-16.4: [Validation] Phase 1 회귀 검증**
-    - [ ] **T-GLB-16.4.1** 레거시 설정 로드 시 신규 3시나리오 스키마로 정규화되는지 검증한다.
-    - [ ] **T-GLB-16.4.2** 동일 DY, 다른 카테고리 mix에서 시나리오별 `PA / TR`이 달라지는지 Retirement/Cost Comparison 회귀로 검증한다.
+    - [x] **T-GLB-16.4.1** 레거시 설정 로드 시 신규 3시나리오 스키마로 정규화되는지 검증한다.
+    - [x] **T-GLB-16.4.2** 동일 DY, 다른 카테고리 mix에서 시나리오별 `PA / TR`이 달라지는지 Retirement/Cost Comparison 회귀로 검증한다.
     - [ ] **T-GLB-16.4.3** Settings/Portfolio/Retirement/Cost Comparison UI에서 시나리오 전환이 즉시 반영되는지 빌드 및 Playwright로 검증한다.
 
 ---

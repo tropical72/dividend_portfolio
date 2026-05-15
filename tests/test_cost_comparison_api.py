@@ -317,11 +317,52 @@ def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypa
     growth = growth_response.json()["data"]["assumptions"]
 
     assert conservative["dy"] == pytest.approx(growth["dy"])
-    assert conservative["pa"] == pytest.approx(0.0075)
+    assert conservative["pa"] == pytest.approx(0.0065)
     assert growth["pa"] == pytest.approx(0.075)
     assert conservative["tr"] == pytest.approx(conservative["dy"] + conservative["pa"])
     assert growth["tr"] == pytest.approx(growth["dy"] + growth["pa"])
     assert growth["tr"] > conservative["tr"]
+
+
+def test_cost_comparison_pa_and_tr_change_when_pa_scenario_changes(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    growth_master_id = _create_category_pa_master(
+        backend,
+        name="CCS Scenario Sensitive Growth",
+        corp_category="Growth Engine",
+        pension_category="Growth Engine",
+        dividend_yield=4.0,
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+
+    conservative_payload = _build_config_payload()
+    conservative_payload["simulation_mode"] = "asset"
+    conservative_payload["master_portfolio_id"] = growth_master_id
+    conservative_payload["assumptions"]["pa_scenario"] = "conservative"
+
+    optimistic_payload = _build_config_payload()
+    optimistic_payload["simulation_mode"] = "asset"
+    optimistic_payload["master_portfolio_id"] = growth_master_id
+    optimistic_payload["assumptions"]["pa_scenario"] = "optimistic"
+
+    conservative_response = client.post("/api/cost-comparison/run", json=conservative_payload)
+    optimistic_response = client.post("/api/cost-comparison/run", json=optimistic_payload)
+
+    assert conservative_response.status_code == 200
+    assert optimistic_response.status_code == 200
+    assert conservative_response.json()["success"] is True
+    assert optimistic_response.json()["success"] is True
+
+    conservative = conservative_response.json()["data"]["assumptions"]
+    optimistic = optimistic_response.json()["data"]["assumptions"]
+
+    assert conservative["pa_scenario"] == "conservative"
+    assert optimistic["pa_scenario"] == "optimistic"
+    assert conservative["dy"] == pytest.approx(optimistic["dy"])
+    assert conservative["pa"] == pytest.approx(0.065)
+    assert optimistic["pa"] == pytest.approx(0.09)
+    assert optimistic["tr"] > conservative["tr"]
 
 
 def test_cost_comparison_run_fails_when_saved_master_portfolio_is_missing(tmp_path, monkeypatch):
