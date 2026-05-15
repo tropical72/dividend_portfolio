@@ -160,6 +160,7 @@
   - [x] **T-01-15.1.2** 가격 하락 `PA`가 다음 달 분배금 절대액을 자동 삭감하지 않는 회귀 테스트를 추가한다.
   - [x] **T-01-15.1.3** `distribution_rules`의 `growth_rate`와 `stress_cut_rate`가 분배금 run-rate에 반영되는 회귀 테스트를 추가한다.
   - [x] **T-01-15.1.4** 리밸런싱/이체 시 source run-rate 비례 감소와 target run-rate 신규 생성을 반영한다.
+  - [x] **T-01-15.1.5** 5월 리밸런싱과 surplus deploy의 월별 시뮬레이션 통합 경로에서 run-rate 동기화를 검증한다.
 
 ### [Phase 16] 분배금 정책 설정 노출 (T-01-16) - PENDING
 
@@ -167,6 +168,7 @@
   - [ ] **T-01-16.1.1** `distribution_rules`의 `growth_rate`와 `stress_cut_rate`를 retirement config/API 스키마에 추가한다.
   - [ ] **T-01-16.1.2** Settings UI에서 계좌/카테고리별 분배금 성장률과 Stress 삭감률을 수정할 수 있게 한다.
   - [ ] **T-01-16.1.3** 저장/재로드 및 시뮬레이션 반영 E2E 테스트를 추가한다.
+  - [ ] **T-01-16.1.4** 신규 매수분 run-rate 생성에 사용할 DY 출처를 `category_return_rates/category_dividend_yields` 기본값과 사용자 override로 분리 정의한다.
 
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 

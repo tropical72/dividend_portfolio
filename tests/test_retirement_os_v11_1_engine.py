@@ -294,6 +294,88 @@ def test_category_specific_pa_dy_tr_are_applied_independently():
     assert month1["corp_growth_balance"] > 60000
 
 
+def test_may_rebalance_scales_distribution_run_rate_after_growth_sale():
+    """5월 리밸런싱에서 Growth를 일부 매도하면 다음 달 법인 실현소득도 비례 감소해야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["household_monthly_need"] = 1000000
+    params["target_monthly_cashflow"] = 1000000
+    params["pension_withdrawal_target"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=2,
+    )
+
+    may, june = result["monthly_data"]
+
+    assert may["corp_realized_income"] == pytest.approx(500000)
+    assert may["corp_growth_balance"] == pytest.approx(52000000)
+    assert may["corp_bond_balance"] == pytest.approx(18000000)
+    assert june["corp_realized_income"] == pytest.approx(260000)
+
+
+def test_may_surplus_deploy_creates_distribution_run_rate_for_new_growth_position():
+    """SGOV 초과분이 Growth로 신규 배치되면 다음 달 target DY 기반 실현소득이 생겨야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["household_monthly_need"] = 1000000
+    params["target_monthly_cashflow"] = 1000000
+    params["pension_withdrawal_target"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06},
+        }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=2,
+    )
+
+    may, june = result["monthly_data"]
+
+    assert may["corp_growth_balance"] == pytest.approx(69000000)
+    assert june["corp_realized_income"] == pytest.approx(345000)
+
+
 def test_crash20_sets_shock_flag_and_keeps_it_until_next_may():
     """Crash20은 월말 이벤트로 Shock Flag를 켜고, 다음 5월 정기점검 전까지 유지되어야 한다."""
     params = base_params()
