@@ -1,13 +1,11 @@
 import pytest
 
 from src.core.projection_engine import ProjectionEngine
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 def make_engine() -> ProjectionEngine:
-    return ProjectionEngine(TaxEngine(), TriggerEngine(), RebalanceEngine())
+    return ProjectionEngine(TaxEngine())
 
 
 def base_params() -> dict:
@@ -98,6 +96,29 @@ def test_distribution_run_rate_is_not_repriced_by_price_appreciation():
     params["category_return_rates"] = {
         "corp": {"Growth Engine": {"dy": 0.06, "pa": -0.50, "tr": -0.44}},
         "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+
+    result = make_engine()._execute_loop(
+        {"corp": 100000000, "pension": 0},
+        params,
+        months=2,
+    )
+
+    assert result["monthly_data"][0]["corp_realized_income"] == pytest.approx(500000)
+    assert result["monthly_data"][1]["corp_realized_income"] == pytest.approx(500000)
+
+
+def test_distribution_run_rate_initialization_ignores_monthly_override_dy():
+    """월별 override DY는 영구 run-rate 초기값을 오염시키면 안 된다."""
+    params = base_params()
+    params["simulation_years"] = 1
+    params["simulation_start_month"] = 1
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06}},
+        "pension": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {"Growth Engine": {"2026-01": {"dy": 0.0, "pa": 0.0}}}
     }
 
     result = make_engine()._execute_loop(
@@ -237,6 +258,51 @@ def test_distribution_run_rate_is_created_after_new_risk_deployment():
 
     assert run_rates["Growth Engine"] == pytest.approx(3000000)
     assert realized_income == pytest.approx(250000)
+
+
+def test_distribution_yield_override_takes_priority_for_new_run_rate_creation():
+    """신규 매수분 run-rate는 category DY보다 distribution_yield_overrides를 우선해야 한다."""
+    engine = make_engine()
+    params = base_params()
+    params["category_return_rates"] = {
+        "corp": {"Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06}},
+    }
+    params["distribution_yield_overrides"] = {
+        "corp": {"Growth Engine": 0.08},
+    }
+    assets = {
+        "SGOV Buffer": 100000000.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    run_rates = {"Growth Engine": 0.0}
+
+    engine._transfer(
+        assets,
+        "SGOV Buffer",
+        "Growth Engine",
+        50000000.0,
+        distribution_run_rates=run_rates,
+        account_key="corp",
+        account_stats=params["portfolio_stats"]["corp"],
+        params=params,
+        sim_year=2026,
+        sim_month=5,
+    )
+    realized_income = engine._apply_monthly_returns(
+        "corp",
+        assets,
+        run_rates,
+        params["portfolio_stats"]["corp"],
+        params,
+        2026,
+        6,
+    )
+
+    assert run_rates["Growth Engine"] == pytest.approx(4000000)
+    assert realized_income == pytest.approx(333333.3333333333)
 
 
 def test_higher_growth_profile_finishes_with_higher_net_worth():

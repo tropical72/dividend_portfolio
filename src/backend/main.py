@@ -9,10 +9,8 @@ from pydantic import BaseModel
 
 from src.backend.api import DividendBackend
 from src.core.projection_engine import ProjectionEngine
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.stress_engine import StressTestEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 def _apply_profile_return_override(
@@ -64,11 +62,7 @@ backend = DividendBackend(
 )
 
 tax_engine = TaxEngine()
-trigger_engine = TriggerEngine()
-rebalance_engine = RebalanceEngine()
-projection_engine = ProjectionEngine(
-    tax_engine=tax_engine, trigger_engine=trigger_engine, rebalance_engine=rebalance_engine
-)
+projection_engine = ProjectionEngine(tax_engine=tax_engine)
 stress_engine = StressTestEngine()
 
 app.add_middleware(
@@ -446,7 +440,6 @@ async def run_retirement_simulation(
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],
         "planned_cashflows": config.get("planned_cashflows", []),
         "corp_salary": corp_params["monthly_salary"],
-        "corp_fixed_cost": monthly_bookkeeping_fee,
         "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
         "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
         "employee_count": corp_params["employee_count"],

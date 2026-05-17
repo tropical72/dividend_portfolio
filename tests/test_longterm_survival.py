@@ -1,16 +1,10 @@
 from src.core.projection_engine import ProjectionEngine
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 def test_longterm_survival_simulation():
     """장기 실행 시 summary/monthly_data 구조와 영구 생존 플래그를 유지해야 한다."""
-    engine = ProjectionEngine(
-        tax_engine=TaxEngine(),
-        trigger_engine=TriggerEngine(),
-        rebalance_engine=RebalanceEngine(),
-    )
+    engine = ProjectionEngine(tax_engine=TaxEngine())
     result = engine.run_30yr_simulation(
         {"corp": 1600000000, "pension": 600000000},
         {
@@ -51,4 +45,4 @@ def test_longterm_survival_simulation():
     summary = result["summary"]
     assert summary["total_survival_years"] >= 30
     assert summary["is_permanent"] is True
-    assert "infinite_with_10pct_cut" in summary
+    assert summary["signals"] == []

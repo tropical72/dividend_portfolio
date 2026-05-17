@@ -1,17 +1,11 @@
 import pytest
 
 from src.core.projection_engine import ProjectionEngine
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 def make_engine() -> ProjectionEngine:
-    return ProjectionEngine(
-        tax_engine=TaxEngine(),
-        trigger_engine=TriggerEngine(),
-        rebalance_engine=RebalanceEngine(),
-    )
+    return ProjectionEngine(tax_engine=TaxEngine())
 
 
 def base_params() -> dict:
@@ -362,6 +356,49 @@ def test_may_surplus_deploy_creates_distribution_run_rate_for_new_growth_positio
             "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
             "Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06},
         }
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100000000, "pension": 0},
+        params=params,
+        months=2,
+    )
+
+    may, june = result["monthly_data"]
+
+    assert may["corp_growth_balance"] == pytest.approx(69000000)
+    assert june["corp_realized_income"] == pytest.approx(345000)
+
+
+def test_monthly_override_does_not_contaminate_may_surplus_deploy_run_rate():
+    """5월 override DY가 0이어도 신규 Growth run-rate는 구조적 DY 기준으로 생성되어야 한다."""
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["household_monthly_need"] = 1000000
+    params["target_monthly_cashflow"] = 1000000
+    params["pension_withdrawal_target"] = 0
+    params["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    params["category_return_rates"] = {
+        "corp": {
+            "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+            "Growth Engine": {"dy": 0.06, "pa": 0.0, "tr": 0.06},
+        }
+    }
+    params["monthly_return_overrides"] = {
+        "corp": {"Growth Engine": {"2026-05": {"dy": 0.0, "pa": 0.0}}}
     }
 
     result = make_engine()._execute_loop(

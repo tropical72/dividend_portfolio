@@ -1,17 +1,11 @@
 import pytest
 
 from src.core.projection_engine import ProjectionEngine
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 def make_engine() -> ProjectionEngine:
-    return ProjectionEngine(
-        tax_engine=TaxEngine(),
-        trigger_engine=TriggerEngine(),
-        rebalance_engine=RebalanceEngine(),
-    )
+    return ProjectionEngine(tax_engine=TaxEngine())
 
 
 def base_params() -> dict:

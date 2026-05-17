@@ -1,8 +1,6 @@
 from typing import Any, Dict
 
-from src.core.rebalance_engine import RebalanceEngine
 from src.core.tax_engine import TaxEngine
-from src.core.trigger_engine import TriggerEngine
 
 
 class ProjectionEngine:
@@ -19,12 +17,8 @@ class ProjectionEngine:
     def __init__(
         self,
         tax_engine: TaxEngine,
-        trigger_engine: TriggerEngine,
-        rebalance_engine: RebalanceEngine,
     ):
         self.tax_engine = tax_engine
-        self.trigger_engine = trigger_engine
-        self.rebalance_engine = rebalance_engine
 
     def run_30yr_simulation(
         self, initial_assets: Dict[str, float], params: Dict[str, Any]
@@ -64,8 +58,8 @@ class ProjectionEngine:
         pension_withdrawal_target = float(p("pension_withdrawal_target", 2500000))
         loan_balance = float(p("initial_shareholder_loan", 0.0))
         corp_salary = float(p("corp_salary", 0.0))
-        corp_fixed_cost = float(p("corp_fixed_cost", 0.0))
-        monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", corp_fixed_cost))
+        legacy_monthly_fixed_cost = float(p("corp_fixed_cost", 0.0))
+        monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", legacy_monthly_fixed_cost))
         annual_corp_tax_adjustment_fee = float(p("annual_corp_tax_adjustment_fee", 0.0))
         employee_count = int(p("employee_count", 0))
         corporate_rules = {
@@ -124,10 +118,10 @@ class ProjectionEngine:
             monthly_bookkeeping_fee=monthly_bookkeeping_fee,
         )
         corp_distribution_run_rates = self._build_distribution_run_rates(
-            "corp", corp_assets, corp_stats, params, start_year, start_month
+            "corp", corp_assets, corp_stats, params
         )
         pension_distribution_run_rates = self._build_distribution_run_rates(
-            "pension", pension_assets, pension_stats, params, start_year, start_month
+            "pension", pension_assets, pension_stats, params
         )
 
         current_stress = False
@@ -466,7 +460,6 @@ class ProjectionEngine:
                 "sgov_exhaustion_date": sgov_exhaustion_date,
                 "growth_asset_sell_start_date": growth_sell_date,
                 "signals": [],
-                "infinite_with_10pct_cut": False,
             },
             "survival_months": survival_m,
             "monthly_data": monthly_data,
@@ -672,8 +665,6 @@ class ProjectionEngine:
         account_assets: Dict[str, float],
         account_stats: Dict[str, Any],
         params: Dict[str, Any],
-        sim_year: int,
-        sim_month: int,
     ) -> Dict[str, float]:
         explicit_run_rates = params.get("distribution_run_rates", {}).get(account_key, {})
         run_rates = {category: 0.0 for category in self.CATEGORY_ORDER}
@@ -686,10 +677,14 @@ class ProjectionEngine:
             balance = max(0.0, float(account_assets.get(category, 0.0)))
             if balance <= 0:
                 continue
-            category_rates = self._category_rate_spec(
-                account_key, category, account_assets, account_stats, params, sim_year, sim_month
+            dy = self._structural_distribution_yield(
+                account_key,
+                category,
+                account_assets,
+                account_stats,
+                params,
             )
-            run_rates[category] = balance * max(0.0, float(category_rates["dy"]))
+            run_rates[category] = balance * dy
         return run_rates
 
     def _grow_distribution_run_rate(
@@ -810,6 +805,32 @@ class ProjectionEngine:
             pa = max(pa, account_expected_return - account_dividend_yield)
         return {"dy": dy, "pa": pa, "tr": dy + pa}
 
+    def _structural_distribution_yield(
+        self,
+        account_key: str,
+        category: str,
+        account_assets: Dict[str, float],
+        account_stats: Dict[str, Any],
+        params: Dict[str, Any],
+    ) -> float:
+        distribution_override = (
+            params.get("distribution_yield_overrides", {}).get(account_key, {}).get(category)
+        )
+        if distribution_override is not None:
+            return max(0.0, float(distribution_override))
+
+        category_override = (
+            params.get("category_return_rates", {}).get(account_key, {}).get(category, {})
+        )
+        if "dy" in category_override:
+            return max(0.0, float(category_override.get("dy", 0.0)))
+
+        category_yields = account_stats.get("category_dividend_yields") or {}
+        if category in category_yields:
+            return max(0.0, float(category_yields[category]))
+
+        return max(0.0, self._fallback_dividend_yield(category, account_assets, account_stats))
+
     def _fallback_dividend_yield(
         self, category: str, account_assets: Dict[str, float], account_stats: Dict[str, Any]
     ) -> float:
@@ -822,12 +843,12 @@ class ProjectionEngine:
         return 0.0
 
     def _corp_operating_cost(
-        self, corp_salary: float, corp_fixed_cost: float, employee_count: int
+        self, corp_salary: float, monthly_operating_cost: float, employee_count: int
     ) -> float:
         effective_employee_count = (
             employee_count if employee_count > 0 else (1 if corp_salary > 0 else 0)
         )
-        return (corp_salary * effective_employee_count) + corp_fixed_cost
+        return (corp_salary * effective_employee_count) + monthly_operating_cost
 
     def _net_salary_to_household(self, corp_salary: float, employee_count: int) -> float:
         effective_employee_count = (
@@ -1582,8 +1603,6 @@ class ProjectionEngine:
                 account_key,
                 account_stats,
                 params,
-                sim_year,
-                sim_month,
             )
         return moved
 
@@ -1598,8 +1617,6 @@ class ProjectionEngine:
         account_key: str | None,
         account_stats: Dict[str, Any] | None,
         params: Dict[str, Any] | None,
-        sim_year: int | None,
-        sim_month: int | None,
     ) -> None:
         if from_category != "SGOV Buffer" and pre_from_balance > 0:
             source_rate = distribution_run_rates.get(from_category, 0.0)
@@ -1611,17 +1628,19 @@ class ProjectionEngine:
             or account_key is None
             or account_stats is None
             or params is None
-            or sim_year is None
-            or sim_month is None
         ):
             return
 
-        target_rates = self._category_rate_spec(
-            account_key, to_category, account_assets, account_stats, params, sim_year, sim_month
+        dy = self._structural_distribution_yield(
+            account_key,
+            to_category,
+            account_assets,
+            account_stats,
+            params,
         )
-        distribution_run_rates[to_category] = distribution_run_rates.get(
-            to_category, 0.0
-        ) + moved * max(0.0, float(target_rates["dy"]))
+        distribution_run_rates[to_category] = distribution_run_rates.get(to_category, 0.0) + (
+            moved * dy
+        )
 
     def _months_cover(self, balance: float, monthly_need: float) -> float:
         if monthly_need <= 0:
