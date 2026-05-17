@@ -104,6 +104,9 @@ export function PortfolioTab({
         savePortfolioTitle: "포트폴리오 저장",
         savePortfolioSubtitle: "이름을 확인하고 저장하세요",
         portfolioName: "포트폴리오 이름",
+        portfolioAccountType: "저장 계좌 유형",
+        portfolioAccountTypeDesc:
+          "선택한 유형에 맞게 저장됩니다. 연금으로 저장하면 High Income 항목은 연금 규칙에 맞게 Bond Buffer로 정규화됩니다.",
         saveAsCopy: "사본으로 저장",
         saveAsCopyDesc: "다른 이름으로 새 항목 저장",
         confirmSave: "저장하기",
@@ -165,6 +168,9 @@ export function PortfolioTab({
         savePortfolioTitle: "Save Portfolio",
         savePortfolioSubtitle: "Review the name and save",
         portfolioName: "Portfolio Name",
+        portfolioAccountType: "Account Type",
+        portfolioAccountTypeDesc:
+          "The portfolio will be saved under this account type. Pension saves normalize High Income items into Bond Buffer.",
         saveAsCopy: "Save as Copy",
         saveAsCopyDesc: "Save as a new item with a different name",
         confirmSave: "Save",
@@ -295,6 +301,8 @@ export function PortfolioTab({
   // 저장 모달 상태 [NEW]
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [tempPortfolioName, setTempPortfolioName] = useState(portfolioName);
+  const [tempAccountType, setTempAccountType] =
+    useState<AccountType>(accountType);
   const [saveAsNew, setSaveAsNew] = useState(false);
 
   /** 전역 설정 동기화 [REQ-PRT-03] */
@@ -428,6 +436,7 @@ export function PortfolioTab({
       return;
     }
     setTempPortfolioName(portfolioName);
+    setTempAccountType(accountType);
     setSaveAsNew(false);
     setIsSaveModalOpen(true);
   };
@@ -458,7 +467,7 @@ export function PortfolioTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: tempPortfolioName,
-          account_type: accountType,
+          account_type: tempAccountType,
           items: items,
           total_capital: capitalUsd,
           currency: "USD",
@@ -470,6 +479,10 @@ export function PortfolioTab({
           setPortfolioId(result.data.id);
         }
         setPortfolioName(tempPortfolioName);
+        setAccountType(result.data?.account_type || tempAccountType);
+        if (Array.isArray(result.data?.items)) {
+          setItems(result.data.items);
+        }
         showStatus(isUpdating ? copy.updated : copy.savedNew, "success");
         setIsSaveModalOpen(false);
         setSaveAsNew(false);
@@ -1152,6 +1165,45 @@ export function PortfolioTab({
                 placeholder={copy.portfolioName}
                 onKeyDown={(e) => e.key === "Enter" && handleSaveExec()}
               />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-end justify-between gap-4">
+                <label className="ml-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                  {copy.portfolioAccountType}
+                </label>
+                <p className="text-right text-[11px] font-medium leading-snug text-slate-500">
+                  {copy.portfolioAccountTypeDesc}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTempAccountType("Corporate")}
+                  data-testid="save-modal-account-corporate"
+                  className={cn(
+                    "rounded-2xl border px-5 py-4 text-sm font-bold transition-all",
+                    tempAccountType === "Corporate"
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm"
+                      : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white",
+                  )}
+                >
+                  {copy.corporate}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTempAccountType("Pension")}
+                  data-testid="save-modal-account-pension"
+                  className={cn(
+                    "rounded-2xl border px-5 py-4 text-sm font-bold transition-all",
+                    tempAccountType === "Pension"
+                      ? "border-amber-300 bg-amber-50 text-amber-700 shadow-sm"
+                      : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white",
+                  )}
+                >
+                  {copy.pension}
+                </button>
+              </div>
             </div>
 
             {portfolioId && (
