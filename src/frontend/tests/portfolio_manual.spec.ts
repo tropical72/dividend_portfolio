@@ -43,6 +43,7 @@ test.describe("Portfolio Manual Add", () => {
   test("should convert SGOV buffer months into allocation weight", async ({
     page,
   }) => {
+    await page.waitForTimeout(500);
     await page.getByPlaceholder(/KRW Amount|KRW 금액/i).fill("115000000");
 
     const addBtn = page
@@ -65,5 +66,53 @@ test.describe("Portfolio Manual Add", () => {
     await expect(sgovRow.getByTestId("portfolio-weight-input")).toHaveValue(
       "30",
     );
+  });
+
+  test("should allow clearing and retyping weight and integer months", async ({
+    page,
+  }) => {
+    await page.waitForTimeout(500);
+    await page.getByPlaceholder(/KRW Amount|KRW 금액/i).fill("115000000");
+
+    const addBtn = page
+      .locator("div:has(h3:text('SGOV Buffer'))")
+      .getByRole("button", { name: /Add Manually|직접 추가/i })
+      .first();
+    await addBtn.scrollIntoViewIfNeeded();
+    await addBtn.click({ force: true });
+
+    const modal = page.getByTestId("manual-add-modal");
+    const weightInput = modal.getByTestId("manual-weight-input");
+    const monthsInput = modal.getByTestId("manual-runway-months-input");
+
+    await weightInput.fill("12.345");
+    await expect(weightInput).toHaveValue("12.345");
+    await weightInput.fill("");
+    await expect(weightInput).toHaveValue("");
+
+    await monthsInput.fill("12.7");
+    await expect(monthsInput).toHaveValue("127");
+    await monthsInput.fill("");
+    await expect(monthsInput).toHaveValue("");
+    await monthsInput.fill("12");
+    await expect(monthsInput).toHaveValue("12");
+
+    await modal.getByPlaceholder(/e.g. AAPL/i).fill("SGOV");
+    await modal.getByPlaceholder(/e.g. Apple Inc./i).fill("SGOV ETF");
+    await modal.getByRole("button", { name: /Add Asset|자산 추가/i }).click();
+
+    const sgovRow = page.getByRole("row").filter({ hasText: "SGOV" }).first();
+    const rowWeightInput = sgovRow.getByTestId("portfolio-weight-input");
+    const rowMonthsInput = sgovRow.getByTestId("portfolio-runway-months-input");
+
+    await rowWeightInput.fill("");
+    await expect(rowWeightInput).toHaveValue("");
+    await rowWeightInput.fill("12.345");
+    await expect(rowWeightInput).toHaveValue("12.345");
+
+    await rowMonthsInput.fill("");
+    await expect(rowMonthsInput).toHaveValue("");
+    await rowMonthsInput.fill("12.7");
+    await expect(rowMonthsInput).toHaveValue("127");
   });
 });

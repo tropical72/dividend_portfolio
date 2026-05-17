@@ -305,7 +305,14 @@ export function PortfolioTab({
     name: "",
     weight: 0,
   });
+  const [manualWeightInput, setManualWeightInput] = useState("");
   const [manualRunwayMonths, setManualRunwayMonths] = useState("");
+  const [weightInputDrafts, setWeightInputDrafts] = useState<
+    Record<string, string>
+  >({});
+  const [runwayInputDrafts, setRunwayInputDrafts] = useState<
+    Record<string, string>
+  >({});
 
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
@@ -411,6 +418,26 @@ export function PortfolioTab({
     return (weight / 100) * (totalCapitalKrw / monthlyNeedKrw);
   };
 
+  const sanitizeDecimalInput = (value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, "");
+    const [integerPart, ...decimalParts] = cleaned.split(".");
+    return decimalParts.length
+      ? `${integerPart}.${decimalParts.join("")}`
+      : integerPart;
+  };
+
+  const sanitizeIntegerInput = (value: string) => value.replace(/[^0-9]/g, "");
+
+  const parseInputNumber = (value: string) => {
+    if (value === "" || value === ".") {
+      return 0;
+    }
+    return parseFloat(value) || 0;
+  };
+
+  const formatWeightValue = (value: number) =>
+    Number.isInteger(value) ? String(value) : String(Number(value.toFixed(4)));
+
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {
     setPortfolioId(p.id);
@@ -443,6 +470,7 @@ export function PortfolioTab({
     setItems((prev) => [...prev, newItem]);
     setManualAdd({ category: null });
     setManualForm({ symbol: "", name: "", weight: 0 });
+    setManualWeightInput("");
     setManualRunwayMonths("");
     showStatus(copy.itemAdded, "success");
   };
@@ -589,6 +617,32 @@ export function PortfolioTab({
     );
   };
 
+  const handlePortfolioWeightInput = (symbol: string, rawValue: string) => {
+    const value = sanitizeDecimalInput(rawValue);
+    setWeightInputDrafts((prev) => ({ ...prev, [symbol]: value }));
+    updateWeight(symbol, parseInputNumber(value));
+  };
+
+  const handlePortfolioRunwayInput = (symbol: string, rawValue: string) => {
+    const value = sanitizeIntegerInput(rawValue);
+    setRunwayInputDrafts((prev) => ({ ...prev, [symbol]: value }));
+    updateWeight(
+      symbol,
+      calculateWeightFromRunwayMonths(parseInputNumber(value)),
+    );
+  };
+
+  const clearInputDraft = (
+    setter: React.Dispatch<React.SetStateAction<Record<string, string>>>,
+    symbol: string,
+  ) => {
+    setter((prev) => {
+      const next = { ...prev };
+      delete next[symbol];
+      return next;
+    });
+  };
+
   /** 종목 삭제 */
   const removeItem = (symbol: string) => {
     setItems((prev) => prev.filter((item) => item.symbol !== symbol));
@@ -675,16 +729,19 @@ export function PortfolioTab({
                   {copy.allocationWeight}
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0"
-                  value={manualForm.weight || ""}
+                  value={manualWeightInput}
                   data-testid="manual-weight-input"
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const value = sanitizeDecimalInput(e.target.value);
+                    setManualWeightInput(value);
                     setManualForm({
                       ...manualForm,
-                      weight: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      weight: parseInputNumber(value),
+                    });
+                  }}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-emerald-300"
                 />
               </div>
@@ -704,19 +761,27 @@ export function PortfolioTab({
                     </span>
                   </div>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="0"
                     value={manualRunwayMonths}
                     disabled={!runwayConversionAvailable}
                     data-testid="manual-runway-months-input"
                     onChange={(e) => {
-                      const monthsText = e.target.value;
-                      const months = parseFloat(monthsText) || 0;
+                      const monthsText = sanitizeIntegerInput(e.target.value);
+                      const months = parseInputNumber(monthsText);
                       setManualRunwayMonths(monthsText);
                       setManualForm({
                         ...manualForm,
                         weight: calculateWeightFromRunwayMonths(months),
                       });
+                      setManualWeightInput(
+                        monthsText
+                          ? formatWeightValue(
+                              calculateWeightFromRunwayMonths(months),
+                            )
+                          : "",
+                      );
                     }}
                     className="w-full rounded-2xl border border-blue-100 bg-white px-5 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                   />
@@ -1145,13 +1210,23 @@ export function PortfolioTab({
                             <td className="py-6 px-4 text-right">
                               <div className="flex items-center justify-end gap-3">
                                 <input
-                                  type="number"
-                                  value={item.weight}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={
+                                    weightInputDrafts[item.symbol] ??
+                                    formatWeightValue(item.weight)
+                                  }
                                   data-testid="portfolio-weight-input"
                                   onChange={(e) =>
-                                    updateWeight(
+                                    handlePortfolioWeightInput(
                                       item.symbol,
-                                      parseFloat(e.target.value) || 0,
+                                      e.target.value,
+                                    )
+                                  }
+                                  onBlur={() =>
+                                    clearInputDraft(
+                                      setWeightInputDrafts,
+                                      item.symbol,
                                     )
                                   }
                                   className="w-24 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-right text-base font-semibold text-slate-800 outline-none transition-all focus:border-emerald-300"
@@ -1166,22 +1241,32 @@ export function PortfolioTab({
                                     {copy.runwayMonths}
                                   </span>
                                   <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={
-                                      runwayConversionAvailable
-                                        ? calculateRunwayMonthsFromWeight(
-                                            item.weight,
-                                          ).toFixed(1)
-                                        : ""
+                                      runwayInputDrafts[item.symbol] ??
+                                      (runwayConversionAvailable
+                                        ? String(
+                                            Math.round(
+                                              calculateRunwayMonthsFromWeight(
+                                                item.weight,
+                                              ),
+                                            ),
+                                          )
+                                        : "")
                                     }
                                     disabled={!runwayConversionAvailable}
                                     data-testid="portfolio-runway-months-input"
                                     onChange={(e) =>
-                                      updateWeight(
+                                      handlePortfolioRunwayInput(
                                         item.symbol,
-                                        calculateWeightFromRunwayMonths(
-                                          parseFloat(e.target.value) || 0,
-                                        ),
+                                        e.target.value,
+                                      )
+                                    }
+                                    onBlur={() =>
+                                      clearInputDraft(
+                                        setRunwayInputDrafts,
+                                        item.symbol,
                                       )
                                     }
                                     className="w-20 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1.5 text-right text-xs font-bold text-blue-700 outline-none transition-all focus:border-blue-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
