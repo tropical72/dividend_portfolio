@@ -418,6 +418,28 @@ export function PortfolioTab({
     return (weight / 100) * (totalCapitalKrw / monthlyNeedKrw);
   };
 
+  const getDefaultCapitalUsdForAccount = useCallback(
+    (nextAccountType: AccountType) => {
+      if (!retirementConfig || exchangeRate <= 0) {
+        return 0;
+      }
+
+      const capitalKrw =
+        nextAccountType === "Pension"
+          ? retirementConfig.pension_params.initial_investment
+          : retirementConfig.corp_params.initial_investment;
+      return capitalKrw > 0 ? capitalKrw / exchangeRate : 0;
+    },
+    [exchangeRate, retirementConfig],
+  );
+
+  const normalizeLoadedCapitalUsd = (p: Portfolio) => {
+    if (p.total_capital > 0) {
+      return p.total_capital;
+    }
+    return getDefaultCapitalUsdForAccount(p.account_type || "Corporate");
+  };
+
   const sanitizeDecimalInput = (value: string) => {
     const cleaned = value.replace(/[^0-9.]/g, "");
     const [integerPart, ...decimalParts] = cleaned.split(".");
@@ -438,16 +460,41 @@ export function PortfolioTab({
   const formatWeightValue = (value: number) =>
     Number.isInteger(value) ? String(value) : String(Number(value.toFixed(4)));
 
+  const buildSavableItems = () =>
+    items.map((item) => {
+      if (!isRunwayInputCategory(item.category) || !runwayConversionAvailable) {
+        return item;
+      }
+
+      return {
+        ...item,
+        runway_months: Math.round(calculateRunwayMonthsFromWeight(item.weight)),
+      };
+    });
+
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {
     setPortfolioId(p.id);
     setPortfolioName(p.name);
     setAccountType(p.account_type || "Corporate");
-    setCapitalUsd(p.total_capital);
+    setCapitalUsd(normalizeLoadedCapitalUsd(p));
+    setWeightInputDrafts({});
+    setRunwayInputDrafts({});
     setItems(p.items);
     setActiveSubTab("design");
     showStatus(`"${p.name}" ${copy.loaded}`, "success");
   };
+
+  useEffect(() => {
+    if (!portfolioId || capitalUsd > 0) {
+      return;
+    }
+
+    const fallbackCapitalUsd = getDefaultCapitalUsdForAccount(accountType);
+    if (fallbackCapitalUsd > 0) {
+      setCapitalUsd(fallbackCapitalUsd);
+    }
+  }, [portfolioId, capitalUsd, accountType, getDefaultCapitalUsdForAccount]);
 
   /** 수동 종목 추가 실행 */
   const handleAddManualItem = () => {
@@ -580,7 +627,7 @@ export function PortfolioTab({
         body: JSON.stringify({
           name: tempPortfolioName,
           account_type: tempAccountType,
-          items: items,
+          items: buildSavableItems(),
           total_capital: capitalUsd,
           currency: "USD",
         }),

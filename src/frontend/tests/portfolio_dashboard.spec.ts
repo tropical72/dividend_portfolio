@@ -134,6 +134,96 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
     await expect(nameInput).toHaveValue(uniqueName);
   });
 
+  test("should backfill zero-capital loaded buffer weights into editable months on save", async ({
+    page,
+    request,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "Load into designer action is desktop-only.");
+
+    const zeroCapitalName = `${uniqueName} Zero Capital`;
+    await request.post("http://127.0.0.1:8000/api/portfolios", {
+      data: {
+        name: zeroCapitalName,
+        account_type: "Corporate",
+        total_capital: 0,
+        currency: "USD",
+        items: [
+          {
+            symbol: "SGOV",
+            name: "SGOV ETF",
+            category: "SGOV Buffer",
+            weight: 10,
+            price: 100,
+            dividend_yield: 4,
+            last_div_amount: 0.3,
+            payment_months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          },
+          {
+            symbol: "VOO",
+            name: "Vanguard S&P 500 ETF",
+            category: "Growth Engine",
+            weight: 90,
+            price: 500,
+            dividend_yield: 1.2,
+            last_div_amount: 1.5,
+            payment_months: [3, 6, 9, 12],
+          },
+        ],
+      },
+    });
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.getByTestId("nav-asset-setup").click({ force: true });
+    await page.getByTestId("portfolio-subtab-dashboard").click({ force: true });
+
+    const testCard = page
+      .locator(".portfolio-card")
+      .filter({ hasText: zeroCapitalName })
+      .first();
+    await expect(testCard).toBeVisible();
+    await testCard.click();
+    await testCard
+      .getByRole("button", {
+        name: /Load into Designer|설계 화면으로 불러오기/i,
+      })
+      .click({ force: true });
+
+    const sgovRow = page.getByRole("row").filter({ hasText: "SGOV" }).first();
+    const monthsInput = sgovRow.getByTestId("portfolio-runway-months-input");
+    await expect(monthsInput).toBeEnabled();
+    await expect(monthsInput).not.toHaveValue("");
+
+    await monthsInput.fill("3");
+    await expect(monthsInput).toHaveValue("3");
+
+    const vooRow = page.getByRole("row").filter({ hasText: "VOO" }).first();
+    const sgovWeight = parseFloat(
+      await sgovRow.getByTestId("portfolio-weight-input").inputValue(),
+    );
+    await vooRow
+      .getByTestId("portfolio-weight-input")
+      .fill(String(Number((100 - sgovWeight).toFixed(4))));
+
+    await page.getByTestId("portfolio-save-button").click();
+    await page.getByRole("button", { name: /Save|저장하기/i }).click();
+    await expect(page.getByText(/Updated|업데이트되었습니다/i)).toBeVisible();
+
+    const response = await request.get("http://127.0.0.1:8000/api/portfolios");
+    const payload = await response.json();
+    const saved = (
+      payload.data as Array<{
+        name?: string;
+        total_capital?: number;
+        items?: Array<{ symbol?: string; runway_months?: number }>;
+      }>
+    ).find((portfolio) => portfolio.name === zeroCapitalName);
+    const savedSgov = saved?.items?.find((item) => item.symbol === "SGOV");
+
+    expect(saved?.total_capital).toBeGreaterThan(0);
+    expect(savedSgov?.runway_months).toBe(3);
+  });
+
   test("should rename a saved portfolio from the dashboard list", async ({
     page,
     isMobile,
