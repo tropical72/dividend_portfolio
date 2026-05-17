@@ -115,4 +115,34 @@ test.describe("Portfolio Manual Add", () => {
     await rowMonthsInput.fill("12.7");
     await expect(rowMonthsInput).toHaveValue("127");
   });
+
+  test("should display integer weight when months are entered", async ({
+    page,
+  }) => {
+    await page.waitForTimeout(500);
+    await page.getByPlaceholder(/KRW Amount|KRW 금액/i).fill("120000000");
+
+    const addBtn = page
+      .locator("div:has(h3:text('SGOV Buffer'))")
+      .getByRole("button", { name: /Add Manually|직접 추가/i })
+      .first();
+    await addBtn.scrollIntoViewIfNeeded();
+    await addBtn.click({ force: true });
+
+    const modal = page.getByTestId("manual-add-modal");
+    await modal.getByPlaceholder(/e.g. AAPL/i).fill("SGOV");
+    await modal.getByPlaceholder(/e.g. Apple Inc./i).fill("SGOV ETF");
+    await modal.getByTestId("manual-runway-months-input").fill("1");
+
+    await expect(modal.getByTestId("manual-weight-input")).toHaveValue("10");
+
+    await modal.getByRole("button", { name: /Add Asset|자산 추가/i }).click();
+
+    const sgovRow = page.getByRole("row").filter({ hasText: "SGOV" }).first();
+    const rowMonthsInput = sgovRow.getByTestId("portfolio-runway-months-input");
+    await rowMonthsInput.fill("2");
+    await expect(sgovRow.getByTestId("portfolio-weight-input")).toHaveValue(
+      "19",
+    );
+  });
 });

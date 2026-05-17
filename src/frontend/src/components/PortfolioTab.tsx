@@ -406,7 +406,7 @@ export function PortfolioTab({
     }
 
     const totalCapitalKrw = capitalUsd * exchangeRate;
-    return (months * monthlyNeedKrw * 100) / totalCapitalKrw;
+    return Math.round((months * monthlyNeedKrw * 100) / totalCapitalKrw);
   };
 
   const calculateRunwayMonthsFromWeight = (weight: number) => {
