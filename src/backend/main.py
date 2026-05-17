@@ -278,7 +278,9 @@ async def run_cost_comparison(req: Optional[CostComparisonConfigRequest] = None)
 
 @app.get("/api/retirement/simulate")
 async def run_retirement_simulation(
-    scenario: Optional[str] = None, pa_scenario: Optional[str] = None
+    scenario: Optional[str] = None,
+    stress_scenario: Optional[str] = None,
+    pa_scenario: Optional[str] = None,
 ):
     config = backend.get_retirement_config()
     if not config:
@@ -359,6 +361,14 @@ async def run_retirement_simulation(
     # [FIX] 쿼리 스트링 scenario가 있으면 우선 사용
     active_id = scenario or config.get("active_assumption_id", "v1")
     assumptions = config.get("assumptions", {})
+    if scenario and scenario not in assumptions:
+        return {
+            "success": False,
+            "message": (
+                f"활성화된 미래 가정(Assumption) '{scenario}' 데이터가 없습니다. "
+                "stress scenario는 stress_scenario 쿼리로 전달해주세요."
+            ),
+        }
     assumption = assumptions.get(active_id, assumptions.get("v1"))
     if not assumption:
         return {"success": False, "message": "활성화된 미래 가정(Assumption) 데이터가 없습니다."}
@@ -458,10 +468,19 @@ async def run_retirement_simulation(
 
     # 6. 스트레스 테스트 시나리오 적용 (필요 시)
     final_params = base_params
-    # 쿼리 스트링 scenario가 시스템 예약어(CRASH, INFLATION 등)인 경우에만 스트레스 엔진 적용
-    stress_scenarios = ["CRASH", "INFLATION", "STAGFLATION", "BOOM"]
-    if scenario and scenario.upper() in stress_scenarios:
-        final_params = stress_engine.apply_scenario(base_params, scenario.upper())
+    normalized_stress_scenario = None
+    valid_stress_scenarios = {"BEAR", "STAGFLATION", "DIVIDEND_CUT"}
+    if stress_scenario:
+        normalized_stress_scenario = stress_scenario.upper()
+        if normalized_stress_scenario not in valid_stress_scenarios:
+            return {
+                "success": False,
+                "message": (
+                    "지원하지 않는 stress scenario입니다. "
+                    "BEAR, STAGFLATION, DIVIDEND_CUT 중 하나를 사용해주세요."
+                ),
+            }
+        final_params = stress_engine.apply_scenario(base_params, normalized_stress_scenario)
 
     # 7. 엔진 실행
     result = projection_engine.run_30yr_simulation(initial_assets, final_params)
@@ -523,6 +542,7 @@ async def run_retirement_simulation(
         "combined_tr": combined_tr,
         "pa_rate": combined_tr - combined_dy if (combined_tr and combined_dy) else 0.0,
         "pa_scenario": backend._normalize_pa_scenario(pa_scenario),
+        "stress_scenario": normalized_stress_scenario,
         "strategy_rules_summary": {
             "rebalance_month": strategy_rules.get("rebalance_month", 5),
             "corporate_sgov_target_months": corporate_rules.get("sgov_target_months", 30),

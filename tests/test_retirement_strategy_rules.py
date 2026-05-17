@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from src.backend.api import DividendBackend
 
 
@@ -81,6 +83,30 @@ def test_retirement_config_drops_unused_legacy_strategy_rule_fields(tmp_path):
     assert "sgov_crisis_months" not in strategy_rules["corporate"]
     assert "high_income_min_ratio" not in strategy_rules["corporate"]
     assert strategy_rules["pension"]["sgov_target_months"] == 36
+    assert "sgov_min_years" not in strategy_rules["pension"]
+    assert "bond_min_years" not in strategy_rules["pension"]
+    assert "bond_min_total_ratio" not in strategy_rules["pension"]
+    assert "dividend_min_ratio" not in strategy_rules["pension"]
+
+
+def test_retirement_config_defaults_file_no_longer_exposes_legacy_strategy_fields(tmp_path):
+    """repo defaults로 초기화된 설정도 legacy strategy_rules를 노출하지 않아야 한다."""
+    defaults_dir = Path(__file__).resolve().parents[1] / "defaults"
+    backend = DividendBackend(data_dir=str(tmp_path), defaults_dir=str(defaults_dir))
+
+    strategy_rules = backend.get_retirement_config()["strategy_rules"]
+
+    assert "rebalance_week" not in strategy_rules
+    assert "bear_market_freeze_enabled" not in strategy_rules
+    assert strategy_rules["rebalance_month"] == 5
+    assert strategy_rules["corporate"]["sgov_target_months"] == 30
+    assert strategy_rules["corporate"]["november_sgov_target_months"] == 27
+    assert "sgov_warn_months" not in strategy_rules["corporate"]
+    assert "sgov_crisis_months" not in strategy_rules["corporate"]
+    assert "high_income_min_ratio" not in strategy_rules["corporate"]
+    assert "high_income_max_ratio" not in strategy_rules["corporate"]
+    assert "growth_sell_years_left_threshold" not in strategy_rules["corporate"]
+    assert strategy_rules["pension"]["sgov_target_months"] == 24
     assert "sgov_min_years" not in strategy_rules["pension"]
     assert "bond_min_years" not in strategy_rules["pension"]
     assert "bond_min_total_ratio" not in strategy_rules["pension"]

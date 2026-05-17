@@ -172,7 +172,7 @@
   - [ ] **T-01-16.1.4** 신규 매수분 run-rate 생성에 사용할 DY 출처를 `category_return_rates/category_dividend_yields` 기본값과 사용자 override로 분리 정의한다.
   - [ ] **T-01-16.1.5** `distribution_yield_overrides`의 retirement config/API/Settings UI 노출 경로를 추가한다.
 
-### [Phase 17] 설정-엔진 정합성 정리 (T-01-17) - IN PROGRESS
+### [Phase 17] 설정-엔진 정합성 정리 (T-01-17) - DONE
 
 - **T-01-17.1: 미사용 Settings 입력 오인 방지**
   - [x] **T-01-17.1.1** `trigger_thresholds` 중 현재 은퇴 시뮬레이션에 미연결된 `high_income_cap_rate`, `equity_yield_multiplier`, `debt_yield_multiplier`, `market_panic_threshold`를 Settings 활성 입력에서 제거하거나 `현재 미적용` 상태로 명시한다.
@@ -181,17 +181,17 @@
   - [x] **T-01-17.2.1** `main.py`의 `market_return_rate`, `real_estate_price`, `target_buffer_months`, `equity_yield_multiplier`, `debt_yield_multiplier` 전달을 제거하거나 실제 엔진 사용으로 연결한다.
   - [x] **T-01-17.2.2** 관련 API/엔진 회귀 테스트를 추가한다.
 - **T-01-17.3: stress scenario API 계약 재설계**
-  - [ ] **T-01-17.3.1** assumption `scenario`와 stress scenario query를 분리하고, no-op 시나리오를 제거한다.
-  - [ ] **T-01-17.3.2** `StressTestEngine`과 simulate endpoint 계약을 같은 시나리오 집합으로 맞춘다.
+  - [x] **T-01-17.3.1** assumption `scenario`와 stress scenario query를 분리하고, no-op 시나리오를 제거한다.
+  - [x] **T-01-17.3.2** `StressTestEngine`과 simulate endpoint 계약을 같은 시나리오 집합으로 맞춘다.
 - **T-01-17.4: summary signals 정리**
-  - [ ] **T-01-17.4.1** `summary.signals`를 실제 계산 결과로 채우거나, ghost 필드라면 summary/type/test에서 제거한다.
-  - [ ] **T-01-17.4.2** 결과 UI와 타입 정의를 같은 계약으로 정렬한다.
+  - [x] **T-01-17.4.1** `summary.signals`를 실제 계산 결과로 채우거나, ghost 필드라면 summary/type/test에서 제거한다.
+  - [x] **T-01-17.4.2** 결과 UI와 타입 정의를 같은 계약으로 정렬한다.
 - **T-01-17.5: frontend legacy monthly_fixed_cost 정리**
-  - [ ] **T-01-17.5.1** 프론트 런타임 상태와 신규 저장 payload에서 `monthly_fixed_cost` 생성을 중단하고, 읽기 전용 legacy 흡수만 남긴다.
-  - [ ] **T-01-17.5.2** 관련 UI/API 회귀 테스트를 추가한다.
+  - [x] **T-01-17.5.1** 프론트 런타임 상태와 신규 저장 payload에서 `monthly_fixed_cost` 생성을 중단하고, 읽기 전용 legacy 흡수만 남긴다.
+  - [x] **T-01-17.5.2** 관련 UI/API 회귀 테스트를 추가한다.
 - **T-01-17.6: defaults legacy 필드 정리**
-  - [ ] **T-01-17.6.1** `defaults/retirement_config.json`의 제거된 legacy strategy fields를 현재 계약에 맞게 정리한다.
-  - [ ] **T-01-17.6.2** 정규화 테스트가 새 defaults 파일 기준으로도 통과하는지 검증한다.
+  - [x] **T-01-17.6.1** `defaults/retirement_config.json`의 제거된 legacy strategy fields를 현재 계약에 맞게 정리한다.
+  - [x] **T-01-17.6.2** 정규화 테스트가 새 defaults 파일 기준으로도 통과하는지 검증한다.
 
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 

@@ -45,4 +45,4 @@ def test_longterm_survival_simulation():
     summary = result["summary"]
     assert summary["total_survival_years"] >= 30
     assert summary["is_permanent"] is True
-    assert summary["signals"] == []
+    assert "signals" not in summary

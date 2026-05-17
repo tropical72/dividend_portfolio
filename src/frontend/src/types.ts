@@ -163,7 +163,6 @@ export interface RetirementConfig {
     monthly_salary: number;
     monthly_bookkeeping_fee?: number;
     annual_corp_tax_adjustment_fee?: number;
-    monthly_fixed_cost?: number;
     employee_count: number;
   };
   pension_params: {
@@ -258,7 +257,6 @@ export interface SimulationResult {
     is_permanent: boolean;
     sgov_exhaustion_date: string;
     growth_asset_sell_start_date: string;
-    signals?: unknown[];
   };
   survival_months: number;
   monthly_data: MonthlySimulationData[];

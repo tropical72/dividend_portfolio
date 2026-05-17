@@ -233,13 +233,21 @@ export function SettingsTab({
       );
     }
     if (globalRetireConfig) {
+      const rawCorpParams = (globalRetireConfig.corp_params ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const {
+        monthly_fixed_cost: _legacyMonthlyFixedCost,
+        ...normalizedCorpParams
+      } = rawCorpParams;
       setRetireConfig({
         ...JSON.parse(JSON.stringify(globalRetireConfig)),
         corp_params: {
-          ...globalRetireConfig.corp_params,
+          ...normalizedCorpParams,
           monthly_bookkeeping_fee:
             globalRetireConfig.corp_params?.monthly_bookkeeping_fee ??
-            globalRetireConfig.corp_params?.monthly_fixed_cost ??
+            Number(rawCorpParams.monthly_fixed_cost ?? 0) ??
             0,
           annual_corp_tax_adjustment_fee:
             globalRetireConfig.corp_params?.annual_corp_tax_adjustment_fee ?? 0,
@@ -386,9 +394,7 @@ export function SettingsTab({
     retireConfig.tax_and_insurance,
   );
   const corporateOperatingCost =
-    (retireConfig.corp_params.monthly_bookkeeping_fee ??
-      retireConfig.corp_params.monthly_fixed_cost ??
-      0) +
+    (retireConfig.corp_params.monthly_bookkeeping_fee ?? 0) +
     (retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
 
   return (
@@ -761,11 +767,7 @@ export function SettingsTab({
                 isCurrency
                 tooltip={t("settings.monthlyBookkeepingFeeTooltip")}
                 testId="input-group-monthly-bookkeeping-fee"
-                value={
-                  retireConfig.corp_params.monthly_bookkeeping_fee ??
-                  retireConfig.corp_params.monthly_fixed_cost ??
-                  0
-                }
+                value={retireConfig.corp_params.monthly_bookkeeping_fee ?? 0}
                 onChange={(v) =>
                   setRetireConfig({
                     ...retireConfig,

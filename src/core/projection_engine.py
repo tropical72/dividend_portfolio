@@ -459,7 +459,6 @@ class ProjectionEngine:
                 "is_permanent": survival_m >= months,
                 "sgov_exhaustion_date": sgov_exhaustion_date,
                 "growth_asset_sell_start_date": growth_sell_date,
-                "signals": [],
             },
             "survival_months": survival_m,
             "monthly_data": monthly_data,

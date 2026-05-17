@@ -112,6 +112,33 @@ def test_update_retirement_config():
     assert response.status_code == 200
 
 
+def test_update_retirement_config_normalizes_legacy_monthly_fixed_cost(tmp_path, monkeypatch):
+    """legacy monthly_fixed_cost는 읽기 시 흡수하되 저장/재조회 payload에는 남지 않아야 한다."""
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "corp_params": {
+                "monthly_fixed_cost": 500000,
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    corp_params = response.json()["data"]["corp_params"]
+    assert corp_params["monthly_bookkeeping_fee"] == 500000
+    assert "monthly_fixed_cost" not in corp_params
+
+    fetched = local_client.get("/api/retirement/config")
+    assert fetched.status_code == 200
+    fetched_corp_params = fetched.json()["data"]["corp_params"]
+    assert fetched_corp_params["monthly_bookkeeping_fee"] == 500000
+    assert "monthly_fixed_cost" not in fetched_corp_params
+
+
 def test_update_retirement_config_strategy_rules(tmp_path, monkeypatch):
     """전략 규칙이 API를 통해 저장되고 기본값과 병합되는지 검증한다."""
     local_backend = DividendBackend(data_dir=str(tmp_path))
@@ -1944,6 +1971,98 @@ def test_retirement_simulation_does_not_pass_dead_params_to_projection_engine(
     assert "target_buffer_months" not in captured_params
     assert "equity_yield_multiplier" not in captured_params
     assert "debt_yield_multiplier" not in captured_params
+
+
+def test_retirement_simulation_uses_separate_stress_scenario_query_param(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.05,
+                    "inflation_rate": 0.0,
+                },
+                "conservative": {
+                    "name": "Conservative Profile",
+                    "expected_return": 0.03,
+                    "inflation_rate": 0.01,
+                },
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "household_monthly_need": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+        },
+    )
+
+    captured_params = {}
+
+    def _capture_run(initial_assets, params):
+        captured_params.update(params)
+        return {
+            "summary": {
+                "total_survival_years": 1,
+                "survival_months": 12,
+                "is_permanent": True,
+                "sgov_exhaustion_date": "Permanent",
+                "growth_asset_sell_start_date": "None",
+                "signals": [],
+            },
+            "survival_months": 12,
+            "monthly_data": [],
+        }
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _capture_run)
+
+    response = local_client.get(
+        "/api/retirement/simulate?scenario=conservative&stress_scenario=DIVIDEND_CUT"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert captured_params["inflation_rate"] == pytest.approx(0.01)
+    assert captured_params["active_stress_scenario"] == "DIVIDEND_CUT"
+
+
+def test_retirement_simulation_rejects_legacy_stress_scenario_in_assumption_query(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.get("/api/retirement/simulate?scenario=CRASH")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is False
+    assert "Assumption" in payload["message"]
 
 
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():

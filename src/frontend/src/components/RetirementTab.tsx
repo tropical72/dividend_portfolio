@@ -289,9 +289,7 @@ export function RetirementTab() {
     config.tax_and_insurance,
   );
   const corporateOperatingCost =
-    (config.corp_params.monthly_bookkeeping_fee ??
-      config.corp_params.monthly_fixed_cost ??
-      0) +
+    (config.corp_params.monthly_bookkeeping_fee ?? 0) +
     (config.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
   const startYear = config.simulation_params.simulation_start_year;
   const startMonth = config.simulation_params.simulation_start_month;
