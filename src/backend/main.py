@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +13,37 @@ from src.core.rebalance_engine import RebalanceEngine
 from src.core.stress_engine import StressTestEngine
 from src.core.tax_engine import TaxEngine
 from src.core.trigger_engine import TriggerEngine
+
+
+def _apply_profile_return_override(
+    stats: Dict[str, Any],
+    target_return: float,
+) -> Dict[str, Any]:
+    """Apply a non-standard profile TR target while preserving portfolio DY."""
+    adjusted = deepcopy(stats)
+    category_rates = adjusted.get("category_return_rates") or {}
+    strategy_weights = adjusted.get("strategy_weights") or {}
+    dividend_yield = float(adjusted.get("dividend_yield", 0.0))
+    target_pa = float(target_return) - dividend_yield
+    current_pa = 0.0
+
+    for category, rates in category_rates.items():
+        weight = float(strategy_weights.get(category, 0.0))
+        current_pa += float(rates.get("pa", 0.0)) * weight
+
+    if category_rates:
+        if abs(current_pa) > 1e-12:
+            scale = target_pa / current_pa
+            for rates in category_rates.values():
+                rates["pa"] = float(rates.get("pa", 0.0)) * scale
+                rates["tr"] = float(rates.get("dy", 0.0)) + rates["pa"]
+        else:
+            for rates in category_rates.values():
+                rates["pa"] = target_pa
+                rates["tr"] = float(rates.get("dy", 0.0)) + rates["pa"]
+
+    adjusted["expected_return"] = float(target_return)
+    return adjusted
 
 
 def _get_default_data_dir() -> str:
@@ -373,6 +405,11 @@ async def run_retirement_simulation(
         p_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
         corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None, pa_scenario)
         pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None, pa_scenario)
+
+    if active_id != "v1" and active_id in assumptions:
+        profile_return = float(assumption["expected_return"])
+        corp_stats = _apply_profile_return_override(corp_stats, profile_return)
+        pension_stats = _apply_profile_return_override(pension_stats, profile_return)
 
     base_params = {
         "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
