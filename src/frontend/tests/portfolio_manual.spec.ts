@@ -26,7 +26,7 @@ test.describe("Portfolio Manual Add", () => {
     // 3. 폼 입력 (모달 내부 필드 지목)
     await modal.getByPlaceholder(/e.g. AAPL/i).fill("TEST");
     await modal.getByPlaceholder(/e.g. Apple Inc./i).fill("Manual Test Stock");
-    await modal.getByPlaceholder("0").fill("10");
+    await modal.getByTestId("manual-weight-input").fill("10");
 
     // 4. 추가 버튼 클릭
     await modal.getByRole("button", { name: /Add Asset|자산 추가/i }).click();
@@ -38,5 +38,32 @@ test.describe("Portfolio Manual Add", () => {
     await expect(
       page.getByRole("cell", { name: "Manual Test Stock" }).first(),
     ).toBeVisible();
+  });
+
+  test("should convert SGOV buffer months into allocation weight", async ({
+    page,
+  }) => {
+    await page.getByPlaceholder(/KRW Amount|KRW 금액/i).fill("115000000");
+
+    const addBtn = page
+      .locator("div:has(h3:text('SGOV Buffer'))")
+      .getByRole("button", { name: /Add Manually|직접 추가/i })
+      .first();
+    await addBtn.scrollIntoViewIfNeeded();
+    await addBtn.click({ force: true });
+
+    const modal = page.getByTestId("manual-add-modal");
+    await modal.getByPlaceholder(/e.g. AAPL/i).fill("SGOV");
+    await modal.getByPlaceholder(/e.g. Apple Inc./i).fill("SGOV ETF");
+    await modal.getByTestId("manual-runway-months-input").fill("3");
+
+    await expect(modal.getByTestId("manual-weight-input")).toHaveValue("30");
+
+    await modal.getByRole("button", { name: /Add Asset|자산 추가/i }).click();
+
+    const sgovRow = page.getByRole("row").filter({ hasText: "SGOV" }).first();
+    await expect(sgovRow.getByTestId("portfolio-weight-input")).toHaveValue(
+      "30",
+    );
   });
 });

@@ -48,7 +48,7 @@ test.describe("Portfolio Save Modal", () => {
     const modal = page.getByTestId("manual-add-modal");
     await modal.getByPlaceholder(/e.g. AAPL/i).fill("SGOV");
     await modal.getByPlaceholder(/e.g. Apple Inc./i).fill("SGOV ETF");
-    await modal.getByPlaceholder("0").fill("100");
+    await modal.getByTestId("manual-weight-input").fill("100");
     await modal.getByRole("button", { name: /Add Asset|자산 추가/i }).click();
 
     await page.getByTestId("portfolio-save-button").click();

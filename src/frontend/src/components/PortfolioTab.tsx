@@ -27,6 +27,7 @@ import type {
   Portfolio,
   PortfolioCategory,
   PortfolioItem,
+  RetirementConfig,
 } from "../types";
 import { PortfolioDashboard } from "./PortfolioDashboard";
 
@@ -69,6 +70,12 @@ export function PortfolioTab({
         tickerSymbol: "티커",
         stockName: "종목명",
         allocationWeight: "비중 (%)",
+        runwayMonths: "버퍼 개월 수",
+        runwayMonthsDesc:
+          "월 필요현금 기준으로 비중을 자동 계산합니다. 직접 %를 수정해도 됩니다.",
+        runwayUnavailable:
+          "총 투자금 또는 월 필요현금이 없어 개월 수 환산을 사용할 수 없습니다.",
+        convertedWeight: "환산 비중",
         cancel: "취소",
         addAsset: "자산 추가",
         portfolioDesigner: "포트폴리오 설계",
@@ -133,6 +140,12 @@ export function PortfolioTab({
         tickerSymbol: "Ticker Symbol",
         stockName: "Stock Name",
         allocationWeight: "Allocation Weight (%)",
+        runwayMonths: "Buffer Months",
+        runwayMonthsDesc:
+          "Converts months into allocation weight using monthly cash need. You can still edit % directly.",
+        runwayUnavailable:
+          "Month conversion needs total capital and monthly cash need.",
+        convertedWeight: "Converted Weight",
         cancel: "Cancel",
         addAsset: "Add Asset",
         portfolioDesigner: "Portfolio Designer",
@@ -292,11 +305,14 @@ export function PortfolioTab({
     name: "",
     weight: 0,
   });
+  const [manualRunwayMonths, setManualRunwayMonths] = useState("");
 
   // 시뮬레이션 상태 [REQ-PRT-03]
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
+  const [retirementConfig, setRetirementConfig] =
+    useState<RetirementConfig | null>(null);
 
   // 저장 모달 상태 [NEW]
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -327,6 +343,73 @@ export function PortfolioTab({
       }
     }
   }, [activeTab, portfolioId, globalSettings]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRetirementConfig = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/retirement/config");
+        const result = await res.json();
+        if (!cancelled && result.success) {
+          setRetirementConfig(result.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setRetirementConfig(null);
+        }
+      }
+    };
+
+    loadRetirementConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const monthlyNeedKrw = useMemo(() => {
+    if (!retirementConfig) {
+      return 0;
+    }
+
+    if (accountType === "Pension") {
+      return (
+        retirementConfig.pension_params.monthly_withdrawal_target ||
+        retirementConfig.simulation_params.target_monthly_cashflow ||
+        0
+      );
+    }
+
+    return (
+      retirementConfig.simulation_params.target_monthly_cashflow ||
+      retirementConfig.simulation_params.household_monthly_need ||
+      0
+    );
+  }, [accountType, retirementConfig]);
+
+  const runwayConversionAvailable = capitalUsd > 0 && monthlyNeedKrw > 0;
+
+  const isRunwayInputCategory = (category: PortfolioCategory | null) =>
+    category === "SGOV Buffer" || category === "Bond Buffer";
+
+  const calculateWeightFromRunwayMonths = (months: number) => {
+    if (!runwayConversionAvailable) {
+      return 0;
+    }
+
+    const totalCapitalKrw = capitalUsd * exchangeRate;
+    return (months * monthlyNeedKrw * 100) / totalCapitalKrw;
+  };
+
+  const calculateRunwayMonthsFromWeight = (weight: number) => {
+    if (!runwayConversionAvailable) {
+      return 0;
+    }
+
+    const totalCapitalKrw = capitalUsd * exchangeRate;
+    return (weight / 100) * (totalCapitalKrw / monthlyNeedKrw);
+  };
 
   /** 대시보드에서 포트폴리오 로드 핸들러 [REQ-PRT-04.3] */
   const handleLoadPortfolio = (p: Portfolio) => {
@@ -360,6 +443,7 @@ export function PortfolioTab({
     setItems((prev) => [...prev, newItem]);
     setManualAdd({ category: null });
     setManualForm({ symbol: "", name: "", weight: 0 });
+    setManualRunwayMonths("");
     showStatus(copy.itemAdded, "success");
   };
 
@@ -594,6 +678,7 @@ export function PortfolioTab({
                   type="number"
                   placeholder="0"
                   value={manualForm.weight || ""}
+                  data-testid="manual-weight-input"
                   onChange={(e) =>
                     setManualForm({
                       ...manualForm,
@@ -603,6 +688,45 @@ export function PortfolioTab({
                   className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-emerald-300"
                 />
               </div>
+              {isRunwayInputCategory(manualAdd.category) && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                  <div className="mb-3 flex items-start justify-between gap-4">
+                    <div>
+                      <label className="text-[11px] font-semibold tracking-[0.08em] text-blue-700">
+                        {copy.runwayMonths}
+                      </label>
+                      <p className="mt-1 text-xs font-medium leading-relaxed text-slate-600">
+                        {copy.runwayMonthsDesc}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700">
+                      {copy.convertedWeight}: {manualForm.weight.toFixed(2)}%
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={manualRunwayMonths}
+                    disabled={!runwayConversionAvailable}
+                    data-testid="manual-runway-months-input"
+                    onChange={(e) => {
+                      const monthsText = e.target.value;
+                      const months = parseFloat(monthsText) || 0;
+                      setManualRunwayMonths(monthsText);
+                      setManualForm({
+                        ...manualForm,
+                        weight: calculateWeightFromRunwayMonths(months),
+                      });
+                    }}
+                    className="w-full rounded-2xl border border-blue-100 bg-white px-5 py-3 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                  {!runwayConversionAvailable && (
+                    <p className="mt-2 text-xs font-semibold text-amber-700">
+                      {copy.runwayUnavailable}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-10">
@@ -1023,6 +1147,7 @@ export function PortfolioTab({
                                 <input
                                   type="number"
                                   value={item.weight}
+                                  data-testid="portfolio-weight-input"
                                   onChange={(e) =>
                                     updateWeight(
                                       item.symbol,
@@ -1035,6 +1160,34 @@ export function PortfolioTab({
                                   %
                                 </span>
                               </div>
+                              {isRunwayInputCategory(item.category) && (
+                                <div className="mt-2 flex items-center justify-end gap-2">
+                                  <span className="text-[11px] font-semibold text-slate-500">
+                                    {copy.runwayMonths}
+                                  </span>
+                                  <input
+                                    type="number"
+                                    value={
+                                      runwayConversionAvailable
+                                        ? calculateRunwayMonthsFromWeight(
+                                            item.weight,
+                                          ).toFixed(1)
+                                        : ""
+                                    }
+                                    disabled={!runwayConversionAvailable}
+                                    data-testid="portfolio-runway-months-input"
+                                    onChange={(e) =>
+                                      updateWeight(
+                                        item.symbol,
+                                        calculateWeightFromRunwayMonths(
+                                          parseFloat(e.target.value) || 0,
+                                        ),
+                                      )
+                                    }
+                                    className="w-20 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1.5 text-right text-xs font-bold text-blue-700 outline-none transition-all focus:border-blue-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                  />
+                                </div>
+                              )}
                             </td>
                             <td className="py-6 px-8 text-center">
                               <button
