@@ -98,6 +98,11 @@
   - `VGIT`와 `Growth Engine`이 동일 월에 서로 다른 증가율과 현금 유입을 만드는지 확인.
 - **[TEST-SUR-11] 문서 대표 캘린더 기준선 검증 [NEW]:**
   - 문서 대표 Phase 2 시나리오에서 법인 `SGOV 30 -> (10월 말 25) -> 11월 복구 27 -> (4월 말 22) -> 다음 5월 복구 30` 구조가 재현되는지 확인.
+- **[TEST-UI-RULE-12] Settings 미사용 trigger 설정 비노출/미적용 안내 [NEW]:**
+  - Advanced Settings에서 `high_income_cap_rate`, `equity_yield_multiplier`, `debt_yield_multiplier`, `market_panic_threshold`가 활성 입력으로 보이지 않는지 확인.
+  - 대신 `현재 은퇴 시뮬레이션에 미적용` 안내가 노출되는지 확인.
+- **[TEST-API-RET-09] simulate dead param 정리 검증 [NEW]:**
+  - `main.py`가 엔진 미사용 값을 더 이상 retirement simulation params에 넣지 않거나, 넣는 경우 실제 엔진 소비 경로가 존재하는지 확인.
   - 개인연금 `SGOV 24 -> 11월 말 18 -> 다음 5월 복구 24` 구조가 재현되는지 확인.
 - **[TEST-SUR-12] Shock / Inflation Freeze / BOOST Ladder 대표 시나리오 검증 [NEW]:**
   - 6월 Crash20 발생 후 다음 해 5월까지 `Shock Flag`가 유지되고, 해당 5월에는 인플레이션 승인이 동결되는지 확인.

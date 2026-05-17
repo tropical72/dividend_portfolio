@@ -43,6 +43,9 @@
 | D-RAMS-8.1.2    | 월 필요 생활비 입력 누락으로 인한 저지출 시뮬레이션 오인 방지 및 Settings 노출 보강                  | T-01-9.4.4            | TEST-UI-RULE-08                                                                                                 | Done        | 1f34368    | 2026.04.16-22.00 |
 | D-RAMS-8.1.3    | Projection Result에서 실제 적용 중인 월 필요 생활비 배지 노출                                        | T-01-9.4.5            | TEST-UI-RULE-09                                                                                                 | Done        | dffc4e6    | 2026.04.16-22.10 |
 | D-RAMS-8.1.4    | v11.1 전략 설정 전체 노출 및 `rebalance_month` 동적 캘린더 연동                                     | T-01-13.1 ~ T-01-13.2 | TEST-SUR-14 / TEST-UI-RULE-05                                                                                   | Done        | a4e292d / aa181a7 | 2026.05.15 |
+| D-RAMS-8.1.5    | Settings의 미사용 trigger 설정을 활성 입력에서 제거하거나 미적용 상태로 명시                         | T-01-17.1             | TEST-UI-RULE-12                                                                                                 | In Progress | -          | 2026.05.18 |
+| D-RAMS-8.1.6    | retirement simulate API의 dead params와 stress scenario ghost 계약 정리                              | T-01-17.2 ~ T-01-17.4 | TEST-API-RET-09                                                                                                 | In Progress | -          | 2026.05.18 |
+| D-RAMS-8.1.7    | frontend legacy `monthly_fixed_cost` 및 defaults legacy strategy fields 정리                         | T-01-17.5 ~ T-01-17.6 | TEST-UI-RULE-12 / TEST-RAMS-1.2.1                                                                               | Pending     | -          | -          |
 
 ---
 

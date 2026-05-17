@@ -121,6 +121,7 @@
 - **[REQ-RAMS-8.5] 투명성:** Step 2 Projection Result에는 실제 사용된 핵심 설정값(예: 법인 SGOV 목표 개월수, 연금 SGOV 하한, 리밸런싱 실행 월)을 확인할 수 있는 요약 정보 또는 상세 패널이 제공되어야 한다.
   - 요약 정보에는 `household_monthly_need`(월 가계필요비용), `corporate_monthly_operating_cost`(법인필요비용 파생값), `monthly_salary`, `estimated_net_salary`도 포함되어 사용자가 현재 시뮬레이션이 어떤 현금흐름 가정 위에서 계산되었는지 즉시 확인할 수 있어야 한다.
 - **[REQ-RAMS-8.6] 엔진 규칙 동적 연동:** `strategy_rules`에 저장된 버퍼 개월수와 Bond floor/target/upper 값은 화면 노출 여부와 무관하게 `ProjectionEngine`의 5월/8월/11월 점검, 연금 floor refill, Stress 판정에 실제로 반영되어야 한다. 엔진 내부에 동일 의미의 하드코딩 상수를 별도로 유지해서는 안 된다.
+- **[REQ-RAMS-8.6a] 설정-엔진 정합성:** Settings와 API는 은퇴 시뮬레이션에 실제 반영되는 설정만 활성 제어로 노출해야 한다. 아직 엔진과 연결되지 않은 legacy/ghost 설정은 입력 가능 상태로 노출하면 안 되며, 숨기거나 `현재 미적용` 상태를 명시해야 한다.
 
 ---
 

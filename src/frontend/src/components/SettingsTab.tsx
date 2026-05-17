@@ -1809,125 +1809,27 @@ export function SettingsTab({
                       }
                     />
                   </div>
-                  <InputGroup
-                    label={t("settings.highIncomeCap")}
-                    unit="%"
-                    tooltip={t("settings.highIncomeCapTooltip")}
-                    value={
-                      retireConfig.trigger_thresholds.high_income_cap_rate * 100
-                    }
-                    onChange={(v) =>
-                      setRetireConfig({
-                        ...retireConfig,
-                        trigger_thresholds: {
-                          ...retireConfig.trigger_thresholds,
-                          high_income_cap_rate: parseFloat(v) / 100,
-                        },
-                      })
-                    }
-                  />
-                  <div className="space-y-4 pt-4 border-t border-slate-800/50">
-                    <div className="flex items-center gap-2">
-                      <h4
-                        className={cn(
-                          isKorean
-                            ? "text-xs font-bold text-slate-400 tracking-normal"
-                            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-                        )}
-                      >
-                        {t("settings.yieldMultipliers")}
-                      </h4>
-                      <div className="group relative">
-                        <Info
-                          size={12}
-                          className="text-slate-700 cursor-help"
-                        />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                          {t("settings.yieldMultipliersTooltip")}
-                        </div>
+                  <div
+                    className="pt-4 border-t border-slate-800/50"
+                    data-testid="advanced-trigger-settings-notice"
+                  >
+                    <div className="rounded-[1.75rem] border border-amber-500/20 bg-amber-500/10 p-5">
+                      <div className="flex items-center gap-2 text-amber-300">
+                        <Info size={14} />
+                        <h4
+                          className={cn(
+                            isKorean
+                              ? "text-sm font-bold tracking-normal"
+                              : "text-xs font-black uppercase tracking-widest",
+                          )}
+                        >
+                          {t("settings.unusedTriggerSettingsTitle")}
+                        </h4>
                       </div>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                        {t("settings.unusedTriggerSettingsBody")}
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <InputGroup
-                        label={t("settings.equityMult")}
-                        unit="x"
-                        tooltip={t("settings.equityMultTooltip")}
-                        testId="input-group-equity-mult"
-                        value={
-                          retireConfig.trigger_thresholds
-                            .equity_yield_multiplier * 100
-                        }
-                        onChange={(v) =>
-                          setRetireConfig({
-                            ...retireConfig,
-                            trigger_thresholds: {
-                              ...retireConfig.trigger_thresholds,
-                              equity_yield_multiplier: parseFloat(v) / 100,
-                            },
-                          })
-                        }
-                      />
-                      <InputGroup
-                        label={t("settings.debtMult")}
-                        unit="x"
-                        tooltip={t("settings.debtMultTooltip")}
-                        testId="input-group-debt-mult"
-                        tooltipAlign="right"
-                        value={
-                          retireConfig.trigger_thresholds
-                            .debt_yield_multiplier * 100
-                        }
-                        onChange={(v) =>
-                          setRetireConfig({
-                            ...retireConfig,
-                            trigger_thresholds: {
-                              ...retireConfig.trigger_thresholds,
-                              debt_yield_multiplier: parseFloat(v) / 100,
-                            },
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-4 pt-4 border-t border-slate-800/50">
-                    <div className="flex items-center gap-2">
-                      <h4
-                        className={cn(
-                          isKorean
-                            ? "text-xs font-bold text-slate-400 tracking-normal"
-                            : "text-[11px] font-black text-slate-500 uppercase tracking-widest",
-                        )}
-                      >
-                        {t("settings.triggerThresholds")}
-                      </h4>
-                      <div className="group relative">
-                        <Info
-                          size={12}
-                          className="text-slate-700 cursor-help"
-                        />
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95">
-                          {t("settings.triggerThresholdsTooltip")}
-                        </div>
-                      </div>
-                    </div>
-                    <InputGroup
-                      label={t("settings.marketPanic")}
-                      unit="%"
-                      tooltip={t("settings.marketPanicTooltip")}
-                      value={
-                        retireConfig.trigger_thresholds.market_panic_threshold *
-                        100
-                      }
-                      onChange={(v) =>
-                        setRetireConfig({
-                          ...retireConfig,
-                          trigger_thresholds: {
-                            ...retireConfig.trigger_thresholds,
-                            market_panic_threshold: parseFloat(v) / 100,
-                          },
-                        })
-                      }
-                    />
                   </div>
                 </div>
               </div>

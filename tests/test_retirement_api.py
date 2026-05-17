@@ -1859,6 +1859,93 @@ def test_retirement_simulation_applies_non_standard_profile_return_override(tmp_
     )
 
 
+def test_retirement_simulation_does_not_pass_dead_params_to_projection_engine(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.05,
+                    "inflation_rate": 0.0,
+                }
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 100000,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "household_monthly_need": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+                "expected_market_growth": 0.0485,
+            },
+            "personal_params": {
+                "real_estate_price": 500000000,
+                "other_assets": 0,
+            },
+            "trigger_thresholds": {
+                "tax_threshold": 200000000,
+                "target_buffer_months": 12,
+                "high_income_cap_rate": 0.4,
+                "market_panic_threshold": -0.2,
+                "equity_yield_multiplier": 1.2,
+                "debt_yield_multiplier": 0.6,
+            },
+        },
+    )
+
+    captured_params = {}
+
+    def _capture_run(initial_assets, params):
+        captured_params.update(params)
+        return {
+            "summary": {
+                "total_survival_years": 1,
+                "survival_months": 12,
+                "is_permanent": True,
+                "sgov_exhaustion_date": "Permanent",
+                "growth_asset_sell_start_date": "None",
+                "signals": [],
+            },
+            "survival_months": 12,
+            "monthly_data": [],
+        }
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _capture_run)
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert "market_return_rate" not in captured_params
+    assert "real_estate_price" not in captured_params
+    assert "target_buffer_months" not in captured_params
+    assert "equity_yield_multiplier" not in captured_params
+    assert "debt_yield_multiplier" not in captured_params
+
+
 def test_run_retirement_simulation_applies_national_pension_income_from_configured_age():
     """국민연금 개시 연령과 월 수령액이 Phase 3 현금흐름에 반영되어야 한다."""
     live_backend = main_module.backend

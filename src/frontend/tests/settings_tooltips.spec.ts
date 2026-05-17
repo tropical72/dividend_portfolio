@@ -1,34 +1,33 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from "@playwright/test";
 
-test.describe('Settings Tooltip Regression Validation', () => {
+test.describe("Settings Advanced Trigger Notice", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173');
-    await page.click('text=Strategy Settings');
-    await page.waitForSelector('text=Strategy Center', { timeout: 15000 });
+    await page.goto("http://localhost:5173");
+    await page.getByTestId("nav-strategy-settings").click();
+    await expect(page.getByTestId("settings-title")).toBeVisible();
   });
 
-  test('Yield Multiplier tooltips should contain default values', async ({ page }) => {
-    // Advanced 섹션 펼치기
-    await page.getByTestId('advanced-settings-toggle').click();
+  test("should hide unused trigger inputs and show a not-applied notice", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name.includes("mobile"),
+      "Settings advanced notice regression is validated on desktop layout only.",
+    );
 
-    // 1. Equity Mult 툴팁 확인
-    const equityGroup = page.getByTestId('input-group-equity-mult');
-    await equityGroup.getByTestId('tooltip-icon').hover();
-    await expect(page.locator('text=기본값: 1.2')).toBeVisible();
+    await page.getByTestId("advanced-settings-toggle").click();
+    await expect(page.getByTestId("advanced-settings-content")).toBeVisible();
 
-    // 2. Debt Mult 툴팁 확인
-    const debtGroup = page.getByTestId('input-group-debt-mult');
-    await debtGroup.getByTestId('tooltip-icon').hover();
-    await expect(page.locator('text=기본값: 0.6')).toBeVisible();
-  });
+    await expect(
+      page.getByTestId("advanced-trigger-settings-notice"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("advanced-trigger-settings-notice"),
+    ).toContainText(
+      /미적용|not connected|hidden until the engine contract is implemented/i,
+    );
 
-  test('Right-side tooltips should be aligned correctly', async ({ page }) => {
-    await page.getByTestId('advanced-settings-toggle').click();
-    
-    const debtGroup = page.getByTestId('input-group-debt-mult');
-    const tooltip = debtGroup.locator('.absolute'); // 툴팁 박스
-    
-    // 우측 정렬 클래스가 포함되어 있는지 확인
-    await expect(tooltip).toHaveClass(/right-0/);
+    await expect(page.getByTestId("input-group-equity-mult")).toHaveCount(0);
+    await expect(page.getByTestId("input-group-debt-mult")).toHaveCount(0);
   });
 });

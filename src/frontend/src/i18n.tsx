@@ -433,6 +433,9 @@ const translations = {
     "settings.marketPanic": "Market Panic",
     "settings.marketPanicTooltip":
       "Bear-market threshold that halts portfolio rebalancing.",
+    "settings.unusedTriggerSettingsTitle": "Unused trigger settings hidden",
+    "settings.unusedTriggerSettingsBody":
+      "High Income Cap, Yield Multipliers, and Market Panic are not connected to the retirement simulation engine yet. They are hidden until the engine contract is implemented.",
     "costComparison.loading": "Loading cost comparison...",
     "costComparison.loadError": "Failed to load cost comparison settings.",
     "costComparison.title": "Personal vs Corporate Comparison",
@@ -1098,6 +1101,9 @@ const translations = {
     "settings.marketPanic": "시장 패닉",
     "settings.marketPanicTooltip":
       "포트폴리오 리밸런싱을 중단하는 하락장 임계치입니다.",
+    "settings.unusedTriggerSettingsTitle": "미적용 trigger 설정 숨김",
+    "settings.unusedTriggerSettingsBody":
+      "고소득 상한, 수익률 배수, 시장 패닉 설정은 아직 은퇴 시뮬레이션 엔진과 연결되지 않았습니다. 엔진 계약이 구현되기 전까지는 입력을 숨깁니다.",
     "costComparison.loading": "비교 시뮬레이터 불러오는 중...",
     "costComparison.loadError": "비교 시뮬레이터 설정을 불러오지 못했습니다.",
     "costComparison.title": "개인 vs 법인 비교",

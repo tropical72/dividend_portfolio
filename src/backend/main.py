@@ -366,7 +366,6 @@ async def run_retirement_simulation(
     # 4. 시뮬레이션 파라미터 결합 (포트폴리오 통계 포함)
     sim_params = config["simulation_params"]
     user_profile = config["user_profile"]
-    trigger_params = config.get("trigger_thresholds", {"target_buffer_months": 24})
     strategy_rules = config.get("strategy_rules", {})
     corporate_rules = strategy_rules.get("corporate", {})
     pension_rules = strategy_rules.get("pension", {})
@@ -420,11 +419,6 @@ async def run_retirement_simulation(
             "household_monthly_need", sim_params["target_monthly_cashflow"]
         ),
         "inflation_rate": assumption["inflation_rate"],
-        "market_return_rate": (
-            backend.get_standard_profile_return(pa_scenario)
-            if active_id == "v1"
-            else assumption["expected_return"]
-        ),
         "birth_year": user_profile["birth_year"],
         "birth_month": user_profile["birth_month"],
         "private_pension_start_age": user_profile["private_pension_start_age"],
@@ -432,9 +426,6 @@ async def run_retirement_simulation(
         "simulation_start_year": sim_params["simulation_start_year"],
         "simulation_start_month": sim_params["simulation_start_month"],
         "simulation_years": sim_params.get("simulation_years", 30),
-        "target_buffer_months": trigger_params["target_buffer_months"],
-        "equity_yield_multiplier": trigger_params.get("equity_yield_multiplier", 1.2),
-        "debt_yield_multiplier": trigger_params.get("debt_yield_multiplier", 0.6),
         "pension_withdrawal_target": pension_params["monthly_withdrawal_target"],
         "national_pension_amount": sim_params["national_pension_amount"],
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],
@@ -443,7 +434,6 @@ async def run_retirement_simulation(
         "monthly_bookkeeping_fee": monthly_bookkeeping_fee,
         "annual_corp_tax_adjustment_fee": annual_corp_tax_adjustment_fee,
         "employee_count": corp_params["employee_count"],
-        "real_estate_price": config.get("personal_params", {}).get("real_estate_price") or 0,
         "rebalance_month": strategy_rules.get("rebalance_month", 5),
         "sgov_target_months": corporate_rules.get("sgov_target_months", 30),
         "corp_november_sgov_target_months": corporate_rules.get(
