@@ -331,6 +331,10 @@ export function RetirementTab() {
   };
   const detailLogRows: DetailLogRow[] = [initialLedgerRow, ...monthlyData];
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
+  const pensionSgovTargetMonths =
+    strategyRulesSummary?.pension_sgov_target_months ??
+    config.strategy_rules.pension.sgov_target_months ??
+    24;
   const portfolioMeta = simulationData.meta?.used_portfolios;
   const standardMasterReturn =
     simulationData.meta?.master_tr ??
@@ -1065,6 +1069,7 @@ export function RetirementTab() {
         >
           <ResultSnapshotCard
             label={t("retirement.snapshotAssumption")}
+            tooltip={t("retirement.snapshotAssumptionTooltip")}
             value={
               activeId === "v1"
                 ? t("retirement.assumption.standard")
@@ -1073,14 +1078,17 @@ export function RetirementTab() {
           />
           <ResultSnapshotCard
             label={t("retirement.snapshotDuration")}
+            tooltip={t("retirement.snapshotDurationTooltip")}
             value={`${config.simulation_params.simulation_years || 30}${t("retirement.chart.yearTick")}`}
           />
           <ResultSnapshotCard
             label={t("retirement.snapshotMonthlyTarget")}
+            tooltip={t("retirement.snapshotMonthlyTargetTooltip")}
             value={`₩${(householdMonthlyNeed || 0).toLocaleString()}`}
           />
           <ResultSnapshotCard
             label={t("retirement.snapshotMaster")}
+            tooltip={t("retirement.snapshotMasterTooltip")}
             value={
               simulationData.meta?.master_name ||
               t("retirement.customStrategyBuilder")
@@ -1126,6 +1134,7 @@ export function RetirementTab() {
                 <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
                   <InlineHint
                     label={t("retirement.shockFlag")}
+                    tooltip={t("retirement.shockFlagTooltip")}
                     value={
                       latestMonth?.shock_flag
                         ? t("retirement.shockOn")
@@ -1134,6 +1143,7 @@ export function RetirementTab() {
                   />
                   <InlineHint
                     label={t("retirement.stressMode")}
+                    tooltip={t("retirement.stressModeTooltip")}
                     value={
                       latestMonth?.stress
                         ? t("retirement.stressOn")
@@ -1142,6 +1152,7 @@ export function RetirementTab() {
                   />
                   <InlineHint
                     label={t("retirement.inflationDecision")}
+                    tooltip={t("retirement.inflationDecisionTooltip")}
                     value={inflationDecisionLabel(
                       latestMonth?.inflation_action,
                     )}
@@ -1203,18 +1214,22 @@ export function RetirementTab() {
                     <div className="grid grid-cols-2 gap-3">
                       <RuleBadge
                         label={t("retirement.rebalance")}
+                        tooltip={t("retirement.rebalanceTooltip")}
                         value={`${strategyRulesSummary.rebalance_month}M`}
                       />
                       <RuleBadge
                         label={t("retirement.corpSgov")}
+                        tooltip={t("retirement.corpSgovTooltip")}
                         value={`${strategyRulesSummary.corporate_sgov_target_months} Mo`}
                       />
                       <RuleBadge
                         label={t("retirement.pensionSgov")}
-                        value={`${strategyRulesSummary.pension_sgov_target_months} Mo`}
+                        tooltip={t("retirement.pensionSgovTooltip")}
+                        value={`${pensionSgovTargetMonths} Mo`}
                       />
                       <RuleBadge
                         label={t("retirement.monthlyCost")}
+                        tooltip={t("retirement.monthlyCostTooltip")}
                         value={`₩${(
                           householdMonthlyNeed || 0
                         ).toLocaleString()}`}
@@ -1222,6 +1237,7 @@ export function RetirementTab() {
                       />
                       <RuleBadge
                         label={t("settings.corporateNeedEstimate")}
+                        tooltip={t("settings.corporateNeedEstimateTooltip")}
                         value={`₩${Math.round(
                           corporateOperatingCost,
                         ).toLocaleString()}`}
@@ -1229,6 +1245,7 @@ export function RetirementTab() {
                       />
                       <RuleBadge
                         label={t("settings.netSalaryEstimate")}
+                        tooltip={t("settings.netSalaryEstimateTooltip")}
                         value={`₩${Math.round(
                           estimatedNetSalaryValue,
                         ).toLocaleString()}`}
@@ -1246,14 +1263,17 @@ export function RetirementTab() {
               <div className="mb-5 grid gap-3 sm:grid-cols-3">
                 <ChartSummaryCard
                   label={t("retirement.chartStartAssets")}
+                  tooltip={t("retirement.chartStartAssetsTooltip")}
                   value={`₩${(initialNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
                 />
                 <ChartSummaryCard
                   label={t("retirement.chartLatestAssets")}
+                  tooltip={t("retirement.chartLatestAssetsTooltip")}
                   value={`₩${(latestNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
                 />
                 <ChartSummaryCard
                   label={t("retirement.chartMinimumAssets")}
+                  tooltip={t("retirement.chartMinimumAssetsTooltip")}
                   value={`₩${(minimumNetWorth / 100000000).toFixed(1)}${largeCurrencyUnit}`}
                 />
               </div>
@@ -1658,23 +1678,67 @@ export function RetirementTab() {
   );
 }
 
-function InlineHint({ label, value }: { label: string; value: string }) {
+function InfoTooltip({
+  tooltip,
+  testId,
+}: {
+  tooltip: string;
+  testId?: string;
+}) {
+  return (
+    <span className="group/infotip relative inline-flex" title={tooltip}>
+      <Info
+        size={12}
+        className="cursor-help text-slate-500"
+        data-testid={testId}
+        aria-label={tooltip}
+      />
+      <span className="absolute left-0 bottom-full z-50 mb-2 hidden w-56 rounded-xl border border-white/80 bg-white/95 p-3 text-left text-[11px] font-medium leading-relaxed text-slate-600 normal-case tracking-normal shadow-lg group-hover/infotip:block">
+        {tooltip}
+      </span>
+    </span>
+  );
+}
+
+function InlineHint({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  tooltip?: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/80 bg-white/72 px-4 py-3 shadow-sm">
-      <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-        {label}
-      </p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+          {label}
+        </p>
+        {tooltip && <InfoTooltip tooltip={tooltip} />}
+      </div>
       <p className="mt-1 text-sm font-medium text-slate-600">{value}</p>
     </div>
   );
 }
 
-function ChartSummaryCard({ label, value }: { label: string; value: string }) {
+function ChartSummaryCard({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  tooltip: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/80 bg-white/74 px-4 py-3 shadow-sm">
-      <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-        {label}
-      </p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+          {label}
+        </p>
+        <InfoTooltip tooltip={tooltip} />
+      </div>
       <p className="mt-1 text-sm font-bold text-slate-800">{value}</p>
     </div>
   );
@@ -1782,22 +1846,27 @@ function TableHeaderLabel({
 function ResultSnapshotCard({
   label,
   value,
+  tooltip,
 }: {
   label: string;
   value: string;
+  tooltip: string;
 }) {
   const { isKorean } = useI18n();
   return (
     <div className="rounded-[1.5rem] border border-white/80 bg-white/76 px-5 py-4 shadow-sm">
-      <p
-        className={cn(
-          isKorean
-            ? "text-[11px] font-semibold text-slate-500 tracking-normal"
-            : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
-        )}
-      >
-        {label}
-      </p>
+      <div className="flex items-center gap-1.5">
+        <p
+          className={cn(
+            isKorean
+              ? "text-[11px] font-semibold text-slate-500 tracking-normal"
+              : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+          )}
+        >
+          {label}
+        </p>
+        <InfoTooltip tooltip={tooltip} />
+      </div>
       <p className="mt-2 break-words text-sm font-bold text-slate-800">
         {value}
       </p>
@@ -1808,10 +1877,12 @@ function ResultSnapshotCard({
 function RuleBadge({
   label,
   value,
+  tooltip,
   testId,
 }: {
   label: string;
   value: string;
+  tooltip: string;
   testId?: string;
 }) {
   const { isKorean } = useI18n();
@@ -1820,15 +1891,18 @@ function RuleBadge({
       className="rounded-2xl border border-white/80 bg-white/72 px-4 py-3 shadow-sm"
       data-testid={testId}
     >
-      <p
-        className={cn(
-          isKorean
-            ? "text-xs font-semibold text-slate-500 tracking-normal"
-            : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
-        )}
-      >
-        {label}:
-      </p>
+      <div className="flex items-center gap-1.5">
+        <p
+          className={cn(
+            isKorean
+              ? "text-xs font-semibold text-slate-500 tracking-normal"
+              : "text-[11px] font-semibold text-slate-500 tracking-[0.08em]",
+          )}
+        >
+          {label}:
+        </p>
+        <InfoTooltip tooltip={tooltip} />
+      </div>
       <p className="mt-1 text-sm font-bold text-slate-800">{value}</p>
     </div>
   );

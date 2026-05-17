@@ -72,13 +72,27 @@ const translations = {
     "retirement.yearsSustainableTooltip":
       "How many full years the current strategy can sustain the retirement cashflow target.",
     "retirement.snapshotAssumption": "Active Assumption",
+    "retirement.snapshotAssumptionTooltip":
+      "Market return and inflation profile currently used for the simulation.",
     "retirement.snapshotDuration": "Simulation Duration",
+    "retirement.snapshotDurationTooltip":
+      "Number of years projected from the configured simulation start date.",
     "retirement.snapshotMonthlyTarget": "Monthly Cash Target",
+    "retirement.snapshotMonthlyTargetTooltip":
+      "Target household monthly cashflow before pension and salary offsets are applied.",
     "retirement.snapshotMaster": "Active Master",
+    "retirement.snapshotMasterTooltip":
+      "Master portfolio bundle used for the corporate and pension account strategy.",
     "retirement.statusSection": "Outcome",
-    "retirement.shockFlag": "Shock Flag",
-    "retirement.stressMode": "Stress Mode",
-    "retirement.inflationDecision": "Inflation Decision",
+    "retirement.shockFlag": "Crash Freeze",
+    "retirement.shockFlagTooltip":
+      "Final-month state of the Crash20 freeze. ON means a 20% equity drawdown freeze is still active and inflation raises are blocked until the next main review.",
+    "retirement.stressMode": "Review Stress",
+    "retirement.stressModeTooltip":
+      "Final-month result of the annual review stress gate. Stress means the strategy could not safely approve all buffer and inflation checks.",
+    "retirement.inflationDecision": "Cashflow Raise Decision",
+    "retirement.inflationDecisionTooltip":
+      "Decision made at the most recent main review: approve inflation-adjusted spending, freeze it, or no review in that month.",
     "retirement.shockOn": "ON",
     "retirement.shockOff": "OFF",
     "retirement.stressOn": "Stress",
@@ -104,8 +118,14 @@ const translations = {
     "retirement.assumptionEditableHint":
       "Adjust this scenario when you want to test a stricter return or inflation assumption.",
     "retirement.chartStartAssets": "Starting Net Worth",
+    "retirement.chartStartAssetsTooltip":
+      "Total corporate and pension assets at the simulation start.",
     "retirement.chartLatestAssets": "Final Net Worth",
+    "retirement.chartLatestAssetsTooltip":
+      "Projected net worth at the last simulated month.",
     "retirement.chartMinimumAssets": "Minimum Net Worth",
+    "retirement.chartMinimumAssetsTooltip":
+      "Lowest projected net worth reached during the simulation.",
     "retirement.chartFocusLabel": "Chart Focus",
     "retirement.chartFocusBody":
       "Read the white line first for total net worth, then compare the corporate and pension balances below it.",
@@ -117,9 +137,17 @@ const translations = {
       "The monthly ledger is folded by default. Open it only when you need a month-by-month audit trail.",
     "retirement.appliedRules": "Applied Rules",
     "retirement.rebalance": "Rebalance",
+    "retirement.rebalanceTooltip":
+      "Main annual review month used by the simulation calendar.",
     "retirement.corpSgov": "Corp SGOV",
+    "retirement.corpSgovTooltip":
+      "Corporate SGOV/cash buffer target measured in months of household cash need.",
     "retirement.pensionSgov": "Pension SGOV",
+    "retirement.pensionSgovTooltip":
+      "Pension SGOV/cash buffer target measured in months of pension withdrawals.",
     "retirement.monthlyCost": "Monthly Cost",
+    "retirement.monthlyCostTooltip":
+      "Configured household monthly cash need used as the main spending target.",
     "retirement.enabled": "Enabled",
     "retirement.disabled": "Disabled",
     "retirement.chart.yearTick": "Y",
@@ -314,7 +342,11 @@ const translations = {
     "settings.monthlyLivingCostTooltip":
       "Net household cash need per month. Pension income, national pension, net salary, and shareholder-loan repayment are measured against this value.",
     "settings.netSalaryEstimate": "Estimated Net Salary",
+    "settings.netSalaryEstimateTooltip":
+      "Estimated after-tax monthly salary based on the configured salary, pension, health insurance, employment insurance, and income tax rates.",
     "settings.corporateNeedEstimate": "Derived Corp Cost",
+    "settings.corporateNeedEstimateTooltip":
+      "Estimated monthly corporate operating cost from bookkeeping and annual tax adjustment fees.",
     "settings.krwPerMonth": "KRW / mo",
     "settings.simulationStartYear": "Start Year",
     "settings.simulationStartYearTooltip":
@@ -710,13 +742,27 @@ const translations = {
     "retirement.yearsSustainableTooltip":
       "현재 전략이 목표 생활비를 몇 년 동안 감당할 수 있는지 보여줍니다.",
     "retirement.snapshotAssumption": "적용 시나리오",
+    "retirement.snapshotAssumptionTooltip":
+      "현재 시뮬레이션에 적용된 시장 수익률과 인플레이션 가정입니다.",
     "retirement.snapshotDuration": "시뮬레이션 기간",
+    "retirement.snapshotDurationTooltip":
+      "설정된 시뮬레이션 시작 월부터 몇 년을 예측하는지 보여줍니다.",
     "retirement.snapshotMonthlyTarget": "월 목표 생활비",
+    "retirement.snapshotMonthlyTargetTooltip":
+      "연금 인출, 급여, 국민연금 차감 전 기준이 되는 가구 월 필요 현금흐름입니다.",
     "retirement.snapshotMaster": "활성 마스터",
+    "retirement.snapshotMasterTooltip":
+      "법인/연금 계좌에 적용된 마스터 포트폴리오 묶음입니다.",
     "retirement.statusSection": "결과 판단",
-    "retirement.shockFlag": "쇼크 플래그",
-    "retirement.stressMode": "스트레스 상태",
-    "retirement.inflationDecision": "인플레이션 결정",
+    "retirement.shockFlag": "하락장 동결",
+    "retirement.shockFlagTooltip":
+      "마지막 시뮬레이션 월 기준 Crash20 동결 상태입니다. ON이면 주식성 자산 20% 하락으로 생활비 인상 승인이 다음 정기점검까지 막힌 상태입니다.",
+    "retirement.stressMode": "정기점검 스트레스",
+    "retirement.stressModeTooltip":
+      "마지막 시뮬레이션 월 기준 정기점검 안전성 판정입니다. Stress이면 버퍼 보충, 채권 하한, 실질자산 방어 조건 중 하나 이상이 부족했다는 뜻입니다.",
+    "retirement.inflationDecision": "생활비 인상 결정",
+    "retirement.inflationDecisionTooltip":
+      "가장 최근 정기점검에서 물가상승률만큼 생활비 목표를 올렸는지, 동결했는지, 해당 월에 점검이 없었는지를 표시합니다.",
     "retirement.shockOn": "ON",
     "retirement.shockOff": "OFF",
     "retirement.stressOn": "Stress",
@@ -742,8 +788,14 @@ const translations = {
     "retirement.assumptionEditableHint":
       "더 보수적인 수익률이나 물가 가정을 시험할 때 이 시나리오를 조정하세요.",
     "retirement.chartStartAssets": "시작 순자산",
+    "retirement.chartStartAssetsTooltip":
+      "시뮬레이션 시작 시점의 법인과 연금 자산 합계입니다.",
     "retirement.chartLatestAssets": "최종 순자산",
+    "retirement.chartLatestAssetsTooltip":
+      "시뮬레이션 마지막 월의 예상 순자산입니다.",
     "retirement.chartMinimumAssets": "최저 순자산",
+    "retirement.chartMinimumAssetsTooltip":
+      "전체 시뮬레이션 기간 중 가장 낮아진 순자산입니다.",
     "retirement.chartFocusLabel": "차트 읽는 법",
     "retirement.chartFocusBody":
       "흰색 총 순자산 흐름을 먼저 보고, 그 아래 법인과 연금 잔고가 어떻게 나뉘는지 비교하면 됩니다.",
@@ -755,9 +807,17 @@ const translations = {
       "월별 원장은 기본으로 접혀 있습니다. 월 단위 근거가 필요할 때만 펼치면 됩니다.",
     "retirement.appliedRules": "적용 규칙",
     "retirement.rebalance": "리밸런싱",
+    "retirement.rebalanceTooltip":
+      "시뮬레이션이 사용하는 연간 메인 정기점검 월입니다.",
     "retirement.corpSgov": "법인 SGOV",
+    "retirement.corpSgovTooltip":
+      "법인 SGOV/현금 버퍼 목표입니다. 월 생활비 기준 몇 개월치인지 표시합니다.",
     "retirement.pensionSgov": "연금 SGOV",
+    "retirement.pensionSgovTooltip":
+      "연금 SGOV/현금 버퍼 목표입니다. 연금 월 인출액 기준 몇 개월치인지 표시합니다.",
     "retirement.monthlyCost": "월 생활비",
+    "retirement.monthlyCostTooltip":
+      "시뮬레이션의 기본 지출 목표로 쓰는 가구 월 필요 현금흐름입니다.",
     "retirement.enabled": "활성",
     "retirement.disabled": "비활성",
     "retirement.chart.yearTick": "년",
@@ -950,7 +1010,11 @@ const translations = {
     "settings.monthlyLivingCostTooltip":
       "가계 기준 월 세후 필요금액입니다. 개인연금, 국민연금, 급여 실수령액, 주주대여금 상환이 이 값을 기준으로 계산됩니다.",
     "settings.netSalaryEstimate": "세후 실수령 추정액",
+    "settings.netSalaryEstimateTooltip":
+      "월 급여와 국민연금, 건강보험, 고용보험, 소득세율 설정을 기준으로 계산한 월 세후 실수령 추정액입니다.",
     "settings.corporateNeedEstimate": "법인필요비용 추정액",
+    "settings.corporateNeedEstimateTooltip":
+      "월 기장료와 연간 법인세 조정료를 월 단위로 환산한 법인 운영비 추정액입니다.",
     "settings.krwPerMonth": "원 / 월",
     "settings.simulationStartYear": "시작 연도",
     "settings.simulationStartYearTooltip":

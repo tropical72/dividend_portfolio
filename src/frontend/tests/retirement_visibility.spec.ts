@@ -79,10 +79,33 @@ test.describe("Retirement Simulation Portfolio Visibility [REQ-RAMS-1.4.5]", () 
     await expect(rulesSummary).toContainText(/Rebalance|리밸런싱/);
     await expect(rulesSummary).toContainText(/Corp SGOV|법인 SGOV/);
     await expect(rulesSummary).toContainText(/Pension SGOV|연금 SGOV/);
-    await expect(rulesSummary).toContainText(/Bear Freeze|하락장 동결/);
     await expect(page.getByTestId("rule-badge-monthly-cost")).toBeVisible();
     await expect(page.getByTestId("rule-badge-monthly-cost")).toContainText(
       /Monthly Cost|월 생활비/,
     );
+  });
+
+  test("should show user-facing outcome labels with explanatory tooltips", async ({
+    page,
+  }) => {
+    await expect(page.getByText(/Crash Freeze|하락장 동결/)).toBeVisible();
+    await expect(
+      page.getByText(/Review Stress|정기점검 스트레스/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Cashflow Raise Decision|생활비 인상 결정/),
+    ).toBeVisible();
+    await expect(page.getByText("쇼크 플래그")).toHaveCount(0);
+
+    await expect(
+      page.locator('[aria-label*="Crash20"], [aria-label*="20%"]').first(),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator(
+          '[aria-label*="simulation start"], [aria-label*="시뮬레이션 시작"]',
+        )
+        .first(),
+    ).toBeVisible();
   });
 });
