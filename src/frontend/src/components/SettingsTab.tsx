@@ -1256,7 +1256,7 @@ export function SettingsTab({
                           <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                             {category}
                           </div>
-                          <div className="grid grid-cols-1 2xl:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 gap-4">
                             <InputGroup
                               label={t("settings.distributionGrowthRate")}
                               unit="% / Yr"
@@ -1461,7 +1461,7 @@ export function SettingsTab({
                           <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                             {category}
                           </div>
-                          <div className="grid grid-cols-1 2xl:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 gap-4">
                             <InputGroup
                               label={t("settings.distributionGrowthRate")}
                               unit="% / Yr"
