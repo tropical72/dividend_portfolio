@@ -1910,7 +1910,10 @@ export function SettingsTab({
                 isCurrency
                 tooltip={t("settings.monthlyLivingCostTooltip")}
                 testId="input-group-monthly-living-cost"
-                value={retireConfig.simulation_params.target_monthly_cashflow}
+                value={
+                  retireConfig.simulation_params.household_monthly_need ??
+                  retireConfig.simulation_params.target_monthly_cashflow
+                }
                 onChange={(v) =>
                   setRetireConfig({
                     ...retireConfig,

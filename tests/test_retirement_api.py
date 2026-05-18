@@ -139,6 +139,34 @@ def test_update_retirement_config_normalizes_legacy_monthly_fixed_cost(tmp_path,
     assert "monthly_fixed_cost" not in fetched_corp_params
 
 
+def test_retirement_config_keeps_household_need_and_target_cashflow_in_sync(tmp_path, monkeypatch):
+    """월 생활비는 household_monthly_need를 canonical 값으로 사용하고 legacy target 필드와 동기화한다."""
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "simulation_params": {
+                "household_monthly_need": 7000000,
+                "target_monthly_cashflow": 3000000,
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    saved_params = response.json()["data"]["simulation_params"]
+    assert saved_params["household_monthly_need"] == 7000000
+    assert saved_params["target_monthly_cashflow"] == 7000000
+
+    fetched = local_client.get("/api/retirement/config")
+    assert fetched.status_code == 200
+    fetched_params = fetched.json()["data"]["simulation_params"]
+    assert fetched_params["household_monthly_need"] == 7000000
+    assert fetched_params["target_monthly_cashflow"] == 7000000
+
+
 def test_update_retirement_config_strategy_rules(tmp_path, monkeypatch):
     """전략 규칙이 API를 통해 저장되고 기본값과 병합되는지 검증한다."""
     local_backend = DividendBackend(data_dir=str(tmp_path))

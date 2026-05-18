@@ -953,12 +953,9 @@ class DividendBackend:
         target_need = normalized.get("target_monthly_cashflow")
         if household_need is None and target_need is not None:
             household_need = target_need
-        if target_need is None and household_need is not None:
-            target_need = household_need
         if household_need is None:
             household_need = 11000000
-        if target_need is None:
-            target_need = household_need
+        target_need = household_need
         normalized["household_monthly_need"] = float(household_need)
         normalized["target_monthly_cashflow"] = float(target_need)
         return normalized
