@@ -39,6 +39,8 @@ import type {
   DistributionYieldOverrides,
   CorporateStrategyCategory,
   PensionStrategyCategory,
+  MasterPortfolio,
+  Portfolio,
   UiLanguage,
 } from "../types";
 
@@ -183,6 +185,27 @@ function formatDecimalDraft(value: number, fractionDigits = 1) {
   return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
 }
 
+function formatPercentValue(value: number | null | undefined, fractionDigits = 1) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  return `${formatDecimalDraft(value * 100, fractionDigits)}%`;
+}
+
+function categoryDividendYield(portfolio: Portfolio | undefined, category: string) {
+  if (!portfolio?.items?.length) return null;
+  let weightedYield = 0;
+  let categoryWeight = 0;
+  for (const item of portfolio.items) {
+    if (item.category !== category) continue;
+    const weight = Number(item.weight || 0);
+    categoryWeight += weight;
+    weightedYield += (Number(item.dividend_yield || 0) / 100) * weight;
+  }
+  if (categoryWeight <= 0) return null;
+  return weightedYield / categoryWeight;
+}
+
 function getVisibleAssumptions(config: RetirementConfig) {
   return USER_VISIBLE_ASSUMPTION_IDS.map((id) => {
     const item = config.assumptions[id];
@@ -262,6 +285,10 @@ export function SettingsTab({
   const [retireConfig, setRetireConfig] = useState<RetirementConfig | null>(
     null,
   );
+  const [masterPortfolios, setMasterPortfolios] = useState<MasterPortfolio[]>(
+    [],
+  );
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error";
@@ -334,6 +361,30 @@ export function SettingsTab({
       });
     }
   }, [globalSettings, globalRetireConfig]);
+
+  useEffect(() => {
+    const loadPortfolioContext = async () => {
+      try {
+        const [masterResponse, portfolioResponse] = await Promise.all([
+          fetch("http://localhost:8000/api/master-portfolios"),
+          fetch("http://localhost:8000/api/portfolios"),
+        ]);
+        const masterPayload = await masterResponse.json();
+        const portfolioPayload = await portfolioResponse.json();
+        if (masterPayload?.success && Array.isArray(masterPayload.data)) {
+          setMasterPortfolios(masterPayload.data as MasterPortfolio[]);
+        }
+        if (portfolioPayload?.success && Array.isArray(portfolioPayload.data)) {
+          setPortfolios(portfolioPayload.data as Portfolio[]);
+        }
+      } catch {
+        setMasterPortfolios([]);
+        setPortfolios([]);
+      }
+    };
+
+    void loadPortfolioContext();
+  }, []);
 
   const updateStrategyRules = (updates: StrategyRulesUpdates) => {
     setRetireConfig((currentConfig) => {
@@ -594,6 +645,56 @@ export function SettingsTab({
   const corporateOperatingCost =
     (retireConfig.corp_params.monthly_bookkeeping_fee ?? 0) +
     (retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
+  const activeMaster = masterPortfolios.find((master) => master.is_active);
+  const activeCorpPortfolio = portfolios.find(
+    (portfolio) => portfolio.id === activeMaster?.corp_id,
+  );
+  const activePensionPortfolio = portfolios.find(
+    (portfolio) => portfolio.id === activeMaster?.pension_id,
+  );
+  const buildNewBuyYieldTooltip = (
+    accountKey: "corp" | "pension",
+    category: CorporateStrategyCategory | PensionStrategyCategory,
+    hasOverride: boolean,
+    overrideYield: number,
+  ) => {
+    const portfolio =
+      accountKey === "corp" ? activeCorpPortfolio : activePensionPortfolio;
+    const fallbackYield = categoryDividendYield(portfolio, category);
+    const actualYield = hasOverride ? overrideYield : fallbackYield;
+    const accountLabel =
+      accountKey === "corp"
+        ? isKorean
+          ? "법인"
+          : "Corporate"
+        : isKorean
+          ? "연금"
+          : "Pension";
+
+    if (isKorean) {
+      return [
+        "이 카테고리로 새 자금이 배치될 때 적용할 구조적 배당률입니다.",
+        `실제 적용: ${formatPercentValue(actualYield)} ${
+          hasOverride ? "(사용자 override)" : "(활성 포트폴리오 카테고리 DY)"
+        }.`,
+        `기본 DY 출처: ${accountLabel} ${
+          portfolio?.name ?? "활성 포트폴리오 없음"
+        } / ${category} = ${formatPercentValue(fallbackYield)}.`,
+        "기존 보유분의 초기 run-rate 장부값은 덮어쓰지 않습니다.",
+      ].join("\n");
+    }
+
+    return [
+      "Structural dividend yield used only when new money is deployed into this category.",
+      `Actual value: ${formatPercentValue(actualYield)} ${
+        hasOverride ? "(user override)" : "(active portfolio category DY)"
+      }.`,
+      `Default DY source: ${accountLabel} ${
+        portfolio?.name ?? "no active portfolio"
+      } / ${category} = ${formatPercentValue(fallbackYield)}.`,
+      "It does not override the current holding's initial run-rate.",
+    ].join("\n");
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-8 space-y-12 pb-40 px-4">
@@ -1244,10 +1345,15 @@ export function SettingsTab({
                     {CORPORATE_DISTRIBUTION_CATEGORIES.map((category) => {
                       const rule =
                         retireConfig.distribution_rules.corp?.[category] ?? {};
+                      const yieldOverrides =
+                        retireConfig.distribution_yield_overrides.corp ?? {};
+                      const hasYieldOverride =
+                        Object.prototype.hasOwnProperty.call(
+                          yieldOverrides,
+                          category,
+                        );
                       const yieldOverride =
-                        retireConfig.distribution_yield_overrides.corp?.[
-                          category
-                        ] ?? 0;
+                        yieldOverrides[category] ?? 0;
                       return (
                         <div
                           key={category}
@@ -1296,8 +1402,11 @@ export function SettingsTab({
                             <InputGroup
                               label={t("settings.distributionNewBuyYield")}
                               unit="%"
-                              tooltip={t(
-                                "settings.distributionNewBuyYieldTooltip",
+                              tooltip={buildNewBuyYieldTooltip(
+                                "corp",
+                                category,
+                                hasYieldOverride,
+                                yieldOverride,
                               )}
                               testId={`input-group-corp-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-new-buy-yield`}
                               value={yieldOverride * 100}
@@ -1449,10 +1558,15 @@ export function SettingsTab({
                       const rule =
                         retireConfig.distribution_rules.pension?.[category] ??
                         {};
+                      const yieldOverrides =
+                        retireConfig.distribution_yield_overrides.pension ?? {};
+                      const hasYieldOverride =
+                        Object.prototype.hasOwnProperty.call(
+                          yieldOverrides,
+                          category,
+                        );
                       const yieldOverride =
-                        retireConfig.distribution_yield_overrides.pension?.[
-                          category
-                        ] ?? 0;
+                        yieldOverrides[category] ?? 0;
                       return (
                         <div
                           key={category}
@@ -1501,8 +1615,11 @@ export function SettingsTab({
                             <InputGroup
                               label={t("settings.distributionNewBuyYield")}
                               unit="%"
-                              tooltip={t(
-                                "settings.distributionNewBuyYieldTooltip",
+                              tooltip={buildNewBuyYieldTooltip(
+                                "pension",
+                                category,
+                                hasYieldOverride,
+                                yieldOverride,
                               )}
                               testId={`input-group-pension-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-new-buy-yield`}
                               value={yieldOverride * 100}
@@ -2372,7 +2489,7 @@ function InputGroup({
             />
             <div
               className={cn(
-                "absolute bottom-full mb-2 w-48 bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-50 border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal animate-in fade-in zoom-in-95",
+                "absolute top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-[9999] border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal whitespace-pre-line animate-in fade-in zoom-in-95",
                 tooltipAlign === "right" ? "right-0" : "left-0",
               )}
             >
