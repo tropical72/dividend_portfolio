@@ -2465,7 +2465,7 @@ function InputGroup({
 
   return (
     <div
-      className="relative z-0 space-y-1.5 hover:z-[10000] focus-within:z-[10000]"
+      className="group space-y-1.5"
       data-testid={
         testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`
       }
@@ -2481,23 +2481,25 @@ function InputGroup({
           {label}
         </label>
         {tooltip && (
-          <div className="group relative z-10">
+          <div className="relative">
             <Info
               size={12}
               className="text-slate-600 cursor-help"
               data-testid="tooltip-icon"
             />
-            <div
-              className={cn(
-                "absolute top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-slate-800 p-3 rounded-xl text-[11px] text-slate-300 font-bold hidden group-hover:block z-[9999] border border-slate-700 shadow-2xl leading-relaxed text-left normal-case tracking-normal whitespace-pre-line animate-in fade-in zoom-in-95",
-                tooltipAlign === "right" ? "right-0" : "left-0",
-              )}
-            >
-              {tooltip}
-            </div>
           </div>
         )}
       </div>
+      {tooltip && (
+        <div
+          className={cn(
+            "hidden rounded-xl border border-slate-700 bg-slate-800/95 p-3 text-left text-[11px] font-bold leading-relaxed tracking-normal text-slate-300 shadow-xl whitespace-pre-line group-hover:block group-focus-within:block",
+            tooltipAlign === "right" ? "text-right" : "text-left",
+          )}
+        >
+          {tooltip}
+        </div>
+      )}
       <div className="relative">
         <input
           type="text"
