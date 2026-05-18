@@ -2465,7 +2465,7 @@ function InputGroup({
 
   return (
     <div
-      className="space-y-1.5"
+      className="relative z-0 space-y-1.5 hover:z-[10000] focus-within:z-[10000]"
       data-testid={
         testId ?? `input-group-${label.toLowerCase().replace(/\s+/g, "-")}`
       }
@@ -2481,7 +2481,7 @@ function InputGroup({
           {label}
         </label>
         {tooltip && (
-          <div className="group relative">
+          <div className="group relative z-10">
             <Info
               size={12}
               className="text-slate-600 cursor-help"
