@@ -58,8 +58,7 @@ class ProjectionEngine:
         pension_withdrawal_target = float(p("pension_withdrawal_target", 2500000))
         loan_balance = float(p("initial_shareholder_loan", 0.0))
         corp_salary = float(p("corp_salary", 0.0))
-        legacy_monthly_fixed_cost = float(p("corp_fixed_cost", 0.0))
-        monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", legacy_monthly_fixed_cost))
+        monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", 0.0))
         annual_corp_tax_adjustment_fee = float(p("annual_corp_tax_adjustment_fee", 0.0))
         employee_count = int(p("employee_count", 0))
         corporate_rules = {

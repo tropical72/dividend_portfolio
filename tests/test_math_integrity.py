@@ -23,7 +23,7 @@ def base_params() -> dict:
         "target_monthly_cashflow": 0,
         "inflation_rate": 0.0,
         "corp_salary": 0,
-        "corp_fixed_cost": 0,
+        "monthly_bookkeeping_fee": 0,
         "employee_count": 0,
         "initial_shareholder_loan": 0,
         "national_pension_amount": 0,

@@ -20,7 +20,7 @@ def base_params() -> dict:
         "target_monthly_cashflow": 11500000,
         "inflation_rate": 0.0,
         "corp_salary": 0,
-        "corp_fixed_cost": 0,
+        "monthly_bookkeeping_fee": 0,
         "employee_count": 0,
         "initial_shareholder_loan": 0,
         "national_pension_amount": 2000000,
@@ -65,7 +65,7 @@ def test_corporate_dividend_income_flows_into_sgov_before_expense():
     params = base_params()
     params["simulation_start_month"] = 4
     params["target_monthly_cashflow"] = 0
-    params["corp_fixed_cost"] = 500
+    params["monthly_bookkeeping_fee"] = 500
     params["portfolio_stats"]["corp"]["dividend_yield"] = 0.12
     params["portfolio_stats"]["corp"]["strategy_weights"] = {
         "SGOV Buffer": 0.0,
@@ -123,7 +123,7 @@ def test_shareholder_loan_payment_only_covers_household_net_shortfall():
     params["target_monthly_cashflow"] = 10000000
     params["corp_salary"] = 2500000
     params["employee_count"] = 1
-    params["corp_fixed_cost"] = 500000
+    params["monthly_bookkeeping_fee"] = 500000
     params["initial_shareholder_loan"] = 100000000
     params["portfolio_stats"]["corp"]["strategy_weights"] = {
         "SGOV Buffer": 1.0,
