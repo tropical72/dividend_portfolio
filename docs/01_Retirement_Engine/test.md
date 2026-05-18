@@ -88,6 +88,10 @@
   - Crash20 또는 정기점검 Stress가 발생하고 `stress_cut_rate`가 설정된 경우, 다음 달부터 해당 카테고리 분배금 run-rate가 지정 비율만큼 삭감되는지 확인.
   - 리밸런싱/이체로 비현금 카테고리를 부분 매도하면 다음 달 분배금 run-rate가 매도 비율만큼 감소하는지 확인.
   - SGOV/Bond 초과분을 비현금 카테고리로 신규 배치하면 target 카테고리 DY 기준의 분배금 run-rate가 새로 생성되는지 확인.
+- **[TEST-SUR-09] 프로필 TR override 정합성 [NEW]:**
+  - Corporate와 Pension의 개별 TR이 서로 다르지만 통합 master TR이 하나로 표시되는 master portfolio를 준비한다.
+  - `Standard Profile`과 `Conservative Profile`에 동일한 master TR 및 동일 인플레이션을 적용하면 최종순자산과 월별 주요 결과가 동일한지 확인한다.
+  - Conservative TR을 master TR보다 높게 설정하면 모든 카테고리 PA에 동일한 delta만 더해지고, 특정 성장 카테고리 PA가 배율 스케일링으로 과도하게 증폭되지 않는지 확인한다.
   - 월별 `monthly_return_overrides`가 초기 run-rate 또는 신규 매수분 run-rate 생성에 섞이지 않는지 확인.
   - `distribution_yield_overrides`가 있으면 신규 매수분 run-rate 생성 시 category DY보다 우선 적용되는지 확인.
   - 위 두 run-rate 동기화는 `_transfer()` 직접 호출뿐 아니라 5월 리밸런싱과 surplus deploy를 통과하는 월별 시뮬레이션 결과에서도 검증해야 한다.

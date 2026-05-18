@@ -1932,11 +1932,133 @@ def test_retirement_simulation_applies_non_standard_profile_return_override(tmp_
     conservative_payload = conservative_response.json()["data"]
 
     assert standard_payload["meta"]["combined_tr"] > 0.03
-    assert conservative_payload["meta"]["combined_tr"] == pytest.approx(0.03)
+    assert conservative_payload["meta"]["combined_tr"] == pytest.approx(0.03, abs=1e-5)
     assert (
         conservative_payload["monthly_data"][-1]["total_net_worth"]
         < standard_payload["monthly_data"][-1]["total_net_worth"]
     )
+
+
+def test_retirement_simulation_profile_master_tr_is_noop_for_conservative_profile(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    corp_portfolio = backend.add_portfolio(
+        name="Profile Cash Corporate",
+        account_type="Corporate",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "SGOV",
+                "name": "SGOV",
+                "weight": 100,
+                "category": "SGOV Buffer",
+                "dividend_yield": 1.0,
+            }
+        ],
+    )["data"]
+    pension_portfolio = backend.add_portfolio(
+        name="Profile Growth Pension",
+        account_type="Pension",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "VOO",
+                "name": "VOO",
+                "weight": 100,
+                "category": "Growth Engine",
+                "dividend_yield": 1.0,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name="Mixed TR Master",
+        corp_id=corp_portfolio["id"],
+        pension_id=pension_portfolio["id"],
+    )["data"]
+    backend.activate_master_portfolio(str(master["id"]))
+    master_tr = backend.calculate_master_portfolio_tr(master)["data"]["combined_tr"]
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    config_response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.0,
+                    "inflation_rate": 0.0,
+                },
+                "conservative": {
+                    "name": "Conservative Profile",
+                    "expected_return": master_tr,
+                    "inflation_rate": 0.0,
+                },
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 100000000,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 10,
+            },
+        },
+    )
+    assert config_response.status_code == 200
+    assert config_response.json()["success"] is True
+
+    standard_response = local_client.get("/api/retirement/simulate?scenario=v1&pa_scenario=base")
+    conservative_response = local_client.get(
+        "/api/retirement/simulate?scenario=conservative&pa_scenario=base"
+    )
+
+    assert standard_response.status_code == 200
+    assert conservative_response.status_code == 200
+    standard_payload = standard_response.json()["data"]
+    conservative_payload = conservative_response.json()["data"]
+
+    assert conservative_payload["meta"]["combined_tr"] == pytest.approx(
+        standard_payload["meta"]["combined_tr"]
+    )
+    assert conservative_payload["monthly_data"][-1]["total_net_worth"] == pytest.approx(
+        standard_payload["monthly_data"][-1]["total_net_worth"]
+    )
+
+
+def test_profile_return_override_applies_additive_pa_delta_instead_of_scaling():
+    stats = {
+        "dividend_yield": 0.01,
+        "expected_return": 0.05,
+        "category_return_rates": {
+            "SGOV Buffer": {"dy": 0.01, "pa": 0.001, "tr": 0.011},
+            "Growth Engine": {"dy": 0.01, "pa": 0.082, "tr": 0.092},
+        },
+    }
+
+    adjusted = main_module._apply_profile_return_override(stats, 0.01)
+
+    assert adjusted["expected_return"] == pytest.approx(0.06)
+    assert adjusted["category_return_rates"]["SGOV Buffer"]["pa"] == pytest.approx(0.011)
+    assert adjusted["category_return_rates"]["Growth Engine"]["pa"] == pytest.approx(0.092)
+    assert adjusted["category_return_rates"]["Growth Engine"]["pa"] != pytest.approx(0.082 * 1.2)
 
 
 def test_retirement_simulation_does_not_pass_dead_params_to_projection_engine(

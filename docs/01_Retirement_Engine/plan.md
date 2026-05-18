@@ -193,6 +193,18 @@
   - [x] **T-01-17.6.1** `defaults/retirement_config.json`의 제거된 legacy strategy fields를 현재 계약에 맞게 정리한다.
   - [x] **T-01-17.6.2** 정규화 테스트가 새 defaults 파일 기준으로도 통과하는지 검증한다.
 
+### [Phase 18] 프로필 TR override 수학 정합성 보정 (T-01-18)
+
+- **T-01-18.1: SDD 기준 확정**
+  - [x] **T-01-18.1.1** 비표준 프로필 `expected_return`은 master TR 대비 포트폴리오 레벨 PA delta로 해석하고, 동일 TR/동일 인플레이션이면 Standard와 동일 결과가 나와야 한다는 요구사항을 명시한다.
+  - [x] **T-01-18.1.2** 정적 PA 배율 스케일링 금지와 회귀 테스트 기준을 문서화한다.
+- **T-01-18.2: TDD 회귀 테스트**
+  - [x] **T-01-18.2.1** Corporate/Pension 개별 TR이 다른 master portfolio에서 Standard master TR과 Conservative TR을 동일하게 맞추면 최종순자산이 동일해야 한다는 API 테스트를 추가한다.
+  - [x] **T-01-18.2.2** Conservative TR이 master TR보다 높을 때 카테고리 PA가 배율이 아니라 동일 delta로 조정되는지 검증한다.
+- **T-01-18.3: 구현**
+  - [x] **T-01-18.3.1** `_apply_profile_return_override`의 PA scale 방식을 제거하고 master TR 대비 additive PA delta 방식으로 교체한다.
+  - [x] **T-01-18.3.2** 은퇴 API meta의 `combined_tr`와 사용 포트폴리오 expected_return이 override 이후에도 일관되게 표시되는지 확인한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**

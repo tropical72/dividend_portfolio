@@ -46,6 +46,7 @@
 | D-RAMS-8.1.5    | Settings의 미사용 trigger 설정을 활성 입력에서 제거하거나 미적용 상태로 명시                         | T-01-17.1             | TEST-UI-RULE-12                                                                                                 | Done        | -          | 2026.05.18 |
 | D-RAMS-8.1.6    | retirement simulate API의 dead params와 stress scenario ghost 계약 정리                              | T-01-17.2 ~ T-01-17.4 | TEST-API-RET-09                                                                                                 | Done        | -          | 2026.05.18 |
 | D-RAMS-8.1.7    | frontend legacy `monthly_fixed_cost` 및 defaults legacy strategy fields 정리                         | T-01-17.5 ~ T-01-17.6 | TEST-UI-RULE-12 / TEST-RAMS-1.2.1                                                                               | Done        | -          | 2026.05.18 |
+| D-RAMS-8.1.8    | 비표준 프로필 TR override의 정적 PA 배율 스케일링 제거                                               | T-01-18.1 ~ T-01-18.3 | TEST-SUR-09                                                                                                      | Done        | pending    | 2026.05.18 |
 
 ---
 

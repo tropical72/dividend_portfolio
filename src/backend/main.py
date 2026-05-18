@@ -15,33 +15,44 @@ from src.core.tax_engine import TaxEngine
 
 def _apply_profile_return_override(
     stats: Dict[str, Any],
-    target_return: float,
+    return_delta: float,
 ) -> Dict[str, Any]:
-    """Apply a non-standard profile TR target while preserving portfolio DY."""
+    """Apply a portfolio-level TR scenario delta while preserving category structure."""
     adjusted = deepcopy(stats)
     category_rates = adjusted.get("category_return_rates") or {}
-    strategy_weights = adjusted.get("strategy_weights") or {}
-    dividend_yield = float(adjusted.get("dividend_yield", 0.0))
-    target_pa = float(target_return) - dividend_yield
-    current_pa = 0.0
-
-    for category, rates in category_rates.items():
-        weight = float(strategy_weights.get(category, 0.0))
-        current_pa += float(rates.get("pa", 0.0)) * weight
+    delta = float(return_delta)
 
     if category_rates:
-        if abs(current_pa) > 1e-12:
-            scale = target_pa / current_pa
-            for rates in category_rates.values():
-                rates["pa"] = float(rates.get("pa", 0.0)) * scale
-                rates["tr"] = float(rates.get("dy", 0.0)) + rates["pa"]
-        else:
-            for rates in category_rates.values():
-                rates["pa"] = target_pa
-                rates["tr"] = float(rates.get("dy", 0.0)) + rates["pa"]
+        for rates in category_rates.values():
+            rates["pa"] = float(rates.get("pa", 0.0)) + delta
+            rates["tr"] = float(rates.get("dy", 0.0)) + rates["pa"]
 
-    adjusted["expected_return"] = float(target_return)
+    adjusted["expected_return"] = float(adjusted.get("expected_return", 0.0)) + delta
     return adjusted
+
+
+def _combined_master_return(
+    corp_stats: Dict[str, Any],
+    pension_stats: Dict[str, Any],
+    corp_portfolio: Optional[Dict[str, Any]],
+    pension_portfolio: Optional[Dict[str, Any]],
+) -> Optional[float]:
+    corp_capital = float(corp_portfolio.get("total_capital", 0.0)) if corp_portfolio else 0.0
+    pension_capital = (
+        float(pension_portfolio.get("total_capital", 0.0)) if pension_portfolio else 0.0
+    )
+    total_capital = corp_capital + pension_capital
+
+    if total_capital > 0:
+        return (
+            float(corp_stats.get("expected_return", 0.0)) * corp_capital
+            + float(pension_stats.get("expected_return", 0.0)) * pension_capital
+        ) / total_capital
+    if corp_portfolio:
+        return float(corp_stats.get("expected_return", 0.0))
+    if pension_portfolio:
+        return float(pension_stats.get("expected_return", 0.0))
+    return None
 
 
 def _get_default_data_dir() -> str:
@@ -411,10 +422,28 @@ async def run_retirement_simulation(
         corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None, pa_scenario)
         pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None, pa_scenario)
 
+    base_master_return = _combined_master_return(
+        corp_stats,
+        pension_stats,
+        active_corp if active_master else None,
+        active_pension if active_master else None,
+    )
     if active_id != "v1" and active_id in assumptions:
         profile_return = float(assumption["expected_return"])
-        corp_stats = _apply_profile_return_override(corp_stats, profile_return)
-        pension_stats = _apply_profile_return_override(pension_stats, profile_return)
+        if base_master_return is None:
+            base_master_return = _combined_master_return(
+                corp_stats,
+                pension_stats,
+                {"total_capital": initial_assets["corp"]} if initial_assets["corp"] else None,
+                (
+                    {"total_capital": initial_assets["pension"]}
+                    if initial_assets["pension"]
+                    else None
+                ),
+            )
+        profile_delta = profile_return - float(base_master_return or 0.0)
+        corp_stats = _apply_profile_return_override(corp_stats, profile_delta)
+        pension_stats = _apply_profile_return_override(pension_stats, profile_delta)
 
     base_params = {
         "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
