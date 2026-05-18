@@ -13,21 +13,21 @@
 
 ## Phase 1: 핵심 로직 독립 라이브러리화 (Extraction of Commons)
 
-**목표:** 전략에 종속되지 않는 순수 계산 로직을 `src/core/libs/` 하위로 분리한다. 이는 엔진의 의존성 방향을 단방향으로 정리하기 위함이다.
+**목표:** 전략에 종속되지 않는 순수 계산 로직을 `src/core/libs/` 하위로 분리한다. 이는 엔진의 의존성 방향을 단방향으로 정리하기 위함이다. **이 단계에서 새로 생성되는 모든 라이브러리 모듈(순수 함수, 클래스 등)은 예외 없이 해당 라이브러리만을 타겟으로 하는 전용 단위 테스트 코드(Unit Test)를 신규 작성해야 하며, 이 신규 테스트들이 100% 통과(Pass)함을 명시적으로 보장해야 한다. (기존 통합 테스트 통과에만 의존하는 것을 엄격히 금지한다.)**
 
 ### Task 1.1: `TaxLib-KR` 분리
 *   **작업 내용:** `src/core/tax_engine.py` 로직을 `src/core/libs/tax_kr/` 패키지로 이동 및 리팩토링.
 *   **세부 지침:**
     1.  `src/core/libs/tax_kr/calculator.py`를 생성한다.
     2.  기존 `TaxEngine` 클래스의 상태(상수들)를 설정 객체(Config)로 받도록 유지하되, 계산 로직(`calculate_income_tax`, `calculate_corp_tax`, `calculate_health_insurance`)을 전략의 상태에 의존하지 않는 독립된 순수 함수(또는 더 명확한 클래스)로 정제한다.
-    3.  **TDD 검증:** `tests/test_tax_engine.py`를 수정하여 새 패키지 경로를 참조하게 하고, 기존 테스트 케이스를 모두 통과시킨다.
+    3.  **TDD 검증 (신규 작성 필수):** 기존 `tests/test_tax_engine.py`를 수정하여 연동시키는 것에 만족하지 마라. 반드시 `tests/libs/test_tax_kr.py`를 새로 생성하여, 분리된 개별 순수 함수들의 모든 엣지 케이스를 커버하는 전용 테스트 코드를 작성하고 100% 통과시켜라.
 
 ### Task 1.2: `Finance-Math` 분리
 *   **작업 내용:** `ProjectionEngine` 내부에 흩어져 있는 복리 계산, 배당 성장에 관련된 수학 함수들을 분리한다.
 *   **세부 지침:**
     1.  `src/core/libs/finance_math/returns.py`를 생성한다.
     2.  `_monthly_return_components`(Compound PA 변환 수식), 배당 Run-rate 성장 로직 등을 순수 함수형으로 추출한다. (예: `def calculate_compound_monthly_pa(annual_pa: float) -> float:`)
-    3.  **TDD 검증:** `tests/test_math_integrity.py`에 이 순수 함수들에 대한 명시적 단위 테스트를 추가하고 검증한다.
+    3.  **TDD 검증 (신규 작성 필수):** 기존 통합 테스트의 통과를 넘어, `tests/libs/test_finance_math.py`를 신규 생성하여 독립된 수학 라이브러리 각각에 대한 입력/출력 무결성 전용 테스트를 작성하고 100% 통과시켜라.
 
 ---
 
