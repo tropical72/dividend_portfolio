@@ -1,5 +1,8 @@
+from copy import deepcopy
+
 import pytest
 
+import src.backend.main as main_module
 from src.core.projection_engine import ProjectionEngine
 from src.core.tax_engine import TaxEngine
 
@@ -258,6 +261,60 @@ def test_distribution_run_rate_is_created_after_new_risk_deployment():
 
     assert run_rates["Growth Engine"] == pytest.approx(3000000)
     assert realized_income == pytest.approx(250000)
+
+
+def test_profile_return_override_zero_delta_matches_standard_projection_math():
+    """프로필 TR이 master TR과 같으면 override 경로는 Standard와 같은 결과를 내야 한다."""
+    standard = base_params()
+    standard["simulation_years"] = 30
+    standard["portfolio_stats"]["corp"]["strategy_weights"] = {
+        "SGOV Buffer": 1.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    standard["portfolio_stats"]["corp"]["expected_return"] = 0.011
+    standard["portfolio_stats"]["corp"]["dividend_yield"] = 0.01
+    standard["portfolio_stats"]["corp"]["category_return_rates"] = {
+        "SGOV Buffer": {"dy": 0.01, "pa": 0.001, "tr": 0.011},
+    }
+    standard["portfolio_stats"]["pension"]["strategy_weights"] = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 1.0,
+    }
+    standard["portfolio_stats"]["pension"]["expected_return"] = 0.092
+    standard["portfolio_stats"]["pension"]["dividend_yield"] = 0.01
+    standard["portfolio_stats"]["pension"]["category_return_rates"] = {
+        "Growth Engine": {"dy": 0.01, "pa": 0.082, "tr": 0.092},
+    }
+    standard["category_return_rates"] = {
+        "corp": standard["portfolio_stats"]["corp"]["category_return_rates"],
+        "pension": standard["portfolio_stats"]["pension"]["category_return_rates"],
+    }
+
+    override = deepcopy(standard)
+    override["portfolio_stats"]["corp"] = main_module._apply_profile_return_override(
+        override["portfolio_stats"]["corp"], 0.0
+    )
+    override["portfolio_stats"]["pension"] = main_module._apply_profile_return_override(
+        override["portfolio_stats"]["pension"], 0.0
+    )
+    override["category_return_rates"] = {
+        "corp": override["portfolio_stats"]["corp"]["category_return_rates"],
+        "pension": override["portfolio_stats"]["pension"]["category_return_rates"],
+    }
+
+    initial_assets = {"corp": 100000000, "pension": 100000000}
+    standard_result = make_engine().run_30yr_simulation(initial_assets, standard)
+    override_result = make_engine().run_30yr_simulation(initial_assets, override)
+
+    assert override_result["monthly_data"][-1]["total_net_worth"] == pytest.approx(
+        standard_result["monthly_data"][-1]["total_net_worth"]
+    )
 
 
 def test_distribution_yield_override_takes_priority_for_new_run_rate_creation():
