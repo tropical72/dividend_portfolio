@@ -99,7 +99,7 @@
   - **[REQ-RAMS-3.3.5] 가격-분배금 독립성:** `PA` 충격이나 가격 하락은 해당 월 평가액을 조정하지만, 별도 분배금 삭감 이벤트가 없으면 다음 달 분배금 절대액을 기계적으로 줄이면 안 된다. 분배금 run-rate는 선택적 `growth_rate`로 성장할 수 있고, Crash20 또는 정기점검 Stress 발생 시 선택적 `stress_cut_rate`만큼 삭감될 수 있어야 한다.
   - **[REQ-RAMS-3.3.6] run-rate 호환성:** 명시적 `distribution_run_rates` 입력이 없으면 초기 run-rate는 `초기 카테고리 평가액 * 구조적 연 DY`로 산정하여 기존 DY 기반 설정과 호환되어야 한다. 구조적 연 DY의 우선순위는 `distribution_yield_overrides -> category_return_rates.dy -> category_dividend_yields -> fallback dividend_yield`이며, 월별 `monthly_return_overrides`는 초기 run-rate 산정에 개입하면 안 된다. 이 모델은 카테고리 단위 평가액/현금흐름 모델이며, 종목별 주식 수와 정확한 미래 체결 가격 장부를 대체하지 않는다.
   - **[REQ-RAMS-3.3.7] 리밸런싱 run-rate 동기화:** 리밸런싱, floor refill, surplus deploy 등 카테고리 간 자산 이동은 평가액뿐 아니라 분배금 run-rate도 함께 조정해야 한다. Source 비현금 카테고리는 `이동금액 / 이동 전 source 평가액` 비율로 run-rate를 줄이고, Target 비현금 카테고리는 구조적 연 DY 기준으로 `이동금액 * target DY`만큼 run-rate를 생성해야 한다.
-  - **[REQ-RAMS-3.3.8] 명시 run-rate와 신규 매수분 정책 분리:** `distribution_run_rates`는 초기 보유분의 명시적 연간 분배금 run-rate를 뜻한다. 이후 신규 매수분의 run-rate 생성은 별도 `distribution_yield_overrides` 또는 카테고리 DY 규칙을 따라야 하며, 월별 `monthly_return_overrides`와 섞이면 안 된다.
+  - **[REQ-RAMS-3.3.8] 명시 run-rate와 신규 매수분 정책 분리:** `distribution_run_rates`는 초기 보유분의 명시적 연간 분배금 run-rate를 뜻한다. 이후 신규 매수분의 run-rate 생성은 별도 `distribution_yield_overrides` 또는 카테고리 DY 규칙을 따라야 하며, 월별 `monthly_return_overrides`와 섞이면 안 된다. 설정 계약에서는 `distribution_run_rates`를 "초기 보유분 장부값", `distribution_yield_overrides`를 "신규 매수분 구조적 DY override"로 분리해 다뤄야 한다.
 - **[REQ-RAMS-3.4] Shock / Stress / Inflation 운영 규칙:**
   - **[REQ-RAMS-3.4.1] Crash20:** 월말 기준 주식성 슬리브 평가액이 직전 5월 기준값의 80% 이하가 되면 Shock Flag를 활성화한다.
   - **[REQ-RAMS-3.4.2] Stress 판정:** Stress는 월말 숫자로 즉시 판정하지 않고 5월 정기점검의 A/B/C 테스트 결과로만 판정한다.

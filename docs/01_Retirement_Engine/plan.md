@@ -163,14 +163,14 @@
   - [x] **T-01-15.1.5** 5월 리밸런싱과 surplus deploy의 월별 시뮬레이션 통합 경로에서 run-rate 동기화를 검증한다.
   - [x] **T-01-15.1.6** run-rate 초기화/신규 매수분 생성용 구조적 DY를 월별 return override와 분리하고, 오염 방지 회귀 테스트를 추가한다.
 
-### [Phase 16] 분배금 정책 설정 노출 (T-01-16) - PENDING
+### [Phase 16] 분배금 정책 설정 노출 (T-01-16) - DONE
 
 - **T-01-16.1: UI/API 설정 경로**
-  - [ ] **T-01-16.1.1** `distribution_rules`의 `growth_rate`와 `stress_cut_rate`를 retirement config/API 스키마에 추가한다.
-  - [ ] **T-01-16.1.2** Settings UI에서 계좌/카테고리별 분배금 성장률과 Stress 삭감률을 수정할 수 있게 한다.
-  - [ ] **T-01-16.1.3** 저장/재로드 및 시뮬레이션 반영 E2E 테스트를 추가한다.
-  - [ ] **T-01-16.1.4** 신규 매수분 run-rate 생성에 사용할 DY 출처를 `category_return_rates/category_dividend_yields` 기본값과 사용자 override로 분리 정의한다.
-  - [ ] **T-01-16.1.5** `distribution_yield_overrides`의 retirement config/API/Settings UI 노출 경로를 추가한다.
+  - [x] **T-01-16.1.1** `distribution_rules`의 `growth_rate`와 `stress_cut_rate`를 retirement config/API 스키마에 추가한다.
+  - [x] **T-01-16.1.2** Settings UI에서 계좌/카테고리별 분배금 성장률과 Stress 삭감률을 수정할 수 있게 한다.
+  - [x] **T-01-16.1.3** 저장/재로드 및 시뮬레이션 반영 E2E 테스트를 추가한다.
+  - [x] **T-01-16.1.4** 신규 매수분 run-rate 생성에 사용할 DY 출처를 `category_return_rates/category_dividend_yields` 기본값과 사용자 override로 분리 정의한다.
+  - [x] **T-01-16.1.5** `distribution_yield_overrides`의 retirement config/API/Settings UI 노출 경로를 추가한다.
 
 ### [Phase 17] 설정-엔진 정합성 정리 (T-01-17) - DONE
 

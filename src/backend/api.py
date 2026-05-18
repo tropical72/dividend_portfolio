@@ -680,6 +680,20 @@ class DividendBackend:
             },
         }
 
+    def _get_default_distribution_rules(self) -> Dict[str, Any]:
+        """분배금 run-rate 성장/Stress 삭감 규칙 기본 스키마를 반환합니다."""
+        return {
+            "corp": {},
+            "pension": {},
+        }
+
+    def _get_default_distribution_yield_overrides(self) -> Dict[str, Any]:
+        """신규 매수분 run-rate 생성용 구조적 DY override 기본 스키마를 반환합니다."""
+        return {
+            "corp": {},
+            "pension": {},
+        }
+
     def _normalize_strategy_rules(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """현재 엔진이 실제로 사용하는 strategy_rules만 유지합니다."""
         defaults = self._get_default_strategy_rules()
@@ -728,6 +742,50 @@ class DividendBackend:
                 ),
             },
         }
+
+    def _normalize_distribution_rules(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """distribution_rules에서 엔진이 이해하는 성장/삭감 규칙만 유지합니다."""
+        defaults = self._get_default_distribution_rules()
+        source = dict(section or {})
+        normalized: Dict[str, Any] = {}
+
+        for account_key in ("corp", "pension"):
+            account_rules = source.get(account_key)
+            normalized_account: Dict[str, Any] = {}
+            if isinstance(account_rules, dict):
+                for category, rule_spec in account_rules.items():
+                    if not isinstance(rule_spec, dict):
+                        continue
+                    normalized_rule: Dict[str, float] = {}
+                    if rule_spec.get("growth_rate") is not None:
+                        normalized_rule["growth_rate"] = float(rule_spec["growth_rate"])
+                    if rule_spec.get("stress_cut_rate") is not None:
+                        normalized_rule["stress_cut_rate"] = float(rule_spec["stress_cut_rate"])
+                    if normalized_rule:
+                        normalized_account[str(category)] = normalized_rule
+            normalized[account_key] = normalized_account or defaults[account_key]
+
+        return normalized
+
+    def _normalize_distribution_yield_overrides(
+        self, section: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """신규 매수분 구조적 DY override를 계정/카테고리별 비율로 정규화합니다."""
+        defaults = self._get_default_distribution_yield_overrides()
+        source = dict(section or {})
+        normalized: Dict[str, Any] = {}
+
+        for account_key in ("corp", "pension"):
+            account_overrides = source.get(account_key)
+            normalized_account: Dict[str, float] = {}
+            if isinstance(account_overrides, dict):
+                for category, value in account_overrides.items():
+                    if value is None:
+                        continue
+                    normalized_account[str(category)] = max(0.0, float(value))
+            normalized[account_key] = normalized_account or defaults[account_key]
+
+        return normalized
 
     def _get_default_assumptions(self) -> Dict[str, Any]:
         """사용자 화면에 노출되는 기본 가정 프로필 스키마를 반환합니다."""
@@ -780,6 +838,8 @@ class DividendBackend:
             "active_assumption_id": "v1",
             "assumptions": self._get_default_assumptions(),
             "strategy_rules": self._get_default_strategy_rules(),
+            "distribution_rules": self._get_default_distribution_rules(),
+            "distribution_yield_overrides": self._get_default_distribution_yield_overrides(),
             "user_profile": {
                 "birth_year": 1972,
                 "birth_month": 8,
@@ -932,6 +992,17 @@ class DividendBackend:
         )
         self.retirement_config["strategy_rules"] = self._normalize_strategy_rules(
             cast(Optional[Dict[str, Any]], self.retirement_config.get("strategy_rules"))
+        )
+        self.retirement_config["distribution_rules"] = self._normalize_distribution_rules(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("distribution_rules"))
+        )
+        self.retirement_config["distribution_yield_overrides"] = (
+            self._normalize_distribution_yield_overrides(
+                cast(
+                    Optional[Dict[str, Any]],
+                    self.retirement_config.get("distribution_yield_overrides"),
+                )
+            )
         )
         self._sanitize_retirement_assumptions()
         assumptions = self.retirement_config.get("assumptions", {})
@@ -2195,6 +2266,16 @@ class DividendBackend:
                         value["annual_corp_tax_adjustment_fee"] = 0.0
                 if key == "strategy_rules":
                     value = self._normalize_strategy_rules(cast(Dict[str, Any], value))
+                if key == "distribution_rules":
+                    value = self._normalize_distribution_rules(cast(Dict[str, Any], value))
+                    candidate_config[key] = value
+                    continue
+                if key == "distribution_yield_overrides":
+                    value = self._normalize_distribution_yield_overrides(
+                        cast(Dict[str, Any], value)
+                    )
+                    candidate_config[key] = value
+                    continue
                 candidate_config[key] = self._deep_merge_dict(candidate_config[key], value)
             else:
                 candidate_config[key] = value
@@ -2213,6 +2294,17 @@ class DividendBackend:
         )
         self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
             cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
+        )
+        self.retirement_config["distribution_rules"] = self._normalize_distribution_rules(
+            cast(Optional[Dict[str, Any]], self.retirement_config.get("distribution_rules"))
+        )
+        self.retirement_config["distribution_yield_overrides"] = (
+            self._normalize_distribution_yield_overrides(
+                cast(
+                    Optional[Dict[str, Any]],
+                    self.retirement_config.get("distribution_yield_overrides"),
+                )
+            )
         )
 
         self.storage.save_json(self.retirement_config_file, self.retirement_config)

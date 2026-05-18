@@ -35,6 +35,10 @@ import type {
   AppSettings,
   PlannedCashflow,
   StrategyRules,
+  DistributionRules,
+  DistributionYieldOverrides,
+  CorporateStrategyCategory,
+  PensionStrategyCategory,
   UiLanguage,
 } from "../types";
 
@@ -57,6 +61,16 @@ type NormalizableStrategyRules = Partial<
   pension?: Partial<StrategyRules["pension"]>;
 };
 
+type DistributionRulesUpdates = {
+  corp?: DistributionRules["corp"];
+  pension?: DistributionRules["pension"];
+};
+
+type DistributionYieldOverrideUpdates = {
+  corp?: DistributionYieldOverrides["corp"];
+  pension?: DistributionYieldOverrides["pension"];
+};
+
 const USER_VISIBLE_ASSUMPTION_IDS = ["v1", "conservative"] as const;
 
 const DEFAULT_STRATEGY_RULES: StrategyRules = {
@@ -76,6 +90,29 @@ const DEFAULT_STRATEGY_RULES: StrategyRules = {
     bond_upper_months: 24,
   },
 };
+
+const DEFAULT_DISTRIBUTION_RULES: DistributionRules = {
+  corp: {},
+  pension: {},
+};
+
+const DEFAULT_DISTRIBUTION_YIELD_OVERRIDES: DistributionYieldOverrides = {
+  corp: {},
+  pension: {},
+};
+
+const CORPORATE_DISTRIBUTION_CATEGORIES: CorporateStrategyCategory[] = [
+  "Bond Buffer",
+  "High Income",
+  "Dividend Growth",
+  "Growth Engine",
+];
+
+const PENSION_DISTRIBUTION_CATEGORIES: PensionStrategyCategory[] = [
+  "Bond Buffer",
+  "Dividend Growth",
+  "Growth Engine",
+];
 
 function normalizeStrategyRules(
   rules?: NormalizableStrategyRules,
@@ -116,6 +153,26 @@ function normalizeStrategyRules(
       bond_upper_months:
         rules?.pension?.bond_upper_months ??
         DEFAULT_STRATEGY_RULES.pension.bond_upper_months,
+    },
+  };
+}
+
+function normalizeDistributionRules(
+  rules?: Partial<DistributionRules>,
+): DistributionRules {
+  return {
+    corp: { ...(rules?.corp ?? DEFAULT_DISTRIBUTION_RULES.corp) },
+    pension: { ...(rules?.pension ?? DEFAULT_DISTRIBUTION_RULES.pension) },
+  };
+}
+
+function normalizeDistributionYieldOverrides(
+  overrides?: Partial<DistributionYieldOverrides>,
+): DistributionYieldOverrides {
+  return {
+    corp: { ...(overrides?.corp ?? DEFAULT_DISTRIBUTION_YIELD_OVERRIDES.corp) },
+    pension: {
+      ...(overrides?.pension ?? DEFAULT_DISTRIBUTION_YIELD_OVERRIDES.pension),
     },
   };
 }
@@ -271,27 +328,155 @@ export function SettingsTab({
         strategy_rules: normalizeStrategyRules(
           globalRetireConfig.strategy_rules,
         ),
+        distribution_rules: normalizeDistributionRules(
+          globalRetireConfig.distribution_rules,
+        ),
+        distribution_yield_overrides: normalizeDistributionYieldOverrides(
+          globalRetireConfig.distribution_yield_overrides,
+        ),
       });
     }
   }, [globalSettings, globalRetireConfig]);
 
   const updateStrategyRules = (updates: StrategyRulesUpdates) => {
+    setRetireConfig((currentConfig) => {
+      if (!currentConfig) return currentConfig;
+      const currentRules = normalizeStrategyRules(currentConfig.strategy_rules);
+      return {
+        ...currentConfig,
+        strategy_rules: normalizeStrategyRules({
+          ...currentRules,
+          ...updates,
+          corporate: {
+            ...currentRules.corporate,
+            ...updates.corporate,
+          },
+          pension: {
+            ...currentRules.pension,
+            ...updates.pension,
+          },
+        }),
+      };
+    });
+  };
+
+  const updateDistributionRules = (updates: DistributionRulesUpdates) => {
+    setRetireConfig((currentConfig) => {
+      if (!currentConfig) return currentConfig;
+      const currentRules = normalizeDistributionRules(
+        currentConfig.distribution_rules,
+      );
+      return {
+        ...currentConfig,
+        distribution_rules: normalizeDistributionRules({
+          ...currentRules,
+          ...updates,
+          corp: {
+            ...currentRules.corp,
+            ...updates.corp,
+          },
+          pension: {
+            ...currentRules.pension,
+            ...updates.pension,
+          },
+        }),
+      };
+    });
+  };
+
+  const updateDistributionYieldOverrides = (
+    updates: DistributionYieldOverrideUpdates,
+  ) => {
+    setRetireConfig((currentConfig) => {
+      if (!currentConfig) return currentConfig;
+      const currentOverrides = normalizeDistributionYieldOverrides(
+        currentConfig.distribution_yield_overrides,
+      );
+      return {
+        ...currentConfig,
+        distribution_yield_overrides: normalizeDistributionYieldOverrides({
+          ...currentOverrides,
+          ...updates,
+          corp: {
+            ...currentOverrides.corp,
+            ...updates.corp,
+          },
+          pension: {
+            ...currentOverrides.pension,
+            ...updates.pension,
+          },
+        }),
+      };
+    });
+  };
+
+  const updateDistributionRuleValue = (
+    accountKey: "corp" | "pension",
+    category: CorporateStrategyCategory | PensionStrategyCategory,
+    field: "growth_rate" | "stress_cut_rate",
+    rawValue: string,
+  ) => {
     if (!retireConfig) return;
-    const currentRules = normalizeStrategyRules(retireConfig.strategy_rules);
-    setRetireConfig({
-      ...retireConfig,
-      strategy_rules: normalizeStrategyRules({
-        ...currentRules,
-        ...updates,
-        corporate: {
-          ...currentRules.corporate,
-          ...updates.corporate,
+    const currentRules = normalizeDistributionRules(
+      retireConfig.distribution_rules,
+    );
+    const normalizedValue = rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
+    if (accountKey === "corp") {
+      const corpCategory = category as CorporateStrategyCategory;
+      const currentCategoryRules = currentRules.corp[corpCategory] ?? {};
+      updateDistributionRules({
+        corp: {
+          ...currentRules.corp,
+          [corpCategory]: {
+            ...currentCategoryRules,
+            [field]: normalizedValue,
+          },
         },
-        pension: {
-          ...currentRules.pension,
-          ...updates.pension,
+      });
+      return;
+    }
+
+    const pensionCategory = category as PensionStrategyCategory;
+    const currentCategoryRules = currentRules.pension[pensionCategory] ?? {};
+    updateDistributionRules({
+      pension: {
+        ...currentRules.pension,
+        [pensionCategory]: {
+          ...currentCategoryRules,
+          [field]: normalizedValue,
         },
-      }),
+      },
+    });
+  };
+
+  const updateDistributionYieldOverrideValue = (
+    accountKey: "corp" | "pension",
+    category: CorporateStrategyCategory | PensionStrategyCategory,
+    rawValue: string,
+  ) => {
+    if (!retireConfig) return;
+    const currentOverrides = normalizeDistributionYieldOverrides(
+      retireConfig.distribution_yield_overrides,
+    );
+    const normalizedValue = rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
+
+    if (accountKey === "corp") {
+      const corpCategory = category as CorporateStrategyCategory;
+      updateDistributionYieldOverrides({
+        corp: {
+          ...currentOverrides.corp,
+          [corpCategory]: normalizedValue,
+        },
+      });
+      return;
+    }
+
+    const pensionCategory = category as PensionStrategyCategory;
+    updateDistributionYieldOverrides({
+      pension: {
+        ...currentOverrides.pension,
+        [pensionCategory]: normalizedValue,
+      },
     });
   };
 
@@ -309,8 +494,24 @@ export function SettingsTab({
     updateStrategyRules({ pension: DEFAULT_STRATEGY_RULES.pension });
   };
 
+  const resetCorporateDistributionRules = () => {
+    updateDistributionRules({ corp: DEFAULT_DISTRIBUTION_RULES.corp });
+    updateDistributionYieldOverrides({
+      corp: DEFAULT_DISTRIBUTION_YIELD_OVERRIDES.corp,
+    });
+  };
+
+  const resetPensionDistributionRules = () => {
+    updateDistributionRules({ pension: DEFAULT_DISTRIBUTION_RULES.pension });
+    updateDistributionYieldOverrides({
+      pension: DEFAULT_DISTRIBUTION_YIELD_OVERRIDES.pension,
+    });
+  };
+
   const resetAllStrategyRules = () => {
     updateStrategyRules(DEFAULT_STRATEGY_RULES);
+    updateDistributionRules(DEFAULT_DISTRIBUTION_RULES);
+    updateDistributionYieldOverrides(DEFAULT_DISTRIBUTION_YIELD_OVERRIDES);
   };
 
   const handleSave = async () => {
@@ -1023,6 +1224,101 @@ export function SettingsTab({
                     }
                   />
                 </div>
+                <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/60 p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h5 className="text-xs font-black uppercase tracking-widest text-emerald-200">
+                        {t("settings.distributionRules")}
+                      </h5>
+                      <p className="text-[11px] text-slate-500">
+                        {t("settings.distributionRulesTooltip")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={resetCorporateDistributionRules}
+                      className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-black rounded-xl border border-slate-700 uppercase tracking-widest"
+                      data-testid="reset-corporate-distribution-rules"
+                    >
+                      <RotateCcw size={12} />
+                      {t("settings.reset")}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {CORPORATE_DISTRIBUTION_CATEGORIES.map((category) => {
+                      const rule =
+                        retireConfig.distribution_rules.corp?.[category] ?? {};
+                      const yieldOverride =
+                        retireConfig.distribution_yield_overrides.corp?.[
+                          category
+                        ] ?? 0;
+                      return (
+                        <div
+                          key={category}
+                          className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 space-y-4"
+                        >
+                          <div className="text-xs font-black uppercase tracking-widest text-slate-300">
+                            {category}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <InputGroup
+                              label={t("settings.distributionGrowthRate")}
+                              unit="% / Yr"
+                              tooltip={t(
+                                "settings.distributionGrowthRateTooltip",
+                              )}
+                              testId={`input-group-corp-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-growth-rate`}
+                              value={(rule.growth_rate ?? 0) * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionRuleValue(
+                                  "corp",
+                                  category,
+                                  "growth_rate",
+                                  v,
+                                )
+                              }
+                            />
+                            <InputGroup
+                              label={t("settings.distributionStressCutRate")}
+                              unit="%"
+                              tooltip={t(
+                                "settings.distributionStressCutRateTooltip",
+                              )}
+                              testId={`input-group-corp-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-stress-cut-rate`}
+                              value={(rule.stress_cut_rate ?? 0) * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionRuleValue(
+                                  "corp",
+                                  category,
+                                  "stress_cut_rate",
+                                  v,
+                                )
+                              }
+                            />
+                            <InputGroup
+                              label={t("settings.distributionNewBuyYield")}
+                              unit="%"
+                              tooltip={t(
+                                "settings.distributionNewBuyYieldTooltip",
+                              )}
+                              testId={`input-group-corp-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-new-buy-yield`}
+                              value={yieldOverride * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionYieldOverrideValue(
+                                  "corp",
+                                  category,
+                                  v,
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               <div className="bg-slate-950/40 rounded-[2rem] border border-slate-800 p-6 space-y-5">
@@ -1131,6 +1427,102 @@ export function SettingsTab({
                       })
                     }
                   />
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/60 p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h5 className="text-xs font-black uppercase tracking-widest text-amber-200">
+                        {t("settings.distributionRules")}
+                      </h5>
+                      <p className="text-[11px] text-slate-500">
+                        {t("settings.distributionRulesTooltip")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={resetPensionDistributionRules}
+                      className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-black rounded-xl border border-slate-700 uppercase tracking-widest"
+                      data-testid="reset-pension-distribution-rules"
+                    >
+                      <RotateCcw size={12} />
+                      {t("settings.reset")}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {PENSION_DISTRIBUTION_CATEGORIES.map((category) => {
+                      const rule =
+                        retireConfig.distribution_rules.pension?.[category] ??
+                        {};
+                      const yieldOverride =
+                        retireConfig.distribution_yield_overrides.pension?.[
+                          category
+                        ] ?? 0;
+                      return (
+                        <div
+                          key={category}
+                          className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 space-y-4"
+                        >
+                          <div className="text-xs font-black uppercase tracking-widest text-slate-300">
+                            {category}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <InputGroup
+                              label={t("settings.distributionGrowthRate")}
+                              unit="% / Yr"
+                              tooltip={t(
+                                "settings.distributionGrowthRateTooltip",
+                              )}
+                              testId={`input-group-pension-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-growth-rate`}
+                              value={(rule.growth_rate ?? 0) * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionRuleValue(
+                                  "pension",
+                                  category,
+                                  "growth_rate",
+                                  v,
+                                )
+                              }
+                            />
+                            <InputGroup
+                              label={t("settings.distributionStressCutRate")}
+                              unit="%"
+                              tooltip={t(
+                                "settings.distributionStressCutRateTooltip",
+                              )}
+                              testId={`input-group-pension-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-stress-cut-rate`}
+                              value={(rule.stress_cut_rate ?? 0) * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionRuleValue(
+                                  "pension",
+                                  category,
+                                  "stress_cut_rate",
+                                  v,
+                                )
+                              }
+                            />
+                            <InputGroup
+                              label={t("settings.distributionNewBuyYield")}
+                              unit="%"
+                              tooltip={t(
+                                "settings.distributionNewBuyYieldTooltip",
+                              )}
+                              testId={`input-group-pension-${category.toLowerCase().replace(/\s+/g, "-")}-distribution-new-buy-yield`}
+                              value={yieldOverride * 100}
+                              fractionDigits={1}
+                              onChange={(v) =>
+                                updateDistributionYieldOverrideValue(
+                                  "pension",
+                                  category,
+                                  v,
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>

@@ -190,4 +190,90 @@ test.describe("Settings Strategy Rules", () => {
       page.getByTestId("rule-badge-estimated-net-salary"),
     ).toContainText(`₩${netSalaryEstimate}`);
   });
+
+  test("should persist distribution rules and reflect them in simulation income", async ({
+    page,
+    request,
+  }) => {
+    const corpDividendGrowthInput = page
+      .getByTestId(
+        "input-group-corp-dividend-growth-distribution-growth-rate",
+      )
+      .locator("input");
+    const corpGrowthEngineInput = page
+      .getByTestId(
+        "input-group-corp-growth-engine-distribution-growth-rate",
+      )
+      .locator("input");
+    const corpGrowthStressCutInput = page
+      .getByTestId(
+        "input-group-corp-growth-engine-distribution-stress-cut-rate",
+      )
+      .locator("input");
+    const corpGrowthNewBuyYieldInput = page
+      .getByTestId("input-group-corp-growth-engine-distribution-new-buy-yield")
+      .locator("input");
+    const pensionDividendNewBuyYieldInput = page
+      .getByTestId(
+        "input-group-pension-dividend-growth-distribution-new-buy-yield",
+      )
+      .locator("input");
+
+    await corpDividendGrowthInput.fill("100");
+    await corpGrowthEngineInput.fill("100");
+    await corpGrowthStressCutInput.fill("40");
+    await corpGrowthNewBuyYieldInput.fill("8");
+    await pensionDividendNewBuyYieldInput.fill("5");
+
+    await page.getByTestId("apply-settings-button").click();
+    await expect(
+      page.getByText(
+        /All strategy settings were saved\.|모든 전략 설정이 저장되었습니다\./,
+      ),
+    ).toBeVisible();
+
+    await page.reload();
+    await page.getByTestId("nav-strategy-settings").click();
+    await expect(page.getByTestId("settings-title")).toBeVisible();
+    await expect(corpDividendGrowthInput).toHaveValue("100.0");
+    await expect(corpGrowthEngineInput).toHaveValue("100.0");
+    await expect(corpGrowthStressCutInput).toHaveValue("40.0");
+    await expect(corpGrowthNewBuyYieldInput).toHaveValue("8.0");
+    await expect(pensionDividendNewBuyYieldInput).toHaveValue("5.0");
+
+    const configResponse = await request.get(
+      "http://localhost:8000/api/retirement/config",
+    );
+    expect(configResponse.ok()).toBeTruthy();
+    const configPayload = await configResponse.json();
+    expect(
+      configPayload.data.distribution_rules.corp["Dividend Growth"]
+        .growth_rate,
+    ).toBeCloseTo(1.0);
+    expect(
+      configPayload.data.distribution_rules.corp["Growth Engine"].growth_rate,
+    ).toBeCloseTo(1.0);
+    expect(
+      configPayload.data.distribution_rules.corp["Growth Engine"]
+        .stress_cut_rate,
+    ).toBeCloseTo(0.4);
+    expect(
+      configPayload.data.distribution_yield_overrides.corp["Growth Engine"],
+    ).toBeCloseTo(0.08);
+    expect(
+      configPayload.data.distribution_yield_overrides.pension[
+        "Dividend Growth"
+      ],
+    ).toBeCloseTo(0.05);
+
+    const simulationResponse = await request.get(
+      "http://localhost:8000/api/retirement/simulate?pa_scenario=base",
+    );
+    expect(simulationResponse.ok()).toBeTruthy();
+    const simulationPayload = await simulationResponse.json();
+    expect(simulationPayload.success).toBeTruthy();
+    expect(
+      simulationPayload.data.monthly_data[1].corp_realized_income,
+    ).toBeGreaterThan(simulationPayload.data.monthly_data[0].corp_realized_income);
+  });
 });

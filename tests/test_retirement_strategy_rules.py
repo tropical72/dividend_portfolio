@@ -21,6 +21,50 @@ def test_retirement_config_includes_default_strategy_rules(tmp_path):
     assert config["strategy_rules"]["pension"]["bond_floor_months"] == 12
     assert config["strategy_rules"]["pension"]["bond_target_months"] == 18
     assert config["strategy_rules"]["pension"]["bond_upper_months"] == 24
+    assert config["distribution_rules"] == {"corp": {}, "pension": {}}
+    assert config["distribution_yield_overrides"] == {"corp": {}, "pension": {}}
+
+
+def test_retirement_config_distribution_rules_partial_update_keeps_defaults(tmp_path):
+    """분배금 규칙 일부만 수정해도 나머지 계정 기본 구조는 유지되어야 한다."""
+    backend = DividendBackend(data_dir=str(tmp_path))
+
+    response = backend.update_retirement_config(
+        {
+            "distribution_rules": {
+                "corp": {
+                    "Growth Engine": {
+                        "growth_rate": 0.12,
+                        "stress_cut_rate": 0.4,
+                    }
+                }
+            }
+        }
+    )
+
+    distribution_rules = response["data"]["distribution_rules"]
+    assert distribution_rules["corp"]["Growth Engine"]["growth_rate"] == 0.12
+    assert distribution_rules["corp"]["Growth Engine"]["stress_cut_rate"] == 0.4
+    assert distribution_rules["pension"] == {}
+
+
+def test_retirement_config_distribution_yield_overrides_partial_update_keeps_defaults(tmp_path):
+    """신규 매수분 DY override 일부만 수정해도 나머지 계정 기본 구조는 유지되어야 한다."""
+    backend = DividendBackend(data_dir=str(tmp_path))
+
+    response = backend.update_retirement_config(
+        {
+            "distribution_yield_overrides": {
+                "corp": {
+                    "Growth Engine": 0.08,
+                }
+            }
+        }
+    )
+
+    overrides = response["data"]["distribution_yield_overrides"]
+    assert overrides["corp"]["Growth Engine"] == 0.08
+    assert overrides["pension"] == {}
 
 
 def test_retirement_config_strategy_rules_partial_update_keeps_defaults(tmp_path):

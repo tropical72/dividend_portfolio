@@ -91,6 +91,17 @@
   - 월별 `monthly_return_overrides`가 초기 run-rate 또는 신규 매수분 run-rate 생성에 섞이지 않는지 확인.
   - `distribution_yield_overrides`가 있으면 신규 매수분 run-rate 생성 시 category DY보다 우선 적용되는지 확인.
   - 위 두 run-rate 동기화는 `_transfer()` 직접 호출뿐 아니라 5월 리밸런싱과 surplus deploy를 통과하는 월별 시뮬레이션 결과에서도 검증해야 한다.
+- **[TEST-API-RET-10] distribution_rules 설정 계약 검증 [NEW]:**
+  - retirement config 기본 응답에 `distribution_rules = { corp: {}, pension: {} }` 구조가 포함되는지 확인.
+  - `distribution_rules.<account>.<category>.growth_rate/stress_cut_rate` 부분 업데이트가 저장 후 재조회에서 유지되는지 확인.
+  - Settings UI에서 입력한 분배금 규칙 값이 페이지 reload 후 다시 표시되는지 확인한다.
+  - `/api/retirement/simulate`가 저장된 `distribution_rules`를 `ProjectionEngine` params로 전달하는지 확인.
+  - UI에서 저장한 `distribution_rules`가 실제 시뮬레이션의 다음 달 `corp_realized_income` 변화에 반영되는지 확인한다.
+- **[TEST-API-RET-11] distribution_yield_overrides 설정 계약 검증 [NEW]:**
+  - retirement config 기본 응답에 `distribution_yield_overrides = { corp: {}, pension: {} }` 구조가 포함되는지 확인.
+  - `distribution_yield_overrides.<account>.<category>` 부분 업데이트가 저장 후 재조회에서 유지되는지 확인.
+  - Settings UI에서 입력한 신규매수 DY override가 페이지 reload 후 다시 표시되는지 확인한다.
+  - `/api/retirement/simulate`가 저장된 `distribution_yield_overrides`를 `ProjectionEngine` params로 전달하는지 확인.
 - **[TEST-SUR-09] 사용자 변형 포트폴리오 호환성 검증 [NEW]:**
   - 문서 표준 포트폴리오가 아닌 다른 종목/비중 조합을 넣어도, 같은 자산군 카테고리 규칙으로 동일 엔진이 동작하는지 확인.
 - **[TEST-SUR-10] 실사용 API 경로 자산군 수익률 전달 검증 [NEW]:**

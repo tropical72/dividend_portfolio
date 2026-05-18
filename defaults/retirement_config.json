@@ -35,6 +35,14 @@
             "bond_upper_months": 24
         }
     },
+    "distribution_rules": {
+        "corp": {},
+        "pension": {}
+    },
+    "distribution_yield_overrides": {
+        "corp": {},
+        "pension": {}
+    },
     "user_profile": {
         "birth_year": 1980,
         "birth_month": 1,

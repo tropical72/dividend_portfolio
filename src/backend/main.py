@@ -112,6 +112,8 @@ class RetirementConfigRequest(BaseModel):
     tax_and_insurance: Optional[Dict[str, Any]] = None
     trigger_thresholds: Optional[Dict[str, Any]] = None
     strategy_rules: Optional[Dict[str, Any]] = None
+    distribution_rules: Optional[Dict[str, Any]] = None
+    distribution_yield_overrides: Optional[Dict[str, Any]] = None
 
 
 class CostComparisonConfigRequest(BaseModel):
@@ -459,6 +461,8 @@ async def run_retirement_simulation(
         "pension_bond_floor_months": pension_rules.get("bond_floor_months", 12),
         "pension_bond_target_months": pension_rules.get("bond_target_months", 18),
         "pension_bond_upper_months": pension_rules.get("bond_upper_months", 24),
+        "distribution_rules": config.get("distribution_rules", {}),
+        "distribution_yield_overrides": config.get("distribution_yield_overrides", {}),
     }
 
     # 5. 세무 엔진 최신화

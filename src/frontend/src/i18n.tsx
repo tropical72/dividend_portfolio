@@ -316,6 +316,18 @@ const translations = {
     "settings.pensionBondUpper": "Pension Bond Upper",
     "settings.pensionBondUpperTooltip":
       "Engine-active. Bond above this upper band can be redeployed as surplus. Default: 24 months.",
+    "settings.distributionRules": "Distribution Rules",
+    "settings.distributionRulesTooltip":
+      "Optional run-rate overrides for non-cash sleeves. Enter 0 to leave the engine default behavior unchanged.",
+    "settings.distributionGrowthRate": "Run-rate Growth",
+    "settings.distributionGrowthRateTooltip":
+      "Optional annual growth rate applied to the category's distribution run-rate. Enter percent per year. 0 means no override.",
+    "settings.distributionStressCutRate": "Stress Cut",
+    "settings.distributionStressCutRateTooltip":
+      "Optional cut rate applied when Crash20 or review Stress triggers a distribution cut for this category. Enter percent. 0 means no override.",
+    "settings.distributionNewBuyYield": "New Buy DY",
+    "settings.distributionNewBuyYieldTooltip":
+      "Optional structural dividend yield used only when new money is deployed into this category. It does not override the current holding's initial run-rate.",
     "settings.cashflowEvents": "Cashflow Events",
     "settings.cashflowEventsTooltip":
       "Register future one-time inflows or large expenses.",
@@ -987,6 +999,18 @@ const translations = {
     "settings.pensionBondUpper": "연금 채권 Upper",
     "settings.pensionBondUpperTooltip":
       "엔진 반영 항목입니다. 이 상단을 넘는 연금 Bond Buffer는 초과분으로 보고 위험자산 쪽으로 재배치될 수 있습니다. 기본값은 24개월입니다.",
+    "settings.distributionRules": "분배금 규칙",
+    "settings.distributionRulesTooltip":
+      "비현금 슬리브의 run-rate 성장률과 Stress 삭감률을 덮어쓰는 선택 설정입니다. 0이면 엔진 기본 동작을 그대로 사용합니다.",
+    "settings.distributionGrowthRate": "run-rate 성장",
+    "settings.distributionGrowthRateTooltip":
+      "해당 카테고리 분배금 run-rate에 적용할 선택적 연 성장률입니다. 연 %로 입력하며 0이면 override를 쓰지 않습니다.",
+    "settings.distributionStressCutRate": "Stress 삭감",
+    "settings.distributionStressCutRateTooltip":
+      "Crash20 또는 정기점검 Stress가 분배금 삭감을 유발할 때 적용할 선택적 삭감률입니다. %로 입력하며 0이면 override를 쓰지 않습니다.",
+    "settings.distributionNewBuyYield": "신규매수 DY",
+    "settings.distributionNewBuyYieldTooltip":
+      "이 카테고리로 새 자금이 배치될 때만 적용할 구조적 배당률입니다. 기존 보유분의 초기 run-rate 장부값은 덮어쓰지 않습니다.",
     "settings.cashflowEvents": "현금흐름 이벤트",
     "settings.cashflowEventsTooltip":
       "미래의 일회성 자산 유입이나 큰 지출을 등록합니다.",

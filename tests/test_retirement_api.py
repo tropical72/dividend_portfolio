@@ -163,6 +163,59 @@ def test_update_retirement_config_strategy_rules(tmp_path, monkeypatch):
     assert strategy_rules["pension"]["sgov_target_months"] == 24
 
 
+def test_update_retirement_config_distribution_rules(tmp_path, monkeypatch):
+    """distribution_rules가 API를 통해 저장되고 계정 기본 구조를 유지하는지 검증한다."""
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "distribution_rules": {
+                "corp": {
+                    "Growth Engine": {
+                        "growth_rate": 0.12,
+                        "stress_cut_rate": 0.4,
+                    }
+                }
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    distribution_rules = response.json()["data"]["distribution_rules"]
+    assert distribution_rules["corp"]["Growth Engine"]["growth_rate"] == pytest.approx(0.12)
+    assert distribution_rules["corp"]["Growth Engine"]["stress_cut_rate"] == pytest.approx(0.4)
+    assert distribution_rules["pension"] == {}
+
+
+def test_update_retirement_config_distribution_yield_overrides(tmp_path, monkeypatch):
+    """distribution_yield_overrides가 API를 통해 저장되고 기본 구조를 유지하는지 검증한다."""
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "distribution_yield_overrides": {
+                "corp": {
+                    "Growth Engine": 0.08,
+                },
+                "pension": {
+                    "Dividend Growth": 0.05,
+                },
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    overrides = response.json()["data"]["distribution_yield_overrides"]
+    assert overrides["corp"]["Growth Engine"] == pytest.approx(0.08)
+    assert overrides["pension"]["Dividend Growth"] == pytest.approx(0.05)
+
+
 def test_update_retirement_config_rejects_inconsistent_corp_principal():
     """법인 총운용자산이 자본금+주주대여금보다 작으면 저장을 거부해야 한다."""
     response = client.post(
@@ -2048,6 +2101,168 @@ def test_retirement_simulation_uses_separate_stress_scenario_query_param(tmp_pat
     assert payload["success"] is True
     assert captured_params["inflation_rate"] == pytest.approx(0.01)
     assert captured_params["active_stress_scenario"] == "DIVIDEND_CUT"
+
+
+def test_retirement_simulation_passes_distribution_rules_to_projection_engine(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.05,
+                    "inflation_rate": 0.0,
+                },
+                "conservative": {
+                    "name": "Conservative Profile",
+                    "expected_return": 0.03,
+                    "inflation_rate": 0.01,
+                },
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "household_monthly_need": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "distribution_rules": {
+                "corp": {"Growth Engine": {"growth_rate": 0.12, "stress_cut_rate": 0.4}}
+            },
+        },
+    )
+
+    captured_params = {}
+
+    def _capture_run(initial_assets, params):
+        captured_params.update(params)
+        return {
+            "summary": {
+                "total_survival_years": 1,
+                "survival_months": 12,
+                "is_permanent": True,
+                "sgov_exhaustion_date": "Permanent",
+                "growth_asset_sell_start_date": "None",
+            },
+            "survival_months": 12,
+            "monthly_data": [],
+        }
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _capture_run)
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert captured_params["distribution_rules"] == {
+        "corp": {"Growth Engine": {"growth_rate": 0.12, "stress_cut_rate": 0.4}},
+        "pension": {},
+    }
+
+
+def test_retirement_simulation_passes_distribution_yield_overrides_to_projection_engine(
+    tmp_path, monkeypatch
+):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    monkeypatch.setattr(main_module, "backend", backend)
+    local_client = TestClient(main_module.app)
+
+    local_client.post(
+        "/api/retirement/config",
+        json={
+            "active_assumption_id": "v1",
+            "assumptions": {
+                "v1": {
+                    "name": "Standard Profile",
+                    "expected_return": 0.05,
+                    "inflation_rate": 0.0,
+                },
+                "conservative": {
+                    "name": "Conservative Profile",
+                    "expected_return": 0.03,
+                    "inflation_rate": 0.01,
+                },
+            },
+            "corp_params": {
+                "initial_investment": 100000000,
+                "capital_stock": 0,
+                "initial_shareholder_loan": 0,
+                "monthly_salary": 0,
+                "monthly_bookkeeping_fee": 0,
+                "annual_corp_tax_adjustment_fee": 0,
+                "employee_count": 0,
+            },
+            "pension_params": {
+                "initial_investment": 0,
+                "severance_reserve": 0,
+                "other_reserve": 0,
+                "monthly_withdrawal_target": 0,
+            },
+            "simulation_params": {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "target_monthly_cashflow": 0,
+                "household_monthly_need": 0,
+                "national_pension_amount": 0,
+                "simulation_years": 1,
+            },
+            "distribution_yield_overrides": {
+                "corp": {"Growth Engine": 0.08},
+                "pension": {"Dividend Growth": 0.05},
+            },
+        },
+    )
+
+    captured_params = {}
+
+    def _capture_run(initial_assets, params):
+        captured_params.update(params)
+        return {
+            "summary": {
+                "total_survival_years": 1,
+                "survival_months": 12,
+                "is_permanent": True,
+                "sgov_exhaustion_date": "Permanent",
+                "growth_asset_sell_start_date": "None",
+            },
+            "survival_months": 12,
+            "monthly_data": [],
+        }
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", _capture_run)
+
+    response = local_client.get("/api/retirement/simulate")
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert captured_params["distribution_yield_overrides"] == {
+        "corp": {"Growth Engine": 0.08},
+        "pension": {"Dividend Growth": 0.05},
+    }
 
 
 def test_retirement_simulation_rejects_legacy_stress_scenario_in_assumption_query(

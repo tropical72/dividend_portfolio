@@ -138,6 +138,21 @@ export interface StrategyRules {
   };
 }
 
+export interface DistributionRuleSpec {
+  growth_rate?: number;
+  stress_cut_rate?: number;
+}
+
+export interface DistributionRules {
+  corp: Partial<Record<CorporateStrategyCategory, DistributionRuleSpec>>;
+  pension: Partial<Record<PensionStrategyCategory, DistributionRuleSpec>>;
+}
+
+export interface DistributionYieldOverrides {
+  corp: Partial<Record<CorporateStrategyCategory, number>>;
+  pension: Partial<Record<PensionStrategyCategory, number>>;
+}
+
 export interface RetirementConfig {
   active_assumption_id: string;
   user_profile: {
@@ -193,6 +208,8 @@ export interface RetirementConfig {
     debt_yield_multiplier: number;
   };
   strategy_rules: StrategyRules;
+  distribution_rules: DistributionRules;
+  distribution_yield_overrides: DistributionYieldOverrides;
   assumptions: {
     [key: string]: {
       name: string;
