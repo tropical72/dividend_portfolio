@@ -40,12 +40,15 @@ test.describe("Retirement Tab UX", () => {
   test("should allow editing assumptions and resetting", async ({ page }) => {
     // 인풋 필드가 보일 때까지 대기
     const assumptionCard = page.getByTestId("assumption-card-conservative");
+    const standardReturnInput = page.getByTestId("return-v1");
     const returnInput = page.getByTestId("return-conservative");
     await returnInput.waitFor({ state: "visible", timeout: 15000 });
+    const standardReturnBefore = await standardReturnInput.inputValue();
 
     // 값 수정
     await returnInput.fill("12.0");
     await returnInput.press("Enter");
+    await expect(standardReturnInput).toHaveValue(standardReturnBefore);
 
     // 리셋 버튼 확인
     const resetButton = assumptionCard

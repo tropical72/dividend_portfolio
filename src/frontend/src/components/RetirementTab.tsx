@@ -335,9 +335,10 @@ export function RetirementTab() {
     24;
   const portfolioMeta = simulationData.meta?.used_portfolios;
   const standardMasterReturn =
+    config.assumptions?.v1?.master_return ??
+    config.assumptions?.v1?.expected_return ??
     simulationData.meta?.master_tr ??
     simulationData.meta?.master_yield ??
-    config.assumptions?.v1?.master_return ??
     0.0485;
   const chartData = monthlyData.filter(
     (d) => d.index % 12 === 0 || d.index === 1,
