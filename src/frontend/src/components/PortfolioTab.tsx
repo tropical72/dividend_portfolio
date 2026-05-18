@@ -13,6 +13,15 @@ import {
   Edit3,
   Plus,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { cn } from "../lib/utils";
 import { useI18n } from "../i18n";
 import {
@@ -94,6 +103,9 @@ export function PortfolioTab({
         expectedIncome: "예상 현금흐름 (세전)",
         annualDividend: "연간 배당금",
         monthlyIncome: "월 현금흐름",
+        monthlyDividendChart: "월별 배당금 지급액",
+        monthlyDividendChartDesc:
+          "종목별 지급 월, 최근 1회 배당금, 현재 투자금 기준으로 계산한 월별 예상 지급액입니다.",
         perYear: "/ 연",
         perMonth: "/ 월",
         expectedYield: "배당수익률",
@@ -164,6 +176,9 @@ export function PortfolioTab({
         expectedIncome: "Expected Income (Tax-Excl.)",
         annualDividend: "Annual Dividend",
         monthlyIncome: "Monthly Income",
+        monthlyDividendChart: "Monthly Dividend Payout",
+        monthlyDividendChartDesc:
+          "Estimated monthly payout based on each asset's payment months, latest dividend amount, and current capital.",
         perYear: "/ year",
         perMonth: "/ month",
         expectedYield: "Dividend Yield",
@@ -318,6 +333,9 @@ export function PortfolioTab({
   const [capitalUsd, setCapitalUsd] = useState<number>(10000);
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [calcMode, setCalcMode] = useState<"TTM" | "Forward">("Forward");
+  const [dividendChartCurrency, setDividendChartCurrency] = useState<
+    "KRW" | "USD"
+  >("KRW");
   const [retirementConfig, setRetirementConfig] =
     useState<RetirementConfig | null>(null);
 
@@ -554,7 +572,65 @@ export function PortfolioTab({
       annualDividendUsd,
       monthlyDividendUsd: annualDividendUsd / 12,
     };
-  }, [items, capitalUsd, globalSettings, getCategoryPA]);
+  }, [items, capitalUsd, getCategoryPA]);
+
+  const monthlyDividendChartData = useMemo(() => {
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = index + 1;
+      const amountUsd = items.reduce((sum, item) => {
+        if (!item.payment_months?.includes(month)) return sum;
+        const price = item.price || 0;
+        if (price <= 0) return sum;
+        const allocated = capitalUsd * ((item.weight || 0) / 100);
+        const shares = allocated / price;
+        return sum + shares * (item.last_div_amount || 0);
+      }, 0);
+
+      return {
+        month: isKorean ? `${month}월` : `${month}M`,
+        amount:
+          dividendChartCurrency === "KRW"
+            ? Math.round(amountUsd * exchangeRate)
+            : parseFloat(amountUsd.toFixed(2)),
+      };
+    });
+  }, [capitalUsd, dividendChartCurrency, exchangeRate, isKorean, items]);
+
+  const formatDividendChartAmount = (value: number | string | undefined) =>
+    dividendChartCurrency === "KRW"
+      ? `₩${Number(value || 0).toLocaleString()}`
+      : `$${Number(value || 0).toLocaleString()}`;
+
+  const renderDividendTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: ReadonlyArray<{
+      color?: string;
+      value?: number | string;
+    }>;
+    label?: string | number;
+  }) => {
+    if (!active || !payload?.length) return null;
+    const entry = payload[0];
+
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white/95 p-3 text-[11px] font-semibold text-slate-600 shadow-xl">
+        <div className="mb-2 text-xs font-bold text-slate-800">{label}</div>
+        <div className="flex items-center gap-2">
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: entry.color || "#10b981" }}
+          />
+          <span className="font-bold tabular-nums text-slate-800">
+            {formatDividendChartAmount(entry.value)}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   /** 통화별 입력 핸들러 [REQ-PRT-03.1, 03.2] */
   const handleUsdChange = (val: string) => {
@@ -1139,6 +1215,84 @@ export function PortfolioTab({
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div
+            className="rounded-[2.5rem] border border-white/80 bg-white/78 p-8 shadow-sm"
+            data-testid="portfolio-designer-monthly-dividend-chart"
+          >
+            <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                  <DollarSign className="text-emerald-600" size={20} />{" "}
+                  {copy.monthlyDividendChart}
+                  <span className="text-sm font-semibold text-slate-400">
+                    ({dividendChartCurrency})
+                  </span>
+                </h3>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  {copy.monthlyDividendChartDesc}
+                </p>
+              </div>
+              <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm">
+                {(["KRW", "USD"] as const).map((currency) => (
+                  <button
+                    key={currency}
+                    type="button"
+                    onClick={() => setDividendChartCurrency(currency)}
+                    data-testid={`portfolio-designer-dividend-currency-${currency.toLowerCase()}`}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] transition-all",
+                      dividendChartCurrency === currency
+                        ? "bg-white text-emerald-700 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700",
+                    )}
+                  >
+                    {currency}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="h-[320px] min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={monthlyDividendChartData}
+                  margin={{ top: 20, right: 20, left: 16, bottom: 8 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#d8e0e7"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748b", fontSize: 12, fontWeight: 600 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                    tickFormatter={(value) =>
+                      dividendChartCurrency === "KRW"
+                        ? `₩${(Number(value) / 10000).toFixed(0)}만`
+                        : `$${Number(value).toLocaleString()}`
+                    }
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#d9e6ee", opacity: 0.45 }}
+                    content={renderDividendTooltip}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    fill="#10b981"
+                    radius={[8, 8, 0, 0]}
+                    barSize={28}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 

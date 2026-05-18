@@ -18,6 +18,16 @@ test.describe("Portfolio Strategy Categories", () => {
     page,
   }) => {
     await expect(page.getByTestId("portfolio-account-corporate")).toBeVisible();
+    await expect(
+      page.getByTestId("portfolio-designer-monthly-dividend-chart"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("portfolio-designer-dividend-currency-krw"),
+    ).toHaveClass(/text-emerald-700/);
+    await page.getByTestId("portfolio-designer-dividend-currency-usd").click();
+    await expect(
+      page.getByTestId("portfolio-designer-dividend-currency-usd"),
+    ).toHaveClass(/text-emerald-700/);
     await expect(page.getByText("SGOV Buffer")).toBeVisible();
     await expect(page.getByText("Bond Buffer")).toBeVisible();
     await expect(page.getByText("High Income")).toBeVisible();

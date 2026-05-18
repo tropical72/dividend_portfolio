@@ -63,6 +63,7 @@
 | REQ-PRT-04.1 | 포트폴리오 저장 (Corporate/Pension)                                | T-02-1.1.1            | TEST-PRT-04                 | Done        | bd97ad2    | 2026.04.15-15.43 |
 | REQ-PRT-04.2 | 저장 리스트 및 편집/이름변경/복제                                  | T-02-7.2              | TEST-PRT-04                 | Done        | bd97ad2    | 2026.04.15-15.43 |
 | REQ-PRT-06   | 비교 대시보드 및 시각화 고도화(Radar)                              | T-02-6.1              | TEST-PRT-06                 | Done        | f674f26    | 2026.04.15-16.23 |
+| D-PRT-06.4.1 | 설계 화면 및 관리/비교 화면의 월별 배당금 그래프 확장, 마스터 전략 다중 비교 지원 | T-02-2.2.3 / T-02-4.2.2 | TEST-PRT-03.6 / TEST-PRT-06.4.1 | Done        | -          | 2026.05.18 |
 | REQ-PRT-07   | UI 가독성(Sub-Tabs) 및 명칭(Corporate) 강화                        | T-02-5.1              | TEST-PRT-07                 | Done        | 23abcca    | 2026.04.15-13.36 |
 | REQ-PRT-08   | 마스터 전략(Master Strategy) 구성 및 관리                          | T-02-8.1              | TEST-RAMS-1.5               | Done        | 23abcca    | 2026.04.15-13.36 |
 | REQ-PRT-08.6 | 시스템 기본 번들 보장 및 보호 (System Default)                     | T-02-8.6              | TEST-RAMS-1.5               | Done        | 21955e3    | 2026.04.16-17.40 |

@@ -73,8 +73,10 @@ export function PortfolioDashboard({
         globalUsdCapital: "전체 USD 투자금",
         globalKrwCapital: "전체 KRW 투자금",
         monthlyDividendComparison: "월 배당 비교",
-        aggregatedIncome: "선택한 포트폴리오의 월별 현금흐름 비교",
+        aggregatedIncome:
+          "선택한 마스터 전략과 저장 포트폴리오의 월별 현금흐름 비교",
         clearSelection: "선택 해제",
+        selectedMasterStrategies: "선택한 마스터 전략",
         income: "현금흐름",
         strategyCharacter: "전략 성격",
         assetMix: "자산 배분",
@@ -130,8 +132,10 @@ export function PortfolioDashboard({
         globalUsdCapital: "Global USD Capital",
         globalKrwCapital: "Global KRW Capital",
         monthlyDividendComparison: "Monthly Dividend Comparison",
-        aggregatedIncome: "Aggregated income across selected portfolios",
+        aggregatedIncome:
+          "Aggregated income across selected master strategies and portfolios",
         clearSelection: "Clear Selection",
+        selectedMasterStrategies: "Selected Master Strategies",
         income: "Income",
         strategyCharacter: "Strategy Character",
         assetMix: "Asset Mix",
@@ -164,6 +168,9 @@ export function PortfolioDashboard({
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedMasterIds, setSelectedMasterIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [analysisChartsReady, setAnalysisChartsReady] = useState(false);
 
@@ -175,6 +182,9 @@ export function PortfolioDashboard({
   // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
   const [globalCurrency, setGlobalCurrency] = useState<"USD" | "KRW">("USD");
+  const [dividendChartCurrency, setDividendChartCurrency] = useState<
+    "KRW" | "USD"
+  >("KRW");
   const [exchangeRate, setExchangeRate] = useState<number>(1425.5);
   const [editingPortfolioId, setEditingPortfolioId] = useState<string | null>(
     null,
@@ -212,6 +222,8 @@ export function PortfolioDashboard({
   );
 
   // 데이터 로드
+  const selectedAnalysisCount = selectedIds.size + selectedMasterIds.size;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -254,7 +266,7 @@ export function PortfolioDashboard({
   }, []);
 
   useEffect(() => {
-    if (selectedIds.size === 0) {
+    if (selectedAnalysisCount === 0) {
       setAnalysisChartsReady(false);
       return;
     }
@@ -267,7 +279,7 @@ export function PortfolioDashboard({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [selectedIds]);
+  }, [selectedAnalysisCount]);
 
   /** 투자금 입력 핸들러 */
   const handleGlobalUsdChange = (val: string) => {
@@ -389,37 +401,163 @@ export function PortfolioDashboard({
     }
   };
 
+  const monthlyAmountsForPortfolio = useCallback(
+    (portfolio: Portfolio | undefined, capitalOverride?: number) => {
+      const amounts = Array.from({ length: 12 }, () => 0);
+      if (!portfolio) return amounts;
+      const capital =
+        capitalOverride ?? globalCapitalUsd ?? portfolio.total_capital ?? 0;
+      for (const item of portfolio.items || []) {
+        const price = item.price || 0;
+        if (price <= 0) continue;
+        const allocated = capital * ((item.weight || 0) / 100);
+        const shares = allocated / price;
+        for (const month of item.payment_months || []) {
+          if (month < 1 || month > 12) continue;
+          amounts[month - 1] += shares * (item.last_div_amount || 0);
+        }
+      }
+      return amounts;
+    },
+    [globalCapitalUsd],
+  );
+
+  const dividendSeries = useMemo(() => {
+    const selectedPortfolioSeries = portfolios
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => ({
+        id: `portfolio:${p.id}`,
+        name: p.name || "Untitled",
+        values: monthlyAmountsForPortfolio(p),
+      }));
+
+    const selectedMasterSeries = masterPortfolios
+      .filter((m) => selectedMasterIds.has(m.id))
+      .map((master) => {
+        const corp = portfolios.find((p) => p.id === master.corp_id);
+        const pension = portfolios.find((p) => p.id === master.pension_id);
+        const corpSavedCapital = corp?.total_capital || 0;
+        const pensionSavedCapital = pension?.total_capital || 0;
+        const savedTotal = corpSavedCapital + pensionSavedCapital;
+        const corpCapital =
+          globalCapitalUsd !== null
+            ? savedTotal > 0
+              ? globalCapitalUsd * (corpSavedCapital / savedTotal)
+              : corp
+                ? globalCapitalUsd
+                : 0
+            : undefined;
+        const pensionCapital =
+          globalCapitalUsd !== null
+            ? savedTotal > 0
+              ? globalCapitalUsd * (pensionSavedCapital / savedTotal)
+              : pension
+                ? globalCapitalUsd
+                : 0
+            : undefined;
+
+        const corpAmounts = monthlyAmountsForPortfolio(corp, corpCapital);
+        const pensionAmounts = monthlyAmountsForPortfolio(
+          pension,
+          pensionCapital,
+        );
+
+        return {
+          id: `master:${master.id}`,
+          name: `${copy.masterStrategy}: ${master.name}`,
+          values: corpAmounts.map(
+            (amount, idx) => amount + pensionAmounts[idx],
+          ),
+        };
+      });
+
+    return [...selectedMasterSeries, ...selectedPortfolioSeries];
+  }, [
+    copy.masterStrategy,
+    globalCapitalUsd,
+    masterPortfolios,
+    monthlyAmountsForPortfolio,
+    portfolios,
+    selectedIds,
+    selectedMasterIds,
+  ]);
+
   /** 차트 데이터 계산 */
   const chartData = useMemo(() => {
-    if (!portfolios || portfolios.length === 0 || selectedIds.size === 0)
-      return [];
-    const selectedPortfolios = portfolios.filter((p) => selectedIds.has(p.id));
-    if (selectedPortfolios.length === 0) return [];
+    if (dividendSeries.length === 0) return [];
 
-    const months = Array.from({ length: 12 }, (_, i) => i + 1);
-
-    return months.map((m) => {
-      const dataPoint: Record<string, string | number> = { name: `${m}월` };
-      selectedPortfolios.forEach((p) => {
-        const capital = globalCapitalUsd ?? (p.total_capital || 0);
-        const items = p.items || [];
-        const monthlySum = items.reduce((sum, item) => {
-          if (item && item.payment_months && item.payment_months.includes(m)) {
-            const allocated = capital * ((item.weight || 0) / 100);
-            const shares = allocated / (item.price || 1);
-            let amt = shares * (item.last_div_amount || 0);
-            if (globalCurrency === "KRW") amt *= exchangeRate;
-            return sum + amt;
-          }
-          return sum;
-        }, 0);
-        dataPoint[p.name || "Untitled"] = parseFloat(
-          monthlySum.toFixed(globalCurrency === "KRW" ? 0 : 2),
+    return Array.from({ length: 12 }, (_, index) => {
+      const dataPoint: Record<string, string | number> = {
+        name: isKorean ? `${index + 1}월` : `${index + 1}M`,
+      };
+      for (const series of dividendSeries) {
+        const rawAmount = series.values[index] || 0;
+        const amount =
+          dividendChartCurrency === "KRW"
+            ? rawAmount * exchangeRate
+            : rawAmount;
+        dataPoint[series.id] = parseFloat(
+          amount.toFixed(dividendChartCurrency === "KRW" ? 0 : 2),
         );
-      });
+      }
       return dataPoint;
     });
-  }, [portfolios, selectedIds, globalCapitalUsd, globalCurrency, exchangeRate]);
+  }, [dividendChartCurrency, dividendSeries, exchangeRate, isKorean]);
+
+  const formatDividendChartAmount = (value: number | string | undefined) =>
+    dividendChartCurrency === "USD"
+      ? `$${Number(value || 0).toLocaleString()}`
+      : `₩${Number(value || 0).toLocaleString()}`;
+
+  const renderDividendTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: ReadonlyArray<{
+      color?: string;
+      dataKey?: string | number;
+      name?: string | number;
+      value?: number | string;
+    }>;
+    label?: string | number;
+  }) => {
+    if (!active || !payload?.length) return null;
+
+    return (
+      <div className="min-w-40 rounded-2xl border border-slate-200 bg-white/95 p-3 text-[11px] font-semibold text-slate-600 shadow-xl">
+        <div className="mb-2 text-xs font-bold text-slate-800">{label}</div>
+        <div className="space-y-1.5">
+          {payload.map((entry) => {
+            const seriesName =
+              dividendSeries.find((series) => series.id === entry.dataKey)
+                ?.name || String(entry.name || entry.dataKey || "");
+
+            return (
+              <div
+                key={`${entry.dataKey}-${seriesName}`}
+                className="flex items-center justify-between gap-4"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: entry.color || "#10b981" }}
+                  />
+                  <span className="max-w-40 truncate text-slate-500">
+                    {seriesName}
+                  </span>
+                </div>
+                <span className="shrink-0 font-bold tabular-nums text-slate-800">
+                  {formatDividendChartAmount(entry.value)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   /** 레이더 차트 및 지표 데이터 계산 */
   const { radarData, metrics } = useMemo(() => {
@@ -466,7 +604,7 @@ export function PortfolioDashboard({
     });
 
     return { radarData: radar, metrics: comparisonMetrics };
-  }, [portfolios, selectedIds, globalCapitalUsd, paRates, getDY, getTR]);
+  }, [portfolios, selectedIds, globalCapitalUsd, getDY, getTR]);
 
   /** 선택 핸들러 */
   const toggleSelect = (e: React.MouseEvent, id: string) => {
@@ -475,6 +613,13 @@ export function PortfolioDashboard({
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSelectedIds(next);
+  };
+
+  const toggleSelectMaster = (id: string) => {
+    const next = new Set(selectedMasterIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedMasterIds(next);
   };
 
   /** 로드 핸들러 */
@@ -615,6 +760,7 @@ export function PortfolioDashboard({
               masterPortfolios.map((m) => {
                 const c_p = portfolios.find((p) => p.id === m.corp_id);
                 const p_p = portfolios.find((p) => p.id === m.pension_id);
+                const isMasterSelected = selectedMasterIds.has(m.id);
 
                 const corpCapital = c_p?.total_capital || 0;
                 const pensionCapital = p_p?.total_capital || 0;
@@ -641,14 +787,36 @@ export function PortfolioDashboard({
                 return (
                   <div
                     key={m.id}
+                    data-testid={`master-strategy-card-${m.id}`}
                     className={cn(
                       "group flex items-center justify-between rounded-[2rem] border p-8 transition-all duration-500",
                       m.is_active
                         ? "border-emerald-200 bg-emerald-50/90 shadow-sm"
                         : "border-white/80 bg-white/78 shadow-sm hover:border-emerald-100",
+                      isMasterSelected &&
+                        !m.is_active &&
+                        "border-blue-200 bg-blue-50/70",
                     )}
                   >
                     <div className="flex items-center gap-8">
+                      <button
+                        onClick={() => toggleSelectMaster(m.id)}
+                        role="checkbox"
+                        aria-checked={isMasterSelected}
+                        data-testid={`master-dividend-select-${m.id}`}
+                        className={cn(
+                          "rounded-xl p-2 transition-all",
+                          isMasterSelected
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-slate-400 hover:bg-slate-50 hover:text-slate-600",
+                        )}
+                      >
+                        {isMasterSelected ? (
+                          <CheckSquare size={22} />
+                        ) : (
+                          <Square size={22} />
+                        )}
+                      </button>
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
                           {editingMasterId === m.id ? (
@@ -878,7 +1046,7 @@ export function PortfolioDashboard({
       </div>
 
       {/* 2. Advanced Analysis Cluster */}
-      {selectedIds.size > 0 && (
+      {selectedAnalysisCount > 0 && (
         <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
           {/* 2.1 Monthly Dividend Bar Chart */}
           <div className="rounded-[2.5rem] border border-white/80 bg-white/82 p-10 shadow-sm">
@@ -889,18 +1057,41 @@ export function PortfolioDashboard({
                   data-testid="portfolio-monthly-chart-title"
                 >
                   <BarChart3 className="text-emerald-700" size={24} />{" "}
-                  {copy.monthlyDividendComparison} ({globalCurrency})
+                  {copy.monthlyDividendComparison} ({dividendChartCurrency})
                 </h3>
                 <p className="ml-9 mt-1 text-xs font-medium text-slate-500">
                   {copy.aggregatedIncome}
                 </p>
               </div>
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700"
-              >
-                {copy.clearSelection}
-              </button>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm">
+                  {(["KRW", "USD"] as const).map((currency) => (
+                    <button
+                      key={currency}
+                      type="button"
+                      onClick={() => setDividendChartCurrency(currency)}
+                      data-testid={`portfolio-dashboard-dividend-currency-${currency.toLowerCase()}`}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] transition-all",
+                        dividendChartCurrency === currency
+                          ? "bg-white text-emerald-700 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700",
+                      )}
+                    >
+                      {currency}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedIds(new Set());
+                    setSelectedMasterIds(new Set());
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-semibold tracking-[0.08em] text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700"
+                >
+                  {copy.clearSelection}
+                </button>
+              </div>
             </div>
             <div className="min-w-0 w-full text-xs">
               {analysisChartsReady ? (
@@ -926,54 +1117,43 @@ export function PortfolioDashboard({
                       tickLine={false}
                       tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
                       tickFormatter={(val) =>
-                        globalCurrency === "USD"
+                        dividendChartCurrency === "USD"
                           ? `$${val}`
                           : `₩${(val / 10000).toFixed(0)}만`
                       }
                     />
                     <Tooltip
                       cursor={{ fill: "#d9e6ee", opacity: 0.45 }}
-                      contentStyle={{
-                        backgroundColor: "#ffffff",
-                        border: "1px solid #d8e0e7",
-                        borderRadius: "16px",
-                        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
-                      }}
-                      formatter={(val: number | string | undefined) => [
-                        globalCurrency === "USD"
-                          ? `$${Number(val || 0).toLocaleString()}`
-                          : `₩${Number(val || 0).toLocaleString()}`,
-                        copy.income,
-                      ]}
+                      content={renderDividendTooltip}
                     />
                     <Legend
                       wrapperStyle={{ paddingTop: "30px" }}
                       iconType="circle"
                       formatter={(value) => (
                         <span className="ml-1 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                          {value}
+                          {dividendSeries.find((series) => series.id === value)
+                            ?.name || value}
                         </span>
                       )}
                     />
-                    {portfolios
-                      .filter((p) => selectedIds.has(p.id))
-                      .map((p, idx) => (
-                        <Bar
-                          key={p.id}
-                          dataKey={p.name}
-                          fill={
-                            [
-                              "#10b981",
-                              "#3b82f6",
-                              "#f59e0b",
-                              "#8b5cf6",
-                              "#ec4899",
-                            ][idx % 5]
-                          }
-                          radius={[6, 6, 0, 0]}
-                          barSize={selectedIds.size > 2 ? 15 : 30}
-                        />
-                      ))}
+                    {dividendSeries.map((series, idx) => (
+                      <Bar
+                        key={series.id}
+                        dataKey={series.id}
+                        name={series.name}
+                        fill={
+                          [
+                            "#10b981",
+                            "#3b82f6",
+                            "#f59e0b",
+                            "#8b5cf6",
+                            "#ec4899",
+                          ][idx % 5]
+                        }
+                        radius={[6, 6, 0, 0]}
+                        barSize={selectedAnalysisCount > 2 ? 15 : 30}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -982,178 +1162,180 @@ export function PortfolioDashboard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 2.2 Asset Mix Radar Chart */}
-            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm min-w-0">
-              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
-                <PieChart size={18} className="text-blue-700" />{" "}
-                {copy.strategyCharacter} ({copy.assetMix})
-              </h4>
-              <div className="min-w-0 w-full">
-                {analysisChartsReady ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RadarChart
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="80%"
-                      data={radarData}
-                    >
-                      <PolarGrid stroke="#d8e0e7" />
-                      <PolarAngleAxis
-                        dataKey="subject"
-                        tick={{
-                          fill: "#64748b",
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                      />
-                      <PolarRadiusAxis
-                        angle={30}
-                        domain={[0, 100]}
-                        tick={false}
-                        axisLine={false}
-                      />
-                      {portfolios
-                        .filter((p) => selectedIds.has(p.id))
-                        .map((p, idx) => (
-                          <Radar
-                            key={p.id}
-                            name={p.name}
-                            dataKey={p.name}
-                            stroke={
-                              [
-                                "#10b981",
-                                "#3b82f6",
-                                "#f59e0b",
-                                "#8b5cf6",
-                                "#ec4899",
-                              ][idx % 5]
-                            }
-                            fill={
-                              [
-                                "#10b981",
-                                "#3b82f6",
-                                "#f59e0b",
-                                "#8b5cf6",
-                                "#ec4899",
-                              ][idx % 5]
-                            }
-                            fillOpacity={0.3}
-                          />
-                        ))}
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#ffffff",
-                          border: "1px solid #d8e0e7",
-                          borderRadius: "12px",
-                          fontSize: "11px",
-                          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
-                        }}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[300px] w-full rounded-2xl bg-slate-50/70" />
-                )}
+          {selectedIds.size > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* 2.2 Asset Mix Radar Chart */}
+              <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm min-w-0">
+                <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
+                  <PieChart size={18} className="text-blue-700" />{" "}
+                  {copy.strategyCharacter} ({copy.assetMix})
+                </h4>
+                <div className="min-w-0 w-full">
+                  {analysisChartsReady ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RadarChart
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="80%"
+                        data={radarData}
+                      >
+                        <PolarGrid stroke="#d8e0e7" />
+                        <PolarAngleAxis
+                          dataKey="subject"
+                          tick={{
+                            fill: "#64748b",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        />
+                        <PolarRadiusAxis
+                          angle={30}
+                          domain={[0, 100]}
+                          tick={false}
+                          axisLine={false}
+                        />
+                        {portfolios
+                          .filter((p) => selectedIds.has(p.id))
+                          .map((p, idx) => (
+                            <Radar
+                              key={p.id}
+                              name={p.name}
+                              dataKey={p.name}
+                              stroke={
+                                [
+                                  "#10b981",
+                                  "#3b82f6",
+                                  "#f59e0b",
+                                  "#8b5cf6",
+                                  "#ec4899",
+                                ][idx % 5]
+                              }
+                              fill={
+                                [
+                                  "#10b981",
+                                  "#3b82f6",
+                                  "#f59e0b",
+                                  "#8b5cf6",
+                                  "#ec4899",
+                                ][idx % 5]
+                              }
+                              fillOpacity={0.3}
+                            />
+                          ))}
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#ffffff",
+                            border: "1px solid #d8e0e7",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+                          }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] w-full rounded-2xl bg-slate-50/70" />
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* 2.3 Metrics Comparison Matrix */}
-            <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm">
-              <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
-                <Layout size={18} className="text-emerald-700" />{" "}
-                {copy.comparisonMatrix}
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {copy.indicator}
-                      </th>
-                      {metrics.map((m) => (
-                        <th
-                          key={m.name}
-                          className="max-w-[100px] truncate px-4 py-4 text-right text-[11px] font-semibold tracking-[0.08em] text-slate-600"
-                        >
-                          {m.name}
+              {/* 2.3 Metrics Comparison Matrix */}
+              <div className="rounded-[2.5rem] border border-white/80 bg-white/80 p-10 shadow-sm">
+                <h4 className="mb-8 flex items-center gap-2 text-sm font-semibold tracking-[0.08em] text-slate-500">
+                  <Layout size={18} className="text-emerald-700" />{" "}
+                  {copy.comparisonMatrix}
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {copy.indicator}
                         </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    <tr>
-                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {copy.avgYield}
-                      </td>
-                      {metrics.map((m) => (
-                        <td
-                          key={m.name}
-                          className="px-4 py-4 text-right font-semibold text-slate-700"
-                        >
-                          {m.yield.toFixed(2)}%
+                        {metrics.map((m) => (
+                          <th
+                            key={m.name}
+                            className="max-w-[100px] truncate px-4 py-4 text-right text-[11px] font-semibold tracking-[0.08em] text-slate-600"
+                          >
+                            {m.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      <tr>
+                        <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {copy.avgYield}
                         </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
-                        {copy.expectedTr}
-                      </td>
-                      {metrics.map((m) => (
-                        <td
-                          key={m.name}
-                          className="px-4 py-4 text-right font-semibold text-emerald-700"
-                        >
-                          {m.tr.toFixed(2)}%
+                        {metrics.map((m) => (
+                          <td
+                            key={m.name}
+                            className="px-4 py-4 text-right font-semibold text-slate-700"
+                          >
+                            {m.yield.toFixed(2)}%
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-emerald-700">
+                          {copy.expectedTr}
                         </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {copy.estimatedIncome} ({globalCurrency})
-                      </td>
-                      {metrics.map((m) => (
-                        <td
-                          key={m.name}
-                          className="px-4 py-4 text-right font-semibold text-slate-800"
-                        >
-                          {globalCurrency === "USD"
-                            ? `$${Math.round(m.annualIncome).toLocaleString()}`
-                            : `₩${Math.round(m.annualIncome * exchangeRate).toLocaleString()}`}
+                        {metrics.map((m) => (
+                          <td
+                            key={m.name}
+                            className="px-4 py-4 text-right font-semibold text-emerald-700"
+                          >
+                            {m.tr.toFixed(2)}%
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {copy.estimatedIncome} ({globalCurrency})
                         </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {copy.assetCount}
-                      </td>
-                      {metrics.map((m) => (
-                        <td
-                          key={m.name}
-                          className="px-4 py-4 text-right font-semibold text-slate-700"
-                        >
-                          {m.assetCount}
+                        {metrics.map((m) => (
+                          <td
+                            key={m.name}
+                            className="px-4 py-4 text-right font-semibold text-slate-800"
+                          >
+                            {globalCurrency === "USD"
+                              ? `$${Math.round(m.annualIncome).toLocaleString()}`
+                              : `₩${Math.round(m.annualIncome * exchangeRate).toLocaleString()}`}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {copy.assetCount}
                         </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
-                        {copy.coreAsset}
-                      </td>
-                      {metrics.map((m) => (
-                        <td
-                          key={m.name}
-                          className="px-4 py-4 text-right font-semibold text-blue-700"
-                        >
-                          {m.topAsset}
+                        {metrics.map((m) => (
+                          <td
+                            key={m.name}
+                            className="px-4 py-4 text-right font-semibold text-slate-700"
+                          >
+                            {m.assetCount}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                          {copy.coreAsset}
                         </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
+                        {metrics.map((m) => (
+                          <td
+                            key={m.name}
+                            className="px-4 py-4 text-right font-semibold text-blue-700"
+                          >
+                            {m.topAsset}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

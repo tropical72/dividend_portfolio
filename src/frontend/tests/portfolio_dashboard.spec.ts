@@ -10,6 +10,8 @@ import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
 test.describe("Portfolio Dashboard - List & Detail", () => {
   test.describe.configure({ mode: "serial" });
   let uniqueName: string;
+  let uniquePensionName: string;
+  let uniqueMasterName: string;
   let originalState: BackendTestState;
 
   test.beforeEach(async ({ page, request }) => {
@@ -53,6 +55,51 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
         ],
       },
     });
+    uniquePensionName = `${uniqueName} Pension`;
+    const pensionResponse = await page.request.post(
+      "http://127.0.0.1:8000/api/portfolios",
+      {
+        data: {
+          name: uniquePensionName,
+          account_type: "Pension",
+          total_capital: 30000,
+          currency: "USD",
+          items: [
+            {
+              symbol: "SCHD",
+              name: "Schwab US Dividend Equity",
+              category: "Dividend Growth",
+              weight: 100,
+              price: 80,
+              dividend_yield: 3.5,
+              last_div_amount: 0.7,
+              payment_months: [3, 6, 9, 12],
+            },
+          ],
+        },
+      },
+    );
+    const pensionPayload = await pensionResponse.json();
+
+    const corpResponse = await page.request.get(
+      "http://127.0.0.1:8000/api/portfolios",
+    );
+    const corpPayload = await corpResponse.json();
+    const corpPortfolio = corpPayload.data.find(
+      (portfolio: { id?: string; name?: string }) =>
+        portfolio.name === uniqueName,
+    );
+    const corpPortfolioId = corpPortfolio?.id;
+    expect(corpPortfolioId).toBeTruthy();
+
+    uniqueMasterName = `${uniqueName} Master`;
+    await page.request.post("http://127.0.0.1:8000/api/master-portfolios", {
+      data: {
+        name: uniqueMasterName,
+        corp_id: corpPortfolioId,
+        pension_id: pensionPayload.data.id,
+      },
+    });
 
     await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
 
@@ -89,6 +136,37 @@ test.describe("Portfolio Dashboard - List & Detail", () => {
 
     // 계좌 유형 배지 확인
     await expect(portfolioCards.getByText(/Corporate|법인/i)).toBeVisible();
+  });
+
+  test("should compare selected master strategies in the monthly dividend chart", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "Master dividend legend assertion is desktop-only.");
+
+    const masterCard = page
+      .locator('[data-testid^="master-strategy-card-"]')
+      .filter({ hasText: uniqueMasterName })
+      .first();
+    await expect(masterCard).toBeVisible();
+
+    await masterCard
+      .locator('[data-testid^="master-dividend-select-"]')
+      .click({ force: true });
+
+    await expect(
+      page.getByTestId("portfolio-monthly-chart-title"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("portfolio-dashboard-dividend-currency-krw"),
+    ).toHaveClass(/text-emerald-700/);
+    await page.getByTestId("portfolio-dashboard-dividend-currency-usd").click();
+    await expect(
+      page.getByTestId("portfolio-dashboard-dividend-currency-usd"),
+    ).toHaveClass(/text-emerald-700/);
+    await expect(
+      page.locator(".recharts-legend-wrapper").getByText(uniqueMasterName),
+    ).toBeVisible();
   });
 
   test("should expand accordion to show details when clicked", async ({
