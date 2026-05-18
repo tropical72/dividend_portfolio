@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Info } from "lucide-react";
 import {
   Bar,
@@ -234,6 +234,14 @@ export function CostComparisonTab() {
   const [running, setRunning] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const translationRef = useRef(t);
+  const selectedMasterPortfolioIdRef = useRef<string | null>(
+    defaultConfig.master_portfolio_id,
+  );
+
+  useEffect(() => {
+    translationRef.current = t;
+  }, [t]);
 
   const normalizeConfig = (raw: CostComparisonConfig): CostComparisonConfig => {
     return {
@@ -285,13 +293,15 @@ export function CostComparisonTab() {
               settingsPayload.data?.default_pa_scenario || "base",
             );
           }
+          selectedMasterPortfolioIdRef.current =
+            nextConfig.master_portfolio_id ?? null;
           setConfig(nextConfig);
         }
       } catch (error) {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : t("costComparison.loadError"),
+            : translationRef.current("costComparison.loadError"),
         );
       } finally {
         setLoading(false);
@@ -299,7 +309,7 @@ export function CostComparisonTab() {
     };
 
     void loadConfig();
-  }, [t]);
+  }, []);
 
   const updateConfig = (
     section: ConfigSectionKey,
@@ -333,10 +343,18 @@ export function CostComparisonTab() {
   };
 
   const updateMasterPortfolioId = (value: string) => {
+    selectedMasterPortfolioIdRef.current = value || null;
     setConfig((prev) => ({
       ...prev,
       master_portfolio_id: value || null,
     }));
+  };
+
+  const getSelectedMasterPortfolioId = () => {
+    const selectedValue = document.querySelector<HTMLSelectElement>(
+      '[data-testid="cc-master-portfolio"]',
+    )?.value;
+    return selectedValue || selectedMasterPortfolioIdRef.current;
   };
 
   const updateSalary = (index: number, monthlySalary: number) => {
@@ -365,14 +383,20 @@ export function CostComparisonTab() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          ...config,
+          master_portfolio_id: getSelectedMasterPortfolioId(),
+        }),
       });
       const payload = await response.json();
       if (!payload?.success) {
         throw new Error(payload?.message || t("costComparison.saveError"));
       }
       setSaveMessage(t("costComparison.saveSuccess"));
-      setConfig(normalizeConfig(payload.data as CostComparisonConfig));
+      const nextConfig = normalizeConfig(payload.data as CostComparisonConfig);
+      selectedMasterPortfolioIdRef.current =
+        nextConfig.master_portfolio_id ?? null;
+      setConfig(nextConfig);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : t("costComparison.saveError"),
@@ -389,7 +413,10 @@ export function CostComparisonTab() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          ...config,
+          master_portfolio_id: getSelectedMasterPortfolioId(),
+        }),
       });
       const payload = await response.json();
       if (!payload?.success) {
@@ -1584,6 +1611,7 @@ function MasterPortfolioField({
         className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none"
         data-testid={testId}
         value={value}
+        onInput={(event) => onChange(event.currentTarget.value)}
         onChange={(event) => onChange(event.target.value)}
       >
         {options.length === 0 ? <option value="">-</option> : null}

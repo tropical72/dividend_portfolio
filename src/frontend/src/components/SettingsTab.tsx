@@ -294,18 +294,15 @@ export function SettingsTab({
         string,
         unknown
       >;
-      const {
-        monthly_fixed_cost: _legacyMonthlyFixedCost,
-        ...normalizedCorpParams
-      } = rawCorpParams;
+      const normalizedCorpParams = { ...rawCorpParams };
+      delete normalizedCorpParams.monthly_fixed_cost;
       setRetireConfig({
         ...JSON.parse(JSON.stringify(globalRetireConfig)),
         corp_params: {
           ...normalizedCorpParams,
           monthly_bookkeeping_fee:
             globalRetireConfig.corp_params?.monthly_bookkeeping_fee ??
-            Number(rawCorpParams.monthly_fixed_cost ?? 0) ??
-            0,
+            Number(rawCorpParams.monthly_fixed_cost ?? 0),
           annual_corp_tax_adjustment_fee:
             globalRetireConfig.corp_params?.annual_corp_tax_adjustment_fee ?? 0,
         },

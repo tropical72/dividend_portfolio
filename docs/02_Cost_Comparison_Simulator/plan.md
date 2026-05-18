@@ -146,15 +146,15 @@
     - [x] **T-CCS-10.1.1** 비용 비교가 저장된 `master_portfolio_id`를 기준으로 실행되어야 한다는 요구사항을 `REQ-CCS-25`로 명시한다.
     - [x] **T-CCS-10.1.2** 선택/저장/실행/깨진 참조 차단 테스트 기준을 `TEST-CCS-101`로 정의하고 `trace_matrix`에 등록한다.
 - **T-CCS-10.2: [Backend] Master Portfolio 선택값 저장 및 실행 주입**
-    - [ ] **T-CCS-10.2.1** `cost_comparison_config.json`에 비용 비교 전용 `master_portfolio_id` 필드를 추가하고 하위 호환 기본값을 정의한다.
-    - [ ] **T-CCS-10.2.2** 비교 실행 API가 저장된 `master_portfolio_id`를 우선 사용하고, 미설정 시 활성 master portfolio로 fallback하도록 한다.
-    - [ ] **T-CCS-10.2.3** 선택된 master portfolio 또는 내부 참조가 깨진 경우 명시적 오류를 반환하고 임의 수익률 fallback을 금지한다.
+    - [x] **T-CCS-10.2.1** `cost_comparison_config.json`에 비용 비교 전용 `master_portfolio_id` 필드를 추가하고 하위 호환 기본값을 정의한다.
+    - [x] **T-CCS-10.2.2** 비교 실행 API가 저장된 `master_portfolio_id`를 우선 사용하고, 미설정 시 활성 master portfolio로 fallback하도록 한다.
+    - [x] **T-CCS-10.2.3** 선택된 master portfolio 또는 내부 참조가 깨진 경우 명시적 오류를 반환하고 임의 수익률 fallback을 금지한다.
 - **T-CCS-10.3: [Frontend] 기준 Master Portfolio 선택 UI**
-    - [ ] **T-CCS-10.3.1** 비용 비교 입력 영역에 저장된 master portfolio 목록과 현재 선택 전략을 표시한다.
-    - [ ] **T-CCS-10.3.2** 선택 변경 시 `master_portfolio_id`를 비용 비교 설정에 저장하고, 실행 결과 assumptions 영역에 실제 사용 전략명을 표시한다.
+    - [x] **T-CCS-10.3.1** 비용 비교 입력 영역에 저장된 master portfolio 목록과 현재 선택 전략을 표시한다.
+    - [x] **T-CCS-10.3.2** 선택 변경 시 `master_portfolio_id`를 비용 비교 설정에 저장하고, 실행 결과 assumptions 영역에 실제 사용 전략명을 표시한다.
 - **T-CCS-10.4: [Validation] Master Portfolio 기반 실행 정합성 검증**
-    - [ ] **T-CCS-10.4.1** 서로 다른 DY를 가진 두 master portfolio를 준비하고 선택값에 따라 비교 결과의 `DY/TR/총수익`이 바뀌는지 API 테스트로 검증한다.
-    - [ ] **T-CCS-10.4.2** Playwright로 master portfolio 선택, 저장, 재로드, 실행 결과 assumptions 표시를 검증한다.
+    - [x] **T-CCS-10.4.1** 서로 다른 DY를 가진 두 master portfolio를 준비하고 선택값에 따라 비교 결과의 `DY/TR/총수익`이 바뀌는지 API 테스트로 검증한다.
+    - [x] **T-CCS-10.4.2** Playwright로 master portfolio 선택, 저장, 재로드, 실행 결과 assumptions 표시를 검증한다.
 
 ### [Phase 11] 법인 운영비 입력 분리 및 세무 비용 반영 (T-CCS-11) [NEW]
 - **T-CCS-11.1: [Docs] 운영비 입력 모델 분리 기준 정의**
