@@ -1256,7 +1256,7 @@ export function SettingsTab({
                           <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                             {category}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 2xl:grid-cols-3 gap-4">
                             <InputGroup
                               label={t("settings.distributionGrowthRate")}
                               unit="% / Yr"
@@ -1461,7 +1461,7 @@ export function SettingsTab({
                           <div className="text-xs font-black uppercase tracking-widest text-slate-300">
                             {category}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 2xl:grid-cols-3 gap-4">
                             <InputGroup
                               label={t("settings.distributionGrowthRate")}
                               unit="% / Yr"
@@ -2402,7 +2402,7 @@ function InputGroup({
             setInputValue(formatDisplayValue(normalized));
             onChange(normalized);
           }}
-          className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
+          className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 pr-16 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
         />
         {(isCurrency || unit) && (
           <span
