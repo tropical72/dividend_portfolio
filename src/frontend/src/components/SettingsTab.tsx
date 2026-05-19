@@ -185,14 +185,20 @@ function formatDecimalDraft(value: number, fractionDigits = 1) {
   return value.toFixed(fractionDigits).replace(/\.?0+$/, "");
 }
 
-function formatPercentValue(value: number | null | undefined, fractionDigits = 1) {
+function formatPercentValue(
+  value: number | null | undefined,
+  fractionDigits = 1,
+) {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "N/A";
   }
   return `${formatDecimalDraft(value * 100, fractionDigits)}%`;
 }
 
-function categoryDividendYield(portfolio: Portfolio | undefined, category: string) {
+function categoryDividendYield(
+  portfolio: Portfolio | undefined,
+  category: string,
+) {
   if (!portfolio?.items?.length) return null;
   let weightedYield = 0;
   let categoryWeight = 0;
@@ -468,7 +474,8 @@ export function SettingsTab({
     const currentRules = normalizeDistributionRules(
       retireConfig.distribution_rules,
     );
-    const normalizedValue = rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
+    const normalizedValue =
+      rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
     if (accountKey === "corp") {
       const corpCategory = category as CorporateStrategyCategory;
       const currentCategoryRules = currentRules.corp[corpCategory] ?? {};
@@ -506,7 +513,8 @@ export function SettingsTab({
     const currentOverrides = normalizeDistributionYieldOverrides(
       retireConfig.distribution_yield_overrides,
     );
-    const normalizedValue = rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
+    const normalizedValue =
+      rawValue === "" ? 0 : (parseFloat(rawValue) || 0) / 100;
 
     if (accountKey === "corp") {
       const corpCategory = category as CorporateStrategyCategory;
@@ -1176,6 +1184,43 @@ export function SettingsTab({
               </button>
             </div>
 
+            <div
+              className="rounded-[2rem] border border-violet-500/30 bg-violet-950/20 p-6"
+              data-testid="os-v11-summary-card"
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-2xl border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-violet-200">
+                  OS v11.1
+                </div>
+                <h4
+                  className={cn(
+                    isKorean
+                      ? "text-sm font-bold tracking-normal text-slate-100"
+                      : "text-xs font-black uppercase tracking-widest text-slate-100",
+                  )}
+                >
+                  {t("settings.osV11Title")}
+                </h4>
+              </div>
+              <p className="max-w-5xl text-xs font-semibold leading-relaxed text-slate-300">
+                {t("settings.osV11Body")}
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {[
+                  t("settings.osV11PointAssets"),
+                  t("settings.osV11PointAccounts"),
+                  t("settings.osV11PointCalendar"),
+                ].map((point) => (
+                  <div
+                    key={point}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-[11px] font-semibold leading-relaxed text-slate-300"
+                  >
+                    {point}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="bg-slate-950/40 rounded-[2rem] border border-slate-800 p-6 space-y-5">
               <div className="flex items-center justify-between gap-4">
                 <h4
@@ -1352,8 +1397,7 @@ export function SettingsTab({
                           yieldOverrides,
                           category,
                         );
-                      const yieldOverride =
-                        yieldOverrides[category] ?? 0;
+                      const yieldOverride = yieldOverrides[category] ?? 0;
                       return (
                         <div
                           key={category}
@@ -1565,8 +1609,7 @@ export function SettingsTab({
                           yieldOverrides,
                           category,
                         );
-                      const yieldOverride =
-                        yieldOverrides[category] ?? 0;
+                      const yieldOverride = yieldOverrides[category] ?? 0;
                       return (
                         <div
                           key={category}

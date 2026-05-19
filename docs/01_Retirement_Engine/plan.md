@@ -146,6 +146,7 @@
   - [x] **T-01-13.2.1** 법인 `november_sgov_target_months`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
   - [x] **T-01-13.2.2** 연금 `sgov_target/floor`, `bond_floor/target/upper`를 Settings에서 수정 가능하게 노출한다.
   - [x] **T-01-13.2.3** Settings 저장/재로드 E2E가 신규 노출 필드를 검증하도록 확장한다.
+  - [x] **T-01-13.2.4** Settings 전략 규칙 섹션에 OS v11.1 핵심 운용 정책 설명 카드를 추가한다.
 
 ### [Phase 14] 자산군 수익률 월 변환 정밀화 (T-01-14) - DONE
 

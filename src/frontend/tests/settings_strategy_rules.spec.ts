@@ -34,6 +34,10 @@ test.describe("Settings Strategy Rules", () => {
 
   test("should render and persist strategy rules", async ({ page }) => {
     await expect(page.getByTestId("strategy-rules-section")).toBeVisible();
+    await expect(page.getByTestId("os-v11-summary-card")).toBeVisible();
+    await expect(page.getByTestId("os-v11-summary-card")).toContainText(
+      /OS v11\.1|운용 정책/,
+    );
 
     const rebalanceMonthInput = page
       .getByTestId("input-group-rebalance-month")
@@ -196,14 +200,10 @@ test.describe("Settings Strategy Rules", () => {
     request,
   }) => {
     const corpDividendGrowthInput = page
-      .getByTestId(
-        "input-group-corp-dividend-growth-distribution-growth-rate",
-      )
+      .getByTestId("input-group-corp-dividend-growth-distribution-growth-rate")
       .locator("input");
     const corpGrowthEngineInput = page
-      .getByTestId(
-        "input-group-corp-growth-engine-distribution-growth-rate",
-      )
+      .getByTestId("input-group-corp-growth-engine-distribution-growth-rate")
       .locator("input");
     const corpGrowthStressCutInput = page
       .getByTestId(
@@ -247,8 +247,7 @@ test.describe("Settings Strategy Rules", () => {
     expect(configResponse.ok()).toBeTruthy();
     const configPayload = await configResponse.json();
     expect(
-      configPayload.data.distribution_rules.corp["Dividend Growth"]
-        .growth_rate,
+      configPayload.data.distribution_rules.corp["Dividend Growth"].growth_rate,
     ).toBeCloseTo(1.0);
     expect(
       configPayload.data.distribution_rules.corp["Growth Engine"].growth_rate,
@@ -274,6 +273,8 @@ test.describe("Settings Strategy Rules", () => {
     expect(simulationPayload.success).toBeTruthy();
     expect(
       simulationPayload.data.monthly_data[1].corp_realized_income,
-    ).toBeGreaterThan(simulationPayload.data.monthly_data[0].corp_realized_income);
+    ).toBeGreaterThan(
+      simulationPayload.data.monthly_data[0].corp_realized_income,
+    );
   });
 });

@@ -149,6 +149,8 @@
   - `strategy_rules` 일부 필드만 저장해도 백엔드가 나머지 기본값을 유지하는지 확인.
 - **[TEST-UI-RULE-05] 재로드 지속성:**
   - Settings에서 수정한 `rebalance_month`, `corporate.sgov_target_months`, `corporate.november_sgov_target_months`, `corporate.bond_*_months`, `pension.sgov_target_months`, `pension.sgov_floor_months`, `pension.bond_*_months` 값이 저장 후 재로드 시 유지되는지 확인.
+- **[TEST-UI-RULE-05a] OS v11.1 설명 카드:**
+  - Settings 전략 규칙 섹션에 OS v11.1 설명 카드가 노출되고, 법인/연금 운용 구분과 자산군 역할 요약을 확인할 수 있는지 검증한다.
 - **[TEST-UI-RULE-06] Step 2 규칙 요약 노출:**
   - `Projection Result` 영역에 실제 적용된 `Rebalance Month`, `Corp SGOV`, `Pension SGOV` 요약 배지가 렌더링되는지 확인.
 - **[TEST-UI-RULE-07] 사용자 노출 Assumption 프리셋 정규화 [NEW]:**

@@ -276,6 +276,15 @@ const translations = {
     "settings.strategyRules": "Strategy Rules",
     "settings.strategyRulesTooltip":
       "Expose the stock-plan defaults as user settings and tune buffers, floors, and annual execution policy.",
+    "settings.osV11Title": "What this simulator models",
+    "settings.osV11Body":
+      "OS v11.1 is the operating policy behind this app. It separates corporate and pension assets, withdraws monthly spending only from SGOV cash buffers, and uses scheduled reviews to refill buffers or rebalance risk assets.",
+    "settings.osV11PointAssets":
+      "Asset roles: SGOV cash buffer, Bond buffer, High Income, Dividend Growth, and Growth Engine.",
+    "settings.osV11PointAccounts":
+      "Account split: corporate assets cover salary, household cashflow, tax, and buffer reviews; pension assets follow pension withdrawal and floor-refill rules.",
+    "settings.osV11PointCalendar":
+      "Calendar: main annual review in May by default, corporate follow-up in November, with stress and inflation decisions reflected in the simulation.",
     "settings.resetAll": "Reset All",
     "settings.executionPolicy": "Execution Policy",
     "settings.reset": "Reset",
@@ -959,6 +968,15 @@ const translations = {
     "settings.strategyRules": "전략 규칙",
     "settings.strategyRulesTooltip":
       "stock-plan 기본 전략을 사용자 설정으로 노출하고 계좌별 규칙을 조정합니다.",
+    "settings.osV11Title": "이 시뮬레이터가 구현한 운용 정책",
+    "settings.osV11Body":
+      "OS v11.1은 이 앱의 기본 운용 정책입니다. 법인 자산과 연금 자산을 분리하고, 월 생활비 인출은 SGOV 현금 버퍼에서만 수행하며, 정기점검 때 버퍼 보충과 위험자산 리밸런싱을 판단합니다.",
+    "settings.osV11PointAssets":
+      "자산 역할: SGOV 현금 버퍼, Bond 버퍼, High Income, Dividend Growth, Growth Engine.",
+    "settings.osV11PointAccounts":
+      "계좌 구분: 법인은 급여·가계현금흐름·세금·버퍼 점검을 담당하고, 연금은 연금 인출과 floor 보충 규칙을 따릅니다.",
+    "settings.osV11PointCalendar":
+      "운용 달력: 기본 5월 메인 정기점검, 11월 법인 후속점검, Stress 및 인플레이션 결정을 시뮬레이션에 반영합니다.",
     "settings.resetAll": "전체 복구",
     "settings.executionPolicy": "실행 정책",
     "settings.reset": "복구",

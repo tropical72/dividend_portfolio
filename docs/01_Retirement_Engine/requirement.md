@@ -114,6 +114,9 @@
 - **[REQ-RAMS-8.2] 계좌별 전략 설정 UI:**
   - 연금 계좌용 설정과 법인 계좌용 설정을 시각적으로 분리하여 제공한다.
   - 각 설정은 설명 툴팁과 기본값 복원 기능을 포함한다.
+- **[REQ-RAMS-8.2.1] OS v11.1 설명 노출:** Settings 화면은 사용자가 이 프로그램이 `OS v11.1` 운용 정책을 시뮬레이션한다는 사실을 이해할 수 있도록 짧은 설명 카드를 제공해야 한다.
+  - 설명은 법인/연금 계좌 구분, 5단 자산 역할, SGOV-only 월 인출, 정기점검 기반 버퍼 보충/리밸런싱을 핵심만 요약한다.
+  - 설명은 설정 입력을 방해하지 않도록 전략 규칙 섹션의 안내 카드 수준으로 제공한다.
 - **[REQ-RAMS-8.3] 시뮬레이션 프로필 구조화:** 기존 Settings 화면은 단순 입력 목록이 아니라 `User Profile / Pension / Corporate / Strategy Rules / Assumptions / Events` 등 구조화된 섹션으로 재편될 수 있어야 한다.
   - `Sim Control` 섹션에서 `household_monthly_need`(월 가계필요비용), `simulation_years`, `simulation_start_year`, `simulation_start_month`를 수정할 수 있어야 한다.
 - **[REQ-RAMS-8.3.0] 법인필요비용 파생값 노출:** `Corporate` 섹션에는 `월 기장비 + 연 세무조정료/12`로 계산한 `법인필요비용`을 읽기 전용으로 즉시 표시해야 한다.
