@@ -254,7 +254,6 @@ function AppShell({
             <PortfolioTab
               items={designItems}
               setItems={setDesignItems}
-              activeTab={activeTab}
               globalSettings={safeSettings}
               accountType={designAccountType}
               setAccountType={setDesignAccountType}

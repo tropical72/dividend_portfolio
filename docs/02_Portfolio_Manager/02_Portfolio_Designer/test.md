@@ -17,6 +17,10 @@
 - **[TEST-PRT-01.6] 버퍼 개월 수 환산 입력:**
   - SGOV Buffer 또는 Bond Buffer 항목 추가/수정 시 개월 수를 입력하면 `개월 수 × 월 필요현금 ÷ 총 투자금 × 100`으로 비중(%)이 즉시 환산되는지 확인한다.
   - 환산된 비중이 저장 payload의 `weight` 값으로 반영되는지 확인한다.
+- **[TEST-PRT-03.1.1] 계좌별 설정 투자금 기준:**
+  - Portfolio Designer 진입 시 Corporate 선택 상태에서는 `corp_params.initial_investment`가 KRW 입력값으로 표시되는지 확인한다.
+  - Pension으로 전환하면 `pension_params.initial_investment + severance_reserve + other_reserve`가 KRW 입력값으로 표시되는지 확인한다.
+  - USD 필드는 사용자가 직접 입력하는 기준값이 아니라 현재 환율 기준 환산값으로 표시되는지 확인한다.
 - **[TEST-PRT-03.6] 설계 화면 월별 배당 그래프:**
   - Portfolio Designer에서 현재 종목의 `payment_months`와 `last_div_amount` 기준 월별 배당금 막대 그래프가 렌더링되는지 확인한다.
   - 투자금 또는 종목 비중을 변경하면 그래프 금액이 같은 계산식으로 갱신되는지 확인한다.

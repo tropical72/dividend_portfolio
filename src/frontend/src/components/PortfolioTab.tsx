@@ -46,14 +46,12 @@ import { PortfolioDashboard } from "./PortfolioDashboard";
 export function PortfolioTab({
   items,
   setItems,
-  activeTab,
   globalSettings,
   accountType,
   setAccountType,
 }: {
   items: PortfolioItem[];
   setItems: React.Dispatch<React.SetStateAction<PortfolioItem[]>>;
-  activeTab: string;
   globalSettings: AppSettings | null;
   accountType: AccountType;
   setAccountType: React.Dispatch<React.SetStateAction<AccountType>>;
@@ -95,9 +93,9 @@ export function PortfolioTab({
         reset: "새로만들기",
         savePortfolio: "포트폴리오 저장",
         simulationSettings: "시뮬레이션 설정",
-        totalCapitalUsd: "총 투자금 (USD)",
+        totalCapitalUsd: "환산 투자금 (USD)",
         totalCapitalKrw: "총 투자금 (KRW)",
-        usdAmount: "USD 금액",
+        usdAmount: "USD 환산액",
         krwAmount: "KRW 금액",
         dailySync: "실시간 반영",
         expectedIncome: "예상 현금흐름 (세전)",
@@ -168,9 +166,9 @@ export function PortfolioTab({
         reset: "Reset",
         savePortfolio: "Save Portfolio",
         simulationSettings: "Simulation Settings",
-        totalCapitalUsd: "Total Capital (USD)",
+        totalCapitalUsd: "Converted Capital (USD)",
         totalCapitalKrw: "Total Capital (KRW)",
-        usdAmount: "USD Amount",
+        usdAmount: "Converted USD Amount",
         krwAmount: "KRW Amount",
         dailySync: "Daily Sync",
         expectedIncome: "Expected Income (Tax-Excl.)",
@@ -354,20 +352,8 @@ export function PortfolioTab({
       );
       const currentRate = globalSettings.current_exchange_rate || 1425.5;
       setExchangeRate(currentRate);
-
-      // 포트폴리오 탭이 활성화되고, 기존 포트폴리오 로드가 아닌 "새 설계" 상태일 때만 기본값 적용
-      if (activeTab === "portfolio" && !portfolioId) {
-        if (globalSettings.default_capital) {
-          const capital = globalSettings.default_capital;
-          if (globalSettings.default_currency === "KRW") {
-            setCapitalUsd(capital / currentRate);
-          } else {
-            setCapitalUsd(capital);
-          }
-        }
-      }
     }
-  }, [activeTab, portfolioId, globalSettings]);
+  }, [globalSettings]);
 
   useEffect(() => {
     let cancelled = false;
@@ -436,27 +422,54 @@ export function PortfolioTab({
     return (weight / 100) * (totalCapitalKrw / monthlyNeedKrw);
   };
 
-  const getDefaultCapitalUsdForAccount = useCallback(
+  const getDefaultCapitalKrwForAccount = useCallback(
     (nextAccountType: AccountType) => {
-      if (!retirementConfig || exchangeRate <= 0) {
+      if (!retirementConfig) {
         return 0;
       }
 
-      const capitalKrw =
-        nextAccountType === "Pension"
-          ? retirementConfig.pension_params.initial_investment
-          : retirementConfig.corp_params.initial_investment;
-      return capitalKrw > 0 ? capitalKrw / exchangeRate : 0;
+      if (nextAccountType === "Pension") {
+        return (
+          (retirementConfig.pension_params.initial_investment || 0) +
+          (retirementConfig.pension_params.severance_reserve || 0) +
+          (retirementConfig.pension_params.other_reserve || 0)
+        );
+      }
+
+      return retirementConfig.corp_params.initial_investment || 0;
     },
-    [exchangeRate, retirementConfig],
+    [retirementConfig],
   );
 
-  const normalizeLoadedCapitalUsd = (p: Portfolio) => {
-    if (p.total_capital > 0) {
-      return p.total_capital;
+  const getDefaultCapitalUsdForAccount = useCallback(
+    (nextAccountType: AccountType) => {
+      if (exchangeRate <= 0) {
+        return 0;
+      }
+
+      const capitalKrw = getDefaultCapitalKrwForAccount(nextAccountType);
+      return capitalKrw > 0 ? capitalKrw / exchangeRate : 0;
+    },
+    [exchangeRate, getDefaultCapitalKrwForAccount],
+  );
+
+  const applySettingsCapitalForAccount = useCallback(
+    (nextAccountType: AccountType) => {
+      const defaultCapitalUsd = getDefaultCapitalUsdForAccount(nextAccountType);
+      if (defaultCapitalUsd > 0) {
+        setCapitalUsd(defaultCapitalUsd);
+      }
+    },
+    [getDefaultCapitalUsdForAccount],
+  );
+
+  useEffect(() => {
+    if (activeSubTab !== "design") {
+      return;
     }
-    return getDefaultCapitalUsdForAccount(p.account_type || "Corporate");
-  };
+
+    applySettingsCapitalForAccount(accountType);
+  }, [accountType, activeSubTab, applySettingsCapitalForAccount, portfolioId]);
 
   const sanitizeDecimalInput = (value: string) => {
     const cleaned = value.replace(/[^0-9.]/g, "");
@@ -495,7 +508,7 @@ export function PortfolioTab({
     setPortfolioId(p.id);
     setPortfolioName(p.name);
     setAccountType(p.account_type || "Corporate");
-    setCapitalUsd(normalizeLoadedCapitalUsd(p));
+    applySettingsCapitalForAccount(p.account_type || "Corporate");
     setWeightInputDrafts({});
     setRunwayInputDrafts({});
     setItems(p.items);
@@ -508,11 +521,8 @@ export function PortfolioTab({
       return;
     }
 
-    const fallbackCapitalUsd = getDefaultCapitalUsdForAccount(accountType);
-    if (fallbackCapitalUsd > 0) {
-      setCapitalUsd(fallbackCapitalUsd);
-    }
-  }, [portfolioId, capitalUsd, accountType, getDefaultCapitalUsdForAccount]);
+    applySettingsCapitalForAccount(accountType);
+  }, [portfolioId, capitalUsd, accountType, applySettingsCapitalForAccount]);
 
   /** 수동 종목 추가 실행 */
   const handleAddManualItem = () => {
@@ -633,12 +643,6 @@ export function PortfolioTab({
   };
 
   /** 통화별 입력 핸들러 [REQ-PRT-03.1, 03.2] */
-  const handleUsdChange = (val: string) => {
-    const cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
-    const num = parseFloat(cleanVal) || 0;
-    setCapitalUsd(num);
-  };
-
   const handleKrwChange = (val: string) => {
     const cleanVal = val.replace(/,/g, "").replace(/[^0-9.]/g, "");
     const num = parseFloat(cleanVal) || 0;
@@ -659,7 +663,7 @@ export function PortfolioTab({
       setPortfolioName(copy.defaultName);
       setTempPortfolioName(copy.defaultName);
       setAccountType("Corporate");
-      setCapitalUsd(10000);
+      setCapitalUsd(getDefaultCapitalUsdForAccount("Corporate") || 0);
       showStatus(copy.resetDone, "success");
     }
   };
@@ -1111,29 +1115,13 @@ export function PortfolioTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <label className="ml-1 text-xs font-semibold tracking-[0.08em] text-slate-500">
-                    {copy.totalCapitalUsd}
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      placeholder={copy.usdAmount}
-                      value={Math.round(capitalUsd).toLocaleString()}
-                      onChange={(e) => handleUsdChange(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xl font-semibold text-slate-800 outline-none transition-all focus:border-emerald-300"
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 font-semibold text-slate-500">
-                      $
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="ml-1 text-xs font-semibold tracking-[0.08em] text-slate-500">
                     {copy.totalCapitalKrw}
                   </label>
                   <div className="relative group">
                     <input
                       type="text"
                       placeholder={copy.krwAmount}
+                      data-testid="portfolio-design-capital-krw-input"
                       value={Math.round(
                         capitalUsd * exchangeRate,
                       ).toLocaleString()}
@@ -1142,6 +1130,24 @@ export function PortfolioTab({
                     />
                     <span className="absolute right-5 top-1/2 -translate-y-1/2 font-semibold text-slate-500">
                       ₩
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="ml-1 text-xs font-semibold tracking-[0.08em] text-slate-500">
+                    {copy.totalCapitalUsd}
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder={copy.usdAmount}
+                      data-testid="portfolio-design-capital-usd-display"
+                      value={Math.round(capitalUsd).toLocaleString()}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-xl font-semibold text-slate-500 outline-none"
+                    />
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 font-semibold text-slate-500">
+                      $
                     </span>
                   </div>
                 </div>

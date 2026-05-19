@@ -30,6 +30,11 @@
 ## [REQ-PRT-03] 통합 시뮬레이션 엔진 (Simulation) [REQ-07, 08]
 
 - **[REQ-PRT-03.1] 통화 이원화 입력:** 총 투자금액을 USD 또는 KRW 구역에 입력 가능.
+- **[REQ-PRT-03.1.1] 계좌별 설정 투자금 기준:** Portfolio Designer의 시뮬레이션 총 투자금 기본값은 전역 기본 투자금이 아니라 은퇴 설정의 계좌별 원화 투자금을 사용해야 한다.
+  - Corporate 선택 시 `corp_params.initial_investment`를 사용한다.
+  - Pension 선택 시 `pension_params.initial_investment + severance_reserve + other_reserve`를 사용한다.
+  - 화면 입력의 기준 통화는 KRW이며, USD는 현재 환율 기준 환산값으로 표시한다.
+  - 저장된 포트폴리오를 불러오더라도 설계 화면 시뮬레이션 투자금은 현재 선택 계좌의 설정 투자금을 기준으로 재계산한다.
 - **[REQ-PRT-03.2] 실시간 환율 연산:** 한쪽 통화 입력 시 즉시 현재 환율을 적용하여 다른 쪽 통화로 변환 표시 (환율 수치 병기).
 - **[REQ-PRT-03.3] 분석 모드 전환:** '과거 이력(TTM)' 또는 '미래 예측(Forward)' 모드 중 선택하여 시뮬레이션 수행.
 - **[REQ-PRT-03.4] 분석 결과 보고:** 카테고리별 및 전체에 대해 **가중 평균 배당률(Dividend Yield)**을 메인 지표로 표시하며, 은퇴 시뮬레이션용 **총수익률(TR)**은 PA 합산 수치임을 명시하여 병기한다. (세전 기준)

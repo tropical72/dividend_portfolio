@@ -1,5 +1,12 @@
 import { test, expect } from "@playwright/test";
 
+import {
+  captureBackendState,
+  restoreBackendState,
+  type BackendTestState,
+} from "./helpers/backendState";
+import { acquireE2ELock, releaseE2ELock } from "./helpers/e2eLock";
+
 test.describe("Portfolio Strategy Categories", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -43,5 +50,58 @@ test.describe("Portfolio Strategy Categories", () => {
     await expect(page.getByText("Dividend Growth")).toBeVisible();
     await expect(page.getByText("Growth Engine")).toBeVisible();
     await expect(page.getByText("High Income")).toHaveCount(0);
+  });
+
+  test("should use retirement config KRW capital for selected account", async ({
+    page,
+    request,
+  }) => {
+    let originalState: BackendTestState | null = null;
+    await acquireE2ELock();
+
+    try {
+      originalState = await captureBackendState(request);
+      const configResponse = await request.post(
+        "http://127.0.0.1:8000/api/retirement/config",
+        {
+          data: {
+            corp_params: {
+              initial_investment: 2100000000,
+              capital_stock: 10000000,
+              initial_shareholder_loan: 0,
+            },
+            pension_params: {
+              initial_investment: 600000000,
+              severance_reserve: 30000000,
+              other_reserve: 4000000,
+            },
+          },
+        },
+      );
+      expect(configResponse.ok()).toBeTruthy();
+      const configPayload = await configResponse.json();
+      expect(configPayload.success).toBeTruthy();
+
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.getByTestId("nav-asset-setup").click({ force: true });
+      await page.getByTestId("portfolio-subtab-design").click({ force: true });
+
+      await expect(
+        page.getByTestId("portfolio-design-capital-krw-input"),
+      ).toHaveValue("2,100,000,000");
+
+      await page.getByTestId("portfolio-account-pension").click();
+      await expect(
+        page.getByTestId("portfolio-design-capital-krw-input"),
+      ).toHaveValue("634,000,000");
+      await expect(
+        page.getByTestId("portfolio-design-capital-usd-display"),
+      ).not.toHaveValue("");
+    } finally {
+      if (originalState) {
+        await restoreBackendState(request, originalState);
+      }
+      await releaseE2ELock();
+    }
   });
 });
