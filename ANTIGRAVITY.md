@@ -1,4 +1,4 @@
-# Gemini 협업 가이드 (Core Constitution)
+# Antigravity 협업 가이드 (Core Constitution)
 
 ## 1. 페르소나 및 핵심 원칙
 *   **신중한 코드 리뷰어:** 모든 변경은 최소한으로 유지한다. **기존 코드 수정 시 한 번에 30줄**을 초과하지 않으며, **신규 파일 생성 시 파일당 300줄** 이내로 제한한다. (Small Code 원칙 준수)
@@ -17,7 +17,7 @@
 *   **Zero-Regression Principle (CRITICAL):** 코드 완료 보고 전, 반드시 실제 개발 서버를 구동하여 화면 렌더링 및 주요 기능의 정상 동작을 확인해야 한다. 특히 '파란 화면만 나오는 현상(Runtime Error)'이 발생할 경우, 원인을 분석하여 'Key Knowledge' 섹션에 기록하고 동일 사례가 재발하지 않도록 테스트 케이스를 보강한다.
 *   **Dependency Maintenance (MUST):** 새로운 라이브러리를 설치하거나 환경을 변경할 경우, 반드시 `requirements.txt`(Python) 또는 `package.json`(Node.js)을 즉시 업데이트하여 환경의 재현성을 보장해야 한다.
 *   **Comprehensive Korean Comments (MUST):** 모든 코드에는 한글 주석을 충실하게 기입한다. 특히 클래스/함수의 역할(Docstring), 복잡한 로직의 이유, 주요 변수의 의미를 명확히 설명해야 한다.
-*   **Structure Maintenance (MUST):** 프로젝트의 디렉토리 구조가 변경될 경우, 반드시 `GEMINI.md`의 '4. 프로젝트 디렉토리 구조' 섹션을 즉시 업데이트하여 최신 상태를 유지해야 한다.
+*   **Structure Maintenance (MUST):** 프로젝트의 디렉토리 구조가 변경될 경우, 반드시 `ANTIGRAVITY.md`의 '4. 프로젝트 디렉토리 구조' 섹션을 즉시 업데이트하여 최신 상태를 유지해야 한다.
 *   **Typography Policy (CRITICAL):** 시스템의 모든 UI 요소는 **최소 11px 이상의 폰트 사이즈**를 유지해야 한다. (`text-[11px]` 미만 사용 절대 금지)
 *   **Visual Debugging Protocol (NEW):** 말로 설명하기 어려운 UI/UX 문제는 다음 절차를 따른다.
     1.  사용자가 화면을 캡처하여 클립보드에 저장한다.
@@ -84,18 +84,17 @@
 
 ---
 
-## Development Context (Last Updated: 2026-05-01)
+## Development Context (Last Updated: 2026-06-12)
 
 ### 1. 현재 상태 Summary
+*   **Antigravity CLI 마이그레이션 완료**: Gemini CLI 지원 종료에 따라 신규 공식 도구인 Antigravity CLI로 프로젝트 설정 및 명칭을 전면 이관함.
 *   **Cost Comparison Simulator 1차 구현 완료**: 개인운용 vs 법인운용 비교 탭, 기준 포트폴리오 연동, KPI/차트/감사(Audit) 패널, 정책 메타 표시까지 문서 기준 주요 범위가 구현됨.
 *   **Asset-driven 확장 및 회귀 정리 완료**: Target-driven 외에 보유 자산 기반 비교 모드, 30년 장기 프로젝션, 순현금흐름 기준 우열 판정, 기본 진입 UX 정비가 반영됨. 관련 회귀 추적 ID(`TEST-CCS-94`~`99`)는 `docs/trace_matrix.md`에서 완료 상태로 정리됨.
 *   **공개 저장소 정리 완료**: `defaults/` 기본값과 사용자 로컬 런타임 데이터가 분리되었고, 루트 `README.md` 및 레거시/임시 자산 정리가 완료됨.
-*   **남은 백로그는 기능 확장/검증 중심**: 전역 다국어 토스트/에러 문자열 정리, 국민연금 설정 UI 보강, 자산군별 PA/국민연금 그래프 검증, AI Advisor, Analysis Graph가 후순위 작업으로 남아 있음.
 
 ### 2. 차기 작업 우선순위 (NEXT)
 *   **[T-GLB-13.4] 시뮬레이션 정교화 검증**:
     *   **목표**: 자산군별 기대주가상승률(PA) 차등 적용과 국민연금 입력값 변경이 실제 은퇴 시뮬레이션 결과에 합리적으로 반영되는지 자동/수동 검증한다.
-    *   **핵심**: `docs/00_RAMS_Global/plan.md`의 `T-GLB-13.4.1`, `T-GLB-13.4.2`를 테스트 기준으로 구체화한다.
 *   **[T-GLB-12.5.2] 사용자 노출 메시지 i18n 정리**:
     *   **목표**: 토스트, 에러, 경고 메시지의 문자열 출처를 번역 키 계층으로 정리하여 한국어/영어 혼용을 줄인다.
 *   **[Backlog] AI Advisor / Analysis Graph**:

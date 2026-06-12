@@ -4,7 +4,7 @@
 ## 1. CODE INTEGRITY (범용 절대 준수)
 * **[LIMIT] Small Code Rule:** 기존 코드 수정 시 **한 번에 30줄**, 신규 파일 생성 시 **300줄**을 1라인이라도 초과하는 것을 금지한다. 위반 시 즉시 작업을 중단하고 분할 계획을 수립하라.
 * **[TDD] Test-First Approach:** 언어와 프레임워크에 상관없이, 코드를 단 한 줄이라도 수정하기 전 반드시 실패하는 테스트 코드(Red)를 먼저 작성하고 실행 결과를 보고하라. 테스트 통과(Green)만이 작업 완료의 유일한 증거다.
-* **[QUALITY] Quality Gate MANDATE:** **해당 프로젝트의 `GEMINI.md`에 명시된** 정적 분석 및 테스트 명령(예: Ruff, ESLint, Gradle Lint 등)을 0개의 에러로 통과하라. 만약 명시되지 않았다면 해당 도메인의 산업 표준 도구를 스스로 찾아 적용하여 무결성을 증명하라.
+* **[QUALITY] Quality Gate MANDATE:** **해당 프로젝트의 `ANTIGRAVITY.md`에 명시된** 정적 분석 및 테스트 명령(예: Ruff, ESLint, Gradle Lint 등)을 0개의 에러로 통과하라. 만약 명시되지 않았다면 해당 도메인의 산업 표준 도구를 스스로 찾아 적용하여 무결성을 증명하라.
 * **[UI] Typography Policy:** 플랫폼에 관계없이 모든 UI 요소는 **가독성 최우선 수치(Web 기준 최소 11px)** 이상을 유지해야 한다. 사용자 경험을 해치는 미세 폰트 사용은 시스템 결함으로 간주한다.
 
 ## 2. SDD & WORKFLOW (절대 절차)
@@ -20,6 +20,6 @@
 
 ## 4. PRIORITY (우선순위)
 1. 이 `system.md`의 절대 명령 (Universal Constitution)
-2. 해당 프로젝트의 `GEMINI.md` (Project Specialization)
+2. 해당 프로젝트의 `ANTIGRAVITY.md` (Project Specialization)
 3. `docs/` 내의 글로벌 표준 문서
 4. 사용자의 개별 요청

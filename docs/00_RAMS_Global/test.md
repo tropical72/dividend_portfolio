@@ -39,6 +39,9 @@
 - **[TEST-SYS-STR-04] Retirement / Cost Comparison 시나리오 계산 정합성**
     - 시나리오: 동일 DY, 다른 카테고리 mix의 master portfolio 두 개를 비교할 때, 선택한 PA 시나리오에 따라 `PA / TR` 및 시뮬레이션 메타가 합리적으로 달라지는가?
 
+- **[TEST-SYS-MIG-01] Antigravity CLI 마이그레이션 검증**
+    - 시나리오: 프로젝트 내 `GEMINI.md`가 `ANTIGRAVITY.md`로 변경되었으며, 협업 가이드 내 모든 명칭이 Antigravity CLI로 갱신되었는가? 또한 `.gemini/` 폴더가 `.antigravity/`로 정상 변경되었는가?
+
 ## [Manual/UX] 수동 테스트
 - **[UX-SYS-03] 통합 실행 스크립트 (run_dev.py) 검증**
     - 체크리스트:

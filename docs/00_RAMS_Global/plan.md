@@ -118,5 +118,11 @@
     - [x] **T-GLB-16.4.2** 동일 DY, 다른 카테고리 mix에서 시나리오별 `PA / TR`이 달라지는지 Retirement/Cost Comparison 회귀로 검증한다.
     - [x] **T-GLB-16.4.3** Settings/Portfolio/Retirement/Cost Comparison UI에서 시나리오 전환이 즉시 반영되는지 빌드 및 Playwright로 검증한다.
 
+### [Phase 17] Antigravity CLI 마이그레이션 [NEW] - DONE
+- **T-GLB-17.1: [Docs/Structure] 협업 도구 명칭 및 설정 폴더 변경**
+    - [x] **T-GLB-17.1.1** `GEMINI.md`를 `ANTIGRAVITY.md`로 변경하고 내부 명칭을 치환한다.
+    - [x] **T-GLB-17.1.2** `.gemini/` 설정 폴더를 `.antigravity/`로 변경한다.
+    - [x] **T-GLB-17.1.3** 전역 요구사항/계획 문서 내 "Gemini CLI" 언급을 "Antigravity CLI"로 갱신한다.
+
 ---
-*마지막 업데이트: 2026-04-25 13:45:00*
+*마지막 업데이트: 2026-06-12 12:00:00*

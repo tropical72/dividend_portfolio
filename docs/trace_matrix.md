@@ -89,6 +89,7 @@
 | REQ-GLB-16   | 자산군별 PA 시나리오 3중화 (Phase 1)          | T-GLB-16.1 ~ T-GLB-16.4 | TEST-SYS-STR-02 / TEST-SYS-STR-03 | Done | 2608b2d           | 2026.05.15       |
 | REQ-SYS-03.5 | 공개 저장소 기본값과 로컬 런타임 데이터 분리  | T-GLB-14.1   | TEST-SYS-1.3.2   | Done        | 75902aa           | 2026.04.25-01.42 |
 | REQ-SYS-03.6 | 공개 저장소 진입 문서 및 레거시 자산 정리     | T-GLB-15.1   | TEST-SYS-QG-04   | Done        | 0cef9b8 / 1dc1cb1 | 2026.04.25-23.47 |
+| REQ-SYS-02.3 | Antigravity CLI 마이그레이션                  | T-GLB-17.1   | TEST-SYS-MIG-01  | Done        | -                 | 2026-06-12       |
 
 ---
 
