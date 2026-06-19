@@ -1222,3 +1222,113 @@ def test_stress_boost_follows_dynamic_main_review_month():
     assert june["crash20_triggered"] is False
     assert june["boost_amount"] == 1000000.0
     assert july["pension_draw"] == pytest.approx(3500000.0)
+
+
+def test_transfer_records_actual_sale_and_proportional_cost_basis():
+    engine = make_engine()
+    assets = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 120.0,
+        "Growth Engine": 0.0,
+    }
+    cost_basis = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 80.0,
+        "Growth Engine": 0.0,
+    }
+    trade_events = []
+
+    moved = engine._transfer(
+        assets,
+        "Dividend Growth",
+        "SGOV Buffer",
+        30.0,
+        account_key="personal",
+        sim_year=2026,
+        sim_month=5,
+        cost_basis=cost_basis,
+        trade_events=trade_events,
+    )
+
+    assert moved == pytest.approx(30.0)
+    assert cost_basis["Dividend Growth"] == pytest.approx(60.0)
+    assert cost_basis["SGOV Buffer"] == pytest.approx(30.0)
+    assert trade_events == [
+        {
+            "account": "personal",
+            "year": 2026,
+            "month": 5,
+            "from_category": "Dividend Growth",
+            "to_category": "SGOV Buffer",
+            "sale_proceeds": 30.0,
+            "cost_basis_sold": 20.0,
+            "realized_gain": 10.0,
+        }
+    ]
+
+
+def test_transfer_from_sgov_is_purchase_without_realized_sale():
+    engine = make_engine()
+    assets = {
+        "SGOV Buffer": 50.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 0.0,
+    }
+    cost_basis = dict(assets)
+    trade_events = []
+
+    engine._transfer(
+        assets,
+        "SGOV Buffer",
+        "Growth Engine",
+        20.0,
+        account_key="personal",
+        sim_year=2026,
+        sim_month=5,
+        cost_basis=cost_basis,
+        trade_events=trade_events,
+    )
+
+    assert cost_basis["SGOV Buffer"] == pytest.approx(30.0)
+    assert cost_basis["Growth Engine"] == pytest.approx(20.0)
+    assert trade_events == []
+
+
+def test_personal_taxable_account_uses_actual_rebalance_sales():
+    params = base_params()
+    params["simulation_start_month"] = 5
+    params["rebalance_month"] = 5
+    params["personal_withdrawal_target"] = 10.0
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {
+            "SGOV Buffer": 0.0,
+            "Bond Buffer": 0.0,
+            "High Income": 0.0,
+            "Dividend Growth": 0.0,
+            "Growth Engine": 1.0,
+        },
+        "category_return_rates": {
+            "Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        },
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0},
+        params=params,
+        months=1,
+    )
+
+    month = result["monthly_data"][0]
+    personal_events = [event for event in result["trade_events"] if event["account"] == "personal"]
+    assert month["personal_balance"] == pytest.approx(100.0)
+    assert month["personal_draw"] == pytest.approx(0.0)
+    assert sum(event["sale_proceeds"] for event in personal_events) == pytest.approx(100.0)

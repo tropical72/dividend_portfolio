@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Dict
 
 from src.core.tax_engine import TaxEngine
@@ -45,6 +46,7 @@ class ProjectionEngine:
         stats = params.get("portfolio_stats", {})
         corp_stats = stats.get("corp", {})
         pension_stats = stats.get("pension", {})
+        personal_stats = stats.get("personal", {})
         birth_year = int(p("birth_year", 1972))
         birth_month = int(p("birth_month", 8))
         private_pension_start_age = int(p("private_pension_start_age", 55))
@@ -56,6 +58,7 @@ class ProjectionEngine:
         inflation_rate = float(p("inflation_rate", 0.0))
         national_pension_amount = float(p("national_pension_amount", 2000000))
         pension_withdrawal_target = float(p("pension_withdrawal_target", 2500000))
+        personal_withdrawal_target = float(p("personal_withdrawal_target", 0.0))
         loan_balance = float(p("initial_shareholder_loan", 0.0))
         corp_salary = float(p("corp_salary", 0.0))
         monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", 0.0))
@@ -116,12 +119,34 @@ class ProjectionEngine:
             loan_balance=loan_balance,
             monthly_bookkeeping_fee=monthly_bookkeeping_fee,
         )
+        personal_assets = self._build_account_state(
+            initial_balance=float(initial_assets.get("personal", 0.0)),
+            account_type="personal",
+            account_stats=personal_stats,
+            phase=start_phase,
+            household_monthly_need=household_monthly_need,
+            pension_withdrawal_target=personal_withdrawal_target,
+            national_pension_amount=national_pension_amount,
+            corp_salary=corp_salary,
+            employee_count=employee_count,
+            loan_balance=loan_balance,
+            monthly_bookkeeping_fee=monthly_bookkeeping_fee,
+        )
         corp_distribution_run_rates = self._build_distribution_run_rates(
             "corp", corp_assets, corp_stats, params
         )
         pension_distribution_run_rates = self._build_distribution_run_rates(
             "pension", pension_assets, pension_stats, params
         )
+        personal_distribution_run_rates = self._build_distribution_run_rates(
+            "personal", personal_assets, personal_stats, params
+        )
+        self._active_cost_basis_by_account = {
+            "corp": dict(corp_assets),
+            "pension": dict(pension_assets),
+            "personal": dict(personal_assets),
+        }
+        self._active_trade_events: list[Dict[str, Any]] = []
 
         current_stress = False
         shock_flag = False
@@ -130,7 +155,11 @@ class ProjectionEngine:
         growth_sell_date = "None"
         sgov_exhaustion_date = "Permanent"
         survival_m = 0
-        crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+        crash20_base = (
+            self._equity_value(corp_assets)
+            + self._equity_value(pension_assets)
+            + self._equity_value(personal_assets)
+        )
         previous_may_total_assets = None
         corp_realized_income_by_year: Dict[int, float] = {}
         corp_deductible_expenses_by_year: Dict[int, float] = {}
@@ -161,6 +190,15 @@ class ProjectionEngine:
                 pension_assets,
                 pension_distribution_run_rates,
                 pension_stats,
+                params,
+                sim_year,
+                sim_month,
+            )
+            self._apply_monthly_returns(
+                "personal",
+                personal_assets,
+                personal_distribution_run_rates,
+                personal_stats,
                 params,
                 sim_year,
                 sim_month,
@@ -212,6 +250,9 @@ class ProjectionEngine:
             if pension_income > 0:
                 pension_draw = min(pension_income, pension_assets["SGOV Buffer"])
                 pension_assets["SGOV Buffer"] -= pension_draw
+
+            personal_draw = min(personal_withdrawal_target, personal_assets["SGOV Buffer"])
+            personal_assets["SGOV Buffer"] -= personal_draw
 
             corp_draw = min(corp_monthly_need, corp_assets["SGOV Buffer"])
             corp_assets["SGOV Buffer"] -= corp_draw
@@ -314,10 +355,56 @@ class ProjectionEngine:
                     corporate_rules=corporate_rules,
                     pension_rules=pension_rules,
                 )
+
+                self._fill_pension_sgov(
+                    personal_assets,
+                    personal_distribution_run_rates,
+                    personal_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    target_amount=personal_withdrawal_target * pension_rules["sgov_target_months"],
+                    monthly_need=personal_withdrawal_target,
+                    bond_upper_months=pension_rules["bond_upper_months"],
+                    bond_floor_months=pension_rules["bond_floor_months"],
+                    account_key="personal",
+                )
+                self._fill_bucket(
+                    personal_assets,
+                    personal_distribution_run_rates,
+                    "personal",
+                    personal_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    target_category="Bond Buffer",
+                    target_amount=personal_withdrawal_target * pension_rules["bond_target_months"],
+                    floor_amount=personal_withdrawal_target * pension_rules["bond_floor_months"],
+                    donor_order=("High Income", "Dividend Growth", "Growth Engine"),
+                )
+                self._cap_buffer_and_deploy_surplus(
+                    personal_assets,
+                    personal_distribution_run_rates,
+                    "personal",
+                    personal_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    sgov_cap=personal_withdrawal_target * pension_rules["sgov_target_months"],
+                    bond_cap=personal_withdrawal_target * pension_rules["bond_upper_months"],
+                )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
-                crash20_base = self._equity_value(corp_assets) + self._equity_value(pension_assets)
-                previous_may_total_assets = sum(corp_assets.values()) + sum(pension_assets.values())
+                crash20_base = (
+                    self._equity_value(corp_assets)
+                    + self._equity_value(pension_assets)
+                    + self._equity_value(personal_assets)
+                )
+                previous_may_total_assets = (
+                    sum(corp_assets.values())
+                    + sum(pension_assets.values())
+                    + sum(personal_assets.values())
+                )
                 shock_flag = False
             elif sim_month == corporate_mini_review_month:
                 self._run_august_corporate_review(
@@ -354,11 +441,31 @@ class ProjectionEngine:
                 pension_rules,
             )
 
-            total_net_worth = sum(corp_assets.values()) + sum(pension_assets.values())
+            self._run_pension_floor_refill(
+                personal_assets,
+                personal_distribution_run_rates,
+                personal_stats,
+                params,
+                sim_year,
+                sim_month,
+                personal_withdrawal_target,
+                pension_rules,
+                account_key="personal",
+            )
+
+            total_net_worth = (
+                sum(corp_assets.values())
+                + sum(pension_assets.values())
+                + sum(personal_assets.values())
+            )
             if total_net_worth <= 0:
                 break
 
-            equity_value = self._equity_value(corp_assets) + self._equity_value(pension_assets)
+            equity_value = (
+                self._equity_value(corp_assets)
+                + self._equity_value(pension_assets)
+                + self._equity_value(personal_assets)
+            )
             crash20_triggered = False
             if crash20_base > 0 and equity_value <= crash20_base * 0.8 and not shock_flag:
                 crash20_triggered = True
@@ -395,6 +502,7 @@ class ProjectionEngine:
             survival_m = index
             corp_balance = sum(corp_assets.values())
             pension_balance = sum(pension_assets.values())
+            personal_balance = sum(personal_assets.values())
             monthly_data.append(
                 {
                     "index": index,
@@ -405,12 +513,14 @@ class ProjectionEngine:
                     "total_net_worth": total_net_worth,
                     "corp_balance": corp_balance,
                     "pension_balance": pension_balance,
+                    "personal_balance": personal_balance,
                     "loan_balance": loan_balance,
                     "target_cashflow": current_total_need,
                     "next_target_cashflow": next_target_cashflow,
                     "net_salary": actual_net_salary,
                     "corp_draw": corp_draw,
                     "pension_draw": pension_draw,
+                    "personal_draw": personal_draw,
                     "corp_bookkeeping_paid": actual_bookkeeping_paid,
                     "corp_tax_adjustment_fee_paid": actual_tax_adjustment_fee_paid,
                     "corp_tax_payment": actual_corp_tax_payment,
@@ -434,6 +544,11 @@ class ProjectionEngine:
                     "pension_high_income_balance": pension_assets["High Income"],
                     "pension_dividend_balance": pension_assets["Dividend Growth"],
                     "pension_growth_balance": pension_assets["Growth Engine"],
+                    "personal_sgov_balance": personal_assets["SGOV Buffer"],
+                    "personal_bond_balance": personal_assets["Bond Buffer"],
+                    "personal_high_income_balance": personal_assets["High Income"],
+                    "personal_dividend_balance": personal_assets["Dividend Growth"],
+                    "personal_growth_balance": personal_assets["Growth Engine"],
                     "corp_sgov_months": corp_sgov_months,
                     "corp_bond_months": corp_bond_months,
                     "pension_sgov_months": pension_sgov_months,
@@ -461,6 +576,8 @@ class ProjectionEngine:
             },
             "survival_months": survival_m,
             "monthly_data": monthly_data,
+            "trade_events": list(getattr(self, "_active_trade_events", [])),
+            "ending_cost_basis": deepcopy(getattr(self, "_active_cost_basis_by_account", {})),
         }
 
     def _build_account_state(
@@ -1301,6 +1418,7 @@ class ProjectionEngine:
         monthly_need: float,
         bond_upper_months: float,
         bond_floor_months: float,
+        account_key: str = "pension",
     ) -> float:
         if target_amount <= 0:
             return 0.0
@@ -1313,7 +1431,7 @@ class ProjectionEngine:
             "SGOV Buffer",
             max(0.0, pension_assets["Bond Buffer"] - bond_upper),
             distribution_run_rates=pension_distribution_run_rates,
-            account_key="pension",
+            account_key=account_key,
             account_stats=account_stats,
             params=params,
             sim_year=sim_year,
@@ -1322,7 +1440,7 @@ class ProjectionEngine:
         growth_used += self._transfer_from_sequence(
             pension_assets,
             pension_distribution_run_rates,
-            "pension",
+            account_key,
             account_stats,
             params,
             sim_year,
@@ -1348,6 +1466,7 @@ class ProjectionEngine:
         sim_month: int,
         pension_withdrawal_target: float,
         pension_rules: Dict[str, float],
+        account_key: str = "pension",
     ) -> None:
         floor_amount = pension_withdrawal_target * pension_rules["sgov_floor_months"]
         if pension_withdrawal_target <= 0 or pension_assets["SGOV Buffer"] >= floor_amount:
@@ -1359,7 +1478,7 @@ class ProjectionEngine:
             "SGOV Buffer",
             needed,
             distribution_run_rates=pension_distribution_run_rates,
-            account_key="pension",
+            account_key=account_key,
             account_stats=pension_stats,
             params=params,
             sim_year=sim_year,
@@ -1585,9 +1704,33 @@ class ProjectionEngine:
         params: Dict[str, Any] | None = None,
         sim_year: int | None = None,
         sim_month: int | None = None,
+        cost_basis: Dict[str, float] | None = None,
+        trade_events: list[Dict[str, Any]] | None = None,
     ) -> float:
+        if cost_basis is None and account_key is not None:
+            cost_basis = getattr(self, "_active_cost_basis_by_account", {}).get(account_key)
+        if trade_events is None:
+            trade_events = getattr(self, "_active_trade_events", None)
         moved = min(max(0.0, amount), account_assets[from_category])
         pre_from_balance = account_assets[from_category]
+        if moved > 0 and cost_basis is not None:
+            pre_from_basis = max(0.0, cost_basis.get(from_category, 0.0))
+            basis_sold = pre_from_basis * moved / pre_from_balance if pre_from_balance > 0 else 0.0
+            cost_basis[from_category] = max(0.0, pre_from_basis - basis_sold)
+            cost_basis[to_category] = max(0.0, cost_basis.get(to_category, 0.0)) + moved
+            if from_category != "SGOV Buffer" and trade_events is not None:
+                trade_events.append(
+                    {
+                        "account": account_key,
+                        "year": sim_year,
+                        "month": sim_month,
+                        "from_category": from_category,
+                        "to_category": to_category,
+                        "sale_proceeds": moved,
+                        "cost_basis_sold": basis_sold,
+                        "realized_gain": moved - basis_sold,
+                    }
+                )
         account_assets[from_category] -= moved
         account_assets[to_category] += moved
         if moved > 0 and distribution_run_rates is not None:

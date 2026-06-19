@@ -950,6 +950,52 @@ export function SettingsTab({
                 />
               </div>
             </section>
+
+            <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">
+              <SectionTitle
+                icon={Wallet2}
+                title={t("settings.personalTaxableAccount")}
+                color="text-sky-400"
+                tooltip={t("settings.personalTaxableAccountTooltip")}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputGroup
+                  label={t("settings.initialCapital")}
+                  value={
+                    retireConfig.personal_account_params.initial_investment
+                  }
+                  isCurrency
+                  tooltip={t("settings.initialCapitalTooltip")}
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        initial_investment: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={t("settings.withdrawal")}
+                  value={
+                    retireConfig.personal_account_params
+                      .monthly_withdrawal_target
+                  }
+                  isCurrency
+                  tooltip={t("settings.personalTaxableWithdrawalTooltip")}
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        monthly_withdrawal_target: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </section>
           </div>
 
           <section className="bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800 space-y-6">

@@ -4,7 +4,7 @@
 
 export const TYPES_VERSION = "1.0.0";
 
-export type AccountType = "Corporate" | "Pension";
+export type AccountType = "Corporate" | "Pension" | "Personal";
 export type UiLanguage = "ko" | "en";
 export type PaScenarioKey = "conservative" | "base" | "optimistic";
 export type CorporateStrategyCategory =
@@ -98,9 +98,11 @@ export interface MasterPortfolio {
   name: string;
   corp_id: string | null;
   pension_id: string | null;
+  personal_id?: string | null;
   is_active: boolean;
   corp_name?: string;
   pension_name?: string;
+  personal_name?: string;
   combined_yield?: number;
   combined_tr?: number;
   broken_reference?: boolean;
@@ -186,6 +188,10 @@ export interface RetirementConfig {
     other_reserve: number;
     monthly_withdrawal_target: number;
   };
+  personal_account_params: {
+    initial_investment: number;
+    monthly_withdrawal_target: number;
+  };
   planned_cashflows: PlannedCashflow[];
   tax_and_insurance: {
     point_unit_price: number;
@@ -232,12 +238,14 @@ export interface MonthlySimulationData {
   total_net_worth: number;
   corp_balance: number;
   pension_balance: number;
+  personal_balance: number;
   loan_balance: number;
   target_cashflow: number;
   next_target_cashflow?: number;
   net_salary: number;
   corp_draw?: number;
   pension_draw?: number;
+  personal_draw?: number;
   shareholder_loan_payment?: number;
   household_shortfall?: number;
   boost_amount?: number;
@@ -334,6 +342,8 @@ export interface CostComparisonConfig {
     pa_scenario?: PaScenarioKey;
     simulation_years: number;
     target_monthly_household_cash_after_tax: number;
+    personal_capital_gains_tax_rate?: number;
+    personal_capital_gains_deduction?: number;
   };
   corporate: {
     salary_recipients: CostComparisonSalaryRecipient[];
@@ -407,6 +417,16 @@ export interface CostComparisonScenarioResult {
         effective_rate?: number;
         tax_rate_low?: number;
       };
+      investment_income?: {
+        dividend_income?: number;
+        unrealized_appreciation?: number;
+        realized_capital_gain?: number;
+        rebalance_sale_proceeds?: number;
+        cost_basis_sold?: number;
+        health_insurance_income?: number;
+        dividend_tax?: number;
+        capital_gains_tax?: number;
+      };
       operating_costs?: {
         monthly_bookkeeping_fee?: number;
         annual_corp_tax_adjustment_fee?: number;
@@ -449,6 +469,8 @@ export interface CostComparisonResult {
     pa_scenario?: PaScenarioKey;
     simulation_years: number;
     target_monthly_household_cash_after_tax: number;
+    personal_capital_gains_tax_rate?: number;
+    personal_capital_gains_deduction?: number;
     base_year: number;
     simulation_mode: "target" | "asset";
   };

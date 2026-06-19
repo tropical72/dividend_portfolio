@@ -47,6 +47,12 @@
 - **[TEST-PRT-09.4] 저장된 마스터 전략 이름 변경:**
   - `Manage & Compare` 리스트에서 저장된 마스터 전략 이름을 수정 후 저장하면 즉시 카드 제목과 API 응답에 반영되는지 확인한다.
 
+- **[TEST-PRT-10] 개인 일반계좌 통합 [NEW]:**
+  - Portfolio Designer에서 Personal 계좌 타입을 선택하고 5개 카테고리 포트폴리오를 저장/재로드한다.
+  - Personal 선택 시 personal_account_params.initial_investment가 설계 투자금 기준으로 적용된다.
+  - 마스터 전략에 personal_id를 저장하고 삭제 보호, 가중 DY/TR, 월별 배당 합계에 포함한다.
+  - Retirement 결과의 초기값, 월별 차트, 상세표에 personal_balance가 표시되고 total_net_worth에 포함된다.
+
 ## 2. Feature Completion Gate [NEW]
 
 - Portfolio Designer 관련 Frontend 변경은 커밋 전 `npm run lint`, `npm run build`, `npx prettier --check <changed_frontend_files>`를 통과해야 한다.

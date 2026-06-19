@@ -74,6 +74,10 @@
         "other_reserve": 0,
         "monthly_withdrawal_target": 1000000
     },
+    "personal_account_params": {
+        "initial_investment": 0,
+        "monthly_withdrawal_target": 0
+    },
     "personal_params": {
         "real_estate_price": 500000000,
         "other_assets": 0

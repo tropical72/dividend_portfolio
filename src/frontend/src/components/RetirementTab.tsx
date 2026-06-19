@@ -314,17 +314,20 @@ export function RetirementTab() {
       config.corp_params.initial_investment +
       config.pension_params.initial_investment +
       config.pension_params.severance_reserve +
-      config.pension_params.other_reserve,
+      config.pension_params.other_reserve +
+      config.personal_account_params.initial_investment,
     corp_balance: config.corp_params.initial_investment,
     pension_balance:
       config.pension_params.initial_investment +
       config.pension_params.severance_reserve +
       config.pension_params.other_reserve,
+    personal_balance: config.personal_account_params.initial_investment,
     loan_balance: config.corp_params.initial_shareholder_loan,
     target_cashflow: householdMonthlyNeed,
     net_salary: 0,
     corp_draw: 0,
     pension_draw: 0,
+    personal_draw: 0,
     is_initial_state: true,
   };
   const detailLogRows: DetailLogRow[] = [initialLedgerRow, ...monthlyData];
@@ -1389,7 +1392,9 @@ export function RetirementTab() {
                           ? t("retirement.chart.totalAssets")
                           : entry?.dataKey === "corp_balance"
                             ? t("retirement.chart.corpAssets")
-                            : name || t("retirement.chart.pensionAssets"),
+                            : entry?.dataKey === "personal_balance"
+                              ? t("retirement.chart.personalAssets")
+                              : name || t("retirement.chart.pensionAssets"),
                       ]}
                     />
                     <Legend
@@ -1423,6 +1428,15 @@ export function RetirementTab() {
                       stroke="#3b82f6"
                       strokeWidth={2}
                       fill="url(#colorPen)"
+                      isAnimationActive={true}
+                    />
+                    <Area
+                      name={t("retirement.chart.personalAssets")}
+                      type="monotone"
+                      dataKey="personal_balance"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      fillOpacity={0}
                       isAnimationActive={true}
                     />
                   </AreaChart>
@@ -1543,6 +1557,14 @@ export function RetirementTab() {
                         tooltipTestId="retirement-detail-header-pen-bal"
                       />
                     </th>
+                    <th className="px-6 py-5 text-right text-sky-500/70">
+                      <TableHeaderLabel
+                        label={t("retirement.table.personalBal")}
+                        tooltip={t("retirement.table.personalBalTooltip")}
+                        align="right"
+                        tooltipTestId="retirement-detail-header-personal-bal"
+                      />
+                    </th>
                     <th className="border-l border-slate-200 px-6 py-5 text-right text-slate-200">
                       <TableHeaderLabel
                         label={t("retirement.table.netWorth")}
@@ -1640,6 +1662,12 @@ export function RetirementTab() {
                       </td>
                       <td className="px-6 py-4 text-right text-xs font-medium text-slate-600">
                         {(m.pension_balance / 100000000).toFixed(2)}
+                        <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
+                          {t("retirement.table.hundredMillion")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right text-xs font-medium text-sky-700">
+                        {((m.personal_balance || 0) / 100000000).toFixed(2)}
                         <span className="text-[11px] ml-0.5 opacity-50 text-slate-500">
                           {t("retirement.table.hundredMillion")}
                         </span>

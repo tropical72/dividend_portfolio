@@ -118,6 +118,7 @@ class RetirementConfigRequest(BaseModel):
     corp_params: Optional[Dict[str, Any]] = None
     pension_params: Optional[Dict[str, Any]] = None
     personal_params: Optional[Dict[str, Any]] = None
+    personal_account_params: Optional[Dict[str, Any]] = None
     planned_cashflows: Optional[List[Dict[str, Any]]] = None
     assumptions: Optional[Dict[str, Any]] = None
     tax_and_insurance: Optional[Dict[str, Any]] = None
@@ -142,6 +143,7 @@ class MasterPortfolioRequest(BaseModel):
     name: str
     corp_id: Optional[str] = None
     pension_id: Optional[str] = None
+    personal_id: Optional[str] = None
 
 
 class TestStateRequest(BaseModel):
@@ -236,7 +238,7 @@ async def get_master_portfolios(pa_scenario: Optional[str] = None):
 @app.post("/api/master-portfolios")
 async def create_master_portfolio(req: MasterPortfolioRequest):
     return backend.add_master_portfolio(
-        name=req.name, corp_id=req.corp_id, pension_id=req.pension_id
+        name=req.name, corp_id=req.corp_id, pension_id=req.pension_id, personal_id=req.personal_id
     )
 
 
@@ -361,6 +363,7 @@ async def run_retirement_simulation(
     )
     annual_corp_tax_adjustment_fee = float(corp_params.get("annual_corp_tax_adjustment_fee") or 0)
     pension_params = config["pension_params"]
+    personal_account_params = config.get("personal_account_params", {})
     initial_assets = {
         "corp": corp_params["initial_investment"],
         "pension": (
@@ -368,6 +371,7 @@ async def run_retirement_simulation(
             + (pension_params.get("other_reserve") or 0)
             + (pension_params["initial_investment"])
         ),
+        "personal": float(personal_account_params.get("initial_investment") or 0.0),
     }
 
     # 3. 활성 가정(Assumption) 추출
@@ -410,10 +414,16 @@ async def run_retirement_simulation(
     active_pension = (
         backend.get_portfolio_by_id(active_master.get("pension_id")) if active_master else None
     )
-    if active_master and (active_corp or active_pension):
+    active_personal = (
+        backend.get_portfolio_by_id(active_master.get("personal_id")) if active_master else None
+    )
+    if active_master and (active_corp or active_pension or active_personal):
         corp_stats = backend.get_portfolio_stats_by_id(active_master.get("corp_id"), pa_scenario)
         pension_stats = backend.get_portfolio_stats_by_id(
             active_master.get("pension_id"), pa_scenario
+        )
+        personal_stats = backend.get_portfolio_stats_by_id(
+            active_master.get("personal_id"), pa_scenario
         )
     else:
         # Fallback: 마스터가 없으면 타입별 첫 번째 포트폴리오 사용 (하위 호환)
@@ -421,6 +431,7 @@ async def run_retirement_simulation(
         p_p = next((p for p in backend.portfolios if p.get("account_type") == "Pension"), None)
         corp_stats = backend.get_portfolio_stats_by_id(c_p["id"] if c_p else None, pa_scenario)
         pension_stats = backend.get_portfolio_stats_by_id(p_p["id"] if p_p else None, pa_scenario)
+        personal_stats = backend.get_portfolio_stats_by_id(None, pa_scenario)
 
     base_master_return = _combined_master_return(
         corp_stats,
@@ -444,12 +455,18 @@ async def run_retirement_simulation(
         profile_delta = profile_return - float(base_master_return or 0.0)
         corp_stats = _apply_profile_return_override(corp_stats, profile_delta)
         pension_stats = _apply_profile_return_override(pension_stats, profile_delta)
+        personal_stats = _apply_profile_return_override(personal_stats, profile_delta)
 
     base_params = {
-        "portfolio_stats": {"corp": corp_stats, "pension": pension_stats},
+        "portfolio_stats": {
+            "corp": corp_stats,
+            "pension": pension_stats,
+            "personal": personal_stats,
+        },
         "category_return_rates": {
             "corp": corp_stats.get("category_return_rates", {}),
             "pension": pension_stats.get("category_return_rates", {}),
+            "personal": personal_stats.get("category_return_rates", {}),
         },
         "appreciation_rates": {
             k: v / 100.0
@@ -468,6 +485,9 @@ async def run_retirement_simulation(
         "simulation_start_month": sim_params["simulation_start_month"],
         "simulation_years": sim_params.get("simulation_years", 30),
         "pension_withdrawal_target": pension_params["monthly_withdrawal_target"],
+        "personal_withdrawal_target": float(
+            personal_account_params.get("monthly_withdrawal_target") or 0.0
+        ),
         "national_pension_amount": sim_params["national_pension_amount"],
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],
         "planned_cashflows": config.get("planned_cashflows", []),

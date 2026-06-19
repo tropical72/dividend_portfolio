@@ -5,6 +5,7 @@
 - **[REQ-PRT-01.1] 설계 인터페이스:** 계좌 타입별 전략 카테고리 섹션을 제공한다.
   - Corporate: `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`
   - Pension: `SGOV Buffer`, `Bond Buffer`, `Dividend Growth`, `Growth Engine`
+  - Personal Taxable: `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`
 - **[REQ-PRT-01.2] 항목 관리:** 각 종목의 Ticker, 이름, 비중(Weight, %)을 입력 및 수정 가능. [REQ-04]
 - **[REQ-PRT-01.3] 실시간 비중 합산:**
   - 각 카테고리 내 종목 비중 합계 표시. [REQ-05]
@@ -14,7 +15,7 @@
   - 사용자에게 "비중 합계가 100%여야 합니다"라는 경고 메시지와 수정 경로 안내.
 - **[REQ-PRT-01.5] 초기화 기능:** '새로만들기' 버튼 제공. 클릭 시 현재 설계 화면의 모든 입력값 초기화. [REQ-09]
 - **[REQ-PRT-01.6] 카테고리 안내성:** 각 전략 카테고리는 역할 설명과 은퇴 엔진에서의 매도 우선순위를 툴팁 또는 보조 텍스트로 제공한다.
-- **[REQ-PRT-01.7] 계좌 타입 전환 동기화:** 사용자가 Corporate/Pension 계좌 타입을 바꾸면 카테고리 구조와 허용 카테고리 목록이 즉시 해당 계좌 타입 기준으로 전환되어야 한다.
+- **[REQ-PRT-01.7] 계좌 타입 전환 동기화:** 사용자가 Corporate/Pension/Personal Taxable 계좌 타입을 바꾸면 카테고리 구조와 허용 카테고리 목록이 즉시 해당 계좌 타입 기준으로 전환되어야 한다.
 - **[REQ-PRT-01.8] 레거시 카테고리 마이그레이션:** 기존 3단 카테고리로 저장된 포트폴리오는 계좌 타입별 기본 매핑 규칙에 따라 4단 전략 카테고리로 안전하게 변환되어야 한다.
 - **[REQ-PRT-01.9] 버퍼 개월 수 기반 비중 입력:** `SGOV Buffer`와 `Bond Buffer`는 사용자가 비중(%) 대신 개월 수를 입력할 수 있어야 한다.
   - Corporate는 은퇴 설정의 `simulation_params.target_monthly_cashflow`를 월 필요현금으로 사용한다.
@@ -33,6 +34,7 @@
 - **[REQ-PRT-03.1.1] 계좌별 설정 투자금 기준:** Portfolio Designer의 시뮬레이션 총 투자금 기본값은 전역 기본 투자금이 아니라 은퇴 설정의 계좌별 원화 투자금을 사용해야 한다.
   - Corporate 선택 시 `corp_params.initial_investment`를 사용한다.
   - Pension 선택 시 `pension_params.initial_investment + severance_reserve + other_reserve`를 사용한다.
+  - Personal Taxable 선택 시 `personal_account_params.initial_investment`를 사용한다.
   - 화면 입력의 기준 통화는 KRW이며, USD는 현재 환율 기준 환산값으로 표시한다.
   - 저장된 포트폴리오를 불러오더라도 설계 화면 시뮬레이션 투자금은 현재 선택 계좌의 설정 투자금을 기준으로 재계산한다.
 - **[REQ-PRT-03.2] 실시간 환율 연산:** 한쪽 통화 입력 시 즉시 현재 환율을 적용하여 다른 쪽 통화로 변환 표시 (환율 수치 병기).
@@ -49,7 +51,7 @@
 
 - **[REQ-PRT-04.1] 포트폴리오 저장:**
   - 현재 구성을 **이름** 및 **계좌 유형**과 함께 저장한다. [REQ-09]
-  - **계좌 유형 구분:** 법인계좌(Corporate)와 연금계좌(Pension) 중 하나를 선택해야 한다. (기존 'Personal'에서 'Corporate'로 명칭 통일)
+  - **계좌 유형 구분:** 법인계좌(Corporate), 연금계좌(Pension), 개인 일반계좌(Personal) 중 하나를 선택해야 한다. (기존 'Personal'에서 'Corporate'로 명칭 통일)
   - **이름 필수 입력:** 이름이 비어있을 경우 저장을 차단하고 경고 메시지를 표시한다.
   - **덮어쓰기 로직:** 기존에 저장된 포트폴리오를 편집 중인 경우(ID 존재), 새로운 항목을 생성하지 않고 기존 ID를 유지하며 업데이트한다.
 - **[REQ-PRT-04.2] 저장 리스트 관리:** 저장된 포트폴리오의 삭제 및 이름 변경 기능. [REQ-14]
@@ -67,6 +69,7 @@
 - **[REQ-PRT-06.4.1] 마스터 전략 월별 수입 흐름 비교:**
   - `Manage & Compare`의 Master Strategy 영역에서도 복수 마스터 전략을 선택해 월별 배당 흐름을 같은 그래프에서 비교할 수 있어야 한다.
   - 마스터 전략의 월별 배당금은 연결된 법인 포트폴리오와 연금 포트폴리오의 월별 배당금을 합산한다.
+  - 개인 일반계좌가 연결된 경우 해당 포트폴리오의 월별 배당금과 저장 투자금도 같은 방식으로 합산한다.
   - 전역 투자금 override가 입력된 경우, 마스터 전략의 법인/연금 구성 포트폴리오 저장 투자금 비율로 override 금액을 배분해 계산한다.
   - 저장된 개별 포트폴리오 선택과 마스터 전략 선택은 동시에 가능하며, 같은 그래프에서 비교되어야 한다.
   - 그래프 금액 표시는 KRW/USD 중 선택할 수 있어야 하며 기본값은 KRW다. 이는 전역 투자금 입력 통화와 별도 상태로 관리한다.
@@ -89,9 +92,9 @@
 
 ## [REQ-PRT-08] 마스터 포트폴리오(Master Portfolio) 관리 [NEW]
 
-- **[REQ-PRT-08.1] 데이터 모델:** `id`, `name`, `corp_id`, `pension_id`, `is_active` 필드를 포함한다.
+- **[REQ-PRT-08.1] 데이터 모델:** `id`, `name`, `corp_id`, `pension_id`, `personal_id`, `is_active` 필드를 포함한다.
 - **[REQ-PRT-08.2] 구성 제약:**
-  - 법인(Corporate)과 연금(Pension) 포트폴리오를 각각 최대 1개씩만 포함할 수 있다.
+  - 법인(Corporate), 연금(Pension), 개인 일반(Personal) 포트폴리오를 각각 최대 1개씩만 포함할 수 있다.
   - 최소 1개 이상의 개별 포트폴리오가 할당되어야 한다.
 - **[REQ-PRT-08.3] 삭제 보호 (Dependency):**
   - 마스터 포트폴리오에서 참조 중인 개별 포트폴리오는 삭제할 수 없다. (Watchlist-Portfolio 관계 준용)
@@ -103,6 +106,8 @@
   - 앱 부팅 시 `strategy-default`, `corp-default`, `pension-default`가 항상 존재하도록 자동 생성(Seeding) 로직을 갖춘다.
   - 해당 기본 항목들은 `is_system_default: true` 속성을 가지며, 사용자가 삭제할 수 없도록 UI와 API 레벨에서 강력하게 보호한다.
   - 기본 마스터 전략은 부팅 시 활성화(Active) 상태를 보장하여 사용자가 즉시 은퇴 시뮬레이션을 실행할 수 있도록 한다.
+
+- **[REQ-PRT-08.7] 개인 일반계좌 연결:** 마스터 전략 생성/수정 UI는 `Personal` 포트폴리오를 선택적으로 연결할 수 있어야 하며, 요약 DY/TR과 Retirement Engine 주입에 포함해야 한다.
 
 ## [REQ-PRT-09] 마스터 전략 통합 UI [NEW]
 

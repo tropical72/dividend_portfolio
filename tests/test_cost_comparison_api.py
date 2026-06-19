@@ -524,7 +524,7 @@ def test_cost_comparison_target_mode_corporate_net_cashflow_combines_company_cas
 
     payload = _build_config_payload()
     payload["assumptions"]["simulation_years"] = 10
-    payload["personal_assets"]["investment_assets"] = 2500000000
+    payload["personal_assets"]["investment_assets"] = 10000000000
     payload["corporate"]["initial_shareholder_loan"] = 500000000
 
     save_response = client.post("/api/cost-comparison/config", json=payload)
@@ -735,3 +735,85 @@ def test_personal_asset_driven_series_does_not_double_count_household_cash(tmp_p
     personal_series = run_response.json()["data"]["personal"]["series"]
     assert personal_series[0]["cumulative_household_cash"] == 0
     assert personal_series[0]["total_economic_value"] == personal_series[0]["net_worth"]
+
+
+def test_personal_pa_without_rebalance_only_increases_net_worth(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    master_id = _create_category_pa_master(
+        backend,
+        name="CCS PA Only",
+        corp_category="Growth Engine",
+        pension_category="Growth Engine",
+        dividend_yield=0.0,
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+    payload = _build_config_payload()
+    payload["simulation_mode"] = "asset"
+    payload["master_portfolio_id"] = master_id
+    payload["personal_assets"]["investment_assets"] = 1000000000
+    payload["real_estate"]["official_price"] = 0
+    payload["assumptions"]["simulation_years"] = 1
+
+    response = client.post("/api/cost-comparison/run", json=payload)
+
+    assert response.status_code == 200
+    personal = response.json()["data"]["personal"]
+    investment = personal["breakdown"]["audit_details"]["investment_income"]
+    assert personal["kpis"]["annual_net_cashflow"] < 0
+    assert personal["breakdown"]["health_insurance"] == pytest.approx(0.0)
+    assert personal["series"][0]["net_worth"] > 1000000000
+    assert investment["dividend_income"] == pytest.approx(0.0)
+    assert investment["rebalance_sale_proceeds"] > 0
+    assert investment["realized_capital_gain"] > 0
+    assert investment["unrealized_appreciation"] > 0
+    assert investment["health_insurance_income"] == pytest.approx(0.0)
+
+
+def test_rebalance_gain_is_taxed_but_excluded_from_personal_health_income(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    master_id = _create_category_pa_master(
+        backend,
+        name="CCS Rebalance Gain",
+        corp_category="Growth Engine",
+        pension_category="Growth Engine",
+        dividend_yield=0.0,
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+    payload = _build_config_payload()
+    payload["simulation_mode"] = "asset"
+    payload["master_portfolio_id"] = master_id
+    payload["personal_assets"]["investment_assets"] = 1000000000
+    payload["real_estate"]["official_price"] = 0
+    payload["assumptions"]["simulation_years"] = 1
+    payload["assumptions"]["personal_capital_gains_tax_rate"] = 0.22
+    payload["assumptions"]["personal_capital_gains_deduction"] = 2500000
+    payload["corporate"]["salary_recipients"] = []
+    payload["corporate"]["monthly_bookkeeping_fee"] = 0
+    payload["corporate"]["annual_corp_tax_adjustment_fee"] = 0
+
+    response = client.post("/api/cost-comparison/run", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    personal_audit = data["personal"]["breakdown"]["audit_details"]
+    corporate_audit = data["corporate"]["breakdown"]["audit_details"]
+    personal_income = personal_audit["investment_income"]
+    corporate_income = corporate_audit["investment_income"]
+    assert personal_income["realized_capital_gain"] > 0
+    assert personal_income["capital_gains_tax"] > 0
+    assert personal_income["health_insurance_income"] == pytest.approx(0.0)
+    assert personal_audit["health"]["income_points"] == 0
+    assert corporate_income["realized_capital_gain"] > 0
+    assert corporate_audit["corp_tax"]["tax_base"] == pytest.approx(
+        corporate_income["realized_capital_gain"]
+    )
+
+
+def test_cost_comparison_config_does_not_expose_fixed_rebalance_sale_ratio(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+
+    config = backend.get_cost_comparison_config()
+
+    assert "annual_rebalance_sale_ratio" not in config["assumptions"]

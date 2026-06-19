@@ -16,7 +16,9 @@
         "pa_scenario": "base",
         "price_appreciation_rate": 3.0,
         "simulation_years": 30,
-        "target_monthly_household_cash_after_tax": 4000000
+        "target_monthly_household_cash_after_tax": 4000000,
+        "personal_capital_gains_tax_rate": 0.22,
+        "personal_capital_gains_deduction": 2500000
     },
     "corporate": {
         "salary_recipients": [

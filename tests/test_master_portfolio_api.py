@@ -132,7 +132,7 @@ def test_master_portfolio_create_returns_computed_yield_and_tr(client):
     assert body["data"]["corp_name"] == f"Yield Corp {suffix}"
     assert body["data"]["pension_name"] == "-"
     assert body["data"]["combined_yield"] == pytest.approx(4.0)
-    assert body["data"]["combined_tr"] == pytest.approx(13.6)
+    assert body["data"]["combined_tr"] == pytest.approx(10.5)
     assert body["data"]["broken_reference"] is False
 
 
@@ -201,3 +201,43 @@ def test_default_master_bundle_cannot_be_deleted(tmp_path):
     assert "기본 포트폴리오" in pension_delete["message"]
     assert master_delete["success"] is False
     assert "기본 마스터 전략" in master_delete["message"]
+
+
+def test_master_portfolio_includes_personal_taxable_portfolio(client):
+    suffix = uuid4().hex[:8]
+    personal_res = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Personal Taxable {suffix}",
+            "account_type": "Personal",
+            "total_capital": 2000,
+            "items": [
+                {
+                    "symbol": "VOO",
+                    "name": "VOO",
+                    "weight": 100,
+                    "dividend_yield": 2.0,
+                    "category": "Growth Engine",
+                }
+            ],
+        },
+    )
+    assert personal_res.json()["success"] is True
+    personal_id = personal_res.json()["data"]["id"]
+
+    master_res = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Personal Master {suffix}",
+            "corp_id": None,
+            "pension_id": None,
+            "personal_id": personal_id,
+        },
+    )
+
+    assert master_res.json()["success"] is True
+    master = master_res.json()["data"]
+    assert master["personal_id"] == personal_id
+    assert master["personal_name"] == f"Personal Taxable {suffix}"
+    assert master["combined_yield"] == pytest.approx(2.0)
+    assert client.delete(f"/api/portfolios/{personal_id}").json()["success"] is False

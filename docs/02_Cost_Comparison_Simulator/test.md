@@ -54,6 +54,12 @@
     - 개인연금 자산 평가액이 비교 운용자산 또는 부동산 재산 점수에 잘못 포함되지 않는지 확인.
 - **[TEST-CCS-24] 세후 순증가액 산출:**
     - 개인운용에서 세금/건보료 차감 후 `세후 순증가액`이 일관되게 계산되는지 확인.
+- **[TEST-CCS-103] 실현/미실현 수익 및 건보료 분리 회귀 테스트:**
+    - PA만 발생하고 매도가 없으면 개인 가처분 현금과 건보 소득점수가 증가하지 않고 순자산만 증가하는지 확인.
+    - 배당수익은 개인 가처분 현금, 배당세 및 지역건보 산정소득에 반영되는지 확인.
+    - 리밸런싱 실현 양도차익은 개인 양도세와 법인 과세표준에는 반영되지만 개인 건보 소득에는 포함되지 않는지 확인.
+    - 매도 원금은 수익이나 가계 현금으로 중복 집계되지 않고 aggregate 취득원가가 비례 차감되는지 확인.
+    - 감사 응답에 `dividend_income`, `unrealized_appreciation`, `realized_capital_gain`, `health_insurance_income`이 분리 노출되는지 확인.
 
 ### [Structure 4] 법인운용 시나리오 (REQ-CCS-40 ~ 47, 93 ~ 94)
 - **[TEST-CCS-30] 법인 총수익 계산:**
@@ -155,6 +161,8 @@
 - **Pytest (Backend):** 비교 엔진 계산 로직, 저장 스키마, API 정합성 검증.
 - **Playwright (Frontend):** 독립 탭 UI, 저장/재로드, KPI 카드, 차트 렌더링, 오류 UX 검증.
 - **상태 격리:** 테스트는 snapshot/restore 또는 테스트 전용 설정 파일을 사용하여 사용자 실데이터와 분리되어야 한다.
+
+- **[TEST-CCS-104] 실제 리밸런싱 매도 연동 [NEW]:** 고정 매도비율 제거, 무매도 시 0원, 엔진 이벤트와 감사 합계 일치, 미실현 PA 비과세를 검증한다.
 
 ## 4. Feature Completion Gate
 - 비교 시뮬레이터 관련 Python 변경은 커밋 전 `PYTHONPATH=. .venv/bin/ruff check <changed_python_files>`와 `PYTHONPATH=. .venv/bin/black --check <changed_python_files>`를 통과해야 한다.

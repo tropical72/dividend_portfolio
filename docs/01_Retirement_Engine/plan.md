@@ -206,6 +206,13 @@
   - [x] **T-01-18.3.1** `_apply_profile_return_override`의 PA scale 방식을 제거하고 master TR 대비 additive PA delta 방식으로 교체한다.
   - [x] **T-01-18.3.2** 은퇴 API meta의 `combined_tr`와 사용 포트폴리오 expected_return이 override 이후에도 일관되게 표시되는지 확인한다.
 
+### [Phase 19] 개인 일반계좌 및 실제 거래 원장 (T-01-19)
+
+- [x] SDD 계약을 확정한다.
+- [x] 실패 테스트를 작성한다.
+- [x] 엔진/API와 Settings UI를 구현한다.
+- [x] 현재 변경 범위의 품질 게이트를 통과한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**

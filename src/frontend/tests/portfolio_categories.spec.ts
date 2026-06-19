@@ -105,3 +105,44 @@ test.describe("Portfolio Strategy Categories", () => {
     }
   });
 });
+
+test("should support personal taxable account categories and capital", async ({
+  page,
+  request,
+}) => {
+  let originalState: BackendTestState | null = null;
+  await acquireE2ELock();
+  try {
+    originalState = await captureBackendState(request);
+    const response = await request.post(
+      "http://127.0.0.1:8000/api/retirement/config",
+      {
+        data: {
+          personal_account_params: {
+            initial_investment: 480000000,
+            monthly_withdrawal_target: 2000000,
+          },
+        },
+      },
+    );
+    expect(response.ok()).toBeTruthy();
+
+    await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.getByTestId("nav-asset-setup").click({ force: true });
+    await page.getByTestId("portfolio-subtab-design").click({ force: true });
+    await page.getByTestId("portfolio-account-personal").click();
+
+    await expect(
+      page.getByTestId("portfolio-design-capital-krw-input"),
+    ).toHaveValue("480,000,000");
+    await expect(page.getByText("SGOV Buffer")).toBeVisible();
+    await expect(page.getByText("Bond Buffer")).toBeVisible();
+    await expect(page.getByText("High Income")).toBeVisible();
+    await expect(page.getByText("Dividend Growth")).toBeVisible();
+    await expect(page.getByText("Growth Engine")).toBeVisible();
+  } finally {
+    if (originalState) await restoreBackendState(request, originalState);
+    await releaseE2ELock();
+  }
+});

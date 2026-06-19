@@ -55,6 +55,8 @@ export function PortfolioDashboard({
         strategyNamePlaceholder: "전략 명칭 입력",
         corpPortfolio: "법인 포트폴리오",
         pensionPortfolio: "연금 포트폴리오",
+        personalPortfolio: "개인 일반계좌 포트폴리오",
+        personalShort: "개인",
         none: "없음",
         saveStrategy: "전략 저장",
         noMasterStrategies: "저장된 마스터 전략이 없습니다.",
@@ -115,6 +117,8 @@ export function PortfolioDashboard({
         strategyNamePlaceholder: "Strategy name",
         corpPortfolio: "Corporate Portfolio",
         pensionPortfolio: "Pension Portfolio",
+        personalPortfolio: "Personal Taxable Portfolio",
+        personalShort: "Personal",
         none: "None",
         saveStrategy: "Save Strategy",
         noMasterStrategies: "No saved master strategies.",
@@ -178,6 +182,7 @@ export function PortfolioDashboard({
   const [newMasterName, setNewMasterName] = useState("");
   const [selectedCorpId, setSelectedCorpId] = useState<string>("");
   const [selectedPenId, setSelectedPenId] = useState<string>("");
+  const [selectedPersonalId, setSelectedPersonalId] = useState<string>("");
 
   // 전역 시뮬레이션 상태 [REQ-PRT-06.3]
   const [globalCapitalUsd, setGlobalCapitalUsd] = useState<number | null>(null);
@@ -296,7 +301,11 @@ export function PortfolioDashboard({
 
   /** 마스터 전략 생성 */
   const handleCreateMaster = async () => {
-    if (!newMasterName || (!selectedCorpId && !selectedPenId)) return;
+    if (
+      !newMasterName ||
+      (!selectedCorpId && !selectedPenId && !selectedPersonalId)
+    )
+      return;
     try {
       const res = await fetch("http://localhost:8000/api/master-portfolios", {
         method: "POST",
@@ -305,6 +314,7 @@ export function PortfolioDashboard({
           name: newMasterName,
           corp_id: selectedCorpId || null,
           pension_id: selectedPenId || null,
+          personal_id: selectedPersonalId || null,
         }),
       });
       const data = await res.json();
@@ -313,6 +323,7 @@ export function PortfolioDashboard({
         setNewMasterName("");
         setSelectedCorpId("");
         setSelectedPenId("");
+        setSelectedPersonalId("");
       }
     } catch (err) {
       console.error(err);
@@ -436,9 +447,12 @@ export function PortfolioDashboard({
       .map((master) => {
         const corp = portfolios.find((p) => p.id === master.corp_id);
         const pension = portfolios.find((p) => p.id === master.pension_id);
+        const personal = portfolios.find((p) => p.id === master.personal_id);
         const corpSavedCapital = corp?.total_capital || 0;
         const pensionSavedCapital = pension?.total_capital || 0;
-        const savedTotal = corpSavedCapital + pensionSavedCapital;
+        const personalSavedCapital = personal?.total_capital || 0;
+        const savedTotal =
+          corpSavedCapital + pensionSavedCapital + personalSavedCapital;
         const corpCapital =
           globalCapitalUsd !== null
             ? savedTotal > 0
@@ -455,18 +469,31 @@ export function PortfolioDashboard({
                 ? globalCapitalUsd
                 : 0
             : undefined;
+        const personalCapital =
+          globalCapitalUsd !== null
+            ? savedTotal > 0
+              ? globalCapitalUsd * (personalSavedCapital / savedTotal)
+              : personal
+                ? globalCapitalUsd
+                : 0
+            : undefined;
 
         const corpAmounts = monthlyAmountsForPortfolio(corp, corpCapital);
         const pensionAmounts = monthlyAmountsForPortfolio(
           pension,
           pensionCapital,
         );
+        const personalAmounts = monthlyAmountsForPortfolio(
+          personal,
+          personalCapital,
+        );
 
         return {
           id: `master:${master.id}`,
           name: `${copy.masterStrategy}: ${master.name}`,
           values: corpAmounts.map(
-            (amount, idx) => amount + pensionAmounts[idx],
+            (amount, idx) =>
+              amount + pensionAmounts[idx] + personalAmounts[idx],
           ),
         };
       });
@@ -739,9 +766,33 @@ export function PortfolioDashboard({
                     ))}
                 </select>
               </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">
+                  {copy.personalPortfolio}
+                </p>
+                <select
+                  value={selectedPersonalId}
+                  onChange={(e) => setSelectedPersonalId(e.target.value)}
+                  data-testid="master-personal-portfolio"
+                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-sky-300"
+                >
+                  <option value="">{copy.none}</option>
+                  {portfolios
+                    .filter((p) => p.account_type === "Personal")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
               <button
                 onClick={handleCreateMaster}
-                disabled={!newMasterName || (!selectedCorpId && !selectedPenId)}
+                disabled={
+                  !newMasterName ||
+                  (!selectedCorpId && !selectedPenId && !selectedPersonalId)
+                }
                 data-testid="save-master-strategy-btn"
                 className="flex w-full items-center justify-center gap-2 rounded-[1.5rem] bg-emerald-500 py-4 text-sm font-semibold text-white transition-all hover:bg-emerald-600 disabled:opacity-30"
               >
@@ -760,29 +811,42 @@ export function PortfolioDashboard({
               masterPortfolios.map((m) => {
                 const c_p = portfolios.find((p) => p.id === m.corp_id);
                 const p_p = portfolios.find((p) => p.id === m.pension_id);
+                const personal_p = portfolios.find(
+                  (p) => p.id === m.personal_id,
+                );
                 const isMasterSelected = selectedMasterIds.has(m.id);
 
                 const corpCapital = c_p?.total_capital || 0;
                 const pensionCapital = p_p?.total_capital || 0;
-                const totalCapital = corpCapital + pensionCapital;
+                const personalCapital = personal_p?.total_capital || 0;
+                const totalCapital =
+                  corpCapital + pensionCapital + personalCapital;
                 const avg_dy =
                   totalCapital > 0
-                    ? (getDY(c_p) * corpCapital + getDY(p_p) * pensionCapital) /
+                    ? (getDY(c_p) * corpCapital +
+                        getDY(p_p) * pensionCapital +
+                        getDY(personal_p) * personalCapital) /
                       totalCapital
                     : c_p
                       ? getDY(c_p)
                       : p_p
                         ? getDY(p_p)
-                        : 0;
+                        : personal_p
+                          ? getDY(personal_p)
+                          : 0;
                 const avg_tr =
                   totalCapital > 0
-                    ? (getTR(c_p) * corpCapital + getTR(p_p) * pensionCapital) /
+                    ? (getTR(c_p) * corpCapital +
+                        getTR(p_p) * pensionCapital +
+                        getTR(personal_p) * personalCapital) /
                       totalCapital
                     : c_p
                       ? getTR(c_p)
                       : p_p
                         ? getTR(p_p)
-                        : 0;
+                        : personal_p
+                          ? getTR(personal_p)
+                          : 0;
 
                 return (
                   <div
@@ -881,6 +945,10 @@ export function PortfolioDashboard({
                             {copy.penShort}:
                           </span>{" "}
                           {p_p?.name || "-"}
+                          <span className="mx-1 text-slate-300">/</span>
+                          <span className="font-semibold text-sky-700">
+                            {copy.personalShort}: {personal_p?.name || "-"}
+                          </span>
                         </p>
                       </div>
                     </div>

@@ -129,6 +129,7 @@ export function PortfolioTab({
         confirmSave: "저장하기",
         corporate: "법인",
         pension: "연금",
+        personal: "개인 일반",
       }
     : {
         defaultName: "My New Portfolio",
@@ -202,6 +203,7 @@ export function PortfolioTab({
         confirmSave: "Save",
         corporate: "Corporate",
         pension: "Pension",
+        personal: "Personal Taxable",
       };
   const [activeSubTab, setActiveSubTab] = useState<"design" | "manage">(
     "design",
@@ -238,7 +240,7 @@ export function PortfolioTab({
 
   const categories = useMemo(
     () =>
-      accountType === "Corporate"
+      accountType !== "Pension"
         ? [
             {
               id: "SGOV Buffer" as PortfolioCategory,
@@ -384,6 +386,14 @@ export function PortfolioTab({
       return 0;
     }
 
+    if (accountType === "Personal") {
+      return (
+        retirementConfig.personal_account_params.monthly_withdrawal_target ||
+        retirementConfig.simulation_params.target_monthly_cashflow ||
+        0
+      );
+    }
+
     if (accountType === "Pension") {
       return (
         retirementConfig.pension_params.monthly_withdrawal_target ||
@@ -434,6 +444,10 @@ export function PortfolioTab({
           (retirementConfig.pension_params.severance_reserve || 0) +
           (retirementConfig.pension_params.other_reserve || 0)
         );
+      }
+
+      if (nextAccountType === "Personal") {
+        return retirementConfig.personal_account_params.initial_investment || 0;
       }
 
       return retirementConfig.corp_params.initial_investment || 0;
@@ -1049,6 +1063,19 @@ export function PortfolioTab({
                   >
                     {copy.pension}
                   </button>
+
+                  <button
+                    onClick={() => setAccountType("Personal")}
+                    data-testid="portfolio-account-personal"
+                    className={cn(
+                      "rounded-xl px-6 py-2.5 text-sm font-semibold transition-all",
+                      accountType === "Personal"
+                        ? "border border-sky-200 bg-sky-50 text-sky-700 shadow-sm"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                    )}
+                  >
+                    {copy.personal}
+                  </button>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
@@ -1621,7 +1648,7 @@ export function PortfolioTab({
                   {copy.portfolioAccountTypeDesc}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setTempAccountType("Corporate")}
@@ -1647,6 +1674,20 @@ export function PortfolioTab({
                   )}
                 >
                   {copy.pension}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTempAccountType("Personal")}
+                  data-testid="save-modal-account-personal"
+                  className={cn(
+                    "rounded-2xl border px-5 py-4 text-sm font-bold transition-all",
+                    tempAccountType === "Personal"
+                      ? "border-sky-300 bg-sky-50 text-sky-700 shadow-sm"
+                      : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white",
+                  )}
+                >
+                  {copy.personal}
                 </button>
               </div>
             </div>

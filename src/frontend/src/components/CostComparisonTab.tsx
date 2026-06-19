@@ -58,6 +58,8 @@ const defaultConfig: CostComparisonConfig = {
     price_appreciation_rate: 3,
     simulation_years: 10,
     target_monthly_household_cash_after_tax: 10000000,
+    personal_capital_gains_tax_rate: 0.22,
+    personal_capital_gains_deduction: 2500000,
   },
   corporate: {
     salary_recipients: [
@@ -263,6 +265,10 @@ export function CostComparisonTab() {
         pa_scenario: normalizePaScenarioKey(
           raw.assumptions?.pa_scenario || "base",
         ),
+        personal_capital_gains_tax_rate:
+          raw.assumptions?.personal_capital_gains_tax_rate ?? 0.22,
+        personal_capital_gains_deduction:
+          raw.assumptions?.personal_capital_gains_deduction ?? 2500000,
       },
     };
   };
@@ -593,6 +599,7 @@ export function CostComparisonTab() {
             options={masterPortfolios}
             onChange={updateMasterPortfolioId}
           />
+
           <NumberField
             label={t("costComparison.investmentAssets")}
             testId="cc-investment-assets"
@@ -642,6 +649,37 @@ export function CostComparisonTab() {
             value={config.assumptions.simulation_years}
             onChange={(value) =>
               updateConfig("assumptions", "simulation_years", value)
+            }
+          />
+          <NumberField
+            label={t("costComparison.capitalGainsTaxRate")}
+            testId="cc-capital-gains-tax-rate"
+            step="0.01"
+            tooltip={t("costComparison.tooltip.capitalGainsTaxRate")}
+            unit={t("costComparison.ratioUnit")}
+            value={config.assumptions.personal_capital_gains_tax_rate ?? 0.22}
+            onChange={(value) =>
+              updateConfig(
+                "assumptions",
+                "personal_capital_gains_tax_rate",
+                value,
+              )
+            }
+          />
+          <NumberField
+            label={t("costComparison.capitalGainsDeduction")}
+            testId="cc-capital-gains-deduction"
+            tooltip={t("costComparison.tooltip.capitalGainsDeduction")}
+            unit="KRW"
+            value={
+              config.assumptions.personal_capital_gains_deduction ?? 2500000
+            }
+            onChange={(value) =>
+              updateConfig(
+                "assumptions",
+                "personal_capital_gains_deduction",
+                value,
+              )
             }
           />
           <NumberField
@@ -2218,6 +2256,30 @@ function ScenarioCostDetailModal({
               {t("costComparison.tax")}
             </div>
             <div className="mt-3 space-y-2">
+              <DetailRow
+                label={t("costComparison.dividendIncome")}
+                value={formatKrw(
+                  auditDetails?.investment_income?.dividend_income ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.unrealizedAppreciation")}
+                value={formatKrw(
+                  auditDetails?.investment_income?.unrealized_appreciation ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.realizedCapitalGain")}
+                value={formatKrw(
+                  auditDetails?.investment_income?.realized_capital_gain ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.healthInsuranceIncome")}
+                value={formatKrw(
+                  auditDetails?.investment_income?.health_insurance_income ?? 0,
+                )}
+              />
               {isCorporate ? (
                 <>
                   <DetailRow

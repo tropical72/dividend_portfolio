@@ -156,6 +156,7 @@ const translations = {
     "retirement.chart.totalAssets": "Total Assets",
     "retirement.chart.corpAssets": "Corporate Assets",
     "retirement.chart.pensionAssets": "Pension Assets",
+    "retirement.chart.personalAssets": "Personal Taxable Assets",
     "retirement.step5Title": "Step 5. Detailed Math Log",
     "retirement.table.dateAge": "Date (Age)",
     "retirement.table.phase": "Phase",
@@ -191,6 +192,9 @@ const translations = {
     "retirement.table.initialStateReview": "Configured starting values",
     "retirement.table.monthsSuffix": "mo",
     "retirement.table.corpBal": "Corp Bal",
+    "retirement.table.personalBal": "Personal Bal",
+    "retirement.table.personalBalTooltip":
+      "Personal taxable account balance after monthly events and rebalancing.",
     "retirement.table.penBal": "Pen Bal",
     "retirement.table.netWorth": "Total Assets",
     "retirement.table.loanBal": "Loan Bal",
@@ -235,6 +239,11 @@ const translations = {
     "settings.pensionAssets": "Pension Assets",
     "settings.pensionAssetsTooltip":
       "Manage the current state of pension assets and withdrawal targets.",
+    "settings.personalTaxableAccount": "Personal Taxable Account",
+    "settings.personalTaxableAccountTooltip":
+      "Manage taxable investment assets with the same rebalancing rules.",
+    "settings.personalTaxableWithdrawalTooltip":
+      "Independent monthly withdrawal target from the taxable account SGOV buffer.",
     "settings.initialCapital": "Initial Capital",
     "settings.initialCapitalTooltip":
       "Current total of cash and securities inside the pension account.",
@@ -490,6 +499,13 @@ const translations = {
     "costComparison.paRate": "Price Appreciation",
     "costComparison.simulationYears": "Simulation Years",
     "costComparison.targetMonthlyCash": "Target After-tax Monthly Cash",
+    "costComparison.rebalanceSaleRatio": "Annual Rebalance Sale Ratio",
+    "costComparison.capitalGainsTaxRate": "Personal Capital Gains Tax Rate",
+    "costComparison.capitalGainsDeduction": "Capital Gains Deduction",
+    "costComparison.dividendIncome": "Dividend Income",
+    "costComparison.unrealizedAppreciation": "Unrealized Appreciation",
+    "costComparison.realizedCapitalGain": "Realized Capital Gain",
+    "costComparison.healthInsuranceIncome": "Health Insurance Income",
     "costComparison.monthlyBookkeepingFee": "Monthly Bookkeeping Fee",
     "costComparison.annualTaxAdjustmentFee": "Annual Tax Adjustment Fee",
     "costComparison.corpTaxRate": "Corporate Tax Rate",
@@ -597,6 +613,12 @@ const translations = {
       "Shows whether the current result was calculated in target-driven mode or asset-driven mode.",
     "costComparison.tooltip.targetMonthlyCash":
       "Target after-tax monthly household cash that both scenarios must deliver.",
+    "costComparison.tooltip.rebalanceSaleRatio":
+      "Estimated share of portfolio market value sold and immediately reinvested during annual rebalancing. Enter as a ratio between 0 and 1.",
+    "costComparison.tooltip.capitalGainsTaxRate":
+      "Estimated personal tax rate applied only to realized rebalancing gains after the deduction.",
+    "costComparison.tooltip.capitalGainsDeduction":
+      "Annual deduction applied before estimating personal capital gains tax.",
     "costComparison.tooltip.monthlyBookkeepingFee":
       "Recurring monthly corporate admin costs such as bookkeeping and basic filing support.",
     "costComparison.tooltip.annualTaxAdjustmentFee":
@@ -850,6 +872,7 @@ const translations = {
     "retirement.chart.totalAssets": "합산 자산",
     "retirement.chart.corpAssets": "법인 자산",
     "retirement.chart.pensionAssets": "연금 자산",
+    "retirement.chart.personalAssets": "개인 일반계좌 자산",
     "retirement.step5Title": "5단계. 상세 계산 로그",
     "retirement.table.dateAge": "일자 (나이)",
     "retirement.table.phase": "단계",
@@ -885,6 +908,9 @@ const translations = {
     "retirement.table.initialStateReview": "설정에 입력한 시작값",
     "retirement.table.monthsSuffix": "개월",
     "retirement.table.corpBal": "법인 잔고",
+    "retirement.table.personalBal": "개인 잔고",
+    "retirement.table.personalBalTooltip":
+      "월별 이벤트와 리밸런싱 이후 개인 일반계좌 잔고입니다.",
     "retirement.table.penBal": "연금 잔고",
     "retirement.table.netWorth": "총자산",
     "retirement.table.loanBal": "대여금 잔고",
@@ -929,6 +955,11 @@ const translations = {
     "settings.pensionAssets": "연금 자산",
     "settings.pensionAssetsTooltip":
       "연금 자산 현황과 월 인출 목표를 관리합니다.",
+    "settings.personalTaxableAccount": "개인 일반계좌",
+    "settings.personalTaxableAccountTooltip":
+      "동일한 리밸런싱 규칙으로 운용하는 과세계좌 자산을 관리합니다.",
+    "settings.personalTaxableWithdrawalTooltip":
+      "개인 일반계좌 SGOV 버퍼에서 인출할 독립 월 목표액입니다.",
     "settings.initialCapital": "초기 자산",
     "settings.initialCapitalTooltip":
       "현재 연금 계좌에 있는 현금과 주식 총합입니다.",
@@ -1179,6 +1210,13 @@ const translations = {
     "costComparison.paRate": "기대주가상승률",
     "costComparison.simulationYears": "시뮬레이션 기간",
     "costComparison.targetMonthlyCash": "목표 세후 월현금",
+    "costComparison.rebalanceSaleRatio": "연간 리밸런싱 매도비율",
+    "costComparison.capitalGainsTaxRate": "개인 양도차익 세율",
+    "costComparison.capitalGainsDeduction": "양도차익 기본공제",
+    "costComparison.dividendIncome": "배당소득",
+    "costComparison.unrealizedAppreciation": "미실현 평가이익",
+    "costComparison.realizedCapitalGain": "실현 양도차익",
+    "costComparison.healthInsuranceIncome": "건보 반영 금융소득",
     "costComparison.monthlyBookkeepingFee": "월 기장비",
     "costComparison.annualTaxAdjustmentFee": "연 법인세 조정료",
     "costComparison.corpTaxRate": "법인세율",
@@ -1285,6 +1323,12 @@ const translations = {
       "현재 결과가 목표 수익 기반인지, 보유 자산 기반인지 보여줍니다.",
     "costComparison.tooltip.targetMonthlyCash":
       "두 시나리오가 동일하게 만들어야 하는 가계 세후 월현금 목표입니다.",
+    "costComparison.tooltip.rebalanceSaleRatio":
+      "연간 리밸런싱 때 매도 후 즉시 재투자하는 포트폴리오 평가액 비율의 추정치입니다. 0과 1 사이 비율로 입력합니다.",
+    "costComparison.tooltip.capitalGainsTaxRate":
+      "기본공제 후 리밸런싱 실현차익에만 적용하는 개인 양도세 추정 세율입니다.",
+    "costComparison.tooltip.capitalGainsDeduction":
+      "개인 양도차익 과세 전 차감하는 연간 기본공제 추정액입니다.",
     "costComparison.tooltip.monthlyBookkeepingFee":
       "기장료와 기본 신고 대행비처럼 매월 반복되는 법인 운영비입니다.",
     "costComparison.tooltip.annualTaxAdjustmentFee":

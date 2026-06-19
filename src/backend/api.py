@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from src.backend.data_provider import StockDataProvider
 from src.backend.storage import StorageManager
+from src.core.projection_engine import ProjectionEngine
 from src.core.tax_engine import TaxEngine
 
 DEFAULT_APPRECIATION_RATES = {
@@ -871,6 +872,10 @@ class DividendBackend:
                 "other_reserve": 0,
                 "monthly_withdrawal_target": 2500000,
             },
+            "personal_account_params": {
+                "initial_investment": 0,
+                "monthly_withdrawal_target": 0,
+            },
             "personal_params": {
                 "real_estate_price": 620000000,
                 "other_assets": 0,
@@ -1050,6 +1055,8 @@ class DividendBackend:
                 "price_appreciation_rate": default_pa,
                 "simulation_years": 10,
                 "target_monthly_household_cash_after_tax": 10000000.0,
+                "personal_capital_gains_tax_rate": 0.22,
+                "personal_capital_gains_deduction": 2500000.0,
             },
             "corporate": {
                 "salary_recipients": [],
@@ -1068,6 +1075,7 @@ class DividendBackend:
         """비교 시뮬레이터 설정의 레거시 필드 위치를 정규화합니다."""
         normalized = deepcopy(config)
         assumptions = cast(Dict[str, Any], normalized.get("assumptions", {}))
+        assumptions.pop("annual_rebalance_sale_ratio", None)
         if "simulation_mode" not in normalized and assumptions.get("simulation_mode"):
             normalized["simulation_mode"] = assumptions.get("simulation_mode")
         assumptions.pop("simulation_mode", None)
@@ -1122,6 +1130,12 @@ class DividendBackend:
             return "assumptions.price_appreciation_rate는 음수일 수 없습니다."
         if assumptions.get("pa_scenario") not in PA_SCENARIO_KEYS:
             return "assumptions.pa_scenario는 conservative, base, optimistic 중 하나여야 합니다."
+        capital_gains_tax_rate = float(assumptions.get("personal_capital_gains_tax_rate") or 0.0)
+        capital_gains_deduction = float(assumptions.get("personal_capital_gains_deduction") or 0.0)
+        if capital_gains_tax_rate < 0 or capital_gains_tax_rate > 1:
+            return "assumptions.personal_capital_gains_tax_rate는 0과 1 사이여야 합니다."
+        if capital_gains_deduction < 0:
+            return "assumptions.personal_capital_gains_deduction은 음수일 수 없습니다."
 
         if float(assumptions.get("target_monthly_household_cash_after_tax") or 0.0) <= 0:
             return "assumptions.target_monthly_household_cash_after_tax는 0보다 커야 합니다."
@@ -1231,64 +1245,289 @@ class DividendBackend:
                         "target_monthly_household_cash_after_tax", 10000000.0
                     )
                 ),
+                "personal_capital_gains_tax_rate": float(
+                    cast(Dict[str, Any], config.get("assumptions", {})).get(
+                        "personal_capital_gains_tax_rate", 0.22
+                    )
+                ),
+                "personal_capital_gains_deduction": float(
+                    cast(Dict[str, Any], config.get("assumptions", {})).get(
+                        "personal_capital_gains_deduction", 2500000.0
+                    )
+                ),
                 "base_year": int(
                     cast(Dict[str, Any], config.get("policy_meta", {})).get("base_year", 2026)
                 ),
                 "simulation_mode": config.get("simulation_mode", "asset"),
+                "_corp_stats": calc_data.get("corp_stats", {}),
+                "_pension_stats": calc_data.get("pension_stats", {}),
             },
         }
 
-    def _calculate_personal_after_tax_cash(
+    def _build_actual_rebalance_schedule(
         self,
         tax_engine: TaxEngine,
-        annual_revenue: float,
-        property_value: float,
-    ) -> Dict[str, Any]:
-        if annual_revenue <= 20000000:
-            income_tax = annual_revenue * 0.154
-            tax_audit = {"tax_rate": 0.154, "is_comprehensive": False}
-        else:
-            income_tax = (20000000 * 0.154) + ((annual_revenue - 20000000) * 0.264)
-            tax_audit = {"tax_rate": 0.264, "is_comprehensive": True, "threshold": 20000000}
+        assumptions: Dict[str, Any],
+        config: Dict[str, Any],
+        account: str,
+    ) -> Dict[int, Dict[str, float]]:
+        """ProjectionEngine의 실제 category 이동을 연도별 매도 합계로 변환합니다."""
+        personal_assets = cast(Dict[str, Any], config.get("personal_assets", {}))
+        initial_balance = float(personal_assets.get("investment_assets") or 0.0)
+        if initial_balance <= 0:
+            return {}
 
-        health_result = tax_engine.calculate_local_health_insurance_detailed(
-            property_value, annual_revenue
+        target_monthly_cash = float(
+            assumptions.get("target_monthly_household_cash_after_tax") or 0.0
         )
-        annual_health = health_result["total_premium"] * 12
-        annual_net = annual_revenue - income_tax - annual_health
+        strategy_rules = cast(Dict[str, Any], self.retirement_config.get("strategy_rules", {}))
+        pension_rules = cast(Dict[str, Any], strategy_rules.get("pension", {}))
+        corp_rules = cast(Dict[str, Any], strategy_rules.get("corporate", {}))
+        stats = (
+            cast(Dict[str, Any], assumptions.get("_corp_stats", {}))
+            if account == "corp"
+            else cast(
+                Dict[str, Any],
+                assumptions.get("_pension_stats") or assumptions.get("_corp_stats") or {},
+            )
+        )
+        appreciation_rates = {
+            key: value / 100.0
+            for key, value in self.get_appreciation_rates_for_scenario(
+                cast(Optional[str], assumptions.get("pa_scenario"))
+            ).items()
+        }
+        params = {
+            "simulation_years": int(assumptions["simulation_years"]),
+            "simulation_start_year": int(assumptions.get("base_year", 2026)),
+            "simulation_start_month": 1,
+            "birth_year": 1970,
+            "birth_month": 1,
+            "private_pension_start_age": 0,
+            "national_pension_start_age": 200,
+            "household_monthly_need": target_monthly_cash if account == "corp" else 0.0,
+            "target_monthly_cashflow": target_monthly_cash,
+            "pension_withdrawal_target": target_monthly_cash if account == "personal" else 0.0,
+            "national_pension_amount": 0.0,
+            "initial_shareholder_loan": initial_balance if account == "corp" else 0.0,
+            "corp_salary": 0.0,
+            "monthly_bookkeeping_fee": 0.0,
+            "annual_corp_tax_adjustment_fee": 0.0,
+            "employee_count": 0,
+            "portfolio_stats": {
+                "corp": stats if account == "corp" else {},
+                "pension": stats if account == "personal" else {},
+            },
+            "category_return_rates": {
+                "corp": stats.get("category_return_rates", {}) if account == "corp" else {},
+                "pension": (
+                    stats.get("category_return_rates", {}) if account == "personal" else {}
+                ),
+            },
+            "appreciation_rates": appreciation_rates,
+            "rebalance_month": strategy_rules.get("rebalance_month", 5),
+            "sgov_target_months": corp_rules.get("sgov_target_months", 30),
+            "corp_november_sgov_target_months": corp_rules.get("november_sgov_target_months", 27),
+            "corp_bond_floor_months": corp_rules.get("bond_floor_months", 12),
+            "corp_bond_target_months": corp_rules.get("bond_target_months", 18),
+            "corp_bond_upper_months": corp_rules.get("bond_upper_months", 24),
+            "pension_sgov_target_months": pension_rules.get("sgov_target_months", 24),
+            "pension_sgov_floor_months": pension_rules.get("sgov_floor_months", 12),
+            "pension_bond_floor_months": pension_rules.get("bond_floor_months", 12),
+            "pension_bond_target_months": pension_rules.get("bond_target_months", 18),
+            "pension_bond_upper_months": pension_rules.get("bond_upper_months", 24),
+        }
+        initial_assets = {
+            "corp": initial_balance if account == "corp" else 0.0,
+            "pension": initial_balance if account == "personal" else 0.0,
+        }
+        projection = ProjectionEngine(tax_engine).run_30yr_simulation(initial_assets, params)
+        engine_account = "corp" if account == "corp" else "pension"
+        schedule: Dict[int, Dict[str, float]] = {}
+        for event in projection.get("trade_events", []):
+            if event.get("account") != engine_account:
+                continue
+            year_index = int(event["year"]) - int(assumptions.get("base_year", 2026)) + 1
+            annual = schedule.setdefault(
+                year_index,
+                {"sale_proceeds": 0.0, "cost_basis_sold": 0.0, "realized_gain": 0.0},
+            )
+            annual["sale_proceeds"] += float(event["sale_proceeds"])
+            annual["cost_basis_sold"] += float(event["cost_basis_sold"])
+            annual["realized_gain"] += float(event["realized_gain"])
+        return schedule
+
+    def _calculate_rebalance_income(
+        self,
+        asset_value: float,
+        cost_basis: float,
+        dy: float,
+        pa: float,
+        sale_proceeds: float = 0.0,
+    ) -> Dict[str, float]:
+        """배당, 평가이익과 리밸런싱 매도분의 실현손익을 분리합니다."""
+        opening_asset = max(0.0, asset_value)
+        opening_basis = max(0.0, cost_basis)
+        dividend_income = opening_asset * max(0.0, dy)
+        appreciation = opening_asset * pa
+        market_value = max(0.0, opening_asset + appreciation)
+        sale_proceeds = min(market_value, max(0.0, sale_proceeds))
+        sold_fraction = sale_proceeds / market_value if market_value > 0 else 0.0
+        basis_sold = opening_basis * sold_fraction
+        realized_gain = sale_proceeds - basis_sold
+        ending_basis_before_income = opening_basis - basis_sold + sale_proceeds
         return {
-            "annual_revenue": annual_revenue,
-            "income_tax": income_tax,
+            "dividend_income": dividend_income,
+            "unrealized_appreciation": (market_value - sale_proceeds)
+            - (opening_basis - basis_sold),
+            "realized_capital_gain": realized_gain,
+            "rebalance_sale_proceeds": sale_proceeds,
+            "cost_basis_sold": basis_sold,
+            "market_value_after_appreciation": market_value,
+            "ending_cost_basis_before_income": ending_basis_before_income,
+        }
+
+    def _calculate_personal_investment_year(
+        self,
+        tax_engine: TaxEngine,
+        asset_value: float,
+        cost_basis: float,
+        property_value: float,
+        assumptions: Dict[str, Any],
+        sale_proceeds: float = 0.0,
+    ) -> Dict[str, Any]:
+        income = self._calculate_rebalance_income(
+            asset_value,
+            cost_basis,
+            float(assumptions["dy"]),
+            float(assumptions["pa"]),
+            sale_proceeds,
+        )
+        dividend_income = income["dividend_income"]
+        if dividend_income <= 20000000:
+            dividend_tax = dividend_income * 0.154
+            tax_rate = 0.154
+        else:
+            dividend_tax = (20000000 * 0.154) + ((dividend_income - 20000000) * 0.264)
+            tax_rate = 0.264
+        taxable_gain = max(
+            0.0,
+            income["realized_capital_gain"]
+            - float(assumptions.get("personal_capital_gains_deduction", 2500000.0)),
+        )
+        capital_gains_tax = taxable_gain * float(
+            assumptions.get("personal_capital_gains_tax_rate", 0.22)
+        )
+        health = tax_engine.calculate_local_health_insurance_detailed(
+            property_value, dividend_income
+        )
+        annual_health = health["total_premium"] * 12
+        net_cash = dividend_income - dividend_tax - capital_gains_tax - annual_health
+        ending_asset = max(0.0, income["market_value_after_appreciation"] + net_cash)
+        ending_basis = min(
+            ending_asset,
+            income["ending_cost_basis_before_income"] + max(0.0, net_cash),
+        )
+        income.update(
+            {
+                "health_insurance_income": dividend_income,
+                "dividend_tax": dividend_tax,
+                "capital_gains_tax": capital_gains_tax,
+            }
+        )
+        return {
+            "ending_asset": ending_asset,
+            "ending_cost_basis": ending_basis,
+            "net_cash": net_cash,
+            "total_tax": dividend_tax + capital_gains_tax,
             "annual_health": annual_health,
-            "annual_net": annual_net,
             "audit_details": {
-                "health": health_result,
-                "tax": tax_audit,
+                "health": health,
+                "tax": {"tax_rate": tax_rate, "is_comprehensive": dividend_income > 20000000},
+                "investment_income": income,
             },
         }
 
-    def _solve_personal_required_annual_revenue(
+    def _solve_personal_required_assets(
         self,
         tax_engine: TaxEngine,
         annual_target_cash: float,
         property_value: float,
-    ) -> Dict[str, float]:
+        assumptions: Dict[str, Any],
+    ) -> Dict[str, Any]:
         low = 0.0
-        high = max(annual_target_cash * 3, 1000000.0)
-        result = self._calculate_personal_after_tax_cash(tax_engine, high, property_value)
-        while result["annual_net"] < annual_target_cash:
+        dy = max(float(assumptions["dy"]), 0.001)
+        high = max(annual_target_cash / dy * 2, 1000000.0)
+        result = self._calculate_personal_investment_year(
+            tax_engine, high, high, property_value, assumptions
+        )
+        while result["net_cash"] < annual_target_cash and high < 1e15:
             high *= 2
-            result = self._calculate_personal_after_tax_cash(tax_engine, high, property_value)
-
+            result = self._calculate_personal_investment_year(
+                tax_engine, high, high, property_value, assumptions
+            )
+        if result["net_cash"] < annual_target_cash:
+            return {"required_assets": float("inf"), "result": result}
         for _ in range(80):
             mid = (low + high) / 2
-            result = self._calculate_personal_after_tax_cash(tax_engine, mid, property_value)
-            if result["annual_net"] >= annual_target_cash:
+            result = self._calculate_personal_investment_year(
+                tax_engine, mid, mid, property_value, assumptions
+            )
+            if result["net_cash"] >= annual_target_cash:
                 high = mid
             else:
                 low = mid
+        return {
+            "required_assets": high,
+            "result": self._calculate_personal_investment_year(
+                tax_engine, high, high, property_value, assumptions
+            ),
+        }
 
-        return self._calculate_personal_after_tax_cash(tax_engine, high, property_value)
+    def _calculate_corporate_investment_year(
+        self,
+        tax_engine: TaxEngine,
+        asset_value: float,
+        cost_basis: float,
+        assumptions: Dict[str, Any],
+        gross_salary: float,
+        fixed_cost: float,
+        company_insurance: float,
+        sale_proceeds: float = 0.0,
+    ) -> Dict[str, Any]:
+        income = self._calculate_rebalance_income(
+            asset_value,
+            cost_basis,
+            float(assumptions["dy"]),
+            float(assumptions["pa"]),
+            sale_proceeds,
+        )
+        taxable_income = income["dividend_income"] + income["realized_capital_gain"]
+        tax_base = max(
+            0.0,
+            taxable_income - gross_salary - fixed_cost - company_insurance,
+        )
+        corp_tax = tax_engine.calculate_corp_tax(tax_base)
+        net_cash = (
+            income["dividend_income"] - gross_salary - fixed_cost - company_insurance - corp_tax
+        )
+        ending_asset = max(0.0, income["market_value_after_appreciation"] + net_cash)
+        ending_basis = max(
+            0.0,
+            min(
+                ending_asset,
+                income["ending_cost_basis_before_income"] + max(0.0, net_cash),
+            ),
+        )
+        income.update({"health_insurance_income": 0.0, "capital_gains_tax": corp_tax})
+        return {
+            "investment_income": income,
+            "tax_base": tax_base,
+            "corp_tax": corp_tax,
+            "net_cash": net_cash,
+            "ending_asset": ending_asset,
+            "ending_cost_basis": ending_basis,
+        }
 
     def _solve_corporate_required_tax_base(
         self, tax_engine: TaxEngine, required_post_tax_profit: float
@@ -1338,39 +1577,53 @@ class DividendBackend:
         )
         tr = float(assumptions["tr"])
         simulation_years = int(assumptions["simulation_years"])
+        sale_schedule = self._build_actual_rebalance_schedule(
+            tax_engine, assumptions, config, "personal"
+        )
 
         # 현재 자산 기반 순방향 계산 (1년차 집중)
         annual_revenue = current_assets * tr
-        result = self._calculate_personal_after_tax_cash(tax_engine, annual_revenue, property_value)
+        result = self._calculate_personal_investment_year(
+            tax_engine,
+            current_assets,
+            current_assets,
+            property_value,
+            assumptions,
+            sale_schedule.get(1, {}).get("sale_proceeds", 0.0),
+        )
 
-        annual_net_cash = float(result["annual_net"])
-        income_tax = float(result["income_tax"])
+        annual_net_cash = float(result["net_cash"])
+        income_tax = float(result["total_tax"])
         annual_health = float(result["annual_health"])
 
         # 시계열 (복리 반영 30년 등)
         series: List[Dict[str, Any]] = []
         sustainability_series: List[Dict[str, Any]] = []
         asset_base = current_assets
+        cost_basis = current_assets
         cumulative_net_cashflow = 0.0
         target_monthly_cash = float(assumptions.get("target_monthly_household_cash_after_tax", 0))
         target_annual_cash = target_monthly_cash * 12
 
         for year in range(1, simulation_years + 1):
-            year_revenue = asset_base * tr
-            year_result = self._calculate_personal_after_tax_cash(
-                tax_engine, year_revenue, property_value
+            year_result = self._calculate_personal_investment_year(
+                tax_engine,
+                asset_base,
+                cost_basis,
+                property_value,
+                assumptions,
+                sale_schedule.get(year, {}).get("sale_proceeds", 0.0),
             )
-
-            year_net_growth = float(year_result["annual_net"])
-            cumulative_net_cashflow += year_net_growth
-            # 자산 성장을 보여주기 위해 세후 수익을 재투자한다고 가정 (복리)
-            asset_base += year_net_growth
+            year_net_cash = float(year_result["net_cash"])
+            cumulative_net_cashflow += year_net_cash
+            asset_base = float(year_result["ending_asset"])
+            cost_basis = float(year_result["ending_cost_basis"])
 
             series.append(
                 {
                     "year": year,
                     "net_worth": asset_base,
-                    "disposable_cash": year_net_growth,
+                    "disposable_cash": year_net_cash,
                     "cumulative_household_cash": 0.0,
                     "total_economic_value": asset_base,
                 }
@@ -1379,9 +1632,9 @@ class DividendBackend:
                 {
                     "year": year,
                     "asset_balance": asset_base,
-                    "household_cash": year_net_growth,
+                    "household_cash": year_net_cash,
                     "cumulative_household_cash": 0.0,
-                    "target_met": year_net_growth >= (target_annual_cash - 1.0),
+                    "target_met": year_net_cash >= (target_annual_cash - 1.0),
                 }
             )
 
@@ -1392,7 +1645,7 @@ class DividendBackend:
                 "cumulative_net_cashflow": cumulative_net_cashflow,
                 "annual_total_cost": income_tax + annual_health,
                 "annual_health_insurance": annual_health,
-                "after_tax_net_growth": annual_net_cash,
+                "after_tax_net_growth": float(result["ending_asset"]) - current_assets,
                 "required_annual_revenue": annual_revenue,
                 "required_assets": current_assets,
                 "net_yield": (annual_net_cash / current_assets * 100) if current_assets > 0 else 0,
@@ -1431,57 +1684,52 @@ class DividendBackend:
         tr = float(assumptions["tr"])
         simulation_years = int(assumptions["simulation_years"])
         annual_target_cash = float(assumptions["target_monthly_household_cash_after_tax"]) * 12
-        required = self._solve_personal_required_annual_revenue(
-            tax_engine, annual_target_cash, property_value
+        required_solution = self._solve_personal_required_assets(
+            tax_engine, annual_target_cash, property_value, assumptions
         )
-        annual_revenue = float(required["annual_revenue"])
-        income_tax = float(required["income_tax"])
+        required_assets = float(required_solution["required_assets"])
+        required = cast(Dict[str, Any], required_solution["result"])
+        annual_revenue = required_assets * tr
+        income_tax = float(required["total_tax"])
         annual_health = float(required["annual_health"])
-        required_assets = annual_revenue / tr if tr > 0 else float("inf")
         asset_margin = current_assets - required_assets
         series: List[Dict[str, Any]] = []
         sustainability_series: List[Dict[str, Any]] = []
         cumulative_household_cash = 0.0
         cumulative_net_cashflow = 0.0
         asset_base = current_assets
-        annual_net_growth = 0.0
+        cost_basis = current_assets
         for year in range(1, simulation_years + 1):
-            annual_net_growth = max(0.0, (asset_base * tr) - income_tax - annual_health)
-            asset_base = max(0.0, asset_base + annual_net_growth)
-            cumulative_household_cash += annual_target_cash
-            cumulative_net_cashflow += annual_target_cash
+            annual_result = self._calculate_personal_investment_year(
+                tax_engine, asset_base, cost_basis, property_value, assumptions
+            )
+            available_cash = max(0.0, float(annual_result["net_cash"]))
+            actual_cash = min(annual_target_cash, available_cash)
+            asset_base = max(0.0, float(annual_result["ending_asset"]) - actual_cash)
+            cost_basis = max(
+                0.0,
+                min(
+                    asset_base,
+                    float(annual_result["ending_cost_basis"]) - actual_cash,
+                ),
+            )
+            cumulative_household_cash += actual_cash
+            cumulative_net_cashflow += actual_cash
             series.append(
                 {
                     "year": year,
                     "net_worth": asset_base,
-                    "disposable_cash": annual_target_cash,
+                    "disposable_cash": actual_cash,
                     "cumulative_household_cash": cumulative_household_cash,
                     "total_economic_value": asset_base + cumulative_household_cash,
                 }
             )
-
-        sustainable_assets = current_assets
-        cumulative_actual_cash = 0.0
-        for year in range(1, simulation_years + 1):
-            annual_result = self._calculate_personal_after_tax_cash(
-                tax_engine, sustainable_assets * tr, property_value
-            )
-            available_cash = min(
-                float(annual_result["annual_net"]),
-                sustainable_assets + float(annual_result["annual_net"]),
-            )
-            actual_cash = min(annual_target_cash, max(0.0, available_cash))
-            sustainable_assets = max(
-                0.0,
-                sustainable_assets + float(annual_result["annual_net"]) - actual_cash,
-            )
-            cumulative_actual_cash += actual_cash
             sustainability_series.append(
                 {
                     "year": year,
-                    "asset_balance": sustainable_assets,
+                    "asset_balance": asset_base,
                     "household_cash": actual_cash,
-                    "cumulative_household_cash": cumulative_actual_cash,
+                    "cumulative_household_cash": cumulative_household_cash,
                     "target_met": actual_cash >= annual_target_cash - 1.0,
                 }
             )
@@ -1511,6 +1759,7 @@ class DividendBackend:
                 "net_corporate_cash": annual_target_cash,
                 "net_salary": 0.0,
                 "target_household_cash": annual_target_cash,
+                "audit_details": required["audit_details"],
             },
             "series": series,
             "sustainability_series": sustainability_series,
@@ -1529,7 +1778,12 @@ class DividendBackend:
         salary_recipients = cast(List[Dict[str, Any]], corporate.get("salary_recipients", []))
         current_assets = float(personal_assets.get("investment_assets") or 0.0)
         tr = float(assumptions["tr"])
+        dy = float(assumptions["dy"])
+        pa = float(assumptions["pa"])
         simulation_years = int(assumptions["simulation_years"])
+        sale_schedule = self._build_actual_rebalance_schedule(
+            tax_engine, assumptions, config, "corp"
+        )
         operating_costs = self._get_annual_corporate_operating_cost(corporate)
         monthly_bookkeeping_fee = operating_costs["monthly_bookkeeping_fee"]
         annual_corp_tax_adjustment_fee = operating_costs["annual_corp_tax_adjustment_fee"]
@@ -1561,51 +1815,82 @@ class DividendBackend:
 
         # 1년차 계산
         annual_revenue = current_assets * tr
-        # 위 근사는 복잡하므로 정확히 계산:
+        investment_income = self._calculate_rebalance_income(
+            current_assets,
+            current_assets,
+            dy,
+            pa,
+            sale_schedule.get(1, {}).get("sale_proceeds", 0.0),
+        )
         company_social_insurance = total_gross_salary * (
             tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
         )
 
+        taxable_investment_income = (
+            investment_income["dividend_income"] + investment_income["realized_capital_gain"]
+        )
         tax_base = max(
-            0.0, annual_revenue - total_gross_salary - fixed_cost_annual - company_social_insurance
+            0.0,
+            taxable_investment_income
+            - total_gross_salary
+            - fixed_cost_annual
+            - company_social_insurance,
         )
         corp_tax = tax_engine.calculate_corp_tax(tax_base)
         net_profit = (
-            annual_revenue
+            investment_income["dividend_income"]
             - total_gross_salary
             - fixed_cost_annual
             - company_social_insurance
             - corp_tax
         )
 
-        retained_earnings = net_profit
+        retained_earnings = (
+            investment_income["unrealized_appreciation"]
+            + investment_income["realized_capital_gain"]
+            + net_profit
+        )
         achievable_household_cash = total_net_salary + net_profit
 
         # 시계열 및 복리
         series = []
         sustainability_series = []
         asset_base = current_assets
+        cost_basis = current_assets
         cumulative_cash = 0.0
         cumulative_net_cashflow = 0.0
         target_monthly_cash = float(assumptions.get("target_monthly_household_cash_after_tax", 0))
         target_annual_cash = target_monthly_cash * 12
 
         for year in range(1, simulation_years + 1):
-            y_revenue = asset_base * tr
+            y_income = self._calculate_rebalance_income(
+                asset_base,
+                cost_basis,
+                dy,
+                pa,
+                sale_schedule.get(year, {}).get("sale_proceeds", 0.0),
+            )
+            y_taxable_income = y_income["dividend_income"] + y_income["realized_capital_gain"]
             y_tax_base = max(
-                0.0, y_revenue - total_gross_salary - fixed_cost_annual - company_social_insurance
+                0.0,
+                y_taxable_income
+                - total_gross_salary
+                - fixed_cost_annual
+                - company_social_insurance,
             )
             y_corp_tax = tax_engine.calculate_corp_tax(y_tax_base)
             y_net_profit = (
-                y_revenue
+                y_income["dividend_income"]
                 - total_gross_salary
                 - fixed_cost_annual
                 - company_social_insurance
                 - y_corp_tax
             )
-
-            y_retained = y_net_profit
-            asset_base += y_retained
+            asset_base = max(0.0, y_income["market_value_after_appreciation"] + y_net_profit)
+            cost_basis = min(
+                asset_base,
+                y_income["ending_cost_basis_before_income"] + max(0.0, y_net_profit),
+            )
             year_cash = total_net_salary + y_net_profit
             cumulative_cash += year_cash
             cumulative_net_cashflow += year_cash
@@ -1665,6 +1950,11 @@ class DividendBackend:
                 "net_salary": total_net_salary,
                 "target_household_cash": achievable_household_cash,
                 "audit_details": {
+                    "investment_income": {
+                        **investment_income,
+                        "health_insurance_income": 0.0,
+                        "capital_gains_tax": corp_tax,
+                    },
                     "corp_tax": {
                         "tax_base": tax_base,
                         "nominal_rate": tax_engine.corp_tax_nominal_rate,
@@ -1738,80 +2028,97 @@ class DividendBackend:
         company_insurance_total = gross_salary_annual * (
             tax_engine.pension_rate + tax_engine.health_rate + tax_engine.employment_rate
         )
-        required_loan_repayment = max(0.0, annual_target_cash - net_salary_annual)
-        required_tax_base = self._solve_corporate_required_tax_base(
-            tax_engine, required_loan_repayment
+        low = 0.0
+        dy = max(float(assumptions["dy"]), 0.001)
+        high = max(annual_target_cash / dy * 2, 1000000.0)
+        required_result = self._calculate_corporate_investment_year(
+            tax_engine,
+            high,
+            high,
+            assumptions,
+            gross_salary_annual,
+            fixed_cost_annual,
+            company_insurance_total,
         )
-        corp_tax = tax_engine.calculate_corp_tax(required_tax_base)
-        annual_revenue = (
-            gross_salary_annual + fixed_cost_annual + company_insurance_total + required_tax_base
-        )
-        required_assets = annual_revenue / tr if tr > 0 else float("inf")
+        while net_salary_annual + required_result["net_cash"] < annual_target_cash:
+            high *= 2
+            required_result = self._calculate_corporate_investment_year(
+                tax_engine,
+                high,
+                high,
+                assumptions,
+                gross_salary_annual,
+                fixed_cost_annual,
+                company_insurance_total,
+            )
+        for _ in range(80):
+            mid = (low + high) / 2
+            candidate = self._calculate_corporate_investment_year(
+                tax_engine,
+                mid,
+                mid,
+                assumptions,
+                gross_salary_annual,
+                fixed_cost_annual,
+                company_insurance_total,
+            )
+            if net_salary_annual + candidate["net_cash"] >= annual_target_cash:
+                high = mid
+                required_result = candidate
+            else:
+                low = mid
+        required_assets = high
+        annual_revenue = required_assets * tr
+        required_tax_base = float(required_result["tax_base"])
+        corp_tax = float(required_result["corp_tax"])
         asset_margin = current_assets - required_assets
-        annual_net_corporate_cash = max(
-            0.0,
-            annual_revenue
-            - gross_salary_annual
-            - fixed_cost_annual
-            - company_insurance_total
-            - corp_tax,
-        )
+        annual_net_corporate_cash = float(required_result["net_cash"])
         annual_net_cashflow = annual_net_corporate_cash + net_salary_annual
 
         asset_base = current_assets
+        cost_basis = current_assets
         cumulative_net_cashflow = 0.0
+        sustainability_series: List[Dict[str, Any]] = []
         for year in range(1, simulation_years + 1):
-            retained_earnings = max(
-                0.0,
-                (asset_base * tr)
-                - gross_salary_annual
-                - fixed_cost_annual
-                - company_insurance_total
-                - corp_tax,
+            annual_result = self._calculate_corporate_investment_year(
+                tax_engine,
+                asset_base,
+                cost_basis,
+                assumptions,
+                gross_salary_annual,
+                fixed_cost_annual,
+                company_insurance_total,
             )
-            asset_base = max(0.0, asset_base + retained_earnings)
-            cumulative_household_cash += annual_target_cash
-            cumulative_net_cashflow += annual_target_cash
+            available_cash = max(0.0, net_salary_annual + annual_result["net_cash"])
+            actual_cash = min(annual_target_cash, available_cash)
+            corporate_distribution = max(0.0, actual_cash - net_salary_annual)
+            asset_base = max(0.0, float(annual_result["ending_asset"]) - corporate_distribution)
+            cost_basis = max(
+                0.0,
+                min(
+                    asset_base,
+                    float(annual_result["ending_cost_basis"]) - corporate_distribution,
+                ),
+            )
+            retained_earnings = asset_base - current_assets
+            cumulative_household_cash += actual_cash
+            cumulative_net_cashflow += actual_cash
             series.append(
                 {
                     "year": year,
                     "net_worth": asset_base,
-                    "disposable_cash": annual_target_cash,
+                    "disposable_cash": actual_cash,
                     "cumulative_household_cash": cumulative_household_cash,
                     "total_economic_value": asset_base + cumulative_household_cash,
                 }
             )
-
-        sustainability_series: List[Dict[str, Any]] = []
-        sustainable_assets = current_assets
-        cumulative_actual_cash = 0.0
-        for year in range(1, simulation_years + 1):
-            annual_revenue_current = sustainable_assets * tr
-            tax_base_current = max(
-                0.0,
-                annual_revenue_current
-                - gross_salary_annual
-                - fixed_cost_annual
-                - company_insurance_total,
-            )
-            corp_tax_current = tax_engine.calculate_corp_tax(tax_base_current)
-            post_tax_profit_current = (
-                annual_revenue_current
-                - gross_salary_annual
-                - fixed_cost_annual
-                - company_insurance_total
-                - corp_tax_current
-            )
-            actual_household_cash = net_salary_annual + post_tax_profit_current
-            sustainable_assets = max(0.0, sustainable_assets + post_tax_profit_current)
-            cumulative_actual_cash += actual_household_cash
             sustainability_series.append(
                 {
                     "year": year,
-                    "asset_balance": sustainable_assets,
-                    "household_cash": actual_household_cash,
-                    "cumulative_household_cash": cumulative_actual_cash,
-                    "target_met": actual_household_cash >= annual_target_cash - 1.0,
+                    "asset_balance": asset_base,
+                    "household_cash": actual_cash,
+                    "cumulative_household_cash": cumulative_household_cash,
+                    "target_met": actual_cash >= annual_target_cash - 1.0,
                 }
             )
 
@@ -1852,6 +2159,7 @@ class DividendBackend:
                 "net_salary": net_salary_annual,
                 "target_household_cash": annual_target_cash,
                 "audit_details": {
+                    "investment_income": required_result["investment_income"],
                     "corp_tax": {
                         "tax_base": required_tax_base,
                         "nominal_rate": tax_engine.corp_tax_nominal_rate,
@@ -1989,7 +2297,9 @@ class DividendBackend:
         return {
             "success": True,
             "data": {
-                "assumptions": assumptions,
+                "assumptions": {
+                    key: value for key, value in assumptions.items() if not key.startswith("_")
+                },
                 "personal": personal,
                 "corporate": corporate,
                 "comparison": self._build_cost_comparison_summary(personal, corporate),
@@ -2394,14 +2704,18 @@ class DividendBackend:
         """마스터 전략의 포트폴리오 참조 상태와 계산 가능 여부를 반환합니다."""
         corp_id = master.get("corp_id")
         pension_id = master.get("pension_id")
+        personal_id = master.get("personal_id")
         corp_portfolio = self.get_portfolio_by_id(corp_id)
         pension_portfolio = self.get_portfolio_by_id(pension_id)
+        personal_portfolio = self.get_portfolio_by_id(personal_id)
         missing_refs: List[str] = []
 
         if corp_id and corp_portfolio is None:
             missing_refs.append("Corporate")
         if pension_id and pension_portfolio is None:
             missing_refs.append("Pension")
+        if personal_id and personal_portfolio is None:
+            missing_refs.append("Personal")
 
         message = None
         if missing_refs:
@@ -2414,6 +2728,7 @@ class DividendBackend:
         return {
             "corp_portfolio": corp_portfolio,
             "pension_portfolio": pension_portfolio,
+            "personal_portfolio": personal_portfolio,
             "missing_refs": missing_refs,
             "is_broken": bool(missing_refs),
             "message": message,
@@ -2433,12 +2748,15 @@ class DividendBackend:
 
         corp_portfolio = cast(Optional[Dict[str, Any]], reference_status["corp_portfolio"])
         pension_portfolio = cast(Optional[Dict[str, Any]], reference_status["pension_portfolio"])
+        personal_portfolio = cast(Optional[Dict[str, Any]], reference_status["personal_portfolio"])
         corp_stats = self.get_portfolio_stats_by_id(master.get("corp_id"), pa_scenario)
         pension_stats = self.get_portfolio_stats_by_id(master.get("pension_id"), pa_scenario)
+        personal_stats = self.get_portfolio_stats_by_id(master.get("personal_id"), pa_scenario)
 
         corp_capital = corp_portfolio["total_capital"] if corp_portfolio else 0
         pension_capital = pension_portfolio["total_capital"] if pension_portfolio else 0
-        total_capital = corp_capital + pension_capital
+        personal_capital = personal_portfolio["total_capital"] if personal_portfolio else 0
+        total_capital = corp_capital + pension_capital + personal_capital
 
         combined_tr = 0.0
         combined_yield = 0.0
@@ -2446,10 +2764,12 @@ class DividendBackend:
             combined_tr = (
                 corp_stats["expected_return"] * corp_capital
                 + pension_stats["expected_return"] * pension_capital
+                + personal_stats["expected_return"] * personal_capital
             ) / total_capital
             combined_yield = (
                 corp_stats["dividend_yield"] * corp_capital
                 + pension_stats["dividend_yield"] * pension_capital
+                + personal_stats["dividend_yield"] * personal_capital
             ) / total_capital
         elif corp_portfolio:
             combined_tr = corp_stats["expected_return"]
@@ -2467,6 +2787,7 @@ class DividendBackend:
                 **reference_status,
                 "corp_stats": corp_stats,
                 "pension_stats": pension_stats,
+                "personal_stats": personal_stats,
                 "combined_tr": combined_tr,
                 "combined_yield": combined_yield,
             },
@@ -2483,11 +2804,13 @@ class DividendBackend:
             data = cast(Dict[str, Any], master_calc["data"])
             corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
             pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+            personal_p = cast(Optional[Dict[str, Any]], data["personal_portfolio"])
             combined_tr = data.get("combined_tr")
             combined_yield = data.get("combined_yield")
 
             summary["corp_name"] = corp_p["name"] if corp_p else "-"
             summary["pension_name"] = pen_p["name"] if pen_p else "-"
+            summary["personal_name"] = personal_p["name"] if personal_p else "-"
             summary["combined_yield"] = (
                 combined_yield * 100.0 if combined_yield is not None else 0.0
             )
@@ -2498,9 +2821,11 @@ class DividendBackend:
             data = cast(Dict[str, Any], master_calc["data"])
             corp_p = cast(Optional[Dict[str, Any]], data["corp_portfolio"])
             pen_p = cast(Optional[Dict[str, Any]], data["pension_portfolio"])
+            personal_p = cast(Optional[Dict[str, Any]], data["personal_portfolio"])
 
             summary["corp_name"] = corp_p["name"] if corp_p else "-"
             summary["pension_name"] = pen_p["name"] if pen_p else "-"
+            summary["personal_name"] = personal_p["name"] if personal_p else "-"
             summary["combined_yield"] = None
             summary["combined_tr"] = None
             summary["broken_reference"] = True
@@ -2536,7 +2861,11 @@ class DividendBackend:
     def is_portfolio_used_in_master(self, p_id: str) -> bool:
         """포트폴리오가 마스터 전략에서 사용 중인지 확인합니다. [REQ-PRT-08.3]"""
         for m in self.master_portfolios:
-            if m.get("corp_id") == p_id or m.get("pension_id") == p_id:
+            if (
+                m.get("corp_id") == p_id
+                or m.get("pension_id") == p_id
+                or m.get("personal_id") == p_id
+            ):
                 return True
         return False
 
@@ -2555,7 +2884,9 @@ class DividendBackend:
                 (
                     m
                     for m in self.master_portfolios
-                    if m.get("corp_id") == p_id or m.get("pension_id") == p_id
+                    if m.get("corp_id") == p_id
+                    or m.get("pension_id") == p_id
+                    or m.get("personal_id") == p_id
                 ),
                 None,
             )
@@ -2593,9 +2924,10 @@ class DividendBackend:
         name: str,
         corp_id: Optional[str] = None,
         pension_id: Optional[str] = None,
+        personal_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """새로운 마스터 전략을 생성합니다. [REQ-PRT-08.1]"""
-        if not corp_id and not pension_id:
+        if not corp_id and not pension_id and not personal_id:
             return {"success": False, "message": "최소 하나 이상의 포트폴리오를 선택해야 합니다."}
 
         new_m = {
@@ -2603,6 +2935,7 @@ class DividendBackend:
             "name": name,
             "corp_id": corp_id,
             "pension_id": pension_id,
+            "personal_id": personal_id,
             "is_active": len(self.master_portfolios) == 0,  # 첫 번째면 자동 활성
         }
         self.master_portfolios.append(new_m)

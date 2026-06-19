@@ -16,7 +16,9 @@ test.describe("Cost Comparison Simulator", () => {
 
     await page.goto("http://localhost:5173");
     await page.getByTestId("nav-cost-comparison").click();
-    await expect(page.getByTestId("cost-comparison-title")).toBeVisible();
+    await expect(page.getByTestId("cost-comparison-title")).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test.afterEach(async ({ request }) => {
@@ -46,6 +48,8 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-real-estate-value").fill("650000000");
     await page.getByTestId("cc-real-estate-ratio").fill("0.5");
     await page.getByTestId("cc-simulation-years").fill("5");
+    await page.getByTestId("cc-capital-gains-tax-rate").fill("0.22");
+    await page.getByTestId("cc-capital-gains-deduction").fill("2500000");
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
     await page.getByTestId("cc-monthly-bookkeeping-fee").fill("500000");
     await page.getByTestId("cc-annual-tax-adjustment-fee").fill("1200000");
@@ -65,6 +69,12 @@ test.describe("Cost Comparison Simulator", () => {
     );
     await expect(page.getByTestId("cc-result-empty")).toBeVisible();
     await expect(page.getByTestId("cc-simulation-years")).toHaveValue("5");
+    await expect(page.getByTestId("cc-capital-gains-tax-rate")).toHaveValue(
+      "0.22",
+    );
+    await expect(page.getByTestId("cc-capital-gains-deduction")).toHaveValue(
+      "2,500,000",
+    );
     await expect(page.getByTestId("cc-target-monthly-cash")).toHaveValue(
       "10,000,000",
     );
@@ -95,6 +105,16 @@ test.describe("Cost Comparison Simulator", () => {
       page.getByTestId("cc-run-button").click(),
     ]);
     const runPayload = await (await runResponsePromise).json();
+    expect(runPayload.data.assumptions.personal_capital_gains_tax_rate).toBe(
+      0.22,
+    );
+    expect(
+      runPayload.data.personal.breakdown.audit_details.investment_income
+        .health_insurance_income,
+    ).toBe(
+      runPayload.data.personal.breakdown.audit_details.investment_income
+        .dividend_income,
+    );
     expect(
       runPayload.data.corporate.breakdown.audit_details.corp_tax.nominal_rate,
     ).toBe(0.22);
@@ -194,6 +214,12 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(
       page.getByTestId("cc-kpi-personal-detail-modal"),
     ).toContainText(/건보료 계산식|Health Insurance Formula/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/미실현 평가이익|Unrealized Appreciation/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/실현 양도차익|Realized Capital Gain/i);
     await page
       .getByTestId("cc-kpi-personal-detail-applied-tax-rate-tooltip")
       .focus();

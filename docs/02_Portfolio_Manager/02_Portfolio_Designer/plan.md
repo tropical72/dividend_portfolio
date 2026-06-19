@@ -80,6 +80,14 @@
   - [x] **T-02-10.3.1** 종목 이관 팝업의 카테고리 선택지를 계좌 타입별 카테고리 구조에 맞게 교체.
   - [x] **T-02-10.3.2** 분석 리포트와 비교 대시보드의 카테고리 집계를 새 전략 카테고리 기준으로 갱신.
 
+### [Phase 11] 개인 일반계좌 Portfolio/Master UI (T-02-11)
+
+- [x] **T-02-11.1** Personal Taxable 계좌 타입과 master personal_id 계약을 문서화한다.
+- [ ] **T-02-11.2** API와 Playwright 실패 테스트를 작성한다.
+- [ ] **T-02-11.3** Portfolio Designer 생성/저장 및 마스터 선택 UI를 구현한다.
+- [ ] **T-02-11.4** Retirement 결과 차트/상세표에 개인 일반계좌를 표시한다.
+- [ ] **T-02-11.5** 품질 게이트를 통과한다.
+
 ### [Implementation Notes] 구현 메모
 
 - 기존 `Fixed/Cash/Growth/Dividend/HighIncome` 타입은 즉시 삭제하지 않고 호환 레이어로 잠시 유지한다.
