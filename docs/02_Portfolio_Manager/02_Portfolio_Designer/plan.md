@@ -83,10 +83,10 @@
 ### [Phase 11] 개인 일반계좌 Portfolio/Master UI (T-02-11)
 
 - [x] **T-02-11.1** Personal Taxable 계좌 타입과 master personal_id 계약을 문서화한다.
-- [ ] **T-02-11.2** API와 Playwright 실패 테스트를 작성한다.
-- [ ] **T-02-11.3** Portfolio Designer 생성/저장 및 마스터 선택 UI를 구현한다.
-- [ ] **T-02-11.4** Retirement 결과 차트/상세표에 개인 일반계좌를 표시한다.
-- [ ] **T-02-11.5** 품질 게이트를 통과한다.
+- [x] **T-02-11.2** Personal 저장/재로드, master 연결, Retirement 결과 표시를 검증하는 Playwright 실패 테스트를 작성한다.
+- [x] **T-02-11.3** Portfolio Designer 생성/저장 및 마스터 선택 UI를 구현하고 삭제 보호/가중 DY·TR 계약을 검증한다.
+- [x] **T-02-11.4** Retirement 결과 차트/상세표에 개인 일반계좌를 표시하고 실제 렌더링을 E2E로 검증한다.
+- [x] **T-02-11.5** 품질 게이트를 통과한다.
 
 ### [Implementation Notes] 구현 메모
 
@@ -96,4 +96,4 @@
 
 ---
 
-_마지막 업데이트: 2026-04-16 17:05:00_
+_마지막 업데이트: 2026-06-19_

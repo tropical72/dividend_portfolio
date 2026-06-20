@@ -135,10 +135,10 @@
 | D-CCS-10.1  | 저장된 Master Portfolio 기반 비용 비교 실행                                  | T-CCS-10.1  | TEST-CCS-101 | Done        | 138a5b8    | 2026.05.18       |
 | D-CCS-11.1  | 법인 운영비 입력을 월 기장비와 연 법인세 조정료로 분리                       | T-CCS-11.1  | TEST-CCS-102 | Done        | c14857f    | 2026.05.18       |
 | D-CCS-12.1  | 배당·미실현 PA·리밸런싱 실현차익 분리 및 건보/세금 반영 정정                | T-CCS-12    | TEST-CCS-103 | Done        | -          | 2026.06.12       |
-| D-RAMS-19.1 | 개인 일반계좌 및 실제 거래 이벤트/취득원가 원장 | T-01-19 | TEST-SUR-16 / TEST-SUR-17 | In Progress | - | 2026.06.13 |
-| D-PRT-11.1 | 개인 일반계좌 Portfolio Designer/Master/Retirement UI 통합 | T-02-11 | TEST-PRT-10 | In Progress | - | 2026.06.13 |
+| D-RAMS-19.1 | 개인 일반계좌 및 실제 거래 이벤트/취득원가 원장 | T-01-19 | TEST-SUR-16 / TEST-SUR-17 | Done | 78021e9 | 2026.06.19 |
+| D-PRT-11.1 | 개인 일반계좌 Portfolio Designer/Master/Retirement UI 통합 | T-02-11 | TEST-PRT-10 | Done | - | 2026.06.19 |
 | D-CCS-13.1 | 고정 매도비율 폐기 및 실제 리밸런싱 매도 연동 | T-CCS-13 | TEST-CCS-104 | Done | - | 2026.06.13 |
 
 ---
 
-_마지막 업데이트: 2026-05-05 22:10:00_
+_마지막 업데이트: 2026-06-19_

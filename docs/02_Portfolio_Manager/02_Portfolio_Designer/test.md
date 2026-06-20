@@ -52,6 +52,7 @@
   - Personal 선택 시 personal_account_params.initial_investment가 설계 투자금 기준으로 적용된다.
   - 마스터 전략에 personal_id를 저장하고 삭제 보호, 가중 DY/TR, 월별 배당 합계에 포함한다.
   - Retirement 결과의 초기값, 월별 차트, 상세표에 personal_balance가 표시되고 total_net_worth에 포함된다.
+  - Playwright는 저장된 Personal 포트폴리오 카드, master의 Personal 연결 표시, Retirement 차트 series 계약과 상세표 헤더를 실제 DOM에서 확인한다.
 
 ## 2. Feature Completion Gate [NEW]
 

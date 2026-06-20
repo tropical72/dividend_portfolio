@@ -1261,6 +1261,7 @@ export function RetirementTab() {
             <div
               className="relative flex h-[460px] flex-col rounded-[1.75rem] border border-white/80 bg-white/68 p-6 shadow-sm lg:col-span-7"
               data-testid="retirement-projection-chart"
+              data-series="total_net_worth,corp_balance,pension_balance,personal_balance"
             >
               <div className="mb-5 grid gap-3 sm:grid-cols-3">
                 <ChartSummaryCard

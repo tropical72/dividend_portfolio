@@ -845,6 +845,7 @@ export function PortfolioTab({
                   type="text"
                   placeholder="e.g. AAPL"
                   value={manualForm.symbol}
+                  data-testid="manual-symbol-input"
                   onChange={(e) =>
                     setManualForm({ ...manualForm, symbol: e.target.value })
                   }
@@ -859,6 +860,7 @@ export function PortfolioTab({
                   type="text"
                   placeholder="e.g. Apple Inc."
                   value={manualForm.name}
+                  data-testid="manual-name-input"
                   onChange={(e) =>
                     setManualForm({ ...manualForm, name: e.target.value })
                   }
@@ -944,6 +946,7 @@ export function PortfolioTab({
               </button>
               <button
                 onClick={handleAddManualItem}
+                data-testid="manual-add-confirm"
                 className="flex-1 rounded-2xl bg-emerald-500 py-4 text-xs font-semibold tracking-[0.08em] text-white shadow-sm transition-all hover:bg-emerald-600"
               >
                 {copy.addAsset}
@@ -1409,6 +1412,7 @@ export function PortfolioTab({
                     </div>
                     <button
                       onClick={() => setManualAdd({ category: cat.id })}
+                      data-testid={`portfolio-add-manual-${cat.id}`}
                       className="self-start rounded-2xl border border-slate-200 bg-slate-50 px-5 py-2.5 text-xs font-semibold tracking-[0.08em] text-slate-500 transition-all hover:bg-emerald-50 hover:text-emerald-700 md:self-center"
                     >
                       <PlusCircle size={16} /> {copy.addManually}
@@ -1750,6 +1754,7 @@ export function PortfolioTab({
               </button>
               <button
                 onClick={handleSaveExec}
+                data-testid="save-modal-confirm"
                 className="flex-1 rounded-2xl bg-emerald-500 py-4 font-semibold text-white transition-all hover:bg-emerald-600 shadow-sm"
               >
                 {copy.confirmSave}

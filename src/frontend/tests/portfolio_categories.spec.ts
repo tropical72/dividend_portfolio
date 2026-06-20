@@ -146,3 +146,66 @@ test("should support personal taxable account categories and capital", async ({
     await releaseE2ELock();
   }
 });
+
+test("should save personal portfolio, connect master, and render retirement account", async ({
+  page,
+  request,
+}) => {
+  let originalState: BackendTestState | null = null;
+  await acquireE2ELock();
+  try {
+    originalState = await captureBackendState(request);
+    await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("nav-asset-setup").click({ force: true });
+    await page.getByTestId("portfolio-subtab-design").click({ force: true });
+    await page.getByTestId("portfolio-account-personal").click();
+    await page.getByTestId("portfolio-name-input").fill("Personal E2E");
+    await page.getByTestId("portfolio-add-manual-Growth Engine").click();
+    await page.getByTestId("manual-symbol-input").fill("VOO");
+    await page.getByTestId("manual-name-input").fill("Vanguard S&P 500 ETF");
+    await page.getByTestId("manual-weight-input").fill("100");
+    await page.getByTestId("manual-add-confirm").click();
+    await page.getByTestId("portfolio-save-button").click();
+    await page.getByTestId("save-modal-account-personal").click();
+    await page.getByTestId("save-modal-confirm").click();
+
+    await page.getByTestId("portfolio-subtab-dashboard").click();
+    await expect(
+      page.getByRole("heading", { name: "Personal E2E" }).last(),
+    ).toBeVisible();
+    await page
+      .getByTestId("master-strategy-name-input")
+      .fill("Personal Master E2E");
+    await page
+      .getByTestId("master-personal-portfolio")
+      .selectOption({ label: "Personal E2E" });
+    await page
+      .getByTestId("save-master-strategy-btn")
+      .evaluate((element: HTMLButtonElement) => element.click());
+    await expect(page.getByText("Personal Master E2E").last()).toBeVisible();
+
+    const state = (await captureBackendState(request)) as BackendTestState & {
+      master_portfolios: Array<{ id: string; name: string }>;
+    };
+    const masterId =
+      state.master_portfolios.find(
+        (item) => item.name === "Personal Master E2E",
+      )?.id || "";
+    expect(masterId).not.toBe("");
+    await page
+      .getByTestId("activate-master-" + masterId)
+      .evaluate((element: HTMLButtonElement) => element.click());
+
+    await page.getByTestId("nav-retirement").click({ force: true });
+    await expect(
+      page.getByTestId("retirement-projection-chart"),
+    ).toHaveAttribute("data-series", /personal_balance/);
+    await page.getByTestId("retirement-detail-toggle").click();
+    await expect(
+      page.getByTestId("retirement-detail-header-personal-bal"),
+    ).toBeVisible();
+  } finally {
+    if (originalState) await restoreBackendState(request, originalState);
+    await releaseE2ELock();
+  }
+});
