@@ -216,6 +216,15 @@ test.describe("Cost Comparison Simulator", () => {
     ).toContainText(/건보료 계산식|Health Insurance Formula/i);
     await expect(
       page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/재산세 과세표준액|Property Tax Assessed Value/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/소득월액보험료|Monthly Income Premium/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
+    ).toContainText(/장기요양보험료|Long-term Care Premium/i);
+    await expect(
+      page.getByTestId("cc-kpi-personal-detail-modal"),
     ).toContainText(/미실현 평가이익|Unrealized Appreciation/i);
     await expect(
       page.getByTestId("cc-kpi-personal-detail-modal"),
@@ -281,6 +290,27 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-waterfall-basis")).toContainText(
       /법인 순현금|net corporate cash|투자자산 x TR|investment assets multiplied by TR/i,
     );
+  });
+
+  test("should render official local health insurance audit fields", async ({
+    page,
+  }) => {
+    const runResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/cost-comparison/run") &&
+        response.request().method() === "POST" &&
+        response.ok(),
+    );
+    await page.getByTestId("cc-run-button").click();
+    await runResponsePromise;
+    await page.getByTestId("cc-kpi-personal-detail-button").click();
+    const modal = page.getByTestId("cc-kpi-personal-detail-modal");
+    await expect(modal).toContainText(
+      /재산세 과세표준액|Property Tax Assessed Value/i,
+    );
+    await expect(modal).toContainText(/소득월액보험료|Monthly Income Premium/i);
+    await expect(modal).toContainText(/장기요양보험료|Long-term Care Premium/i);
+    await expect(modal).not.toContainText(/소득 점수|Income Points/i);
   });
 
   test("should run asset-driven mode with monthly disposable cash labeling", async ({

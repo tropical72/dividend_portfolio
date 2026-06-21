@@ -1,10 +1,12 @@
+import pytest
+
 from src.core.tax_engine import TaxEngine
 
 
 def test_local_health_insurance_calculation():
     """
-    지역건보료 계산 테스트 (2026년 가상 기준)
-    부동산 공시가 10억, 연 소득 2,000만 원일 때의 점수 합산 및 금액 검증
+    지역건보료 계산 기본 회귀 테스트
+    재산세 과세표준 10억, 연 소득 2,000만 원 기준
     """
     engine = TaxEngine()
 
@@ -12,11 +14,10 @@ def test_local_health_insurance_calculation():
     property_points = engine.get_property_points(property_val=1000000000)
     assert property_points > 0
 
-    # 2. 소득 점수 산출 검증
-    income_points = engine.get_income_points(annual_income=20000000)
-    assert income_points > 0
+    # 2. 2026년부터 소득은 점수화하지 않고 월 보험료율을 직접 적용
+    assert engine.get_income_points(annual_income=20000000) == 0
 
-    # 3. 최종 보험료 산출 (재산+소득 점수 * 단가)
+    # 3. 최종 보험료 산출 (소득월액보험료 + 재산보험료 + 장기요양)
     monthly_premium = engine.calculate_local_health_insurance(
         property_val=1000000000, annual_income=20000000
     )
@@ -24,6 +25,48 @@ def test_local_health_insurance_calculation():
     # 로그 출력을 위해 직접 문자열 포맷팅 사용
     msg = f"Monthly Premium: {monthly_premium}"
     print(f"\n[Test] {msg} KRW")
+
+
+def test_local_health_insurance_matches_2026_nhis_formula():
+    """2026년 공단 공식 산식과 재산 60등급표를 재현합니다."""
+    engine = TaxEngine(
+        {
+            "point_unit_price": 211.5,
+            "health_insurance_rate": 0.0719,
+            "long_term_care_rate": 0.009448,
+            "property_basic_deduction": 100000000,
+        }
+    )
+
+    ten_billion = engine.calculate_local_health_insurance_detailed(
+        property_val=1000000000, annual_income=12000000
+    )
+    assert ten_billion["taxable_property_value"] == 900000000
+    assert ten_billion["property_grade"] == 38
+    assert ten_billion["property_points"] == 1001
+    assert ten_billion["income_monthly_premium"] == pytest.approx(71900.0)
+    assert ten_billion["property_premium"] == pytest.approx(211711.0)
+    assert ten_billion["base_premium"] == pytest.approx(283610.0)
+    assert ten_billion["long_term_care_premium"] == pytest.approx(37260.0)
+    assert ten_billion["total_premium"] == pytest.approx(320870.0)
+
+    assessed_value = engine.calculate_local_health_insurance_detailed(
+        property_val=615000000, annual_income=12000000
+    )
+    assert assessed_value["taxable_property_value"] == 515000000
+    assert assessed_value["property_grade"] == 33
+    assert assessed_value["property_points"] == 812
+    assert assessed_value["total_premium"] == pytest.approx(275640.0)
+
+
+def test_property_grade_boundaries_and_basic_deduction():
+    engine = TaxEngine({"property_basic_deduction": 100000000})
+
+    assert engine.get_property_grade(100000000) == (0, 0)
+    assert engine.get_property_grade(104500000) == (1, 22)
+    assert engine.get_property_grade(104500001) == (2, 44)
+    assert engine.get_property_grade(7881240000) == (59, 2271)
+    assert engine.get_property_grade(7881240001) == (60, 2341)
 
 
 def test_corp_tax_calculation():

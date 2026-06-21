@@ -7,12 +7,79 @@ class TaxEngine:
     모든 세무 상수는 외부에서 주입받으며, 미지정 시 기본값을 사용함. [REQ-ARCH-2]
     """
 
+    PROPERTY_POINT_BRACKETS = (
+        (450, 22),
+        (900, 44),
+        (1350, 66),
+        (1800, 97),
+        (2250, 122),
+        (2700, 146),
+        (3150, 171),
+        (3600, 195),
+        (4050, 219),
+        (4500, 244),
+        (5020, 268),
+        (5590, 294),
+        (6220, 320),
+        (6930, 344),
+        (7710, 365),
+        (8590, 386),
+        (9570, 412),
+        (10700, 439),
+        (11900, 465),
+        (13300, 490),
+        (14800, 516),
+        (16400, 535),
+        (18300, 559),
+        (20400, 586),
+        (22700, 611),
+        (25300, 637),
+        (28100, 659),
+        (31300, 681),
+        (34900, 706),
+        (38800, 731),
+        (43200, 757),
+        (48100, 785),
+        (53600, 812),
+        (59700, 841),
+        (66500, 881),
+        (74000, 921),
+        (82400, 961),
+        (91800, 1001),
+        (103000, 1041),
+        (114000, 1091),
+        (127000, 1141),
+        (142000, 1191),
+        (158000, 1241),
+        (176000, 1291),
+        (196000, 1341),
+        (218000, 1391),
+        (242000, 1451),
+        (270000, 1511),
+        (300000, 1571),
+        (330000, 1641),
+        (363000, 1711),
+        (399300, 1781),
+        (439230, 1851),
+        (483153, 1921),
+        (531468, 1991),
+        (584615, 2061),
+        (643077, 2131),
+        (707385, 2201),
+        (778124, 2271),
+        (float("inf"), 2341),
+    )
+
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         config = config or {}
 
-        # 건강보험 관련 변수 (2025년 기본값)
-        self.point_unit_price = float(config.get("point_unit_price", 208.4))
-        self.ltc_rate = float(config.get("ltc_rate", 0.1295))
+        # 지역가입자 건강보험 정책값 (2026년 국민건강보험공단 기준)
+        self.point_unit_price = float(config.get("point_unit_price", 211.5))
+        self.health_insurance_rate = float(config.get("health_insurance_rate", 0.0719))
+        self.long_term_care_rate = float(config.get("long_term_care_rate", 0.009448))
+        self.property_basic_deduction = float(config.get("property_basic_deduction", 100000000))
+        # 기존 UI 호환용: 건강보험료 대비 장기요양보험료 비율
+        self.ltc_rate = self.long_term_care_rate / self.health_insurance_rate
 
         # 법인세 관련 변수
         self.corp_tax_threshold = float(config.get("corp_tax_threshold", 200000000))
@@ -59,36 +126,64 @@ class TaxEngine:
             "income_tax": income_tax,
         }
 
-    def get_property_points(self, property_val: float) -> int:
-        taxable_property = max(0, property_val - 100000000)
-        if taxable_property == 0:
-            return 0
-        import math
+    @staticmethod
+    def _truncate_to_ten_won(amount: float) -> float:
+        """공단 모의계산 표시 방식에 맞춰 10원 미만을 절사합니다."""
+        return float(int(max(0.0, amount) / 10) * 10)
 
-        return int(max(0, 100 * math.log10(max(1, taxable_property / 1000000))))
+    def get_property_grade(self, property_val: float) -> tuple[int, int]:
+        """1억 원 공제 후 재산세 과세표준액을 60등급 점수로 변환합니다."""
+        taxable_property = max(0.0, property_val - self.property_basic_deduction)
+        if taxable_property <= 0:
+            return 0, 0
+
+        taxable_manwon = taxable_property / 10000
+        for grade, (upper_manwon, points) in enumerate(self.PROPERTY_POINT_BRACKETS, start=1):
+            if taxable_manwon <= upper_manwon:
+                return grade, points
+        return 60, 2341
+
+    def get_property_points(self, property_val: float) -> int:
+        """재산세 과세표준액의 공제 후 60등급 점수를 반환합니다."""
+        return self.get_property_grade(property_val)[1]
 
     def get_income_points(self, annual_income: float) -> int:
-        if annual_income <= 3360000:
-            return 0
-        return int(annual_income / 1000000 * 20)
+        """폐기된 호환 인터페이스입니다. 2026년 소득보험료는 점수를 쓰지 않습니다."""
+        return 0
 
     def calculate_local_health_insurance_detailed(
         self, property_val: float, annual_income: float
     ) -> Dict[str, Any]:
-        """[REQ-CCS-55] 건강보험료 점수 산출 내역 상세 반환"""
-        p_points = self.get_property_points(property_val)
-        i_points = self.get_income_points(annual_income)
-        total_points = p_points + i_points
-        base_premium = total_points * self.point_unit_price
-        total_premium = base_premium * (1 + self.ltc_rate)
+        """2026년 지역가입자 건강보험료 공식과 재산 60등급을 적용합니다."""
+        property_grade, property_points = self.get_property_grade(property_val)
+        taxable_property = max(0.0, property_val - self.property_basic_deduction)
+        monthly_income = max(0.0, annual_income) / 12
+        income_monthly_premium = self._truncate_to_ten_won(
+            monthly_income * self.health_insurance_rate
+        )
+        property_premium = float(int(property_points * self.point_unit_price))
+        base_premium = self._truncate_to_ten_won(income_monthly_premium + property_premium)
+        long_term_care_premium = self._truncate_to_ten_won(
+            base_premium * self.long_term_care_rate / self.health_insurance_rate
+        )
+        total_premium = base_premium + long_term_care_premium
 
         return {
-            "property_points": p_points,
-            "income_points": i_points,
-            "total_points": total_points,
+            "property_assessed_value": max(0.0, property_val),
+            "property_basic_deduction": self.property_basic_deduction,
+            "taxable_property_value": taxable_property,
+            "property_grade": property_grade,
+            "property_points": property_points,
             "point_unit_price": self.point_unit_price,
-            "ltc_rate": self.ltc_rate,
+            "property_premium": property_premium,
+            "annual_income": max(0.0, annual_income),
+            "monthly_income": monthly_income,
+            "health_insurance_rate": self.health_insurance_rate,
+            "income_monthly_premium": income_monthly_premium,
             "base_premium": base_premium,
+            "long_term_care_rate": self.long_term_care_rate,
+            "ltc_rate": self.long_term_care_rate / self.health_insurance_rate,
+            "long_term_care_premium": long_term_care_premium,
             "total_premium": total_premium,
         }
 

@@ -326,7 +326,9 @@ async def run_retirement_simulation(
         "pension_params": ["monthly_withdrawal_target", "initial_investment"],
         "tax_and_insurance": [
             "point_unit_price",
-            "ltc_rate",
+            "health_insurance_rate",
+            "long_term_care_rate",
+            "property_basic_deduction",
             "corp_tax_threshold",
             "corp_tax_nominal_rate",
             "corp_tax_low_rate",

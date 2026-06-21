@@ -195,7 +195,10 @@ export interface RetirementConfig {
   planned_cashflows: PlannedCashflow[];
   tax_and_insurance: {
     point_unit_price: number;
-    ltc_rate: number;
+    health_insurance_rate: number;
+    long_term_care_rate: number;
+    property_basic_deduction: number;
+    ltc_rate?: number;
     corp_tax_threshold: number;
     corp_tax_nominal_rate: number;
     corp_tax_low_rate: number;
@@ -396,9 +399,18 @@ export interface CostComparisonScenarioResult {
     loan_repayment_gap?: number;
     audit_details?: {
       health?: {
+        property_assessed_value?: number;
+        property_basic_deduction?: number;
+        taxable_property_value?: number;
+        property_grade?: number;
         property_points?: number;
-        income_points?: number;
-        total_points?: number;
+        property_premium?: number;
+        annual_income?: number;
+        monthly_income?: number;
+        health_insurance_rate?: number;
+        income_monthly_premium?: number;
+        long_term_care_rate?: number;
+        long_term_care_premium?: number;
         point_unit_price?: number;
         ltc_rate?: number;
         base_premium?: number;

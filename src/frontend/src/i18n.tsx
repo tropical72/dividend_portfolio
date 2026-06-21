@@ -494,7 +494,7 @@ const translations = {
     "costComparison.runError": "Failed to run the cost comparison.",
     "costComparison.investmentAssets": "Investment Assets",
     "costComparison.pensionAssets": "Personal Pension Assets",
-    "costComparison.realEstateValue": "Real Estate Official Price",
+    "costComparison.realEstateValue": "Property Tax Assessed Value",
     "costComparison.realEstateRatio": "Ownership Ratio",
     "costComparison.paRate": "Price Appreciation",
     "costComparison.simulationYears": "Simulation Years",
@@ -602,7 +602,7 @@ const translations = {
     "costComparison.tooltip.pensionAssets":
       "Personal pension assets are stored separately and excluded from the direct personal vs corporate operating asset comparison in v1.",
     "costComparison.tooltip.realEstateValue":
-      "Officially assessed real estate value used only for health insurance property scoring in v1.",
+      "Enter the property tax assessed value as of June 1 for local health insurance, not the market or official price.",
     "costComparison.tooltip.realEstateRatio":
       "Your ownership share of the real estate value used in the local health insurance property base.",
     "costComparison.tooltip.paRate":
@@ -726,10 +726,13 @@ const translations = {
     "costComparison.taxBase": "Tax Base",
     "costComparison.taxThreshold": "Tax Threshold",
     "costComparison.operatingCostAnnual": "Annual Operating Cost",
-    "costComparison.propertyPoints": "Property Points",
-    "costComparison.incomePoints": "Income Points",
-    "costComparison.totalPoints": "Total Points",
-    "costComparison.unitPriceLtc": "Unit Price x LTC Rate",
+    "costComparison.propertyAssessedValue": "Property Tax Assessed Value",
+    "costComparison.propertyBasicDeduction": "Property Basic Deduction",
+    "costComparison.taxablePropertyValue": "Value After Deduction",
+    "costComparison.propertyGrade": "Property Grade",
+    "costComparison.propertyPremium": "Property Premium",
+    "costComparison.incomeMonthlyPremium": "Monthly Income Premium",
+    "costComparison.longTermCarePremium": "Long-term Care Premium",
     "costComparison.appliedTaxRate": "Applied Tax Rate",
     "costComparison.appliedCorpTaxRate": "Applied Corp Tax Rate",
     "costComparison.personalWins": "Personal operation is currently ahead.",
@@ -1205,7 +1208,7 @@ const translations = {
     "costComparison.runError": "비교 시뮬레이션 실행에 실패했습니다.",
     "costComparison.investmentAssets": "개인 투자자산",
     "costComparison.pensionAssets": "개인연금 자산",
-    "costComparison.realEstateValue": "부동산 공시지가",
+    "costComparison.realEstateValue": "재산세 과세표준액",
     "costComparison.realEstateRatio": "본인 지분율",
     "costComparison.paRate": "기대주가상승률",
     "costComparison.simulationYears": "시뮬레이션 기간",
@@ -1312,7 +1315,7 @@ const translations = {
     "costComparison.tooltip.pensionAssets":
       "개인연금 자산은 별도 고정자산으로 저장되며, v1에서는 개인 vs 법인 직접 운용자산 비교에서 제외합니다.",
     "costComparison.tooltip.realEstateValue":
-      "v1에서는 건강보험 재산 점수 계산에만 사용하는 부동산 공시지가입니다.",
+      "지역건보 계산에 사용하는 6월 1일 기준 재산세 과세표준액입니다. 공시가격이나 시가를 직접 입력하지 않습니다.",
     "costComparison.tooltip.realEstateRatio":
       "지역건보 재산 기준에 반영할 본인 지분율입니다.",
     "costComparison.tooltip.paRate":
@@ -1435,10 +1438,13 @@ const translations = {
     "costComparison.taxBase": "과세표준",
     "costComparison.taxThreshold": "과세 기준선",
     "costComparison.operatingCostAnnual": "연 운영비 합계",
-    "costComparison.propertyPoints": "재산 점수 (부동산 등)",
-    "costComparison.incomePoints": "소득 점수 (배당 등)",
-    "costComparison.totalPoints": "합계 점수",
-    "costComparison.unitPriceLtc": "점수당 단가 x 요양보험 요율",
+    "costComparison.propertyAssessedValue": "재산세 과세표준액",
+    "costComparison.propertyBasicDeduction": "재산 기본공제",
+    "costComparison.taxablePropertyValue": "공제 후 재산금액",
+    "costComparison.propertyGrade": "재산 등급",
+    "costComparison.propertyPremium": "재산보험료",
+    "costComparison.incomeMonthlyPremium": "소득월액보험료",
+    "costComparison.longTermCarePremium": "장기요양보험료",
     "costComparison.appliedTaxRate": "적용 소득세율",
     "costComparison.appliedCorpTaxRate": "적용 법인세율",
     "costComparison.personalWins": "현재 입력 기준으로 개인운용이 우세합니다.",

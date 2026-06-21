@@ -804,11 +804,45 @@ def test_rebalance_gain_is_taxed_but_excluded_from_personal_health_income(tmp_pa
     assert personal_income["realized_capital_gain"] > 0
     assert personal_income["capital_gains_tax"] > 0
     assert personal_income["health_insurance_income"] == pytest.approx(0.0)
-    assert personal_audit["health"]["income_points"] == 0
+    assert personal_audit["health"]["income_monthly_premium"] == pytest.approx(0.0)
     assert corporate_income["realized_capital_gain"] > 0
     assert corporate_audit["corp_tax"]["tax_base"] == pytest.approx(
         corporate_income["realized_capital_gain"]
     )
+
+
+def test_cost_comparison_uses_2026_local_health_insurance_formula(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    master_id = _create_category_pa_master(
+        backend,
+        name="CCS NHIS 2026",
+        corp_category="Dividend Growth",
+        pension_category="Dividend Growth",
+        dividend_yield=4.0,
+    )
+    monkeypatch.setattr(main_module, "backend", backend)
+    client = TestClient(main_module.app)
+    payload = _build_config_payload()
+    payload["simulation_mode"] = "asset"
+    payload["master_portfolio_id"] = master_id
+    payload["personal_assets"]["investment_assets"] = 300000000
+    payload["real_estate"]["official_price"] = 1000000000
+    payload["real_estate"]["ownership_ratio"] = 1.0
+    payload["assumptions"]["simulation_years"] = 1
+
+    response = client.post("/api/cost-comparison/run", json=payload)
+
+    assert response.status_code == 200
+    personal = response.json()["data"]["personal"]
+    health = personal["breakdown"]["audit_details"]["health"]
+    assert health["property_grade"] == 38
+    assert health["property_points"] == 1001
+    assert health["income_monthly_premium"] == pytest.approx(71900.0)
+    assert health["property_premium"] == pytest.approx(211711.0)
+    assert health["base_premium"] == pytest.approx(283610.0)
+    assert health["long_term_care_premium"] == pytest.approx(37260.0)
+    assert health["total_premium"] == pytest.approx(320870.0)
+    assert personal["breakdown"]["health_insurance"] == pytest.approx(320870.0 * 12)
 
 
 def test_cost_comparison_config_does_not_expose_fixed_rebalance_sale_ratio(tmp_path):

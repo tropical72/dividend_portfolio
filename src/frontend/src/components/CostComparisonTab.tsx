@@ -2160,80 +2160,88 @@ function ScenarioCostDetailModal({
             </div>
             <div className="mt-3 space-y-2">
               <DetailRow
-                label={t("costComparison.propertyPoints")}
+                label={t("costComparison.propertyAssessedValue")}
                 tooltip={
                   isKorean
-                    ? `지역가입자 건보료 산정에 반영되는 재산 점수입니다. 부동산 입력값을 점수 체계로 환산한 결과입니다.`
-                    : `Property points used in local health insurance scoring. This is derived from the modeled real estate input under the current scoring rules.`
+                    ? "입력한 재산세 과세표준액입니다."
+                    : "Entered property tax assessed value."
                 }
-                tooltipTestId={`${testIdPrefix}-detail-property-points-tooltip`}
+                value={formatKrw(
+                  auditDetails?.health?.property_assessed_value ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.propertyBasicDeduction")}
+                tooltip={
+                  isKorean
+                    ? "지역가입자 재산 기본공제 1억 원입니다."
+                    : "The local subscriber property basic deduction."
+                }
+                value={formatKrw(
+                  auditDetails?.health?.property_basic_deduction ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.taxablePropertyValue")}
+                tooltip={
+                  isKorean
+                    ? "과세표준액에서 기본공제를 차감한 60등급 판정 금액입니다."
+                    : "Value used for the 60-grade table after deduction."
+                }
+                value={formatKrw(
+                  auditDetails?.health?.taxable_property_value ?? 0,
+                )}
+              />
+              <DetailRow
+                label={t("costComparison.propertyGrade")}
+                tooltip={
+                  isKorean
+                    ? "공단 재산보험료 60등급표의 적용 등급과 점수입니다."
+                    : "Grade and points from the NHIS 60-grade property table."
+                }
                 value={
-                  auditDetails?.health?.property_points !== undefined
-                    ? `${auditDetails.health.property_points.toLocaleString()} 점`
+                  auditDetails?.health?.property_grade
+                    ? `${auditDetails.health.property_grade}등급 / ${auditDetails.health.property_points?.toLocaleString() ?? 0}점`
                     : "-"
                 }
               />
               <DetailRow
-                label={t("costComparison.incomePoints")}
+                label={t("costComparison.propertyPremium")}
                 tooltip={
                   isKorean
-                    ? `지역가입자 건보료 산정에 반영되는 소득 점수입니다. 개인 투자수익 등 소득 기반 점수입니다.`
-                    : `Income points used in local health insurance scoring. This reflects income-based points from personal investment income.`
+                    ? "재산점수에 부과점수당 금액을 곱한 월 재산보험료입니다."
+                    : "Monthly property premium: property points multiplied by the point-unit price."
                 }
-                tooltipTestId={`${testIdPrefix}-detail-income-points-tooltip`}
-                value={
-                  auditDetails?.health?.income_points !== undefined
-                    ? `${auditDetails.health.income_points.toLocaleString()} 점`
-                    : "-"
-                }
+                value={formatKrw(auditDetails?.health?.property_premium ?? 0)}
               />
               <DetailRow
-                label={t("costComparison.totalPoints")}
+                label={t("costComparison.incomeMonthlyPremium")}
                 tooltip={
                   isKorean
-                    ? `재산 점수와 소득 점수를 합산한 총점입니다. 이 총점에 점수당 단가를 곱해 건보료 본체를 계산합니다.`
-                    : `Combined score from property points and income points. This total is multiplied by the point-unit price to compute the base premium.`
+                    ? "연간 건보 반영소득을 12개월로 나눈 뒤 건강보험료율을 적용한 금액입니다."
+                    : "Monthly income premium from annual health-insurance income divided by 12 and multiplied by the health rate."
                 }
-                tooltipTestId={`${testIdPrefix}-detail-total-points-tooltip`}
-                value={
-                  auditDetails?.health?.total_points !== undefined
-                    ? `${auditDetails.health.total_points.toLocaleString()} 점`
-                    : "-"
-                }
+                value={formatKrw(
+                  auditDetails?.health?.income_monthly_premium ?? 0,
+                )}
               />
               <DetailRow
-                label={t("costComparison.unitPriceLtc")}
+                label={t("costComparison.longTermCarePremium")}
                 tooltip={
                   isKorean
-                    ? `점수당 단가 ${formatKrw(
-                        auditDetails?.health?.point_unit_price ?? 0,
-                      )}에 장기요양보험 ${formatPercent(
-                        healthLtcRate,
-                        1,
-                      )}를 반영한 계수입니다.`
-                    : `Point-unit price of ${formatKrw(
-                        auditDetails?.health?.point_unit_price ?? 0,
-                      )} with long-term care insurance at ${formatPercent(
-                        healthLtcRate,
-                        1,
-                      )} applied.`
+                    ? "건강보험료 본체에 장기요양보험료율을 건강보험료율로 나눈 비율을 적용한 금액입니다."
+                    : "Long-term care premium calculated from the base health premium and the statutory rate ratio."
                 }
-                tooltipTestId={`${testIdPrefix}-detail-unit-price-tooltip`}
-                value={
-                  auditDetails?.health?.point_unit_price
-                    ? `${formatKrw(auditDetails.health.point_unit_price)} x ${(
-                        (1 + (auditDetails.health.ltc_rate || 0)) *
-                        100
-                      ).toFixed(1)}%`
-                    : "-"
-                }
+                value={formatKrw(
+                  auditDetails?.health?.long_term_care_premium ?? 0,
+                )}
               />
               <DetailRow
                 label={t("costComparison.healthPremiumBase")}
                 tooltip={
                   isKorean
-                    ? `장기요양보험을 더하기 전 건보료 본체입니다. 총점과 점수당 단가로 계산됩니다.`
-                    : `Base health premium before adding long-term care insurance. This is computed from total points and the point-unit price.`
+                    ? `장기요양보험을 더하기 전 소득월액보험료와 재산보험료의 합계입니다.`
+                    : `Base health premium before long-term care insurance, equal to the income premium plus property premium.`
                 }
                 tooltipTestId={`${testIdPrefix}-detail-health-base-tooltip`}
                 value={formatKrw(auditDetails?.health?.base_premium ?? 0)}
