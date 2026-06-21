@@ -64,6 +64,27 @@ class ProjectionEngine:
         monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", 0.0))
         annual_corp_tax_adjustment_fee = float(p("annual_corp_tax_adjustment_fee", 0.0))
         employee_count = int(p("employee_count", 0))
+        corp_enabled = bool(p("corp_enabled", True))
+        pension_enabled = bool(p("pension_enabled", True))
+        personal_enabled = bool(p("personal_enabled", True))
+        personal_initial_cost_basis = float(
+            p("personal_initial_cost_basis", initial_assets.get("personal", 0.0))
+        )
+        personal_external_financial_income = float(p("personal_external_financial_income", 0.0))
+        personal_other_comprehensive_tax_base = float(
+            p("personal_other_comprehensive_tax_base", 0.0)
+        )
+        personal_property_assessed_value = float(p("personal_property_assessed_value", 0.0))
+        if not corp_enabled:
+            loan_balance = 0.0
+            corp_salary = 0.0
+            monthly_bookkeeping_fee = 0.0
+            annual_corp_tax_adjustment_fee = 0.0
+            employee_count = 0
+        if not pension_enabled:
+            pension_withdrawal_target = 0.0
+        if not personal_enabled:
+            personal_withdrawal_target = 0.0
         corporate_rules = {
             "may_sgov_target_months": float(p("sgov_target_months", 30.0)),
             "november_sgov_target_months": float(
@@ -146,6 +167,12 @@ class ProjectionEngine:
             "pension": dict(pension_assets),
             "personal": dict(personal_assets),
         }
+        personal_market_value = sum(personal_assets.values())
+        if personal_market_value > 0:
+            basis_ratio = max(0.0, personal_initial_cost_basis) / personal_market_value
+            self._active_cost_basis_by_account["personal"] = {
+                category: value * basis_ratio for category, value in personal_assets.items()
+            }
         self._active_trade_events: list[Dict[str, Any]] = []
 
         current_stress = False
@@ -165,6 +192,9 @@ class ProjectionEngine:
         corp_deductible_expenses_by_year: Dict[int, float] = {}
         corp_tax_assessed_by_year: Dict[int, float] = {}
         corp_tax_prepay_by_year: Dict[int, float] = {}
+        personal_dividend_income_by_year: Dict[int, float] = {}
+        personal_foreign_withholding_by_year: Dict[int, float] = {}
+        personal_tax_ledger_by_year: Dict[int, Dict[str, Any]] = {}
         monthly_data = []
 
         for index in range(1, months + 1):
@@ -194,7 +224,7 @@ class ProjectionEngine:
                 sim_year,
                 sim_month,
             )
-            self._apply_monthly_returns(
+            personal_gross_dividend = self._apply_monthly_returns(
                 "personal",
                 personal_assets,
                 personal_distribution_run_rates,
@@ -202,6 +232,27 @@ class ProjectionEngine:
                 params,
                 sim_year,
                 sim_month,
+            )
+            personal_foreign_withholding = (
+                personal_gross_dividend * self.tax_engine.us_dividend_foreign_withholding_rate
+                if personal_enabled
+                else 0.0
+            )
+            personal_foreign_withholding_paid = self._pay_personal_cash_obligation(
+                personal_assets,
+                personal_distribution_run_rates,
+                personal_stats,
+                params,
+                sim_year,
+                sim_month,
+                personal_foreign_withholding,
+            )
+            personal_dividend_income_by_year[sim_year] = (
+                personal_dividend_income_by_year.get(sim_year, 0.0) + personal_gross_dividend
+            )
+            personal_foreign_withholding_by_year[sim_year] = (
+                personal_foreign_withholding_by_year.get(sim_year, 0.0)
+                + personal_foreign_withholding_paid
             )
             corp_realized_income_by_year[sim_year] = (
                 corp_realized_income_by_year.get(sim_year, 0.0) + corp_realized_income
@@ -235,15 +286,98 @@ class ProjectionEngine:
             corporate_monthly_operating_cost = (
                 corp_bookkeeping_target + corp_tax_adjustment_fee_target + corp_tax_payment_target
             )
-            corp_monthly_need = self._corporate_cash_need(
-                household_need=current_total_need,
-                phase=phase,
-                pension_withdrawal_target=pension_withdrawal_target,
-                national_pension_amount=national_pension_amount,
-                corp_salary=corp_salary,
-                employee_count=employee_count,
-                corporate_monthly_operating_cost=corporate_monthly_operating_cost,
-                loan_balance=loan_balance,
+            corp_monthly_need = (
+                self._corporate_cash_need(
+                    household_need=current_total_need,
+                    phase=phase,
+                    pension_withdrawal_target=pension_withdrawal_target,
+                    national_pension_amount=national_pension_amount,
+                    corp_salary=corp_salary,
+                    employee_count=employee_count,
+                    corporate_monthly_operating_cost=corporate_monthly_operating_cost,
+                    loan_balance=loan_balance,
+                )
+                if corp_enabled
+                else 0.0
+            )
+
+            personal_tax_payment = 0.0
+            personal_dividend_additional_tax = 0.0
+            personal_capital_gains_tax = 0.0
+            personal_tax_assessment_year = sim_year - 1
+            if personal_enabled and sim_month == self.tax_engine.personal_tax_payment_month:
+                assessed_dividend = personal_dividend_income_by_year.get(
+                    personal_tax_assessment_year, 0.0
+                )
+                dividend_tax_detail = self.tax_engine.calculate_us_dividend_tax(
+                    assessed_dividend,
+                    other_financial_income=personal_external_financial_income,
+                    other_comprehensive_tax_base=personal_other_comprehensive_tax_base,
+                )
+                realized_gain = sum(
+                    float(event.get("realized_gain", 0.0))
+                    for event in self._active_trade_events
+                    if event.get("account") == "personal"
+                    and int(event.get("year") or 0) == personal_tax_assessment_year
+                )
+                capital_tax_detail = self.tax_engine.calculate_us_capital_gains_tax(realized_gain)
+                personal_dividend_additional_tax = float(
+                    dividend_tax_detail["domestic_additional_tax"]
+                )
+                personal_capital_gains_tax = float(capital_tax_detail["capital_gains_tax"])
+                personal_tax_payment = self._pay_personal_cash_obligation(
+                    personal_assets,
+                    personal_distribution_run_rates,
+                    personal_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    personal_dividend_additional_tax + personal_capital_gains_tax,
+                )
+                personal_tax_ledger_by_year[personal_tax_assessment_year] = {
+                    "tax_year": personal_tax_assessment_year,
+                    "payment_year": sim_year,
+                    "payment_month": sim_month,
+                    "gross_dividend": assessed_dividend,
+                    "foreign_withholding_tax": personal_foreign_withholding_by_year.get(
+                        personal_tax_assessment_year, 0.0
+                    ),
+                    **dividend_tax_detail,
+                    **capital_tax_detail,
+                    "tax_payment": personal_tax_payment,
+                }
+
+            reflection_month = self.tax_engine.health_income_reflection_month
+            reflection_lag = self.tax_engine.health_income_reflection_lag_years
+            reflected_income_year = (
+                sim_year - reflection_lag
+                if sim_month >= reflection_month
+                else sim_year - reflection_lag - 1
+            )
+            reflected_financial_income = (
+                personal_dividend_income_by_year.get(reflected_income_year, 0.0)
+                + personal_external_financial_income
+            )
+            health_income = (
+                reflected_financial_income
+                if reflected_financial_income >= self.tax_engine.health_financial_income_threshold
+                else 0.0
+            )
+            personal_health_detail = self.tax_engine.calculate_local_health_insurance_detailed(
+                personal_property_assessed_value, health_income
+            )
+            personal_health_insurance = (
+                self._pay_personal_cash_obligation(
+                    personal_assets,
+                    personal_distribution_run_rates,
+                    personal_stats,
+                    params,
+                    sim_year,
+                    sim_month,
+                    float(personal_health_detail["total_premium"]),
+                )
+                if personal_enabled
+                else 0.0
             )
 
             pension_draw = 0.0
@@ -290,6 +424,16 @@ class ProjectionEngine:
                 corp_tax_prepay_by_year[sim_year] = (
                     corp_tax_prepay_by_year.get(sim_year, 0.0) + actual_corp_tax_payment
                 )
+
+            household_shortfall = max(
+                0.0,
+                current_total_need
+                - pension_draw
+                - national_income
+                - actual_net_salary
+                - shareholder_loan_payment
+                - personal_draw,
+            )
 
             pre_review_corp_sgov_months = self._months_cover(
                 corp_assets["SGOV Buffer"], corp_monthly_need
@@ -521,6 +665,16 @@ class ProjectionEngine:
                     "corp_draw": corp_draw,
                     "pension_draw": pension_draw,
                     "personal_draw": personal_draw,
+                    "personal_gross_dividend": personal_gross_dividend,
+                    "personal_foreign_withholding_tax": personal_foreign_withholding_paid,
+                    "personal_dividend_additional_tax": personal_dividend_additional_tax,
+                    "personal_capital_gains_tax": personal_capital_gains_tax,
+                    "personal_tax_payment": personal_tax_payment,
+                    "personal_tax_assessment_year": personal_tax_assessment_year,
+                    "personal_health_insurance": personal_health_insurance,
+                    "personal_health_income_year": reflected_income_year,
+                    "personal_health_income": health_income,
+                    "personal_health_property_points": personal_health_detail["property_points"],
                     "corp_bookkeeping_paid": actual_bookkeeping_paid,
                     "corp_tax_adjustment_fee_paid": actual_tax_adjustment_fee_paid,
                     "corp_tax_payment": actual_corp_tax_payment,
@@ -578,6 +732,9 @@ class ProjectionEngine:
             "monthly_data": monthly_data,
             "trade_events": list(getattr(self, "_active_trade_events", [])),
             "ending_cost_basis": deepcopy(getattr(self, "_active_cost_basis_by_account", {})),
+            "personal_tax_ledger": [
+                personal_tax_ledger_by_year[year] for year in sorted(personal_tax_ledger_by_year)
+            ],
         }
 
     def _build_account_state(
@@ -1690,6 +1847,41 @@ class ProjectionEngine:
                 sim_year=sim_year,
                 sim_month=sim_month,
             )
+
+    def _pay_personal_cash_obligation(
+        self,
+        personal_assets: Dict[str, float],
+        personal_distribution_run_rates: Dict[str, float],
+        personal_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
+        amount: float,
+    ) -> float:
+        due = max(0.0, amount)
+        if due <= 0:
+            return 0.0
+        if personal_assets["SGOV Buffer"] < due:
+            self._transfer_from_sequence(
+                personal_assets,
+                personal_distribution_run_rates,
+                "personal",
+                personal_stats,
+                params,
+                sim_year,
+                sim_month,
+                "SGOV Buffer",
+                due - personal_assets["SGOV Buffer"],
+                (
+                    ("Bond Buffer", 0.0),
+                    ("High Income", 0.0),
+                    ("Dividend Growth", 0.0),
+                    ("Growth Engine", 0.0),
+                ),
+            )
+        paid = min(due, personal_assets["SGOV Buffer"])
+        personal_assets["SGOV Buffer"] -= paid
+        return paid
 
     def _transfer(
         self,

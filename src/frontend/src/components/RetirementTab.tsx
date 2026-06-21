@@ -331,6 +331,16 @@ export function RetirementTab() {
     is_initial_state: true,
   };
   const detailLogRows: DetailLogRow[] = [initialLedgerRow, ...monthlyData];
+  const latestPersonalTaxRow = [...monthlyData]
+    .reverse()
+    .find(
+      (month) =>
+        (month.personal_gross_dividend || 0) > 0 ||
+        (month.personal_tax_payment || 0) > 0 ||
+        (month.personal_health_insurance || 0) > 0,
+    );
+  const personalTaxAuditRow =
+    latestPersonalTaxRow ?? monthlyData[monthlyData.length - 1];
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const pensionSgovTargetMonths =
     strategyRulesSummary?.pension_sgov_target_months ??
@@ -1493,6 +1503,45 @@ export function RetirementTab() {
         </div>
         {isDetailOpen ? (
           <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/76 shadow-sm">
+            {personalTaxAuditRow && (
+              <div
+                data-testid="retirement-personal-tax-audit"
+                className="grid grid-cols-2 gap-3 border-b border-sky-100 bg-sky-50/80 p-5 text-xs md:grid-cols-5"
+              >
+                {[
+                  [
+                    "Gross Dividend",
+                    personalTaxAuditRow.personal_gross_dividend,
+                  ],
+                  [
+                    "U.S. Withholding",
+                    personalTaxAuditRow.personal_foreign_withholding_tax,
+                  ],
+                  [
+                    "Domestic Tax",
+                    personalTaxAuditRow.personal_dividend_additional_tax,
+                  ],
+                  [
+                    "Capital Gains Tax",
+                    personalTaxAuditRow.personal_capital_gains_tax,
+                  ],
+                  [
+                    "Health Premium",
+                    personalTaxAuditRow.personal_health_insurance,
+                  ],
+                ].map(([label, value]) => (
+                  <div
+                    key={String(label)}
+                    className="rounded-xl bg-white/80 p-3"
+                  >
+                    <div className="text-slate-500">{label}</div>
+                    <div className="mt-1 font-bold text-slate-800">
+                      {Number(value || 0).toLocaleString("ko-KR")}원
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="custom-scrollbar max-h-[650px] overflow-y-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 z-10 bg-white/95 text-[11px] font-semibold tracking-[0.08em] text-slate-500 backdrop-blur-md">

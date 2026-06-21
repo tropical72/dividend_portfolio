@@ -93,6 +93,25 @@ class TaxEngine:
         self.health_rate = float(config.get("health_rate", 0.03545))
         self.employment_rate = float(config.get("employment_rate", 0.009))
         self.income_tax_estimate_rate = float(config.get("income_tax_estimate_rate", 0.05))
+        self.us_dividend_foreign_withholding_rate = float(
+            config.get("us_dividend_foreign_withholding_rate", 0.15)
+        )
+        self.domestic_dividend_tax_rate = float(config.get("domestic_dividend_tax_rate", 0.154))
+        self.financial_income_comprehensive_threshold = float(
+            config.get("financial_income_comprehensive_threshold", 20000000)
+        )
+        self.us_capital_gains_tax_rate = float(config.get("us_capital_gains_tax_rate", 0.22))
+        self.us_capital_gains_annual_deduction = float(
+            config.get("us_capital_gains_annual_deduction", 2500000)
+        )
+        self.personal_tax_payment_month = int(config.get("personal_tax_payment_month", 5))
+        self.health_financial_income_threshold = float(
+            config.get("health_financial_income_threshold", 10000000)
+        )
+        self.health_income_reflection_month = int(config.get("health_income_reflection_month", 11))
+        self.health_income_reflection_lag_years = int(
+            config.get("health_income_reflection_lag_years", 1)
+        )
 
     def calculate_corp_tax(self, profit: float) -> float:
         """법인세 산출.
@@ -191,6 +210,88 @@ class TaxEngine:
         """기존 인터페이스 유지"""
         result = self.calculate_local_health_insurance_detailed(property_val, annual_income)
         return result["total_premium"]
+
+    @staticmethod
+    def _progressive_income_tax_national(tax_base: float) -> float:
+        """종합소득 과세표준의 국세 산출세액을 누진구간으로 계산합니다."""
+        taxable = max(0.0, tax_base)
+        brackets = (
+            (14000000.0, 0.06),
+            (50000000.0, 0.15),
+            (88000000.0, 0.24),
+            (150000000.0, 0.35),
+            (300000000.0, 0.38),
+            (500000000.0, 0.40),
+            (1000000000.0, 0.42),
+            (float("inf"), 0.45),
+        )
+        tax = 0.0
+        lower = 0.0
+        for upper, rate in brackets:
+            band = min(taxable, upper) - lower
+            if band > 0:
+                tax += band * rate
+            if taxable <= upper:
+                break
+            lower = upper
+        return tax
+
+    def calculate_progressive_income_tax(self, tax_base: float) -> float:
+        """지방소득세 10%를 포함한 종합소득 산출세액 추정값입니다."""
+        return self._progressive_income_tax_national(tax_base) * 1.1
+
+    def calculate_us_dividend_tax(
+        self,
+        gross_dividend: float,
+        *,
+        other_financial_income: float = 0.0,
+        other_comprehensive_tax_base: float = 0.0,
+    ) -> Dict[str, Any]:
+        """미국 상장 주식·ETF 배당의 원천세와 국내 추가세액을 계산합니다."""
+        gross = max(0.0, gross_dividend)
+        other_financial = max(0.0, other_financial_income)
+        financial_total = gross + other_financial
+        foreign_withholding = gross * self.us_dividend_foreign_withholding_rate
+        separate_tax_floor = gross * self.domestic_dividend_tax_rate
+        is_comprehensive = financial_total > self.financial_income_comprehensive_threshold
+
+        if is_comprehensive:
+            base = max(0.0, other_comprehensive_tax_base)
+            incremental_tax = self.calculate_progressive_income_tax(base + financial_total) - (
+                self.calculate_progressive_income_tax(base)
+            )
+            allocated_tax = incremental_tax * (gross / financial_total) if financial_total else 0.0
+            domestic_tax_before_credit = max(separate_tax_floor, allocated_tax)
+        else:
+            domestic_tax_before_credit = separate_tax_floor
+
+        foreign_tax_credit = min(foreign_withholding, domestic_tax_before_credit)
+        domestic_additional_tax = max(0.0, domestic_tax_before_credit - foreign_tax_credit)
+        return {
+            "gross_dividend": gross,
+            "foreign_withholding_tax": foreign_withholding,
+            "foreign_tax_credit": foreign_tax_credit,
+            "domestic_tax_before_credit": domestic_tax_before_credit,
+            "domestic_additional_tax": domestic_additional_tax,
+            "total_dividend_tax": foreign_withholding + domestic_additional_tax,
+            "financial_income_total": financial_total,
+            "comprehensive_threshold": self.financial_income_comprehensive_threshold,
+            "is_comprehensive": is_comprehensive,
+        }
+
+    def calculate_us_capital_gains_tax(self, annual_realized_gain: float) -> Dict[str, float]:
+        """미국 주식 연간 손익통산 후 기본공제와 22% 세율을 적용합니다."""
+        net_gain = max(0.0, annual_realized_gain)
+        taxable_gain = max(0.0, net_gain - self.us_capital_gains_annual_deduction)
+        tax = taxable_gain * self.us_capital_gains_tax_rate
+        return {
+            "annual_realized_gain": annual_realized_gain,
+            "net_gain_after_loss_offset": net_gain,
+            "annual_deduction": self.us_capital_gains_annual_deduction,
+            "taxable_gain": taxable_gain,
+            "tax_rate": self.us_capital_gains_tax_rate,
+            "capital_gains_tax": tax,
+        }
 
     def calculate_corp_profitability(
         self,

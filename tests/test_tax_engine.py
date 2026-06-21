@@ -107,3 +107,48 @@ def test_tax_engine_boundary_cases():
     income_info = engine.calculate_income_tax(monthly_salary=20000000)  # 월 2000만
     assert income_info["net_salary"] < 20000000
     assert income_info["health"] > 0
+
+
+def test_us_dividend_tax_keeps_foreign_withholding_and_domestic_credit_separate():
+    engine = TaxEngine(
+        {
+            "us_dividend_foreign_withholding_rate": 0.15,
+            "domestic_dividend_tax_rate": 0.154,
+            "financial_income_comprehensive_threshold": 20000000,
+        }
+    )
+
+    result = engine.calculate_us_dividend_tax(12000000)
+
+    assert result["foreign_withholding_tax"] == pytest.approx(1800000)
+    assert result["domestic_tax_before_credit"] == pytest.approx(1848000)
+    assert result["foreign_tax_credit"] == pytest.approx(1800000)
+    assert result["domestic_additional_tax"] == pytest.approx(48000)
+    assert result["is_comprehensive"] is False
+
+
+def test_us_dividend_tax_uses_comprehensive_income_branch_above_threshold():
+    engine = TaxEngine()
+
+    result = engine.calculate_us_dividend_tax(24000000, other_comprehensive_tax_base=50000000)
+
+    assert result["is_comprehensive"] is True
+    assert result["financial_income_total"] == 24000000
+    assert result["domestic_tax_before_credit"] > 24000000 * 0.154
+    assert result["domestic_additional_tax"] > 0
+
+
+def test_us_capital_gains_tax_offsets_annual_losses_and_applies_deduction():
+    engine = TaxEngine(
+        {
+            "us_capital_gains_tax_rate": 0.22,
+            "us_capital_gains_annual_deduction": 2500000,
+        }
+    )
+
+    result = engine.calculate_us_capital_gains_tax(10000000 - 3000000)
+
+    assert result["net_gain_after_loss_offset"] == 7000000
+    assert result["taxable_gain"] == 4500000
+    assert result["capital_gains_tax"] == pytest.approx(990000)
+    assert engine.calculate_us_capital_gains_tax(-1000000)["capital_gains_tax"] == 0

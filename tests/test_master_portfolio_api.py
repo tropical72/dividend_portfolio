@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.backend.api import DividendBackend
-from src.backend.main import app
+from src.backend.main import app, backend
 
 
 @pytest.fixture
@@ -241,3 +241,115 @@ def test_master_portfolio_includes_personal_taxable_portfolio(client):
     assert master["personal_name"] == f"Personal Taxable {suffix}"
     assert master["combined_yield"] == pytest.approx(2.0)
     assert client.delete(f"/api/portfolios/{personal_id}").json()["success"] is False
+
+
+def test_master_portfolio_rejects_mixed_corporate_and_personal(client):
+    suffix = uuid4().hex[:8]
+    corp_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Exclusive Corp {suffix}",
+            "account_type": "Corporate",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+    personal_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Exclusive Personal {suffix}",
+            "account_type": "Personal",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+
+    create_res = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Invalid Mixed Strategy {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+            "personal_id": personal_id,
+        },
+    )
+
+    assert create_res.status_code == 200
+    assert create_res.json()["success"] is False
+    assert "법인운용과 개인운용" in create_res.json()["message"]
+
+
+def test_master_portfolio_allows_personal_with_pension(client):
+    suffix = uuid4().hex[:8]
+    pension_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Allowed Pension {suffix}",
+            "account_type": "Pension",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+    personal_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Allowed Personal {suffix}",
+            "account_type": "Personal",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+
+    create_res = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Personal Pension Strategy {suffix}",
+            "corp_id": None,
+            "pension_id": pension_id,
+            "personal_id": personal_id,
+        },
+    )
+
+    assert create_res.json()["success"] is True
+    assert create_res.json()["data"]["pension_id"] == pension_id
+    assert create_res.json()["data"]["personal_id"] == personal_id
+
+
+def test_master_portfolio_rejects_mixed_update_and_legacy_activation(client):
+    suffix = uuid4().hex[:8]
+    corp_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Update Corp {suffix}",
+            "account_type": "Corporate",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+    personal_id = client.post(
+        "/api/portfolios",
+        json={
+            "name": f"Update Personal {suffix}",
+            "account_type": "Personal",
+            "total_capital": 1000,
+        },
+    ).json()["data"]["id"]
+    master = client.post(
+        "/api/master-portfolios",
+        json={
+            "name": f"Corporate Strategy {suffix}",
+            "corp_id": corp_id,
+            "pension_id": None,
+            "personal_id": None,
+        },
+    ).json()["data"]
+
+    update_res = client.patch(
+        f"/api/master-portfolios/{master['id']}",
+        json={"name": master["name"], "personal_id": personal_id},
+    )
+    assert update_res.json()["success"] is False
+    assert "법인운용과 개인운용" in update_res.json()["message"]
+
+    backend_master = next(m for m in backend.master_portfolios if m["id"] == master["id"])
+    backend_master["personal_id"] = personal_id
+    activate_res = client.post(f"/api/master-portfolios/{master['id']}/activate")
+    backend_master["personal_id"] = None
+
+    assert activate_res.json()["success"] is False
+    assert "법인운용과 개인운용" in activate_res.json()["message"]

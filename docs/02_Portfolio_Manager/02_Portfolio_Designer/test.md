@@ -53,6 +53,11 @@
   - 마스터 전략에 personal_id를 저장하고 삭제 보호, 가중 DY/TR, 월별 배당 합계에 포함한다.
   - Retirement 결과의 초기값, 월별 차트, 상세표에 personal_balance가 표시되고 total_net_worth에 포함된다.
   - Playwright는 저장된 Personal 포트폴리오 카드, master의 Personal 연결 표시, Retirement 차트 series 계약과 상세표 헤더를 실제 DOM에서 확인한다.
+- **[TEST-PRT-11] 법인/개인 운용 배타성 [NEW]:**
+  - `corp_id`와 `personal_id`를 동시에 전달한 마스터 전략 생성과 수정을 API가 거부하는지 확인한다.
+  - 저장소에 남아 있는 레거시 혼합 전략도 활성화할 수 없는지 확인한다.
+  - UI에서 Corporate를 선택하면 Personal 선택이 비활성화되고, Personal을 선택하면 Corporate 선택이 비활성화되며 Pension 선택은 계속 허용되는지 확인한다.
+  - Personal 단독 또는 Personal+Pension 전략은 허용되고 기존 5개 카테고리 및 실제 리밸런싱 거래 이벤트 계약을 유지하는지 확인한다.
 
 ## 2. Feature Completion Gate [NEW]
 

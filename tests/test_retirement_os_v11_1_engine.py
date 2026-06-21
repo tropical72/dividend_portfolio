@@ -1332,3 +1332,184 @@ def test_personal_taxable_account_uses_actual_rebalance_sales():
     assert month["personal_balance"] == pytest.approx(100.0)
     assert month["personal_draw"] == pytest.approx(0.0)
     assert sum(event["sale_proceeds"] for event in personal_events) == pytest.approx(100.0)
+
+
+def test_personal_only_mode_uses_personal_draw_for_household_cashflow():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_month": 6,
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "pension_withdrawal_target": 0.0,
+            "personal_withdrawal_target": 10.0,
+            "national_pension_amount": 0.0,
+            "corp_salary": 5.0,
+            "monthly_bookkeeping_fee": 2.0,
+            "corp_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "strategy_weights": {
+            "SGOV Buffer": 1.0,
+            "Bond Buffer": 0.0,
+            "High Income": 0.0,
+            "Dividend Growth": 0.0,
+            "Growth Engine": 0.0,
+        },
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100.0, "pension": 0.0, "personal": 100.0},
+        params=params,
+        months=1,
+    )
+
+    month = result["monthly_data"][0]
+    assert month["corp_balance"] == pytest.approx(100.0)
+    assert month["corp_monthly_need"] == 0.0
+    assert month["net_salary"] == 0.0
+    assert month["personal_draw"] == 10.0
+    assert month["household_shortfall"] == 0.0
+
+
+def test_personal_us_dividend_withholding_is_deducted_in_payment_month():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_month": 6,
+            "personal_enabled": True,
+            "personal_withdrawal_target": 0.0,
+            "personal_property_assessed_value": 0.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}},
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 120000000.0},
+        params=params,
+        months=1,
+    )
+
+    month = result["monthly_data"][0]
+    assert month["personal_gross_dividend"] == pytest.approx(1200000.0)
+    assert month["personal_foreign_withholding_tax"] == pytest.approx(180000.0)
+    assert month["personal_balance"] == pytest.approx(121020000.0)
+
+
+def test_personal_dividend_domestic_tax_is_paid_in_following_may():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 6,
+            "personal_enabled": True,
+            "personal_withdrawal_target": 0.0,
+            "personal_property_assessed_value": 0.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}},
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 120000000.0},
+        params=params,
+        months=12,
+    )
+
+    may = result["monthly_data"][-1]
+    assert (may["year"], may["month"]) == (2027, 5)
+    assert may["personal_dividend_additional_tax"] > 0
+    assert may["personal_tax_payment"] == pytest.approx(
+        may["personal_dividend_additional_tax"] + may["personal_capital_gains_tax"]
+    )
+    assert result["personal_tax_ledger"][0]["tax_year"] == 2026
+
+
+def test_personal_health_income_is_reflected_after_configured_lag():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "personal_withdrawal_target": 0.0,
+            "personal_property_assessed_value": 1000000000.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}},
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 120000000.0},
+        params=params,
+        months=23,
+    )
+
+    october = result["monthly_data"][-2]
+    november = result["monthly_data"][-1]
+    assert (october["year"], october["month"]) == (2027, 10)
+    assert october["personal_health_income"] == 0.0
+    assert (november["year"], november["month"]) == (2027, 11)
+    assert november["personal_health_income_year"] == 2026
+    assert november["personal_health_income"] >= 10000000.0
+    assert november["personal_health_insurance"] > october["personal_health_insurance"]
+
+
+def test_personal_tax_payment_uses_existing_donor_and_trade_event_rules():
+    engine = make_engine()
+    assets = {
+        "SGOV Buffer": 0.0,
+        "Bond Buffer": 0.0,
+        "High Income": 0.0,
+        "Dividend Growth": 0.0,
+        "Growth Engine": 100.0,
+    }
+    run_rates = {category: 0.0 for category in assets}
+    engine._active_cost_basis_by_account = {"personal": {**assets, "Growth Engine": 60.0}}
+    engine._active_trade_events = []
+
+    paid = engine._pay_personal_cash_obligation(
+        assets,
+        run_rates,
+        {"strategy_weights": {"Growth Engine": 1.0}},
+        base_params(),
+        2027,
+        5,
+        30.0,
+    )
+
+    assert paid == 30.0
+    assert assets["Growth Engine"] == 70.0
+    assert assets["SGOV Buffer"] == 0.0
+    assert engine._active_trade_events == [
+        {
+            "account": "personal",
+            "year": 2027,
+            "month": 5,
+            "from_category": "Growth Engine",
+            "to_category": "SGOV Buffer",
+            "sale_proceeds": 30.0,
+            "cost_basis_sold": 18.0,
+            "realized_gain": 12.0,
+        }
+    ]

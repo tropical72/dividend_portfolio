@@ -994,6 +994,247 @@ export function SettingsTab({
                     })
                   }
                 />
+                <InputGroup
+                  label={isKorean ? "초기 취득원가" : "Initial Cost Basis"}
+                  value={
+                    retireConfig.personal_account_params.initial_cost_basis ||
+                    retireConfig.personal_account_params.initial_investment
+                  }
+                  isCurrency
+                  testId="settings-personal-initial-cost-basis"
+                  tooltip={
+                    isKorean
+                      ? "미국 주식·ETF의 원화 환산 총 취득원가입니다."
+                      : "Aggregate KRW cost basis of U.S.-listed stocks and ETFs."
+                  }
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        initial_cost_basis: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "외부 연간 금융소득"
+                      : "External Financial Income"
+                  }
+                  value={
+                    retireConfig.personal_account_params
+                      .external_financial_income ?? 0
+                  }
+                  isCurrency
+                  testId="settings-personal-external-financial-income"
+                  tooltip={
+                    isKorean
+                      ? "이 계좌 밖의 연간 이자·배당소득으로 종합과세와 건보 판단에 사용합니다."
+                      : "Annual interest and dividend income outside this account."
+                  }
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        external_financial_income: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "기타 종합소득 과세표준"
+                      : "Other Comprehensive Tax Base"
+                  }
+                  value={
+                    retireConfig.personal_account_params
+                      .other_comprehensive_tax_base ?? 0
+                  }
+                  isCurrency
+                  testId="settings-personal-other-comprehensive-tax-base"
+                  tooltip={
+                    isKorean
+                      ? "금융소득 종합과세 누진세액 추정에 사용하는 다른 소득의 과세표준입니다."
+                      : "Other taxable income base used for the comprehensive tax estimate."
+                  }
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        other_comprehensive_tax_base: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "재산세 과세표준액"
+                      : "Property Tax Assessed Value"
+                  }
+                  value={
+                    retireConfig.personal_account_params
+                      .property_assessed_value ?? 0
+                  }
+                  isCurrency
+                  testId="settings-personal-property-assessed-value"
+                  tooltip={
+                    isKorean
+                      ? "공시가격이나 시가가 아닌 지역건보 계산용 재산세 과세표준액입니다."
+                      : "Property-tax assessed value for local health insurance, not market value."
+                  }
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      personal_account_params: {
+                        ...retireConfig.personal_account_params,
+                        property_assessed_value: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "미국 배당 원천세율"
+                      : "U.S. Dividend Withholding"
+                  }
+                  value={
+                    (retireConfig.tax_and_insurance
+                      .us_dividend_foreign_withholding_rate ?? 0.15) * 100
+                  }
+                  unit="%"
+                  fractionDigits={1}
+                  testId="settings-us-dividend-withholding-rate"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        us_dividend_foreign_withholding_rate:
+                          (parseFloat(v) || 0) / 100,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "국내 배당 명목세율"
+                      : "Domestic Dividend Tax Rate"
+                  }
+                  value={
+                    (retireConfig.tax_and_insurance
+                      .domestic_dividend_tax_rate ?? 0.154) * 100
+                  }
+                  unit="%"
+                  fractionDigits={1}
+                  testId="settings-domestic-dividend-tax-rate"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        domestic_dividend_tax_rate: (parseFloat(v) || 0) / 100,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "금융소득 종합과세 기준"
+                      : "Financial Income Threshold"
+                  }
+                  value={
+                    retireConfig.tax_and_insurance
+                      .financial_income_comprehensive_threshold ?? 20000000
+                  }
+                  isCurrency
+                  testId="settings-financial-income-threshold"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        financial_income_comprehensive_threshold:
+                          parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "해외주식 양도세율"
+                      : "U.S. Capital Gains Tax Rate"
+                  }
+                  value={
+                    (retireConfig.tax_and_insurance.us_capital_gains_tax_rate ??
+                      0.22) * 100
+                  }
+                  unit="%"
+                  fractionDigits={1}
+                  testId="settings-us-capital-gains-tax-rate"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        us_capital_gains_tax_rate: (parseFloat(v) || 0) / 100,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "해외주식 연간 기본공제"
+                      : "Annual Capital Gains Deduction"
+                  }
+                  value={
+                    retireConfig.tax_and_insurance
+                      .us_capital_gains_annual_deduction ?? 2500000
+                  }
+                  isCurrency
+                  testId="settings-us-capital-gains-deduction"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        us_capital_gains_annual_deduction: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "건보 금융소득 반영 기준"
+                      : "Health Financial Income Threshold"
+                  }
+                  value={
+                    retireConfig.tax_and_insurance
+                      .health_financial_income_threshold ?? 10000000
+                  }
+                  isCurrency
+                  testId="settings-health-financial-income-threshold"
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        health_financial_income_threshold: parseInt(v) || 0,
+                      },
+                    })
+                  }
+                />
               </div>
             </section>
           </div>

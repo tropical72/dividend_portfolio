@@ -76,7 +76,11 @@
     },
     "personal_account_params": {
         "initial_investment": 0,
-        "monthly_withdrawal_target": 0
+        "initial_cost_basis": 0,
+        "monthly_withdrawal_target": 0,
+        "external_financial_income": 0,
+        "other_comprehensive_tax_base": 0,
+        "property_assessed_value": 0
     },
     "personal_params": {
         "real_estate_price": 500000000,
@@ -94,7 +98,16 @@
         "pension_rate": 0.045,
         "health_rate": 0.035,
         "employment_rate": 0.009,
-        "income_tax_estimate_rate": 0.15
+        "income_tax_estimate_rate": 0.15,
+        "us_dividend_foreign_withholding_rate": 0.15,
+        "domestic_dividend_tax_rate": 0.154,
+        "financial_income_comprehensive_threshold": 20000000,
+        "us_capital_gains_tax_rate": 0.22,
+        "us_capital_gains_annual_deduction": 2500000,
+        "personal_tax_payment_month": 5,
+        "health_financial_income_threshold": 10000000,
+        "health_income_reflection_month": 11,
+        "health_income_reflection_lag_years": 1
     },
     "trigger_thresholds": {
         "tax_threshold": 200000000,

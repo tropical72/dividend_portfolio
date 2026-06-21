@@ -34,24 +34,33 @@ def _apply_profile_return_override(
 def _combined_master_return(
     corp_stats: Dict[str, Any],
     pension_stats: Dict[str, Any],
+    personal_stats: Dict[str, Any],
     corp_portfolio: Optional[Dict[str, Any]],
     pension_portfolio: Optional[Dict[str, Any]],
+    personal_portfolio: Optional[Dict[str, Any]],
 ) -> Optional[float]:
-    corp_capital = float(corp_portfolio.get("total_capital", 0.0)) if corp_portfolio else 0.0
-    pension_capital = (
-        float(pension_portfolio.get("total_capital", 0.0)) if pension_portfolio else 0.0
+    account_data = (
+        (corp_stats, corp_portfolio),
+        (pension_stats, pension_portfolio),
+        (personal_stats, personal_portfolio),
     )
-    total_capital = corp_capital + pension_capital
-
+    weighted_accounts = [
+        (stats, float(portfolio.get("total_capital", 0.0)))
+        for stats, portfolio in account_data
+        if portfolio and float(portfolio.get("total_capital", 0.0)) > 0
+    ]
+    total_capital = sum(capital for _, capital in weighted_accounts)
     if total_capital > 0:
         return (
-            float(corp_stats.get("expected_return", 0.0)) * corp_capital
-            + float(pension_stats.get("expected_return", 0.0)) * pension_capital
-        ) / total_capital
-    if corp_portfolio:
-        return float(corp_stats.get("expected_return", 0.0))
-    if pension_portfolio:
-        return float(pension_stats.get("expected_return", 0.0))
+            sum(
+                float(stats.get("expected_return", 0.0)) * capital
+                for stats, capital in weighted_accounts
+            )
+            / total_capital
+        )
+    for stats, portfolio in account_data:
+        if portfolio:
+            return float(stats.get("expected_return", 0.0))
     return None
 
 
@@ -337,6 +346,15 @@ async def run_retirement_simulation(
             "health_rate",
             "employment_rate",
             "income_tax_estimate_rate",
+            "us_dividend_foreign_withholding_rate",
+            "domestic_dividend_tax_rate",
+            "financial_income_comprehensive_threshold",
+            "us_capital_gains_tax_rate",
+            "us_capital_gains_annual_deduction",
+            "personal_tax_payment_month",
+            "health_financial_income_threshold",
+            "health_income_reflection_month",
+            "health_income_reflection_lag_years",
         ],
     }
 
@@ -401,6 +419,9 @@ async def run_retirement_simulation(
 
     # [REQ-RAMS-1.5.1] 활성화된 마스터 포트폴리오 기반 데이터 추출
     active_master = backend.get_active_master_portfolio()
+    corp_enabled = True
+    pension_enabled = True
+    personal_enabled = True
     if active_master:
         master_calc = backend.calculate_master_portfolio_tr(active_master)
         if not master_calc["success"]:
@@ -409,6 +430,20 @@ async def run_retirement_simulation(
                 "message": master_calc["message"],
                 "broken_reference": True,
             }
+        invalid_mix = backend._validate_master_account_mix(
+            active_master.get("corp_id"), active_master.get("personal_id")
+        )
+        if invalid_mix:
+            return invalid_mix
+        corp_enabled = bool(active_master.get("corp_id"))
+        pension_enabled = bool(active_master.get("pension_id"))
+        personal_enabled = bool(active_master.get("personal_id"))
+        if not corp_enabled:
+            initial_assets["corp"] = 0.0
+        if not pension_enabled:
+            initial_assets["pension"] = 0.0
+        if not personal_enabled:
+            initial_assets["personal"] = 0.0
 
     active_corp = (
         backend.get_portfolio_by_id(active_master.get("corp_id")) if active_master else None
@@ -438,8 +473,10 @@ async def run_retirement_simulation(
     base_master_return = _combined_master_return(
         corp_stats,
         pension_stats,
+        personal_stats,
         active_corp if active_master else None,
         active_pension if active_master else None,
+        active_personal if active_master else None,
     )
     if active_id != "v1" and active_id in assumptions:
         profile_return = float(assumption["expected_return"])
@@ -447,10 +484,16 @@ async def run_retirement_simulation(
             base_master_return = _combined_master_return(
                 corp_stats,
                 pension_stats,
+                personal_stats,
                 {"total_capital": initial_assets["corp"]} if initial_assets["corp"] else None,
                 (
                     {"total_capital": initial_assets["pension"]}
                     if initial_assets["pension"]
+                    else None
+                ),
+                (
+                    {"total_capital": initial_assets["personal"]}
+                    if initial_assets["personal"]
                     else None
                 ),
             )
@@ -474,6 +517,9 @@ async def run_retirement_simulation(
             k: v / 100.0
             for k, v in backend.get_appreciation_rates_for_scenario(pa_scenario).items()
         },
+        "corp_enabled": corp_enabled,
+        "pension_enabled": pension_enabled,
+        "personal_enabled": personal_enabled,
         "target_monthly_cashflow": sim_params["target_monthly_cashflow"],
         "household_monthly_need": sim_params.get(
             "household_monthly_need", sim_params["target_monthly_cashflow"]
@@ -489,6 +535,27 @@ async def run_retirement_simulation(
         "pension_withdrawal_target": pension_params["monthly_withdrawal_target"],
         "personal_withdrawal_target": float(
             personal_account_params.get("monthly_withdrawal_target") or 0.0
+        ),
+        "personal_initial_cost_basis": float(
+            personal_account_params.get("initial_cost_basis")
+            or personal_account_params.get("initial_investment")
+            or 0.0
+        ),
+        "personal_external_financial_income": float(
+            personal_account_params.get("external_financial_income") or 0.0
+        ),
+        "personal_other_comprehensive_tax_base": float(
+            personal_account_params.get("other_comprehensive_tax_base") or 0.0
+        ),
+        "personal_property_assessed_value": float(
+            personal_account_params.get(
+                "property_assessed_value",
+                config.get("personal_params", {}).get(
+                    "property_assessed_value",
+                    config.get("personal_params", {}).get("real_estate_price", 0.0),
+                ),
+            )
+            or 0.0
         ),
         "national_pension_amount": sim_params["national_pension_amount"],
         "initial_shareholder_loan": corp_params["initial_shareholder_loan"],
@@ -545,6 +612,7 @@ async def run_retirement_simulation(
     if active_m:
         corp_p = backend.get_portfolio_by_id(active_m.get("corp_id"))
         pen_p = backend.get_portfolio_by_id(active_m.get("pension_id"))
+        personal_p = backend.get_portfolio_by_id(active_m.get("personal_id"))
     else:
         corp_p = next(
             (p for p in backend.get_portfolios() if p.get("account_type") == "Corporate"),
@@ -554,14 +622,8 @@ async def run_retirement_simulation(
             (p for p in backend.get_portfolios() if p.get("account_type") == "Pension"),
             None,
         )
-    if corp_p is None:
-        corp_p = next(
-            (p for p in backend.get_portfolios() if p.get("account_type") == "Corporate"),
-            None,
-        )
-    if pen_p is None:
-        pen_p = next(
-            (p for p in backend.get_portfolios() if p.get("account_type") == "Pension"),
+        personal_p = next(
+            (p for p in backend.get_portfolios() if p.get("account_type") == "Personal"),
             None,
         )
 
@@ -571,16 +633,19 @@ async def run_retirement_simulation(
     if active_m:
         c_cap = corp_p["total_capital"] if corp_p else 0
         p_cap = pen_p["total_capital"] if pen_p else 0
-        total_cap = c_cap + p_cap
+        personal_cap = personal_p["total_capital"] if personal_p else 0
+        total_cap = c_cap + p_cap + personal_cap
         if total_cap > 0:
             combined_dy = (
                 corp_stats.get("dividend_yield", 0.0) * c_cap
                 + pension_stats.get("dividend_yield", 0.0) * p_cap
+                + personal_stats.get("dividend_yield", 0.0) * personal_cap
             ) / total_cap
             # [REQ-GLB-13] 자산군별 PA가 이미 반영된 expected_return을 가중 평균
             combined_tr = (
                 corp_stats.get("expected_return", 0.0) * c_cap
                 + pension_stats.get("expected_return", 0.0) * p_cap
+                + personal_stats.get("expected_return", 0.0) * personal_cap
             ) / total_cap
         elif corp_p:
             combined_dy = corp_stats.get("dividend_yield", 0.0)
@@ -588,6 +653,9 @@ async def run_retirement_simulation(
         elif pen_p:
             combined_dy = pension_stats.get("dividend_yield", 0.0)
             combined_tr = pension_stats.get("expected_return", 0.0)
+        elif personal_p:
+            combined_dy = personal_stats.get("dividend_yield", 0.0)
+            combined_tr = personal_stats.get("expected_return", 0.0)
 
     result["meta"] = {
         "master_name": active_m["name"] if active_m else "None (Manual)",
@@ -615,6 +683,11 @@ async def run_retirement_simulation(
                 "name": pen_p["name"] if pen_p else "Default (None)",
                 "yield": f"{pension_stats.get('dividend_yield', 0)*100:.2f}%",
                 "expected_return": pension_stats.get("expected_return", 0.07),
+            },
+            "personal": {
+                "name": personal_p["name"] if personal_p else "Default (None)",
+                "yield": f"{personal_stats.get('dividend_yield', 0)*100:.2f}%",
+                "expected_return": personal_stats.get("expected_return", 0.07),
             },
         },
     }

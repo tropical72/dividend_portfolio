@@ -112,6 +112,25 @@ def test_update_retirement_config():
     assert response.status_code == 200
 
 
+def test_update_retirement_config_rejects_invalid_personal_tax_policy(tmp_path, monkeypatch):
+    local_backend = DividendBackend(data_dir=str(tmp_path))
+    monkeypatch.setattr(main_module, "backend", local_backend)
+    local_client = TestClient(main_module.app)
+
+    response = local_client.post(
+        "/api/retirement/config",
+        json={
+            "tax_and_insurance": {
+                "us_capital_gains_tax_rate": 1.2,
+                "personal_tax_payment_month": 13,
+            }
+        },
+    )
+
+    assert response.json()["success"] is False
+    assert "us_capital_gains_tax_rate" in response.json()["message"]
+
+
 def test_update_retirement_config_normalizes_legacy_monthly_fixed_cost(tmp_path, monkeypatch):
     """legacy monthly_fixed_cost는 읽기 시 흡수하되 저장/재조회 payload에는 남지 않아야 한다."""
     local_backend = DividendBackend(data_dir=str(tmp_path))
@@ -140,7 +159,7 @@ def test_update_retirement_config_normalizes_legacy_monthly_fixed_cost(tmp_path,
 
 
 def test_retirement_config_keeps_household_need_and_target_cashflow_in_sync(tmp_path, monkeypatch):
-    """월 생활비는 household_monthly_need를 canonical 값으로 사용하고 legacy target 필드와 동기화한다."""
+    """월 생활비 canonical 값과 legacy target 필드 동기화를 검증한다."""
     local_backend = DividendBackend(data_dir=str(tmp_path))
     monkeypatch.setattr(main_module, "backend", local_backend)
     local_client = TestClient(main_module.app)
@@ -2544,3 +2563,78 @@ def test_run_retirement_simulation_rejects_broken_active_master_reference():
     assert payload["success"] is False
     assert payload["broken_reference"] is True
     assert "broken portfolio references" in payload["message"]
+
+
+def test_personal_only_master_excludes_corporate_account_and_reports_personal_meta(monkeypatch):
+    live_backend = main_module.backend
+    config = live_backend.get_retirement_config()
+    config["corp_params"]["initial_investment"] = 999000000
+    config["corp_params"]["monthly_salary"] = 5000000
+    config["personal_account_params"]["initial_investment"] = 100000000
+    config["personal_account_params"]["monthly_withdrawal_target"] = 1000000
+    config["simulation_params"]["simulation_years"] = 1
+    personal_portfolio = {
+        "id": "personal-only",
+        "name": "Personal Only",
+        "account_type": "Personal",
+        "total_capital": 100000000,
+    }
+    personal_stats = {
+        "dividend_yield": 0.03,
+        "expected_return": 0.08,
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {},
+    }
+    empty_stats = {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "strategy_weights": {},
+        "category_return_rates": {},
+    }
+    active_master = {
+        "id": "personal-master",
+        "name": "Personal Master",
+        "corp_id": None,
+        "pension_id": None,
+        "personal_id": "personal-only",
+        "is_active": True,
+    }
+    captured = {}
+
+    monkeypatch.setattr(live_backend, "get_retirement_config", lambda: config)
+    monkeypatch.setattr(live_backend, "get_active_master_portfolio", lambda: active_master)
+    monkeypatch.setattr(
+        live_backend,
+        "calculate_master_portfolio_tr",
+        lambda *_args, **_kwargs: {"success": True, "data": {}},
+    )
+    monkeypatch.setattr(
+        live_backend,
+        "get_portfolio_by_id",
+        lambda portfolio_id: personal_portfolio if portfolio_id == "personal-only" else None,
+    )
+    monkeypatch.setattr(
+        live_backend,
+        "get_portfolio_stats_by_id",
+        lambda portfolio_id, *_args, **_kwargs: (
+            personal_stats if portfolio_id == "personal-only" else empty_stats
+        ),
+    )
+
+    def capture_run(initial_assets, params):
+        captured["initial_assets"] = initial_assets
+        captured["params"] = params
+        return {"monthly_data": []}
+
+    monkeypatch.setattr(main_module.projection_engine, "run_30yr_simulation", capture_run)
+
+    response = client.get("/api/retirement/simulate")
+
+    assert response.json()["success"] is True
+    assert captured["initial_assets"]["corp"] == 0.0
+    assert captured["initial_assets"]["pension"] == 0.0
+    assert captured["initial_assets"]["personal"] == 100000000
+    assert captured["params"]["corp_enabled"] is False
+    assert captured["params"]["personal_enabled"] is True
+    assert response.json()["data"]["meta"]["combined_tr"] == pytest.approx(0.08)
+    assert response.json()["data"]["meta"]["used_portfolios"]["personal"]["name"] == "Personal Only"

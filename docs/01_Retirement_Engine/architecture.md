@@ -149,6 +149,16 @@
   - 연간 실행 게이트, 버퍼 하한선, 성장 자산 보호, 하락장 잠금 로직을 연결한다.
   - 로그와 Step 2 결과 메타데이터를 보강한다.
 
+### 2.6. 미국 상장 개인계좌 세금·건보 원장
+- **Scope:** 한국 세법상 거주자의 미국 상장 주식·ETF 직접투자만 지원한다. 모든 금액은 원화 환산 aggregate 장부값으로 계산한다.
+- **Monthly Dividend Ledger:** 카테고리별 gross distribution을 Personal SGOV에 유입한 뒤 미국 원천징수세를 같은 달 차감한다.
+- **Annual Dividend Tax Ledger:** 연간 미국 배당과 외부 금융소득을 합산해 분리과세 또는 종합과세 추정 분기를 선택하고, 외국납부세액공제 후 국내 추가세액을 다음 해 5월 납부한다.
+- **Capital Gains Ledger:** 실제 trade event의 `sale_proceeds`, `cost_basis_sold`, `realized_gain`을 연도별 통산한다. 미실현 PA는 제외하고 기본공제 후 세율을 적용한다.
+- **Health Insurance Ledger:** 재산세 과세표준 기반 재산분은 매월 부과한다. 금융소득분은 최소 반영금액과 신고자료 반영 지연연도/월을 정책값으로 적용하며 양도차익은 제외한다.
+- **Funding:** Personal SGOV가 세금과 건보료보다 부족하면 `Bond Buffer -> High Income -> Dividend Growth -> Growth Engine` donor 순서로 현금을 조달하고 실제 매도 이벤트를 남긴다.
+- **Audit Contract:** 월별 응답은 gross dividend, foreign withholding, domestic additional tax, capital gains tax, health premium과 반영 소득연도를 제공하고, 연간 응답은 세금연도와 납부연월, 공제, 세율, 취득원가를 제공한다.
+- **Known Boundary:** 종목별 lot, 실제 체결환율, 증권사별 원천징수 차이, 국내 상장 ETF 과세, 손실 이월은 1차 범위에 포함하지 않는다.
+
 ---
 
 ## 3. UI 컴포넌트 데이터 바인딩

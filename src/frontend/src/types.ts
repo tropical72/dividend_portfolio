@@ -190,7 +190,11 @@ export interface RetirementConfig {
   };
   personal_account_params: {
     initial_investment: number;
+    initial_cost_basis?: number;
     monthly_withdrawal_target: number;
+    external_financial_income?: number;
+    other_comprehensive_tax_base?: number;
+    property_assessed_value?: number;
   };
   planned_cashflows: PlannedCashflow[];
   tax_and_insurance: {
@@ -207,6 +211,15 @@ export interface RetirementConfig {
     health_rate: number;
     employment_rate: number;
     income_tax_estimate_rate: number;
+    us_dividend_foreign_withholding_rate?: number;
+    domestic_dividend_tax_rate?: number;
+    financial_income_comprehensive_threshold?: number;
+    us_capital_gains_tax_rate?: number;
+    us_capital_gains_annual_deduction?: number;
+    personal_tax_payment_month?: number;
+    health_financial_income_threshold?: number;
+    health_income_reflection_month?: number;
+    health_income_reflection_lag_years?: number;
   };
   trigger_thresholds: {
     tax_threshold: number;
@@ -249,6 +262,16 @@ export interface MonthlySimulationData {
   corp_draw?: number;
   pension_draw?: number;
   personal_draw?: number;
+  personal_gross_dividend?: number;
+  personal_foreign_withholding_tax?: number;
+  personal_dividend_additional_tax?: number;
+  personal_capital_gains_tax?: number;
+  personal_tax_payment?: number;
+  personal_tax_assessment_year?: number;
+  personal_health_insurance?: number;
+  personal_health_income_year?: number;
+  personal_health_income?: number;
+  personal_health_property_points?: number;
   shareholder_loan_payment?: number;
   household_shortfall?: number;
   boost_amount?: number;
@@ -288,6 +311,7 @@ export interface SimulationResult {
   };
   survival_months: number;
   monthly_data: MonthlySimulationData[];
+  personal_tax_ledger?: Array<Record<string, number | boolean>>;
   meta?: {
     master_name?: string;
     master_yield?: number;
@@ -304,6 +328,7 @@ export interface SimulationResult {
     used_portfolios?: {
       corp?: { name: string; yield: string; expected_return?: number };
       pension?: { name: string; yield: string; expected_return?: number };
+      personal?: { name: string; yield: string; expected_return?: number };
     };
   };
 }

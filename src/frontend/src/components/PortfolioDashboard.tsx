@@ -56,6 +56,8 @@ export function PortfolioDashboard({
         corpPortfolio: "법인 포트폴리오",
         pensionPortfolio: "연금 포트폴리오",
         personalPortfolio: "개인 일반계좌 포트폴리오",
+        mixedOperationGuide:
+          "법인운용과 개인운용은 같은 전략에 함께 넣을 수 없습니다. 연금은 어느 쪽과도 조합할 수 있습니다.",
         personalShort: "개인",
         none: "없음",
         saveStrategy: "전략 저장",
@@ -118,6 +120,8 @@ export function PortfolioDashboard({
         corpPortfolio: "Corporate Portfolio",
         pensionPortfolio: "Pension Portfolio",
         personalPortfolio: "Personal Taxable Portfolio",
+        mixedOperationGuide:
+          "Corporate and Personal cannot be combined in one strategy. Pension can be paired with either.",
         personalShort: "Personal",
         none: "None",
         saveStrategy: "Save Strategy",
@@ -735,6 +739,8 @@ export function PortfolioDashboard({
                 <select
                   value={selectedCorpId}
                   onChange={(e) => setSelectedCorpId(e.target.value)}
+                  disabled={Boolean(selectedPersonalId)}
+                  data-testid="master-corp-portfolio"
                   className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-300"
                 >
                   <option value="">{copy.none}</option>
@@ -754,6 +760,7 @@ export function PortfolioDashboard({
                 <select
                   value={selectedPenId}
                   onChange={(e) => setSelectedPenId(e.target.value)}
+                  data-testid="master-pension-portfolio"
                   className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-300"
                 >
                   <option value="">{copy.none}</option>
@@ -775,6 +782,7 @@ export function PortfolioDashboard({
                   value={selectedPersonalId}
                   onChange={(e) => setSelectedPersonalId(e.target.value)}
                   data-testid="master-personal-portfolio"
+                  disabled={Boolean(selectedCorpId)}
                   className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-sky-300"
                 >
                   <option value="">{copy.none}</option>
@@ -787,6 +795,12 @@ export function PortfolioDashboard({
                     ))}
                 </select>
               </div>
+              <p
+                data-testid="master-account-mix-guide"
+                className="rounded-xl bg-amber-50 px-4 py-3 text-xs font-medium leading-5 text-amber-800"
+              >
+                {copy.mixedOperationGuide}
+              </p>
               <button
                 onClick={handleCreateMaster}
                 disabled={

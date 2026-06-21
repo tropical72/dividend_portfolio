@@ -213,6 +213,23 @@
 - [x] 엔진/API와 Settings UI를 구현한다.
 - [x] 현재 변경 범위의 품질 게이트를 통과한다.
 
+### [Phase 20] 개인운용 계좌 경계 및 가계 현금흐름 (T-01-20)
+
+- [x] 활성 마스터에 선택되지 않은 계좌 자산과 법인 현금흐름을 제외한다.
+- [x] Personal 실제 인출액을 가계 현금 유입과 부족분 계산에 반영한다.
+- [x] Personal을 Retirement 통합 DY/TR 및 사용 포트폴리오 메타에 포함한다.
+- [x] Personal 단독과 Personal+Pension 조합 회귀 테스트를 추가한다.
+- [x] 전체 관련 품질 게이트를 통과한다.
+
+### [Phase 21] 미국 상장 개인계좌 세금·건보 원장 (T-01-21)
+
+- [x] **T-01-21.1 SDD:** 미국 상장 주식·ETF 범위, 세목, 사건시점, 납부시점, 반영시차를 문서화한다.
+- [x] **T-01-21.2 TDD:** 배당 원천세, 종합과세, 양도세 손익통산, 5월 납부, 건보 시차 실패 테스트를 작성한다.
+- [x] **T-01-21.3 Domain:** TaxEngine에 미국 배당·해외주식 양도세 정책 계산기를 구현한다.
+- [x] **T-01-21.4 Projection:** 월별 원천징수와 연도별 세금·건보 채무 및 Personal 현금유출을 구현한다.
+- [x] **T-01-21.5 API/UI:** 설정 타입과 개인 세금 감사 결과를 Settings/Retirement에 노출한다.
+- [x] **T-01-21.6 Validation:** 관련 pytest, Ruff, Black, ESLint, Build, Prettier, Playwright를 통과한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**

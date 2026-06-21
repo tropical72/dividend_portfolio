@@ -141,6 +141,25 @@ test("should support personal taxable account categories and capital", async ({
     await expect(page.getByText("High Income")).toBeVisible();
     await expect(page.getByText("Dividend Growth")).toBeVisible();
     await expect(page.getByText("Growth Engine")).toBeVisible();
+    await page.getByTestId("nav-strategy-settings").click({ force: true });
+    await expect(
+      page.getByTestId("settings-personal-initial-cost-basis"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-personal-external-financial-income"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-personal-other-comprehensive-tax-base"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-personal-property-assessed-value"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-us-capital-gains-tax-rate"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-health-financial-income-threshold"),
+    ).toBeVisible();
   } finally {
     if (originalState) await restoreBackendState(request, originalState);
     await releaseE2ELock();
@@ -204,6 +223,58 @@ test("should save personal portfolio, connect master, and render retirement acco
     await expect(
       page.getByTestId("retirement-detail-header-personal-bal"),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("retirement-personal-tax-audit"),
+    ).toBeVisible();
+  } finally {
+    if (originalState) await restoreBackendState(request, originalState);
+    await releaseE2ELock();
+  }
+});
+
+test("should prevent corporate and personal portfolios from being mixed in one master", async ({
+  page,
+  request,
+  isMobile,
+}) => {
+  test.skip(isMobile, "Master account mix validation is covered on desktop.");
+  let originalState: BackendTestState | null = null;
+  await acquireE2ELock();
+  try {
+    originalState = await captureBackendState(request);
+    const corpName = "Exclusive Corp " + Date.now();
+    const personalName = "Exclusive Personal " + Date.now();
+    await request.post("http://127.0.0.1:8000/api/portfolios", {
+      data: {
+        name: corpName,
+        account_type: "Corporate",
+        total_capital: 100000000,
+      },
+    });
+    await request.post("http://127.0.0.1:8000/api/portfolios", {
+      data: {
+        name: personalName,
+        account_type: "Personal",
+        total_capital: 100000000,
+      },
+    });
+
+    await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("nav-asset-setup").click({ force: true });
+    await page.getByTestId("portfolio-subtab-dashboard").click({ force: true });
+
+    const corpSelect = page.getByTestId("master-corp-portfolio");
+    const pensionSelect = page.getByTestId("master-pension-portfolio");
+    const personalSelect = page.getByTestId("master-personal-portfolio");
+    await corpSelect.selectOption({ label: corpName });
+    await expect(personalSelect).toBeDisabled();
+    await expect(pensionSelect).toBeEnabled();
+
+    await corpSelect.selectOption("");
+    await personalSelect.selectOption({ label: personalName });
+    await expect(corpSelect).toBeDisabled();
+    await expect(pensionSelect).toBeEnabled();
+    await expect(page.getByTestId("master-account-mix-guide")).toBeVisible();
   } finally {
     if (originalState) await restoreBackendState(request, originalState);
     await releaseE2ELock();

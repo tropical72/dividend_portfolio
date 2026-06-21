@@ -874,7 +874,11 @@ class DividendBackend:
             },
             "personal_account_params": {
                 "initial_investment": 0,
+                "initial_cost_basis": 0,
                 "monthly_withdrawal_target": 0,
+                "external_financial_income": 0,
+                "other_comprehensive_tax_base": 0,
+                "property_assessed_value": 0,
             },
             "personal_params": {
                 "real_estate_price": 620000000,
@@ -893,6 +897,15 @@ class DividendBackend:
                 "health_rate": 0.035,
                 "employment_rate": 0.009,
                 "income_tax_estimate_rate": 0.15,
+                "us_dividend_foreign_withholding_rate": 0.15,
+                "domestic_dividend_tax_rate": 0.154,
+                "financial_income_comprehensive_threshold": 20000000,
+                "us_capital_gains_tax_rate": 0.22,
+                "us_capital_gains_annual_deduction": 2500000,
+                "personal_tax_payment_month": 5,
+                "health_financial_income_threshold": 10000000,
+                "health_income_reflection_month": 11,
+                "health_income_reflection_lag_years": 1,
             },
             "trigger_thresholds": {
                 "tax_threshold": 200000000,
@@ -1028,6 +1041,27 @@ class DividendBackend:
                 "corp_params.initial_investment는 capital_stock + "
                 "initial_shareholder_loan 이상이어야 합니다."
             )
+
+        tax_policy = config.get("tax_and_insurance", {})
+        for key in (
+            "us_dividend_foreign_withholding_rate",
+            "domestic_dividend_tax_rate",
+            "us_capital_gains_tax_rate",
+        ):
+            rate = float(tax_policy.get(key) or 0.0)
+            if rate < 0 or rate > 1:
+                return f"tax_and_insurance.{key}는 0과 1 사이여야 합니다."
+        for key in (
+            "financial_income_comprehensive_threshold",
+            "us_capital_gains_annual_deduction",
+            "health_financial_income_threshold",
+        ):
+            if float(tax_policy.get(key) or 0.0) < 0:
+                return f"tax_and_insurance.{key}은(는) 음수일 수 없습니다."
+        for key in ("personal_tax_payment_month", "health_income_reflection_month"):
+            month = int(tax_policy.get(key) or 0)
+            if month < 1 or month > 12:
+                return f"tax_and_insurance.{key}은(는) 1~12월이어야 합니다."
 
         return None
 
@@ -2921,6 +2955,20 @@ class DividendBackend:
         portfolio = next((p for p in self.portfolios if p["id"] == p_id), None)
         return self._normalize_portfolio_record(portfolio) if portfolio else None
 
+    @staticmethod
+    def _validate_master_account_mix(
+        corp_id: Optional[str], personal_id: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        if corp_id and personal_id:
+            return {
+                "success": False,
+                "message": (
+                    "법인운용과 개인운용은 하나의 마스터 전략에 함께 구성할 수 없습니다. "
+                    "Corporate 또는 Personal 중 하나만 선택해주세요."
+                ),
+            }
+        return None
+
     def add_master_portfolio(
         self,
         name: str,
@@ -2931,6 +2979,10 @@ class DividendBackend:
         """새로운 마스터 전략을 생성합니다. [REQ-PRT-08.1]"""
         if not corp_id and not pension_id and not personal_id:
             return {"success": False, "message": "최소 하나 이상의 포트폴리오를 선택해야 합니다."}
+
+        invalid_mix = self._validate_master_account_mix(corp_id, personal_id)
+        if invalid_mix:
+            return invalid_mix
 
         new_m = {
             "id": str(uuid.uuid4()),
@@ -2949,6 +3001,12 @@ class DividendBackend:
         found_m = next((m for m in self.master_portfolios if m["id"] == m_id), None)
         if not found_m:
             return {"success": False, "message": "전략을 찾을 수 없습니다."}
+
+        invalid_mix = self._validate_master_account_mix(
+            found_m.get("corp_id"), found_m.get("personal_id")
+        )
+        if invalid_mix:
+            return invalid_mix
 
         master_calc = self.calculate_master_portfolio_tr(found_m)
         if not master_calc["success"]:
@@ -2974,6 +3032,12 @@ class DividendBackend:
         """특정 마스터 전략의 정보를 업데이트합니다."""
         for master in self.master_portfolios:
             if master["id"] == m_id:
+                candidate = {**master, **updates}
+                invalid_mix = self._validate_master_account_mix(
+                    candidate.get("corp_id"), candidate.get("personal_id")
+                )
+                if invalid_mix:
+                    return invalid_mix
                 master.update(updates)
                 self.storage.save_json(self.master_portfolios_file, self.master_portfolios)
                 return {"success": True, "data": self._build_master_portfolio_summary(master)}
