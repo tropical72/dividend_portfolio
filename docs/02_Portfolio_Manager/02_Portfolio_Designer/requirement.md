@@ -18,8 +18,8 @@
 - **[REQ-PRT-01.7] 계좌 타입 전환 동기화:** 사용자가 Corporate/Pension/Personal Taxable 계좌 타입을 바꾸면 카테고리 구조와 허용 카테고리 목록이 즉시 해당 계좌 타입 기준으로 전환되어야 한다.
 - **[REQ-PRT-01.8] 레거시 카테고리 마이그레이션:** 기존 3단 카테고리로 저장된 포트폴리오는 계좌 타입별 기본 매핑 규칙에 따라 4단 전략 카테고리로 안전하게 변환되어야 한다.
 - **[REQ-PRT-01.9] 버퍼 개월 수 기반 비중 입력:** `SGOV Buffer`와 `Bond Buffer`는 사용자가 비중(%) 대신 개월 수를 입력할 수 있어야 한다.
-  - Corporate는 은퇴 설정의 `simulation_params.target_monthly_cashflow`를 월 필요현금으로 사용한다.
-  - Pension은 은퇴 설정의 `pension_params.monthly_withdrawal_target`을 우선 사용하고, 값이 없으면 `simulation_params.target_monthly_cashflow`를 fallback으로 사용한다.
+  - Corporate와 Personal Taxable은 공통 Operating Account로서 은퇴 설정의 `simulation_params.household_monthly_need`를 월 필요현금으로 사용한다. 레거시 `target_monthly_cashflow`는 fallback으로만 허용한다.
+  - Pension은 보조 수입계좌이므로 `pension_params.monthly_withdrawal_target`(UI 명칭: 월 개인연금 수령액)을 사용한다.
   - 비중은 `개월 수 × 월 필요현금 ÷ 총 투자금 × 100`으로 즉시 환산해 화면과 저장 payload에 반영한다.
   - 월 필요현금 또는 총 투자금이 0 이하이면 개월 수 환산 입력은 비활성 안내 상태로 표시한다.
 

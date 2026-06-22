@@ -899,6 +899,7 @@ class DividendBackend:
                 "income_tax_estimate_rate": 0.15,
                 "us_dividend_foreign_withholding_rate": 0.15,
                 "domestic_dividend_tax_rate": 0.154,
+                "shareholder_distribution_withholding_rate": 0.154,
                 "financial_income_comprehensive_threshold": 20000000,
                 "us_capital_gains_tax_rate": 0.22,
                 "us_capital_gains_annual_deduction": 2500000,

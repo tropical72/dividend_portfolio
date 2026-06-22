@@ -365,6 +365,9 @@ def test_run_retirement_simulation_with_events():
 def test_run_retirement_simulation_uses_strategy_rule_rebalance_month():
     """현재 월 결과에는 설정된 전략 규칙과 기본 현금흐름이 함께 반영되어야 한다."""
     live_backend = main_module.backend
+    live_backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
     client.post(
         "/api/retirement/config",
         json={
@@ -449,6 +452,9 @@ def test_run_retirement_simulation_uses_document_default_initial_bucket_setup_wh
     local_backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", local_backend)
     local_client = TestClient(main_module.app)
+    local_backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -542,6 +548,9 @@ def test_run_retirement_simulation_uses_dynamic_strategy_rule_month_caps(tmp_pat
     )
     monkeypatch.setattr(main_module, "backend", backend)
     local_client = TestClient(main_module.app)
+    backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -625,6 +634,9 @@ def test_run_retirement_simulation_uses_dynamic_rebalance_month(tmp_path, monkey
     )
     monkeypatch.setattr(main_module, "backend", backend)
     local_client = TestClient(main_module.app)
+    backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -778,6 +790,9 @@ def test_retirement_simulation_august_review_does_not_sell_equity_when_bond_is_i
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     local_client = TestClient(main_module.app)
+    backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -874,6 +889,9 @@ def test_retirement_simulation_november_rebalance_keeps_bond_at_upper_band_bound
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     local_client = TestClient(main_module.app)
+    backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -959,6 +977,9 @@ def test_retirement_api_phase_two_reference_calendar_matches_document_buffer_mon
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     monkeypatch.setattr(main_module, "backend", backend)
     local_client = TestClient(main_module.app)
+    backend.retirement_config["tax_and_insurance"][
+        "shareholder_distribution_withholding_rate"
+    ] = 0.0
 
     local_client.post(
         "/api/retirement/config",
@@ -2572,6 +2593,7 @@ def test_personal_only_master_excludes_corporate_account_and_reports_personal_me
     config["corp_params"]["monthly_salary"] = 5000000
     config["personal_account_params"]["initial_investment"] = 100000000
     config["personal_account_params"]["monthly_withdrawal_target"] = 1000000
+    config["tax_and_insurance"]["shareholder_distribution_withholding_rate"] = 0.123
     config["simulation_params"]["simulation_years"] = 1
     personal_portfolio = {
         "id": "personal-only",
@@ -2636,5 +2658,6 @@ def test_personal_only_master_excludes_corporate_account_and_reports_personal_me
     assert captured["initial_assets"]["personal"] == 100000000
     assert captured["params"]["corp_enabled"] is False
     assert captured["params"]["personal_enabled"] is True
+    assert captured["params"]["shareholder_distribution_withholding_rate"] == pytest.approx(0.123)
     assert response.json()["data"]["meta"]["combined_tr"] == pytest.approx(0.08)
     assert response.json()["data"]["meta"]["used_portfolios"]["personal"]["name"] == "Personal Only"

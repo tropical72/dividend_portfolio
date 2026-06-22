@@ -388,7 +388,7 @@ export function PortfolioTab({
 
     if (accountType === "Personal") {
       return (
-        retirementConfig.personal_account_params.monthly_withdrawal_target ||
+        retirementConfig.simulation_params.household_monthly_need ||
         retirementConfig.simulation_params.target_monthly_cashflow ||
         0
       );
@@ -403,8 +403,8 @@ export function PortfolioTab({
     }
 
     return (
-      retirementConfig.simulation_params.target_monthly_cashflow ||
       retirementConfig.simulation_params.household_monthly_need ||
+      retirementConfig.simulation_params.target_monthly_cashflow ||
       0
     );
   }, [accountType, retirementConfig]);

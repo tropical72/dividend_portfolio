@@ -17,6 +17,7 @@
 - **[TEST-PRT-01.6] 버퍼 개월 수 환산 입력:**
   - SGOV Buffer 또는 Bond Buffer 항목 추가/수정 시 개월 수를 입력하면 `개월 수 × 월 필요현금 ÷ 총 투자금 × 100`으로 비중(%)이 즉시 환산되는지 확인한다.
   - 환산된 비중이 저장 payload의 `weight` 값으로 반영되는지 확인한다.
+  - Corporate/Personal은 `household_monthly_need`, Pension은 월 개인연금 수령액을 분모로 사용하며 Personal 레거시 월 인출값은 결과에 영향을 주지 않는지 확인한다.
 - **[TEST-PRT-03.1.1] 계좌별 설정 투자금 기준:**
   - Portfolio Designer 진입 시 Corporate 선택 상태에서는 `corp_params.initial_investment`가 KRW 입력값으로 표시되는지 확인한다.
   - Pension으로 전환하면 `pension_params.initial_investment + severance_reserve + other_reserve`가 KRW 입력값으로 표시되는지 확인한다.
@@ -58,6 +59,7 @@
   - 저장소에 남아 있는 레거시 혼합 전략도 활성화할 수 없는지 확인한다.
   - UI에서 Corporate를 선택하면 Personal 선택이 비활성화되고, Personal을 선택하면 Corporate 선택이 비활성화되며 Pension 선택은 계속 허용되는지 확인한다.
   - Personal 단독 또는 Personal+Pension 전략은 허용되고 기존 5개 카테고리 및 실제 리밸런싱 거래 이벤트 계약을 유지하는지 확인한다.
+- **[TEST-PRT-12] Operating Account 버퍼 환산 분모 [REGRESSION]:** Corporate와 Personal의 SGOV/Bond 버퍼 개월수 환산은 공통 `household_monthly_need`를 사용하고, Personal 레거시 `monthly_withdrawal_target` 값에는 영향받지 않는지 검증한다. Pension은 `monthly_withdrawal_target`을 월 개인연금 수령액으로 사용한다.
 
 ## 2. Feature Completion Gate [NEW]
 

@@ -902,7 +902,10 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label={t("settings.withdrawal")}
+                  label={
+                    isKorean ? "월 개인연금 수령액" : "Monthly Pension Income"
+                  }
+                  testId="settings-monthly-pension-income"
                   value={retireConfig.pension_params.monthly_withdrawal_target}
                   isCurrency
                   tooltip={t("settings.withdrawalTooltip")}
@@ -958,6 +961,14 @@ export function SettingsTab({
                 color="text-sky-400"
                 tooltip={t("settings.personalTaxableAccountTooltip")}
               />
+              <div
+                data-testid="settings-single-household-withdrawal-policy"
+                className="rounded-2xl border border-sky-500/30 bg-sky-950/30 p-4 text-xs leading-relaxed text-sky-200"
+              >
+                {isKorean
+                  ? "월 가계필요비용이 유일한 인출 목표입니다. 연금과 국민연금을 먼저 반영하고 남은 부족액만 활성 주 운용계좌의 SGOV에서 지급합니다."
+                  : "Household need is the only withdrawal target. Pension income is applied first, and only the remaining gap is paid from the active operating account SGOV."}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputGroup
                   label={t("settings.initialCapital")}
@@ -977,24 +988,6 @@ export function SettingsTab({
                   }
                 />
                 <InputGroup
-                  label={t("settings.withdrawal")}
-                  value={
-                    retireConfig.personal_account_params
-                      .monthly_withdrawal_target
-                  }
-                  isCurrency
-                  tooltip={t("settings.personalTaxableWithdrawalTooltip")}
-                  onChange={(v) =>
-                    setRetireConfig({
-                      ...retireConfig,
-                      personal_account_params: {
-                        ...retireConfig.personal_account_params,
-                        monthly_withdrawal_target: parseInt(v) || 0,
-                      },
-                    })
-                  }
-                />
-                <InputGroup
                   label={isKorean ? "초기 취득원가" : "Initial Cost Basis"}
                   value={
                     retireConfig.personal_account_params.initial_cost_basis ||
@@ -1004,8 +997,8 @@ export function SettingsTab({
                   testId="settings-personal-initial-cost-basis"
                   tooltip={
                     isKorean
-                      ? "미국 주식·ETF의 원화 환산 총 취득원가입니다."
-                      : "Aggregate KRW cost basis of U.S.-listed stocks and ETFs."
+                      ? "현재 평가액과 별개의 세무상 총 취득원가입니다. 자산 수익률이나 평가액은 바꾸지 않고, 매도원가·실현손익·양도세 계산에만 사용합니다."
+                      : "Tax cost basis separate from market value. It affects realized gains and capital-gains tax, not returns or valuation."
                   }
                   onChange={(v) =>
                     setRetireConfig({
@@ -1141,6 +1134,35 @@ export function SettingsTab({
                       tax_and_insurance: {
                         ...retireConfig.tax_and_insurance,
                         domestic_dividend_tax_rate: (parseFloat(v) || 0) / 100,
+                      },
+                    })
+                  }
+                />
+                <InputGroup
+                  label={
+                    isKorean
+                      ? "법인 주주분배 원천징수 추정률"
+                      : "Shareholder Distribution Withholding"
+                  }
+                  value={
+                    (retireConfig.tax_and_insurance
+                      .shareholder_distribution_withholding_rate ?? 0.154) * 100
+                  }
+                  unit="%"
+                  fractionDigits={1}
+                  testId="settings-shareholder-distribution-withholding-rate"
+                  tooltip={
+                    isKorean
+                      ? "주주대여금 소진 후 가계 부족액을 과세 분배로 지급할 때 사용하는 원천징수 추정률입니다."
+                      : "Estimated withholding used when taxable shareholder distributions fund the household gap after the loan is exhausted."
+                  }
+                  onChange={(v) =>
+                    setRetireConfig({
+                      ...retireConfig,
+                      tax_and_insurance: {
+                        ...retireConfig.tax_and_insurance,
+                        shareholder_distribution_withholding_rate:
+                          (parseFloat(v) || 0) / 100,
                       },
                     })
                   }

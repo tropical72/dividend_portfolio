@@ -166,6 +166,53 @@ test("should support personal taxable account categories and capital", async ({
   }
 });
 
+test("should use household need for personal buffer month conversion", async ({
+  page,
+  request,
+}) => {
+  let originalState: BackendTestState | null = null;
+  await acquireE2ELock();
+  try {
+    originalState = await captureBackendState(request);
+    const response = await request.post(
+      "http://127.0.0.1:8000/api/retirement/config",
+      {
+        data: {
+          simulation_params: {
+            household_monthly_need: 10000000,
+          },
+          personal_account_params: {
+            initial_investment: 480000000,
+            monthly_withdrawal_target: 2000000,
+          },
+        },
+      },
+    );
+    expect(response.ok()).toBeTruthy();
+
+    await page.goto("http://localhost:5173", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.getByTestId("nav-asset-setup").click({ force: true });
+    await page.getByTestId("portfolio-subtab-design").click({ force: true });
+    await page.getByTestId("portfolio-account-personal").click();
+    await expect(
+      page.getByTestId("portfolio-design-capital-krw-input"),
+    ).toHaveValue("480,000,000");
+
+    await page.getByTestId("portfolio-add-manual-SGOV Buffer").click();
+    const modal = page.getByTestId("manual-add-modal");
+    await modal.getByTestId("manual-runway-months-input").fill("3");
+
+    // 3개월 × 공통 가계 필요액 1,000만원 ÷ 개인자산 4.8억원 = 6.25% → 6%
+    // 레거시 개인 인출액 200만원을 사용했다면 1%가 되므로 계약 위반을 식별한다.
+    await expect(modal.getByTestId("manual-weight-input")).toHaveValue("6");
+  } finally {
+    if (originalState) await restoreBackendState(request, originalState);
+    await releaseE2ELock();
+  }
+});
+
 test("should save personal portfolio, connect master, and render retirement account", async ({
   page,
   request,

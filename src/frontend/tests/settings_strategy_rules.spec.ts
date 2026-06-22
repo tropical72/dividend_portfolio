@@ -135,6 +135,26 @@ test.describe("Settings Strategy Rules", () => {
     );
   });
 
+  test("should expose one household withdrawal target and pension income semantics", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByTestId("settings-single-household-withdrawal-policy"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("settings-monthly-pension-income"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByTestId("input-group-monthly-living-cost"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByTestId("settings-shareholder-distribution-withholding-rate"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByTestId("settings-personal-monthly-withdrawal"),
+    ).toHaveCount(0);
+  });
+
   test("should persist household cashflow inputs and expose them in retirement summary", async ({
     page,
   }) => {

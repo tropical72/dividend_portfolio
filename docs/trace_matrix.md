@@ -140,9 +140,12 @@
 | D-RAMS-20.1 | 개인운용 활성 마스터 계좌 경계, 가계 현금흐름 및 통합 수익률 정합화 | T-01-20 | TEST-SUR-18 | Done | - | 2026.06.21 |
 | D-RAMS-21.1 | 미국 상장 개인계좌 배당·양도세·금융소득 종합과세·지역건보 시차 원장 | T-01-21 | TEST-SUR-19 ~ 21 | Done | - | 2026.06.21 |
 | D-RAMS-22.1 | 개인 세금 연도별 감사표와 세금 재원 매도 추적 | T-01-22 | TEST-SUR-22 / 23 | Done | 076acbe | 2026.06.22 |
-| D-RAMS-23.1 | 개인운용 Retirement 활성 계좌·가계 인출·Stress·미충족 KPI 정합화 | T-01-23 | TEST-SUR-24 ~ 28 / TEST-UI-RULE-13 | Done | - | 2026.06.22 |
+| D-RAMS-23.1 | 개인운용 Retirement 활성 계좌·가계 인출·Stress·미충족 KPI 정합화 | T-01-23 | TEST-SUR-24 ~ 28 / TEST-UI-RULE-13 | Done | 5bce073 | 2026.06.22 |
+| D-RAMS-24.1 | Operating Account 단일 가계 인출·공통 버퍼·법인 과세 지급 정합화 | T-01-24 | TEST-SUR-29 ~ 32 / TEST-UI-RULE-14 ~ 15 | Done | - | 2026.06.22 |
+| D-RAMS-25.1 | 금융소득 종합과세 소득세법 제62조 비교과세 정합화 | T-01-25 | TEST-SUR-19 | Done | - | 2026.06.22 |
 | D-PRT-11.1 | 개인 일반계좌 Portfolio Designer/Master/Retirement UI 통합 | T-02-11 | TEST-PRT-10 | Done | - | 2026.06.19 |
 | D-PRT-12.1 | 법인운용과 개인운용의 마스터 전략 동시 구성 금지 및 기존 개인 리밸런싱 전략 재사용 | T-02-12 | TEST-PRT-11 | Done | - | 2026.06.21 |
+| D-PRT-13.1 | Corporate/Personal 버퍼 개월수 환산 분모를 공통 가계 필요액으로 통일 | T-02-13 | TEST-PRT-12 | Done | - | 2026.06.22 |
 | D-CCS-13.1 | 고정 매도비율 폐기 및 실제 리밸런싱 매도 연동 | T-CCS-13 | TEST-CCS-104 | Done | - | 2026.06.13 |
 | D-CCS-14.1 | 지역건보 재산 60등급·소득월액·장기요양 공식 산식 정합화 | T-CCS-14 | TEST-CCS-105 | Done | - | 2026.06.20 |
 

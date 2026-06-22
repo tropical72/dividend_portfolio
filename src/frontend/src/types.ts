@@ -213,6 +213,7 @@ export interface RetirementConfig {
     income_tax_estimate_rate: number;
     us_dividend_foreign_withholding_rate?: number;
     domestic_dividend_tax_rate?: number;
+    shareholder_distribution_withholding_rate?: number;
     financial_income_comprehensive_threshold?: number;
     us_capital_gains_tax_rate?: number;
     us_capital_gains_annual_deduction?: number;
@@ -274,6 +275,9 @@ export interface MonthlySimulationData {
   personal_health_income?: number;
   personal_health_property_points?: number;
   shareholder_loan_payment?: number;
+  shareholder_distribution_gross?: number;
+  shareholder_distribution_withholding?: number;
+  shareholder_distribution_net?: number;
   household_shortfall?: number;
   boost_amount?: number;
   corp_monthly_need?: number;
@@ -321,6 +325,9 @@ export interface PersonalAnnualTaxAudit {
   gross_dividend: number;
   foreign_withholding_tax: number;
   foreign_tax_credit: number;
+  general_calculated_tax: number;
+  comparison_calculated_tax: number;
+  incremental_financial_income_tax: number;
   domestic_additional_tax: number;
   sale_proceeds: number;
   cost_basis_sold: number;

@@ -64,6 +64,18 @@ class ProjectionEngine:
         monthly_bookkeeping_fee = float(p("monthly_bookkeeping_fee", 0.0))
         annual_corp_tax_adjustment_fee = float(p("annual_corp_tax_adjustment_fee", 0.0))
         employee_count = int(p("employee_count", 0))
+        shareholder_distribution_withholding_rate = min(
+            0.999999,
+            max(
+                0.0,
+                float(
+                    p(
+                        "shareholder_distribution_withholding_rate",
+                        0.0,
+                    )
+                ),
+            ),
+        )
         corp_enabled = bool(p("corp_enabled", True))
         pension_enabled = bool(p("pension_enabled", True))
         personal_enabled = bool(p("personal_enabled", True))
@@ -277,17 +289,25 @@ class ProjectionEngine:
                 else 0.0
             )
             national_income = national_pension_amount if phase == "Phase 3" else 0.0
-            personal_monthly_need = personal_withdrawal_target
+            personal_monthly_need = 0.0
             if personal_enabled and not corp_enabled:
                 personal_monthly_need = max(
-                    personal_withdrawal_target,
-                    current_total_need - pension_income - national_income,
+                    0.0, current_total_need - pension_income - national_income
                 )
             target_net_salary = self._net_salary_to_household(corp_salary, employee_count)
             household_shortfall = max(
                 0.0, current_total_need - pension_income - national_income - target_net_salary
             )
             target_shareholder_loan_payment = min(loan_balance, household_shortfall)
+            target_shareholder_distribution_net = max(
+                0.0, household_shortfall - target_shareholder_loan_payment
+            )
+            target_shareholder_distribution_gross = (
+                target_shareholder_distribution_net
+                / (1.0 - shareholder_distribution_withholding_rate)
+                if target_shareholder_distribution_net > 0
+                else 0.0
+            )
             corp_bookkeeping_target = monthly_bookkeeping_fee
             corp_tax_adjustment_fee_target = (
                 annual_corp_tax_adjustment_fee if sim_month == 3 else 0.0
@@ -313,6 +333,9 @@ class ProjectionEngine:
                     employee_count=employee_count,
                     corporate_monthly_operating_cost=corporate_monthly_operating_cost,
                     loan_balance=loan_balance,
+                    shareholder_distribution_withholding_rate=(
+                        shareholder_distribution_withholding_rate
+                    ),
                 )
                 if corp_enabled
                 else 0.0
@@ -432,6 +455,16 @@ class ProjectionEngine:
             )
             remaining_corp_cash -= shareholder_loan_payment
             loan_balance -= shareholder_loan_payment
+            shareholder_distribution_gross = min(
+                target_shareholder_distribution_gross, remaining_corp_cash
+            )
+            shareholder_distribution_net = shareholder_distribution_gross * (
+                1.0 - shareholder_distribution_withholding_rate
+            )
+            shareholder_distribution_withholding = (
+                shareholder_distribution_gross - shareholder_distribution_net
+            )
+            remaining_corp_cash -= shareholder_distribution_gross
             corp_deductible_expenses_by_year[sim_year] = (
                 corp_deductible_expenses_by_year.get(sim_year, 0.0)
                 + actual_gross_salary
@@ -450,8 +483,12 @@ class ProjectionEngine:
                 - national_income
                 - actual_net_salary
                 - shareholder_loan_payment
+                - shareholder_distribution_net
                 - personal_draw,
             )
+            if household_shortfall < 1e-6:
+                # Gross-up and withholding arithmetic can leave a non-monetary float residue.
+                household_shortfall = 0.0
             cumulative_household_need += current_total_need
             cumulative_household_shortfall += household_shortfall
             cumulative_household_paid += current_total_need - household_shortfall
@@ -498,13 +535,10 @@ class ProjectionEngine:
                     employee_count=employee_count,
                     corporate_monthly_operating_cost=corporate_monthly_operating_cost,
                     loan_balance=loan_balance,
-                    corporate_rules=(
-                        corporate_rules
-                        if corp_enabled
-                        else {
-                            "may_sgov_target_months": pension_rules["sgov_target_months"],
-                            "bond_floor_months": pension_rules["bond_floor_months"],
-                        }
+                    corporate_rules=corporate_rules,
+                    operating_account_is_personal=personal_enabled and not corp_enabled,
+                    shareholder_distribution_withholding_rate=(
+                        shareholder_distribution_withholding_rate
                     ),
                 )
                 growth_used = self._run_may_rebalance(
@@ -532,18 +566,21 @@ class ProjectionEngine:
                     pension_rules=pension_rules,
                 )
 
-                self._fill_pension_sgov(
+                personal_review_need = max(
+                    0.0, next_target_cashflow - pension_income - national_income
+                )
+                self._fill_corp_sgov(
                     personal_assets,
                     personal_distribution_run_rates,
+                    "personal",
                     personal_stats,
                     params,
                     sim_year,
                     sim_month,
-                    target_amount=personal_monthly_need * pension_rules["sgov_target_months"],
-                    monthly_need=personal_monthly_need,
-                    bond_upper_months=pension_rules["bond_upper_months"],
-                    bond_floor_months=pension_rules["bond_floor_months"],
-                    account_key="personal",
+                    target_amount=personal_review_need * corporate_rules["may_sgov_target_months"],
+                    monthly_need=personal_review_need,
+                    bond_upper_months=corporate_rules["bond_upper_months"],
+                    bond_floor_months=corporate_rules["bond_floor_months"],
                 )
                 self._fill_bucket(
                     personal_assets,
@@ -554,8 +591,8 @@ class ProjectionEngine:
                     sim_year,
                     sim_month,
                     target_category="Bond Buffer",
-                    target_amount=personal_monthly_need * pension_rules["bond_target_months"],
-                    floor_amount=personal_monthly_need * pension_rules["bond_floor_months"],
+                    target_amount=personal_review_need * corporate_rules["bond_target_months"],
+                    floor_amount=personal_review_need * corporate_rules["bond_floor_months"],
                     donor_order=("High Income", "Dividend Growth", "Growth Engine"),
                 )
                 self._cap_buffer_and_deploy_surplus(
@@ -566,8 +603,8 @@ class ProjectionEngine:
                     params,
                     sim_year,
                     sim_month,
-                    sgov_cap=personal_monthly_need * pension_rules["sgov_target_months"],
-                    bond_cap=personal_monthly_need * pension_rules["bond_upper_months"],
+                    sgov_cap=personal_review_need * corporate_rules["may_sgov_target_months"],
+                    bond_cap=personal_review_need * corporate_rules["bond_upper_months"],
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
@@ -584,24 +621,42 @@ class ProjectionEngine:
                 shock_flag = False
             elif sim_month == corporate_mini_review_month:
                 self._run_august_corporate_review(
-                    corp_assets,
-                    corp_distribution_run_rates,
-                    corp_stats,
+                    personal_assets if personal_enabled and not corp_enabled else corp_assets,
+                    (
+                        personal_distribution_run_rates
+                        if personal_enabled and not corp_enabled
+                        else corp_distribution_run_rates
+                    ),
+                    personal_stats if personal_enabled and not corp_enabled else corp_stats,
                     params,
                     sim_year,
                     sim_month,
-                    corp_monthly_need,
+                    (
+                        personal_monthly_need
+                        if personal_enabled and not corp_enabled
+                        else corp_monthly_need
+                    ),
+                    account_key=("personal" if personal_enabled and not corp_enabled else "corp"),
                 )
             elif sim_month == corporate_semi_review_month:
                 growth_used = self._run_november_rebalance(
-                    corp_assets,
-                    corp_distribution_run_rates,
-                    corp_stats,
+                    personal_assets if personal_enabled and not corp_enabled else corp_assets,
+                    (
+                        personal_distribution_run_rates
+                        if personal_enabled and not corp_enabled
+                        else corp_distribution_run_rates
+                    ),
+                    personal_stats if personal_enabled and not corp_enabled else corp_stats,
                     params,
                     sim_year,
                     sim_month,
-                    corp_monthly_need,
+                    (
+                        personal_monthly_need
+                        if personal_enabled and not corp_enabled
+                        else corp_monthly_need
+                    ),
                     corporate_rules,
+                    account_key=("personal" if personal_enabled and not corp_enabled else "corp"),
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
@@ -615,18 +670,6 @@ class ProjectionEngine:
                 sim_month,
                 pension_withdrawal_target,
                 pension_rules,
-            )
-
-            self._run_pension_floor_refill(
-                personal_assets,
-                personal_distribution_run_rates,
-                personal_stats,
-                params,
-                sim_year,
-                sim_month,
-                personal_monthly_need,
-                pension_rules,
-                account_key="personal",
             )
 
             total_net_worth = (
@@ -717,6 +760,9 @@ class ProjectionEngine:
                     "corp_tax_assessed_for_year": corp_tax_assessed_for_year,
                     "corp_realized_income": corp_realized_income,
                     "shareholder_loan_payment": shareholder_loan_payment,
+                    "shareholder_distribution_gross": shareholder_distribution_gross,
+                    "shareholder_distribution_withholding": shareholder_distribution_withholding,
+                    "shareholder_distribution_net": shareholder_distribution_net,
                     "household_shortfall": household_shortfall,
                     "boost_amount": boost_amount if boost_months_remaining > 0 else 0.0,
                     "corp_monthly_need": corp_monthly_need,
@@ -816,6 +862,15 @@ class ProjectionEngine:
                     ),
                     "foreign_tax_credit": float(
                         dividend_tax_detail.get("foreign_tax_credit") or 0.0
+                    ),
+                    "general_calculated_tax": float(
+                        dividend_tax_detail.get("general_calculated_tax") or 0.0
+                    ),
+                    "comparison_calculated_tax": float(
+                        dividend_tax_detail.get("comparison_calculated_tax") or 0.0
+                    ),
+                    "incremental_financial_income_tax": float(
+                        dividend_tax_detail.get("incremental_financial_income_tax") or 0.0
                     ),
                     "domestic_additional_tax": float(
                         dividend_tax_detail.get("domestic_additional_tax") or 0.0
@@ -1276,25 +1331,25 @@ class ProjectionEngine:
         employee_count: int,
         corporate_monthly_operating_cost: float,
         loan_balance: float,
+        shareholder_distribution_withholding_rate: float = 0.0,
     ) -> float:
         pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
         national_income = national_pension_amount if phase == "Phase 3" else 0.0
         baseline_gap = max(0.0, household_need - pension_income - national_income)
         target_net_salary = self._net_salary_to_household(corp_salary, employee_count)
-        if target_net_salary <= 0 and loan_balance <= 0:
-            return (
-                self._corp_operating_cost(
-                    corp_salary, corporate_monthly_operating_cost, employee_count
-                )
-                + baseline_gap
-            )
         target_shareholder_loan_payment = min(
             loan_balance,
             max(0.0, baseline_gap - target_net_salary),
         )
+        distribution_net = max(
+            0.0, baseline_gap - target_net_salary - target_shareholder_loan_payment
+        )
+        rate = min(0.999999, max(0.0, shareholder_distribution_withholding_rate))
+        distribution_gross = distribution_net / (1.0 - rate) if distribution_net > 0 else 0.0
         return (
             self._corp_operating_cost(corp_salary, corporate_monthly_operating_cost, employee_count)
             + target_shareholder_loan_payment
+            + distribution_gross
         )
 
     def _annual_corp_tax_for_year(
@@ -1375,17 +1430,31 @@ class ProjectionEngine:
         corporate_monthly_operating_cost: float,
         loan_balance: float,
         corporate_rules: Dict[str, float],
+        operating_account_is_personal: bool = False,
+        shareholder_distribution_withholding_rate: float = 0.0,
     ) -> tuple[bool, str, float]:
         candidate_total_need = current_total_need * (1.0 + inflation_rate)
-        corp_candidate_need = self._corporate_cash_need(
-            household_need=candidate_total_need,
-            phase=phase,
-            pension_withdrawal_target=pension_withdrawal_target,
-            national_pension_amount=national_pension_amount,
-            corp_salary=corp_salary,
-            employee_count=employee_count,
-            corporate_monthly_operating_cost=corporate_monthly_operating_cost,
-            loan_balance=loan_balance,
+        corp_candidate_need = (
+            max(
+                0.0,
+                candidate_total_need
+                - (pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0)
+                - (national_pension_amount if phase == "Phase 3" else 0.0),
+            )
+            if operating_account_is_personal
+            else self._corporate_cash_need(
+                household_need=candidate_total_need,
+                phase=phase,
+                pension_withdrawal_target=pension_withdrawal_target,
+                national_pension_amount=national_pension_amount,
+                corp_salary=corp_salary,
+                employee_count=employee_count,
+                corporate_monthly_operating_cost=corporate_monthly_operating_cost,
+                loan_balance=loan_balance,
+                shareholder_distribution_withholding_rate=(
+                    shareholder_distribution_withholding_rate
+                ),
+            )
         )
         can_fill_sgov = self._can_fill_target(
             corp_assets,
@@ -1554,11 +1623,12 @@ class ProjectionEngine:
         sim_month: int,
         corp_monthly_need: float,
         corporate_rules: Dict[str, float],
+        account_key: str = "corp",
     ) -> float:
         growth_used = self._fill_corp_sgov(
             corp_assets,
             corp_distribution_run_rates,
-            "corp",
+            account_key,
             corp_stats,
             params,
             sim_year,
@@ -1571,7 +1641,7 @@ class ProjectionEngine:
         growth_used += self._fill_bucket(
             corp_assets,
             corp_distribution_run_rates,
-            "corp",
+            account_key,
             corp_stats,
             params,
             sim_year,
@@ -1584,7 +1654,7 @@ class ProjectionEngine:
         self._cap_buffer_and_deploy_surplus(
             corp_assets,
             corp_distribution_run_rates,
-            "corp",
+            account_key,
             corp_stats,
             params,
             sim_year,
@@ -1603,6 +1673,7 @@ class ProjectionEngine:
         sim_year: int,
         sim_month: int,
         corp_monthly_need: float,
+        account_key: str = "corp",
     ) -> None:
         if corp_monthly_need <= 0 or corp_assets["SGOV Buffer"] >= corp_monthly_need:
             return
@@ -1612,7 +1683,7 @@ class ProjectionEngine:
             "SGOV Buffer",
             corp_monthly_need - corp_assets["SGOV Buffer"],
             distribution_run_rates=corp_distribution_run_rates,
-            account_key="corp",
+            account_key=account_key,
             account_stats=corp_stats,
             params=params,
             sim_year=sim_year,

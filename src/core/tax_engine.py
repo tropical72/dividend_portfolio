@@ -97,6 +97,12 @@ class TaxEngine:
             config.get("us_dividend_foreign_withholding_rate", 0.15)
         )
         self.domestic_dividend_tax_rate = float(config.get("domestic_dividend_tax_rate", 0.154))
+        self.shareholder_distribution_withholding_rate = float(
+            config.get(
+                "shareholder_distribution_withholding_rate",
+                self.domestic_dividend_tax_rate,
+            )
+        )
         self.financial_income_comprehensive_threshold = float(
             config.get("financial_income_comprehensive_threshold", 20000000)
         )
@@ -255,12 +261,34 @@ class TaxEngine:
         separate_tax_floor = gross * self.domestic_dividend_tax_rate
         is_comprehensive = financial_total > self.financial_income_comprehensive_threshold
 
+        general_calculated_tax = 0.0
+        comparison_calculated_tax = 0.0
+        incremental_financial_income_tax = separate_tax_floor
+
         if is_comprehensive:
             base = max(0.0, other_comprehensive_tax_base)
-            incremental_tax = self.calculate_progressive_income_tax(base + financial_total) - (
-                self.calculate_progressive_income_tax(base)
+            threshold = self.financial_income_comprehensive_threshold
+            comprehensive_excess = max(0.0, financial_total - threshold)
+            base_progressive_tax = self.calculate_progressive_income_tax(base)
+
+            # 소득세법 제62조 비교과세 추정:
+            # 일반산출세액은 기준금액까지 원천징수세율, 초과분만 누진과세하고
+            # 비교산출세액은 다른 종합소득 누진세액과 금융소득 전체 원천징수세액을 합산한다.
+            general_calculated_tax = self.calculate_progressive_income_tax(
+                base + comprehensive_excess
+            ) + (threshold * self.domestic_dividend_tax_rate)
+            comparison_calculated_tax = base_progressive_tax + (
+                financial_total * self.domestic_dividend_tax_rate
             )
-            allocated_tax = incremental_tax * (gross / financial_total) if financial_total else 0.0
+            selected_calculated_tax = max(general_calculated_tax, comparison_calculated_tax)
+            incremental_financial_income_tax = max(
+                0.0, selected_calculated_tax - base_progressive_tax
+            )
+            allocated_tax = (
+                incremental_financial_income_tax * (gross / financial_total)
+                if financial_total
+                else 0.0
+            )
             domestic_tax_before_credit = max(separate_tax_floor, allocated_tax)
         else:
             domestic_tax_before_credit = separate_tax_floor
@@ -276,6 +304,9 @@ class TaxEngine:
             "total_dividend_tax": foreign_withholding + domestic_additional_tax,
             "financial_income_total": financial_total,
             "comprehensive_threshold": self.financial_income_comprehensive_threshold,
+            "general_calculated_tax": general_calculated_tax,
+            "comparison_calculated_tax": comparison_calculated_tax,
+            "incremental_financial_income_tax": incremental_financial_income_tax,
             "is_comprehensive": is_comprehensive,
         }
 

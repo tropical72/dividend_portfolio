@@ -348,6 +348,7 @@ async def run_retirement_simulation(
             "income_tax_estimate_rate",
             "us_dividend_foreign_withholding_rate",
             "domestic_dividend_tax_rate",
+            "shareholder_distribution_withholding_rate",
             "financial_income_comprehensive_threshold",
             "us_capital_gains_tax_rate",
             "us_capital_gains_annual_deduction",
@@ -546,6 +547,12 @@ async def run_retirement_simulation(
         ),
         "personal_other_comprehensive_tax_base": float(
             personal_account_params.get("other_comprehensive_tax_base") or 0.0
+        ),
+        "shareholder_distribution_withholding_rate": float(
+            config["tax_and_insurance"].get(
+                "shareholder_distribution_withholding_rate",
+                config["tax_and_insurance"].get("domestic_dividend_tax_rate", 0.154),
+            )
         ),
         "personal_property_assessed_value": float(
             personal_account_params.get(

@@ -152,13 +152,16 @@
 ### 2.6. 미국 상장 개인계좌 세금·건보 원장
 - **Scope:** 한국 세법상 거주자의 미국 상장 주식·ETF 직접투자만 지원한다. 모든 금액은 원화 환산 aggregate 장부값으로 계산한다.
 - **Monthly Dividend Ledger:** 카테고리별 gross distribution을 Personal SGOV에 유입한 뒤 미국 원천징수세를 같은 달 차감한다.
-- **Annual Dividend Tax Ledger:** 연간 미국 배당과 외부 금융소득을 합산해 분리과세 또는 종합과세 추정 분기를 선택하고, 외국납부세액공제 후 국내 추가세액을 다음 해 5월 납부한다.
+- **Annual Dividend Tax Ledger:** 연간 미국 배당과 외부 금융소득을 합산해 분리과세 또는 종합과세 추정 분기를 선택한다. 종합과세 시 기준 초과분만 기타 종합소득 과세표준과 합산한 일반산출세액과 금융소득 전체에 국내 배당세율을 적용한 비교산출세액 중 큰 금액을 사용하고, 외국납부세액공제 후 국내 추가세액을 다음 해 5월 납부한다.
 - **Capital Gains Ledger:** 실제 trade event의 `sale_proceeds`, `cost_basis_sold`, `realized_gain`을 연도별 통산한다. 미실현 PA는 제외하고 기본공제 후 세율을 적용한다.
 - **Health Insurance Ledger:** 재산세 과세표준 기반 재산분은 매월 부과한다. 금융소득분은 최소 반영금액과 신고자료 반영 지연연도/월을 정책값으로 적용하며 양도차익은 제외한다.
 - **Funding:** Personal SGOV가 세금과 건보료보다 부족하면 `Bond Buffer -> High Income -> Dividend Growth -> Growth Engine` donor 순서로 현금을 조달하고 실제 매도 이벤트를 남긴다.
-- **Audit Contract:** 월별 응답은 gross dividend, foreign withholding, domestic additional tax, capital gains tax, health premium과 반영 소득연도를 제공하고, 연간 응답은 세금연도와 납부연월, 공제, 세율, 취득원가를 제공한다.
+- **Audit Contract:** 월별 응답은 gross dividend, foreign withholding, domestic additional tax, capital gains tax, health premium과 반영 소득연도를 제공한다. 연간 응답은 일반산출세액, 비교산출세액, 금융소득 증분세액, 외국납부세액공제, 세금연도와 납부연월, 공제, 세율, 취득원가를 제공한다.
 - **Annual Audit View:** `personal_annual_tax_audit`는 세금연도 기준 집계와 납부연월을 결합하며, 해당 납부를 위해 발생한 `cash_obligation` 거래 이벤트를 포함한다. UI는 월별 계산을 재집계하지 않고 이 계약을 표로 렌더링한다.
-- **Personal Operation Cashflow:** Corporate가 비활성이고 Personal이 활성인 경우 Personal SGOV가 가계 부족분을 지급한다. 월 목표는 사용자 최소 인출액과 `가계필요액 - 개인연금 - 국민연금` 중 큰 값이며, 지급 시 SGOV 취득원가를 비례 감소시킨다.
+- **Operating Account:** Corporate와 Personal 중 활성 계좌 하나를 주 운용계좌로 선택한다. 두 계좌는 동일한 SGOV 30개월/11월 27개월, Bond 12/18/24개월, donor 규칙을 사용하며 법적·세무 지급 경로만 다르다.
+- **Single Household Need:** `household_monthly_need`가 유일한 가계 목표다. 국민연금과 개인연금 수입을 먼저 반영하고 남은 순부족액만 Operating Account가 SGOV에서 지급한다. Personal의 레거시 월 인출 목표는 계산에서 무시한다.
+- **Corporate Distribution Fallback:** 법인은 순급여와 주주대여금 반환을 먼저 사용하고, 대여금 소진 후 남은 순부족액은 설정된 주주분배 원천징수 추정률로 gross-up하여 SGOV에서 지급한다. Gross 지급액과 가계 순수령액을 별도 원장으로 기록한다.
+- **Personal Cost Basis:** Personal SGOV 지급과 비현금 자산 매도는 aggregate 취득원가를 비례 감소시킨다. 취득원가는 세무 원장에만 영향을 주며 평가액·수익률을 바꾸지 않는다.
 - **Active Account Boundary:** 예정 현금흐름, 정기점검, Stress 판정은 활성 계좌만 대상으로 한다. Personal-only의 5월 A/B/C는 Personal SGOV/Bond와 Personal/Pension 활성자산을 사용한다.
 - **Household Completeness Ledger:** Summary는 누적 가계 필요액, 실지급액, 미충족액, 최초 미충족 연월을 제공하며 최종자산과 함께 표시한다.
 - **Known Boundary:** 종목별 lot, 실제 체결환율, 증권사별 원천징수 차이, 국내 상장 ETF 과세, 손실 이월은 1차 범위에 포함하지 않는다.

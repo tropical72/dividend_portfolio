@@ -96,6 +96,12 @@
 - [x] **T-02-12.4** Personal이 기존 카테고리·리밸런싱·거래 원장 방식을 유지하는 회귀를 고정한다.
 - [x] **T-02-12.5** 관련 품질 게이트와 Playwright 검증을 통과한다.
 
+### [Phase 13] Operating Account 월 필요현금 통일 (T-02-13)
+
+- [x] **T-02-13.1 SDD:** Corporate/Personal 버퍼 개월수 환산 분모를 공통 `household_monthly_need`로 정의한다.
+- [x] **T-02-13.2 TDD/Implementation:** Personal 레거시 월 인출값과 무관하게 가계 필요액으로 비중이 환산되는지 검증하고 구현한다.
+- [x] **T-02-13.3 Validation:** 관련 Playwright와 Frontend 품질 게이트를 통과한다.
+
 ### [Implementation Notes] 구현 메모
 
 - 기존 `Fixed/Cash/Growth/Dividend/HighIncome` 타입은 즉시 삭제하지 않고 호환 레이어로 잠시 유지한다.

@@ -134,8 +134,37 @@ def test_us_dividend_tax_uses_comprehensive_income_branch_above_threshold():
 
     assert result["is_comprehensive"] is True
     assert result["financial_income_total"] == 24000000
-    assert result["domestic_tax_before_credit"] > 24000000 * 0.154
-    assert result["domestic_additional_tax"] > 0
+    assert result["general_calculated_tax"] == pytest.approx(11000000)
+    assert result["comparison_calculated_tax"] == pytest.approx(10560000)
+    assert result["domestic_tax_before_credit"] == pytest.approx(4136000)
+    assert result["domestic_additional_tax"] == pytest.approx(536000)
+
+
+def test_us_dividend_tax_uses_comparison_floor_when_other_income_is_zero():
+    engine = TaxEngine()
+
+    result = engine.calculate_us_dividend_tax(24000000)
+
+    assert result["is_comprehensive"] is True
+    assert result["general_calculated_tax"] == pytest.approx(3344000)
+    assert result["comparison_calculated_tax"] == pytest.approx(3696000)
+    assert result["domestic_tax_before_credit"] == pytest.approx(3696000)
+    assert result["domestic_additional_tax"] == pytest.approx(96000)
+
+
+def test_us_dividend_tax_allocates_comprehensive_tax_to_current_dividend():
+    engine = TaxEngine()
+
+    result = engine.calculate_us_dividend_tax(
+        12000000,
+        other_financial_income=12000000,
+        other_comprehensive_tax_base=50000000,
+    )
+
+    assert result["financial_income_total"] == 24000000
+    assert result["incremental_financial_income_tax"] == pytest.approx(4136000)
+    assert result["domestic_tax_before_credit"] == pytest.approx(2068000)
+    assert result["domestic_additional_tax"] == pytest.approx(268000)
 
 
 def test_us_capital_gains_tax_offsets_annual_losses_and_applies_deduction():

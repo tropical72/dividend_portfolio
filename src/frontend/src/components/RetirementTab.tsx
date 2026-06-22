@@ -378,6 +378,14 @@ export function RetirementTab() {
   const latestMonth = monthlyData[monthlyData.length - 1];
   const latestNetWorth =
     monthlyData[monthlyData.length - 1]?.total_net_worth || 0;
+  const cumulativeShareholderDistributionNet = monthlyData.reduce(
+    (total, month) => total + (month.shareholder_distribution_net || 0),
+    0,
+  );
+  const cumulativeShareholderDistributionWithholding = monthlyData.reduce(
+    (total, month) => total + (month.shareholder_distribution_withholding || 0),
+    0,
+  );
   const minimumNetWorth = monthlyData.reduce(
     (min, item) => Math.min(min, item.total_net_worth || 0),
     initialNetWorth || 0,
@@ -439,6 +447,8 @@ export function RetirementTab() {
     (m.pension_draw || 0) +
     (m.net_salary || 0) +
     (m.shareholder_loan_payment || 0) +
+    (m.shareholder_distribution_net || 0) +
+    (m.personal_draw || 0) +
     nationalPensionReceipt(m);
 
   const opsBadge = (m: MonthlySimulationData) => {
@@ -1253,6 +1263,26 @@ export function RetirementTab() {
                       </div>
                     </div>
                   ))}
+                  {cumulativeShareholderDistributionNet > 0 && (
+                    <div
+                      data-testid="retirement-shareholder-distribution-audit"
+                      className="rounded-xl border border-violet-200 bg-violet-50 p-3 text-violet-800 sm:col-span-3"
+                    >
+                      {isKorean
+                        ? "법인 과세 주주분배 순수령"
+                        : "Net taxable shareholder distribution"}
+                      :{" "}
+                      {cumulativeShareholderDistributionNet.toLocaleString(
+                        "ko-KR",
+                      )}
+                      원 /{" "}
+                      {isKorean ? "원천징수 추정" : "Estimated withholding"}:{" "}
+                      {cumulativeShareholderDistributionWithholding.toLocaleString(
+                        "ko-KR",
+                      )}
+                      원
+                    </div>
+                  )}
                   {summary.first_household_shortfall_date && (
                     <div className="text-amber-700 sm:col-span-3">
                       {isKorean ? "최초 미충족" : "First shortfall"}:{" "}
@@ -1610,7 +1640,7 @@ export function RetirementTab() {
                   Personal Annual Tax Audit
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1450px] text-right text-xs">
+                  <table className="w-full min-w-[1750px] text-right text-xs">
                     <thead className="bg-slate-50 text-slate-500">
                       <tr>
                         <th className="px-3 py-2 text-left">Tax Year</th>
@@ -1618,6 +1648,9 @@ export function RetirementTab() {
                         <th className="px-3 py-2">Gross Dividend</th>
                         <th className="px-3 py-2">U.S. Withholding</th>
                         <th className="px-3 py-2">Foreign Tax Credit</th>
+                        <th className="px-3 py-2">General Tax</th>
+                        <th className="px-3 py-2">Comparison Tax</th>
+                        <th className="px-3 py-2">Financial Increment</th>
                         <th className="px-3 py-2">Domestic Tax</th>
                         <th className="px-3 py-2">Sale Proceeds</th>
                         <th className="px-3 py-2">Cost Basis Sold</th>
@@ -1647,6 +1680,9 @@ export function RetirementTab() {
                             audit.gross_dividend,
                             audit.foreign_withholding_tax,
                             audit.foreign_tax_credit,
+                            audit.general_calculated_tax,
+                            audit.comparison_calculated_tax,
+                            audit.incremental_financial_income_tax,
                             audit.domestic_additional_tax,
                             audit.sale_proceeds,
                             audit.cost_basis_sold,

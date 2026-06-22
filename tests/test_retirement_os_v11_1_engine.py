@@ -1448,6 +1448,40 @@ def test_personal_annual_tax_audit_estimates_tax_before_following_may_payment():
     assert audit["annual_deduction"] == pytest.approx(2500000.0)
 
 
+def test_personal_annual_tax_audit_exposes_comparison_tax_amounts():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 6,
+            "personal_enabled": True,
+            "personal_withdrawal_target": 0.0,
+            "personal_property_assessed_value": 0.0,
+            "personal_other_comprehensive_tax_base": 50000000.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 1.2, "pa": 0.0, "tr": 1.2}},
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "SGOV Buffer": {"dy": 1.2, "pa": 0.0, "tr": 1.2}
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 240000000.0},
+        params=params,
+        months=1,
+    )
+
+    audit = result["personal_annual_tax_audit"][0]
+    assert audit["gross_dividend"] == pytest.approx(24000000.0)
+    assert audit["general_calculated_tax"] == pytest.approx(11000000.0)
+    assert audit["comparison_calculated_tax"] == pytest.approx(10560000.0)
+    assert audit["incremental_financial_income_tax"] == pytest.approx(4136000.0)
+    assert audit["domestic_additional_tax"] == pytest.approx(536000.0)
+
+
 def test_personal_dividend_domestic_tax_is_paid_in_following_may():
     params = base_params()
     params.update(
@@ -1704,3 +1738,122 @@ def test_corporate_tax_includes_realized_gain_from_trade_events():
     )
 
     assert assessed == pytest.approx(11.0)
+
+
+def test_personal_operating_draw_ignores_legacy_withdrawal_target():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "personal_withdrawal_target": 99.0,
+            "pension_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {"strategy_weights": {"SGOV Buffer": 1.0}}
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0}, params=params, months=1
+    )
+
+    assert result["monthly_data"][0]["personal_draw"] == 10.0
+
+
+def test_personal_operating_account_uses_thirty_and_twenty_seven_month_targets():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 1.0,
+            "target_monthly_cashflow": 1.0,
+            "personal_withdrawal_target": 0.0,
+            "pension_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 0.0, "Bond Buffer": 0.0, "Growth Engine": 1.0},
+        "category_return_rates": {"Growth Engine": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+
+    may_params = {**params, "simulation_start_month": 5}
+    may = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0},
+        params=may_params,
+        months=1,
+    )["monthly_data"][0]
+    november_params = {**params, "simulation_start_month": 11}
+    november = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0},
+        params=november_params,
+        months=1,
+    )["monthly_data"][0]
+
+    assert may["personal_sgov_balance"] == pytest.approx(30.0)
+    assert november["personal_sgov_balance"] == pytest.approx(27.0)
+
+
+def test_corporate_taxable_distribution_covers_gap_after_loan_is_exhausted():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "pension_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "initial_shareholder_loan": 0.0,
+            "corp_salary": 0.0,
+            "monthly_bookkeeping_fee": 0.0,
+            "shareholder_distribution_withholding_rate": 0.154,
+            "corp_enabled": True,
+            "pension_enabled": False,
+            "personal_enabled": False,
+        }
+    )
+    params["portfolio_stats"]["corp"] = {"strategy_weights": {"SGOV Buffer": 1.0}}
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100.0, "pension": 0.0, "personal": 0.0}, params=params, months=1
+    )
+
+    month = result["monthly_data"][0]
+    assert month["shareholder_distribution_net"] == pytest.approx(10.0)
+    assert month["shareholder_distribution_withholding"] == pytest.approx(10.0 / 0.846 * 0.154)
+    assert month["shareholder_distribution_gross"] == pytest.approx(10.0 / 0.846)
+    assert month["household_shortfall"] == 0.0
+
+
+def test_sub_won_float_residual_does_not_create_household_shortfall():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 1.0,
+            "target_monthly_cashflow": 1.0,
+            "pension_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "initial_shareholder_loan": 0.0,
+            "corp_salary": 0.0,
+            "monthly_bookkeeping_fee": 0.0,
+            "shareholder_distribution_withholding_rate": 0.154,
+            "corp_enabled": True,
+            "pension_enabled": False,
+            "personal_enabled": False,
+        }
+    )
+    params["portfolio_stats"]["corp"] = {"strategy_weights": {"SGOV Buffer": 1.0}}
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100.0, "pension": 0.0, "personal": 0.0},
+        params=params,
+        months=1,
+    )
+
+    assert result["monthly_data"][0]["household_shortfall"] == 0.0
+    assert result["summary"]["cumulative_household_shortfall"] == 0.0
+    assert result["summary"]["first_household_shortfall_date"] is None
