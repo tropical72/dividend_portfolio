@@ -1090,6 +1090,9 @@ class DividendBackend:
                 "corp_tax_nominal_rate", 0.1
             )
         )
+        personal_tax_profile = cast(
+            Dict[str, Any], self.retirement_config.get("personal_account_params", {})
+        )
         return {
             "master_portfolio_id": None,
             "simulation_mode": "asset",
@@ -1111,6 +1114,12 @@ class DividendBackend:
                 "target_monthly_household_cash_after_tax": 10000000.0,
                 "personal_capital_gains_tax_rate": 0.22,
                 "personal_capital_gains_deduction": 2500000.0,
+                "personal_external_financial_income": float(
+                    personal_tax_profile.get("external_financial_income") or 0.0
+                ),
+                "personal_other_comprehensive_tax_base": float(
+                    personal_tax_profile.get("other_comprehensive_tax_base") or 0.0
+                ),
             },
             "corporate": {
                 "salary_recipients": [],
@@ -1190,6 +1199,10 @@ class DividendBackend:
             return "assumptions.personal_capital_gains_tax_rate는 0과 1 사이여야 합니다."
         if capital_gains_deduction < 0:
             return "assumptions.personal_capital_gains_deduction은 음수일 수 없습니다."
+        if float(assumptions.get("personal_external_financial_income") or 0.0) < 0:
+            return "assumptions.personal_external_financial_income은 음수일 수 없습니다."
+        if float(assumptions.get("personal_other_comprehensive_tax_base") or 0.0) < 0:
+            return "assumptions.personal_other_comprehensive_tax_base는 음수일 수 없습니다."
 
         if float(assumptions.get("target_monthly_household_cash_after_tax") or 0.0) <= 0:
             return "assumptions.target_monthly_household_cash_after_tax는 0보다 커야 합니다."
@@ -1271,8 +1284,22 @@ class DividendBackend:
         calc_data = cast(Dict[str, Any], master_calc["data"])
         corp_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("corp_portfolio"))
         pension_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("pension_portfolio"))
-        dy = float(calc_data.get("combined_yield") or 0.0)
-        tr = float(calc_data.get("combined_tr") or 0.0)
+        personal_portfolio = cast(Optional[Dict[str, Any]], calc_data.get("personal_portfolio"))
+        operating_portfolio = corp_portfolio or personal_portfolio
+        operating_stats = cast(
+            Dict[str, Any],
+            calc_data.get("corp_stats") if corp_portfolio else calc_data.get("personal_stats", {}),
+        )
+        dy = float(
+            operating_stats.get("dividend_yield")
+            if operating_portfolio
+            else calc_data.get("combined_yield") or 0.0
+        )
+        tr = float(
+            operating_stats.get("expected_return")
+            if operating_portfolio
+            else calc_data.get("combined_tr") or 0.0
+        )
         pa = tr - dy
 
         return {
@@ -1283,6 +1310,12 @@ class DividendBackend:
                 "portfolio_name": selected_master.get("name", "Active Master"),
                 "corporate_portfolio_name": (
                     corp_portfolio.get("name", "-") if corp_portfolio else "-"
+                ),
+                "personal_portfolio_name": (
+                    personal_portfolio.get("name", "-") if personal_portfolio else "-"
+                ),
+                "operating_portfolio_name": (
+                    operating_portfolio.get("name", "-") if operating_portfolio else "-"
                 ),
                 "pension_portfolio_name": (
                     pension_portfolio.get("name", "-") if pension_portfolio else "-"
@@ -1309,12 +1342,24 @@ class DividendBackend:
                         "personal_capital_gains_deduction", 2500000.0
                     )
                 ),
+                "personal_external_financial_income": float(
+                    cast(Dict[str, Any], config.get("assumptions", {})).get(
+                        "personal_external_financial_income", 0.0
+                    )
+                ),
+                "personal_other_comprehensive_tax_base": float(
+                    cast(Dict[str, Any], config.get("assumptions", {})).get(
+                        "personal_other_comprehensive_tax_base", 0.0
+                    )
+                ),
                 "base_year": int(
                     cast(Dict[str, Any], config.get("policy_meta", {})).get("base_year", 2026)
                 ),
                 "simulation_mode": config.get("simulation_mode", "asset"),
                 "_corp_stats": calc_data.get("corp_stats", {}),
                 "_pension_stats": calc_data.get("pension_stats", {}),
+                "_personal_stats": calc_data.get("personal_stats", {}),
+                "_operating_stats": operating_stats,
             },
         }
 
@@ -1337,13 +1382,12 @@ class DividendBackend:
         strategy_rules = cast(Dict[str, Any], self.retirement_config.get("strategy_rules", {}))
         pension_rules = cast(Dict[str, Any], strategy_rules.get("pension", {}))
         corp_rules = cast(Dict[str, Any], strategy_rules.get("corporate", {}))
-        stats = (
-            cast(Dict[str, Any], assumptions.get("_corp_stats", {}))
-            if account == "corp"
-            else cast(
-                Dict[str, Any],
-                assumptions.get("_pension_stats") or assumptions.get("_corp_stats") or {},
-            )
+        stats = cast(
+            Dict[str, Any],
+            assumptions.get("_operating_stats")
+            or assumptions.get("_corp_stats")
+            or assumptions.get("_personal_stats")
+            or {},
         )
         appreciation_rates = {
             key: value / 100.0
@@ -1359,22 +1403,29 @@ class DividendBackend:
             "birth_month": 1,
             "private_pension_start_age": 0,
             "national_pension_start_age": 200,
-            "household_monthly_need": target_monthly_cash if account == "corp" else 0.0,
+            "household_monthly_need": target_monthly_cash,
             "target_monthly_cashflow": target_monthly_cash,
-            "pension_withdrawal_target": target_monthly_cash if account == "personal" else 0.0,
+            "pension_withdrawal_target": 0.0,
+            "personal_withdrawal_target": 0.0,
             "national_pension_amount": 0.0,
             "initial_shareholder_loan": initial_balance if account == "corp" else 0.0,
+            "corp_enabled": account == "corp",
+            "pension_enabled": False,
+            "personal_enabled": account == "personal",
+            "personal_initial_cost_basis": initial_balance,
             "corp_salary": 0.0,
             "monthly_bookkeeping_fee": 0.0,
             "annual_corp_tax_adjustment_fee": 0.0,
             "employee_count": 0,
             "portfolio_stats": {
                 "corp": stats if account == "corp" else {},
-                "pension": stats if account == "personal" else {},
+                "pension": {},
+                "personal": stats if account == "personal" else {},
             },
             "category_return_rates": {
                 "corp": stats.get("category_return_rates", {}) if account == "corp" else {},
-                "pension": (
+                "pension": {},
+                "personal": (
                     stats.get("category_return_rates", {}) if account == "personal" else {}
                 ),
             },
@@ -1393,10 +1444,11 @@ class DividendBackend:
         }
         initial_assets = {
             "corp": initial_balance if account == "corp" else 0.0,
-            "pension": initial_balance if account == "personal" else 0.0,
+            "pension": 0.0,
+            "personal": initial_balance if account == "personal" else 0.0,
         }
         projection = ProjectionEngine(tax_engine).run_30yr_simulation(initial_assets, params)
-        engine_account = "corp" if account == "corp" else "pension"
+        engine_account = account
         schedule: Dict[int, Dict[str, float]] = {}
         for event in projection.get("trade_events", []):
             if event.get("account") != engine_account:
@@ -1458,12 +1510,17 @@ class DividendBackend:
             sale_proceeds,
         )
         dividend_income = income["dividend_income"]
-        if dividend_income <= 20000000:
-            dividend_tax = dividend_income * 0.154
-            tax_rate = 0.154
-        else:
-            dividend_tax = (20000000 * 0.154) + ((dividend_income - 20000000) * 0.264)
-            tax_rate = 0.264
+        dividend_tax_detail = tax_engine.calculate_us_dividend_tax(
+            dividend_income,
+            other_financial_income=float(
+                assumptions.get("personal_external_financial_income", 0.0)
+            ),
+            other_comprehensive_tax_base=float(
+                assumptions.get("personal_other_comprehensive_tax_base", 0.0)
+            ),
+        )
+        dividend_tax = float(dividend_tax_detail["total_dividend_tax"])
+        tax_rate = dividend_tax / dividend_income if dividend_income > 0 else 0.0
         taxable_gain = max(
             0.0,
             income["realized_capital_gain"]
@@ -1486,6 +1543,8 @@ class DividendBackend:
             {
                 "health_insurance_income": dividend_income,
                 "dividend_tax": dividend_tax,
+                "foreign_withholding_tax": float(dividend_tax_detail["foreign_withholding_tax"]),
+                "domestic_additional_tax": float(dividend_tax_detail["domestic_additional_tax"]),
                 "capital_gains_tax": capital_gains_tax,
             }
         )
@@ -1497,7 +1556,10 @@ class DividendBackend:
             "annual_health": annual_health,
             "audit_details": {
                 "health": health,
-                "tax": {"tax_rate": tax_rate, "is_comprehensive": dividend_income > 20000000},
+                "tax": {
+                    **dividend_tax_detail,
+                    "tax_rate": tax_rate,
+                },
                 "investment_income": income,
             },
         }

@@ -502,6 +502,8 @@ const translations = {
     "costComparison.rebalanceSaleRatio": "Annual Rebalance Sale Ratio",
     "costComparison.capitalGainsTaxRate": "Personal Capital Gains Tax Rate",
     "costComparison.capitalGainsDeduction": "Capital Gains Deduction",
+    "costComparison.externalFinancialIncome": "External Financial Income",
+    "costComparison.otherComprehensiveTaxBase": "Other Comprehensive Tax Base",
     "costComparison.dividendIncome": "Dividend Income",
     "costComparison.unrealizedAppreciation": "Unrealized Appreciation",
     "costComparison.realizedCapitalGain": "Realized Capital Gain",
@@ -619,6 +621,10 @@ const translations = {
       "Estimated personal tax rate applied only to realized rebalancing gains after the deduction.",
     "costComparison.tooltip.capitalGainsDeduction":
       "Annual deduction applied before estimating personal capital gains tax.",
+    "costComparison.tooltip.externalFinancialIncome":
+      "Annual financial income outside this portfolio, included in the comprehensive financial-income threshold.",
+    "costComparison.tooltip.otherComprehensiveTaxBase":
+      "Other comprehensive-income tax base used for progressive comparison taxation.",
     "costComparison.tooltip.monthlyBookkeepingFee":
       "Recurring monthly corporate admin costs such as bookkeeping and basic filing support.",
     "costComparison.tooltip.annualTaxAdjustmentFee":
@@ -1216,6 +1222,8 @@ const translations = {
     "costComparison.rebalanceSaleRatio": "연간 리밸런싱 매도비율",
     "costComparison.capitalGainsTaxRate": "개인 양도차익 세율",
     "costComparison.capitalGainsDeduction": "양도차익 기본공제",
+    "costComparison.externalFinancialIncome": "외부 연간 금융소득",
+    "costComparison.otherComprehensiveTaxBase": "기타 종합소득 과세표준",
     "costComparison.dividendIncome": "배당소득",
     "costComparison.unrealizedAppreciation": "미실현 평가이익",
     "costComparison.realizedCapitalGain": "실현 양도차익",
@@ -1332,6 +1340,10 @@ const translations = {
       "기본공제 후 리밸런싱 실현차익에만 적용하는 개인 양도세 추정 세율입니다.",
     "costComparison.tooltip.capitalGainsDeduction":
       "개인 양도차익 과세 전 차감하는 연간 기본공제 추정액입니다.",
+    "costComparison.tooltip.externalFinancialIncome":
+      "이 포트폴리오 외부에서 발생하는 연간 금융소득으로 금융소득 종합과세 기준 판정에 합산됩니다.",
+    "costComparison.tooltip.otherComprehensiveTaxBase":
+      "금융소득 비교과세 누진세액 계산에 사용하는 기타 종합소득 과세표준입니다.",
     "costComparison.tooltip.monthlyBookkeepingFee":
       "기장료와 기본 신고 대행비처럼 매월 반복되는 법인 운영비입니다.",
     "costComparison.tooltip.annualTaxAdjustmentFee":

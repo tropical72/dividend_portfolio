@@ -187,6 +187,9 @@
 - **[TEST-SUR-30] Operating Account 공통 버퍼 규칙 [REGRESSION]:** 동일 자산과 가계 부족액의 Corporate/Personal이 5월 SGOV 30개월, 11월 27개월, Bond 12/18/24개월과 같은 donor 순서를 사용하는지 검증한다.
 - **[TEST-SUR-31] 법인 대여금 소진 후 과세 지급 [REGRESSION]:** 주주대여금이 0이어도 법인이 순가계 부족액을 주주분배 gross-up으로 지급하고, gross 현금유출·원천징수 추정액·가계 순수령액을 분리하며 미충족액을 0으로 유지하는지 검증한다.
 - **[TEST-SUR-32] 비금전적 미충족 잔차 제거 [REGRESSION]:** 과세 주주분배 gross-up 후 `1e-6원` 미만 부동소수점 잔차가 월·누적 미충족액과 최초 미충족 연월을 생성하지 않는지 검증한다.
+- **[TEST-SUR-33] 비교 엔진 개인 배당세 단일화 [REGRESSION]:** 금융소득 2,400만 원·기타 종합소득 0원에서 Cost Comparison 개인 배당 총세액이 비교산출세액 3,696,000원과 일치하고, 외국 원천세 3,600,000원과 국내 추가세 96,000원을 분리하는지 검증한다.
+- **[TEST-SUR-34] 실현·미실현 과세 경계 [REGRESSION]:** DY 0·PA 양수·실제 매도 0인 경우 개인 배당세, 양도세, 건보 소득과 법인 과세표준이 모두 0이며 순자산만 증가하는지 검증한다.
+- **[TEST-SUR-35] 비교 스케줄 Operating Account 경계 [REGRESSION]:** Personal 비교 스케줄은 Personal 자산과 30/27개월 규칙을, Corporate 비교 스케줄은 Corporate 자산과 같은 운용 포트폴리오 통계를 사용하며 Pension 24개월 규칙으로 대체되지 않는지 검증한다. 직접 운용자산 DY/TR도 같은 Operating Portfolio 단독 통계와 일치해야 한다.
 - **[TEST-UI-RULE-14] 인출 설정 단일화 [REGRESSION]:** Settings에 월 가계필요비용만 인출 목표로 표시되고 Personal 별도 인출 입력은 없으며 Pension 입력은 월 개인연금 수령액으로 표시되는지 검증한다.
 - **[TEST-UI-RULE-15] 취득원가 설명 [REGRESSION]:** 개인 취득원가 입력 도움말이 평가액/수익률에는 영향이 없고 실현손익·양도세 원장에만 사용됨을 명시하는지 검증한다.
 

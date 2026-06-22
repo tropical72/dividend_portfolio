@@ -189,6 +189,12 @@
 - [x] **T-CCS-12.3** aggregate 취득원가 장부 기반 실현차익 계산을 개인·법인 시계열에 공통 적용한다.
 - [x] **T-CCS-12.4** 개인 건보에는 배당만, 개인 양도세와 법인세에는 실현차익을 각각 반영한다.
 - [x] **T-CCS-12.5** 감사 응답과 UI에 배당, PA, 실현차익, 과세소득을 분리 표시한다.
+
+### [Phase 15] 세금 및 Operating Portfolio 엔진 단일화 (T-CCS-15)
+- [x] **T-CCS-15.1 SDD:** 비교과세, 실현/미실현 경계, 동일 Operating Portfolio 스케줄 계약을 확정한다.
+- [x] **T-CCS-15.2 TDD:** 정확한 개인 배당세와 Personal/Corporate 스케줄 계좌 경계 실패 테스트를 작성한다.
+- [x] **T-CCS-15.3 Engine/Audit:** TaxEngine 재사용, 계좌 활성 플래그, 감사 상세를 구현한다.
+- [x] **T-CCS-15.4 Validation:** API 전체 회귀와 Frontend 품질 게이트를 통과한다.
 - [x] **T-CCS-12.6** 관련 Pytest, Ruff, Black, Frontend 품질 게이트를 통과한다.
 
 ### [Phase 13] 실제 리밸런싱 엔진 매도 연동 (T-CCS-13)

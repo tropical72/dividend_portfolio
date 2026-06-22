@@ -50,6 +50,8 @@ test.describe("Cost Comparison Simulator", () => {
     await page.getByTestId("cc-simulation-years").fill("5");
     await page.getByTestId("cc-capital-gains-tax-rate").fill("0.22");
     await page.getByTestId("cc-capital-gains-deduction").fill("2500000");
+    await page.getByTestId("cc-external-financial-income").fill("12000000");
+    await page.getByTestId("cc-other-comprehensive-tax-base").fill("50000000");
     await page.getByTestId("cc-target-monthly-cash").fill("10000000");
     await page.getByTestId("cc-monthly-bookkeeping-fee").fill("500000");
     await page.getByTestId("cc-annual-tax-adjustment-fee").fill("1200000");
@@ -75,6 +77,12 @@ test.describe("Cost Comparison Simulator", () => {
     await expect(page.getByTestId("cc-capital-gains-deduction")).toHaveValue(
       "2,500,000",
     );
+    await expect(page.getByTestId("cc-external-financial-income")).toHaveValue(
+      "12,000,000",
+    );
+    await expect(
+      page.getByTestId("cc-other-comprehensive-tax-base"),
+    ).toHaveValue("50,000,000");
     await expect(page.getByTestId("cc-target-monthly-cash")).toHaveValue(
       "10,000,000",
     );
@@ -107,6 +115,18 @@ test.describe("Cost Comparison Simulator", () => {
     const runPayload = await (await runResponsePromise).json();
     expect(runPayload.data.assumptions.personal_capital_gains_tax_rate).toBe(
       0.22,
+    );
+    expect(runPayload.data.assumptions.personal_external_financial_income).toBe(
+      12000000,
+    );
+    expect(
+      runPayload.data.assumptions.personal_other_comprehensive_tax_base,
+    ).toBe(50000000);
+    const personalTaxAudit =
+      runPayload.data.personal.breakdown.audit_details.tax;
+    expect(personalTaxAudit.total_dividend_tax).toBeCloseTo(
+      personalTaxAudit.foreign_withholding_tax +
+        personalTaxAudit.domestic_additional_tax,
     );
     expect(
       runPayload.data.personal.breakdown.audit_details.investment_income

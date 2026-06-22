@@ -169,6 +169,7 @@
 - **상태 격리:** 테스트는 snapshot/restore 또는 테스트 전용 설정 파일을 사용하여 사용자 실데이터와 분리되어야 한다.
 
 - **[TEST-CCS-104] 실제 리밸런싱 매도 연동 [NEW]:** 고정 매도비율 제거, 무매도 시 0원, 엔진 이벤트와 감사 합계 일치, 미실현 PA 비과세를 검증한다.
+- **[TEST-CCS-106] 비교과세 및 Operating Portfolio 단일화 [NEW]:** 2,400만 원 배당 총세액 3,696,000원, PA-only 무과세, Personal 스케줄의 Personal 30/27개월 규칙과 동일 운용 통계 사용을 검증한다. 및 Pension 제외 후 Operating Portfolio 단독 DY/TR 적용을 검증한다.
 
 ## 4. Feature Completion Gate
 - 비교 시뮬레이터 관련 Python 변경은 커밋 전 `PYTHONPATH=. .venv/bin/ruff check <changed_python_files>`와 `PYTHONPATH=. .venv/bin/black --check <changed_python_files>`를 통과해야 한다.

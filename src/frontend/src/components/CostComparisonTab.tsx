@@ -60,6 +60,8 @@ const defaultConfig: CostComparisonConfig = {
     target_monthly_household_cash_after_tax: 10000000,
     personal_capital_gains_tax_rate: 0.22,
     personal_capital_gains_deduction: 2500000,
+    personal_external_financial_income: 0,
+    personal_other_comprehensive_tax_base: 0,
   },
   corporate: {
     salary_recipients: [
@@ -269,6 +271,10 @@ export function CostComparisonTab() {
           raw.assumptions?.personal_capital_gains_tax_rate ?? 0.22,
         personal_capital_gains_deduction:
           raw.assumptions?.personal_capital_gains_deduction ?? 2500000,
+        personal_external_financial_income:
+          raw.assumptions?.personal_external_financial_income ?? 0,
+        personal_other_comprehensive_tax_base:
+          raw.assumptions?.personal_other_comprehensive_tax_base ?? 0,
       },
     };
   };
@@ -678,6 +684,36 @@ export function CostComparisonTab() {
               updateConfig(
                 "assumptions",
                 "personal_capital_gains_deduction",
+                value,
+              )
+            }
+          />
+          <NumberField
+            label={t("costComparison.externalFinancialIncome")}
+            testId="cc-external-financial-income"
+            tooltip={t("costComparison.tooltip.externalFinancialIncome")}
+            unit="KRW"
+            value={config.assumptions.personal_external_financial_income ?? 0}
+            onChange={(value) =>
+              updateConfig(
+                "assumptions",
+                "personal_external_financial_income",
+                value,
+              )
+            }
+          />
+          <NumberField
+            label={t("costComparison.otherComprehensiveTaxBase")}
+            testId="cc-other-comprehensive-tax-base"
+            tooltip={t("costComparison.tooltip.otherComprehensiveTaxBase")}
+            unit="KRW"
+            value={
+              config.assumptions.personal_other_comprehensive_tax_base ?? 0
+            }
+            onChange={(value) =>
+              updateConfig(
+                "assumptions",
+                "personal_other_comprehensive_tax_base",
                 value,
               )
             }
@@ -2095,11 +2131,16 @@ function ScenarioCostDetailModal({
                     title={t("costComparison.taxBaseFormula")}
                     tooltip={
                       isKorean
-                        ? `과세표준은 연 수익에서 총급여, 연 운영비, 회사부담보험을 차감해 계산합니다. 이 값에 실효 법인세율이 적용됩니다.`
-                        : `Tax base is annual revenue minus gross salary, annual operating cost, and employer insurance. The effective corporate tax rate is applied to this amount.`
+                        ? `과세표준은 배당소득과 실제 리밸런싱 실현차익의 합에서 총급여, 연 운영비, 회사부담보험을 차감해 계산합니다. 미실현 PA는 제외됩니다.`
+                        : `Tax base is dividend income plus realized rebalancing gains minus gross salary, annual operating cost, and employer insurance. Unrealized PA is excluded.`
                     }
                     tooltipTestId={`${testIdPrefix}-detail-tax-base-formula-tooltip`}
-                    value={`${formatKrw(breakdown.annual_revenue)} - ${formatKrw(
+                    value={`${formatKrw(
+                      auditDetails?.investment_income?.dividend_income ?? 0,
+                    )} + ${formatKrw(
+                      auditDetails?.investment_income?.realized_capital_gain ??
+                        0,
+                    )} - ${formatKrw(
                       breakdown.gross_salary ?? 0,
                     )} - ${formatKrw(breakdown.fixed_cost)} - ${formatKrw(
                       breakdown.company_insurance_cost ?? 0,
@@ -2122,9 +2163,11 @@ function ScenarioCostDetailModal({
                     title={t("costComparison.personalTaxFormula")}
                     tooltip={taxTooltip}
                     tooltipTestId={`${testIdPrefix}-detail-personal-tax-formula-tooltip`}
-                    value={`${formatKrw(breakdown.annual_revenue)} x ${(
-                      (auditDetails?.tax?.tax_rate ?? 0) * 100
-                    ).toFixed(1)}% = ${formatKrw(breakdown.tax)}`}
+                    value={`${formatKrw(
+                      auditDetails?.tax?.total_dividend_tax ?? 0,
+                    )} + ${formatKrw(
+                      auditDetails?.investment_income?.capital_gains_tax ?? 0,
+                    )} = ${formatKrw(breakdown.tax)}`}
                   />
                   <FormulaBlock
                     title={t("costComparison.personalHealthFormula")}

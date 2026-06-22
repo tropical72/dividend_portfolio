@@ -420,6 +420,8 @@ export interface CostComparisonConfig {
     target_monthly_household_cash_after_tax: number;
     personal_capital_gains_tax_rate?: number;
     personal_capital_gains_deduction?: number;
+    personal_external_financial_income?: number;
+    personal_other_comprehensive_tax_base?: number;
   };
   corporate: {
     salary_recipients: CostComparisonSalaryRecipient[];
@@ -494,6 +496,12 @@ export interface CostComparisonScenarioResult {
       tax?: {
         tax_rate?: number;
         is_comprehensive?: boolean;
+        foreign_withholding_tax?: number;
+        domestic_additional_tax?: number;
+        total_dividend_tax?: number;
+        general_calculated_tax?: number;
+        comparison_calculated_tax?: number;
+        incremental_financial_income_tax?: number;
         threshold?: number;
       };
       corp_tax?: {

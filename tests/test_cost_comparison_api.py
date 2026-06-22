@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 
 import src.backend.main as main_module
 from src.backend.api import DividendBackend
+from src.core.projection_engine import ProjectionEngine
+from src.core.tax_engine import TaxEngine
 
 
 def _build_config_payload():
@@ -282,7 +284,7 @@ def test_cost_comparison_run_uses_saved_master_portfolio_override(tmp_path, monk
     )
 
 
-def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypatch):
+def test_cost_comparison_pa_and_tr_follow_operating_portfolio_category(tmp_path, monkeypatch):
     backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
     conservative_master_id = _create_category_pa_master(
         backend,
@@ -317,7 +319,7 @@ def test_cost_comparison_pa_and_tr_follow_master_category_mix(tmp_path, monkeypa
     growth = growth_response.json()["data"]["assumptions"]
 
     assert conservative["dy"] == pytest.approx(growth["dy"])
-    assert conservative["pa"] == pytest.approx(0.0065)
+    assert conservative["pa"] == pytest.approx(0.015)
     assert growth["pa"] == pytest.approx(0.075)
     assert conservative["tr"] == pytest.approx(conservative["dy"] + conservative["pa"])
     assert growth["tr"] == pytest.approx(growth["dy"] + growth["pa"])
@@ -809,6 +811,174 @@ def test_rebalance_gain_is_taxed_but_excluded_from_personal_health_income(tmp_pa
     assert corporate_audit["corp_tax"]["tax_base"] == pytest.approx(
         corporate_income["realized_capital_gain"]
     )
+
+
+def test_cost_comparison_personal_dividend_tax_reuses_comparison_tax_engine(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    tax_engine = TaxEngine(backend.retirement_config["tax_and_insurance"])
+    assumptions = {
+        "dy": 0.024,
+        "pa": 0.0,
+        "personal_capital_gains_tax_rate": 0.22,
+        "personal_capital_gains_deduction": 2500000.0,
+    }
+
+    result = backend._calculate_personal_investment_year(
+        tax_engine,
+        asset_value=1000000000.0,
+        cost_basis=1000000000.0,
+        property_value=0.0,
+        assumptions=assumptions,
+    )
+
+    audit = result["audit_details"]
+    assert result["total_tax"] == pytest.approx(3696000.0)
+    assert audit["tax"]["foreign_withholding_tax"] == pytest.approx(3600000.0)
+    assert audit["tax"]["domestic_additional_tax"] == pytest.approx(96000.0)
+    assert audit["tax"]["general_calculated_tax"] == pytest.approx(3344000.0)
+    assert audit["tax"]["comparison_calculated_tax"] == pytest.approx(3696000.0)
+
+
+def test_cost_comparison_applies_external_financial_income_to_comparison_tax(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    tax_engine = TaxEngine(backend.retirement_config["tax_and_insurance"])
+    assumptions = {
+        "dy": 0.012,
+        "pa": 0.0,
+        "personal_capital_gains_tax_rate": 0.22,
+        "personal_capital_gains_deduction": 2500000.0,
+        "personal_external_financial_income": 12000000.0,
+        "personal_other_comprehensive_tax_base": 50000000.0,
+    }
+
+    result = backend._calculate_personal_investment_year(
+        tax_engine, 1000000000.0, 1000000000.0, 0.0, assumptions
+    )
+
+    tax = result["audit_details"]["tax"]
+    assert tax["incremental_financial_income_tax"] == pytest.approx(4136000.0)
+    assert tax["domestic_tax_before_credit"] == pytest.approx(2068000.0)
+    assert tax["foreign_withholding_tax"] == pytest.approx(1800000.0)
+    assert tax["domestic_additional_tax"] == pytest.approx(268000.0)
+    assert result["total_tax"] == pytest.approx(2068000.0)
+
+
+def test_cost_comparison_pa_only_without_sale_is_not_taxable(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    tax_engine = TaxEngine(backend.retirement_config["tax_and_insurance"])
+    assumptions = {
+        "dy": 0.0,
+        "pa": 0.10,
+        "personal_capital_gains_tax_rate": 0.22,
+        "personal_capital_gains_deduction": 2500000.0,
+    }
+
+    personal = backend._calculate_personal_investment_year(
+        tax_engine, 100000000.0, 100000000.0, 0.0, assumptions
+    )
+    corporate = backend._calculate_corporate_investment_year(
+        tax_engine, 100000000.0, 100000000.0, assumptions, 0.0, 0.0, 0.0
+    )
+
+    assert personal["total_tax"] == pytest.approx(0.0)
+    assert personal["annual_health"] == pytest.approx(0.0)
+    assert personal["audit_details"]["investment_income"][
+        "unrealized_appreciation"
+    ] == pytest.approx(10000000.0)
+    assert corporate["tax_base"] == pytest.approx(0.0)
+    assert corporate["corp_tax"] == pytest.approx(0.0)
+    assert corporate["investment_income"]["unrealized_appreciation"] == pytest.approx(10000000.0)
+
+
+def test_cost_comparison_personal_master_selects_personal_operating_stats(tmp_path):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    personal = backend.add_portfolio(
+        name="Personal Operating",
+        account_type="Personal",
+        total_capital=100000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "GOOG",
+                "name": "Alphabet",
+                "weight": 100,
+                "category": "Growth Engine",
+                "dividend_yield": 0.5,
+            }
+        ],
+    )["data"]
+    pension = backend.add_portfolio(
+        name="Pension Auxiliary",
+        account_type="Pension",
+        total_capital=50000000,
+        currency="USD",
+        items=[
+            {
+                "ticker": "SGOV",
+                "name": "SGOV",
+                "weight": 100,
+                "category": "SGOV Buffer",
+                "dividend_yield": 4.0,
+            }
+        ],
+    )["data"]
+    master = backend.add_master_portfolio(
+        name="Personal Master",
+        personal_id=personal["id"],
+        pension_id=pension["id"],
+    )["data"]
+    config = backend.get_cost_comparison_config()
+    config["master_portfolio_id"] = master["id"]
+
+    result = backend._build_cost_comparison_assumptions(config)
+
+    assert result["success"] is True
+    assumptions = result["data"]
+    assert assumptions["operating_portfolio_name"] == "Personal Operating"
+    assert assumptions["personal_portfolio_name"] == "Personal Operating"
+    assert assumptions["_operating_stats"] == assumptions["_personal_stats"]
+    assert assumptions["_operating_stats"] != assumptions["_pension_stats"]
+    assert assumptions["dy"] == pytest.approx(assumptions["_personal_stats"]["dividend_yield"])
+    assert assumptions["tr"] == pytest.approx(assumptions["_personal_stats"]["expected_return"])
+
+
+def test_cost_comparison_personal_schedule_uses_personal_operating_account(tmp_path, monkeypatch):
+    backend = DividendBackend(data_dir=str(tmp_path), ensure_default_master_bundle=True)
+    captured = {}
+
+    def fake_projection(_engine, initial_assets, params):
+        captured["initial_assets"] = initial_assets
+        captured["params"] = params
+        return {"trade_events": []}
+
+    monkeypatch.setattr(ProjectionEngine, "run_30yr_simulation", fake_projection)
+    operating_stats = {
+        "strategy_weights": {"Growth Engine": 1.0},
+        "category_return_rates": {"Growth Engine": {"dy": 0.0, "pa": 0.1, "tr": 0.1}},
+    }
+    assumptions = {
+        "simulation_years": 1,
+        "base_year": 2026,
+        "target_monthly_household_cash_after_tax": 10000000.0,
+        "pa_scenario": "base",
+        "_operating_stats": operating_stats,
+    }
+    config = {"personal_assets": {"investment_assets": 1000000000.0}}
+
+    backend._build_actual_rebalance_schedule(TaxEngine(), assumptions, config, "personal")
+
+    assert captured["initial_assets"] == {
+        "corp": 0.0,
+        "pension": 0.0,
+        "personal": 1000000000.0,
+    }
+    params = captured["params"]
+    assert params["corp_enabled"] is False
+    assert params["pension_enabled"] is False
+    assert params["personal_enabled"] is True
+    assert params["portfolio_stats"]["personal"] == operating_stats
+    assert params["sgov_target_months"] == 30
+    assert params["corp_november_sgov_target_months"] == 27
 
 
 def test_cost_comparison_uses_2026_local_health_insurance_formula(tmp_path, monkeypatch):
