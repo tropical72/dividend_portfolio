@@ -230,6 +230,14 @@
 - [x] **T-01-21.5 API/UI:** 설정 타입과 개인 세금 감사 결과를 Settings/Retirement에 노출한다.
 - [x] **T-01-21.6 Validation:** 관련 pytest, Ruff, Black, ESLint, Build, Prettier, Playwright를 통과한다.
 
+### [Phase 22] 개인 세금 연도별 감사표 (T-01-22)
+
+- [x] **T-01-22.1 SDD:** 연도별 세금 감사 레코드와 세금 재원 매도 추적 계약을 정의한다.
+- [x] **T-01-22.2 TDD:** 연간 집계, 연말 취득원가, 납부연월, obligation 매도 사유 테스트를 작성한다.
+- [x] **T-01-22.3 Engine/API:** `personal_annual_tax_audit`와 거래 이벤트 사유를 구현한다.
+- [x] **T-01-22.4 UI:** Retirement 상세에 연도별 감사표와 재원 매도 상세를 구현한다.
+- [x] **T-01-22.5 Validation:** 관련 pytest, Playwright 및 품질 게이트를 통과한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**

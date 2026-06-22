@@ -341,6 +341,10 @@ export function RetirementTab() {
     );
   const personalTaxAuditRow =
     latestPersonalTaxRow ?? monthlyData[monthlyData.length - 1];
+  const personalAnnualTaxAudit = simulationData.personal_annual_tax_audit ?? [];
+  const personalTaxFundingSales = personalAnnualTaxAudit.flatMap((audit) =>
+    audit.funding_sales.map((sale) => ({ ...sale, taxYear: audit.tax_year })),
+  );
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const pensionSgovTargetMonths =
     strategyRulesSummary?.pension_sgov_target_months ??
@@ -1540,6 +1544,94 @@ export function RetirementTab() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {personalAnnualTaxAudit.length > 0 && (
+              <div
+                data-testid="retirement-personal-annual-tax-audit"
+                className="border-b border-slate-200 bg-white p-5"
+              >
+                <div className="mb-3 text-sm font-bold text-slate-700">
+                  Personal Annual Tax Audit
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1450px] text-right text-xs">
+                    <thead className="bg-slate-50 text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Tax Year</th>
+                        <th className="px-3 py-2">Payment</th>
+                        <th className="px-3 py-2">Gross Dividend</th>
+                        <th className="px-3 py-2">U.S. Withholding</th>
+                        <th className="px-3 py-2">Foreign Tax Credit</th>
+                        <th className="px-3 py-2">Domestic Tax</th>
+                        <th className="px-3 py-2">Sale Proceeds</th>
+                        <th className="px-3 py-2">Cost Basis Sold</th>
+                        <th className="px-3 py-2">Realized Gain</th>
+                        <th className="px-3 py-2">Annual Deduction</th>
+                        <th className="px-3 py-2">Taxable Gain</th>
+                        <th className="px-3 py-2">Capital Gains Tax</th>
+                        <th className="px-3 py-2">Health Premium</th>
+                        <th className="px-3 py-2">Ending Cost Basis</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {personalAnnualTaxAudit.map((audit) => (
+                        <tr
+                          key={audit.tax_year}
+                          className="border-t border-slate-100 text-slate-700"
+                        >
+                          <td className="px-3 py-2 text-left font-bold">
+                            {audit.tax_year}
+                          </td>
+                          <td className="px-3 py-2">
+                            {audit.payment_year && audit.payment_month
+                              ? audit.payment_year + "-" + audit.payment_month
+                              : "-"}
+                          </td>
+                          {[
+                            audit.gross_dividend,
+                            audit.foreign_withholding_tax,
+                            audit.foreign_tax_credit,
+                            audit.domestic_additional_tax,
+                            audit.sale_proceeds,
+                            audit.cost_basis_sold,
+                            audit.realized_gain,
+                            audit.annual_deduction,
+                            audit.taxable_gain,
+                            audit.capital_gains_tax,
+                            audit.health_insurance_total,
+                            audit.ending_cost_basis,
+                          ].map((value, index) => (
+                            <td key={index} className="px-3 py-2">
+                              {Number(value || 0).toLocaleString("ko-KR")}원
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {personalTaxFundingSales.length > 0 && (
+                  <div
+                    data-testid="retirement-personal-tax-funding-sales"
+                    className="mt-4 rounded-xl bg-amber-50 p-4"
+                  >
+                    <div className="mb-2 font-bold text-amber-900">
+                      Tax Funding Sales
+                    </div>
+                    <div className="space-y-1 text-amber-950">
+                      {personalTaxFundingSales.map((sale, index) => (
+                        <div key={index}>
+                          {sale.taxYear} / {sale.year}-{sale.month} /{" "}
+                          {sale.cash_obligation} / {sale.from_category}:{" "}
+                          {sale.sale_proceeds.toLocaleString("ko-KR")}원 / 원가{" "}
+                          {sale.cost_basis_sold.toLocaleString("ko-KR")}원 /
+                          손익 {sale.realized_gain.toLocaleString("ko-KR")}원
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="custom-scrollbar max-h-[650px] overflow-y-auto">

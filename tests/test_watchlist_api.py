@@ -1,24 +1,23 @@
-import importlib
-import os
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture(autouse=True)
-def setup_test_env(tmp_path):
-    """테스트 환경 격리: 임시 디렉토리 사용"""
+def setup_test_env(tmp_path, monkeypatch):
+    """현재 FastAPI 모듈의 backend를 임시 저장소 인스턴스로 교체한다."""
+    import src.backend.main as main_module
+    from src.backend.api import DividendBackend
+
     data_dir = tmp_path / "data"
     data_dir.mkdir()
-    os.environ["APP_DATA_DIR"] = str(data_dir)
-
-    # 앱 및 백엔드 재로드
-    import src.backend.main
-
-    importlib.reload(src.backend.main)
+    monkeypatch.setenv("APP_DATA_DIR", str(data_dir))
+    isolated_backend = DividendBackend(
+        data_dir=str(data_dir),
+        defaults_dir=main_module.DEFAULTS_DIR,
+        ensure_default_master_bundle=True,
+    )
+    monkeypatch.setattr(main_module, "backend", isolated_backend)
     yield
-    if "APP_DATA_DIR" in os.environ:
-        del os.environ["APP_DATA_DIR"]
 
 
 @pytest.mark.asyncio
@@ -29,9 +28,11 @@ async def test_watchlist_add_and_get():
     ticker = "AAPL"
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        # 1. 초기 목록 비어있음 확인 (기본 8개 존재)
+        # 1. 현재 기본 목록 크기를 기준선으로 사용
         get_res = await ac.get("/api/watchlist")
-        assert len(get_res.json()["data"]) == 8
+        initial_data = get_res.json()["data"]
+        initial_count = len(initial_data)
+        assert not any(item["symbol"] == ticker for item in initial_data)
 
         # 2. 종목 추가
         add_res = await ac.post("/api/watchlist", json={"ticker": ticker, "country": "US"})
@@ -41,7 +42,7 @@ async def test_watchlist_add_and_get():
         # 3. 추가 후 목록 확인
         get_res2 = await ac.get("/api/watchlist")
         data = get_res2.json()["data"]
-        assert len(data) == 9
+        assert len(data) == initial_count + 1
         assert any(item["symbol"] == ticker for item in data)
 
 

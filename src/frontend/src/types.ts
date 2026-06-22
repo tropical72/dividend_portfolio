@@ -255,6 +255,7 @@ export interface MonthlySimulationData {
   corp_balance: number;
   pension_balance: number;
   personal_balance: number;
+  personal_cost_basis?: number;
   loan_balance: number;
   target_cashflow: number;
   next_target_cashflow?: number;
@@ -301,6 +302,39 @@ export interface MonthlySimulationData {
   event?: boolean;
 }
 
+export interface PersonalTradeEvent {
+  account: string;
+  year: number;
+  month: number;
+  from_category: string;
+  to_category: string;
+  sale_proceeds: number;
+  cost_basis_sold: number;
+  realized_gain: number;
+  cash_obligation?: string;
+}
+
+export interface PersonalAnnualTaxAudit {
+  tax_year: number;
+  payment_year?: number | null;
+  payment_month?: number | null;
+  gross_dividend: number;
+  foreign_withholding_tax: number;
+  foreign_tax_credit: number;
+  domestic_additional_tax: number;
+  sale_proceeds: number;
+  cost_basis_sold: number;
+  realized_gain: number;
+  annual_deduction: number;
+  taxable_gain: number;
+  capital_gains_tax: number;
+  health_insurance_total: number;
+  ending_cost_basis: number;
+  tax_payment: number;
+  is_comprehensive: boolean;
+  funding_sales: PersonalTradeEvent[];
+}
+
 /** 시뮬레이션 결과 전체 구조 인터페이스 */
 export interface SimulationResult {
   summary: {
@@ -312,6 +346,9 @@ export interface SimulationResult {
   survival_months: number;
   monthly_data: MonthlySimulationData[];
   personal_tax_ledger?: Array<Record<string, number | boolean>>;
+  trade_events?: PersonalTradeEvent[];
+  ending_cost_basis?: Record<string, Record<string, number>>;
+  personal_annual_tax_audit?: PersonalAnnualTaxAudit[];
   meta?: {
     master_name?: string;
     master_yield?: number;

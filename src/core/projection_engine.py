@@ -246,6 +246,7 @@ class ProjectionEngine:
                 sim_year,
                 sim_month,
                 personal_foreign_withholding,
+                obligation_type="foreign_withholding",
             )
             personal_dividend_income_by_year[sim_year] = (
                 personal_dividend_income_by_year.get(sim_year, 0.0) + personal_gross_dividend
@@ -333,6 +334,7 @@ class ProjectionEngine:
                     sim_year,
                     sim_month,
                     personal_dividend_additional_tax + personal_capital_gains_tax,
+                    obligation_type="annual_tax",
                 )
                 personal_tax_ledger_by_year[personal_tax_assessment_year] = {
                     "tax_year": personal_tax_assessment_year,
@@ -375,6 +377,7 @@ class ProjectionEngine:
                     sim_year,
                     sim_month,
                     float(personal_health_detail["total_premium"]),
+                    obligation_type="health_insurance",
                 )
                 if personal_enabled
                 else 0.0
@@ -647,6 +650,9 @@ class ProjectionEngine:
             corp_balance = sum(corp_assets.values())
             pension_balance = sum(pension_assets.values())
             personal_balance = sum(personal_assets.values())
+            personal_cost_basis = sum(
+                getattr(self, "_active_cost_basis_by_account", {}).get("personal", {}).values()
+            )
             monthly_data.append(
                 {
                     "index": index,
@@ -658,6 +664,7 @@ class ProjectionEngine:
                     "corp_balance": corp_balance,
                     "pension_balance": pension_balance,
                     "personal_balance": personal_balance,
+                    "personal_cost_basis": personal_cost_basis,
                     "loan_balance": loan_balance,
                     "target_cashflow": current_total_need,
                     "next_target_cashflow": next_target_cashflow,
@@ -720,6 +727,92 @@ class ProjectionEngine:
             if sim_month == main_review_month:
                 approved_total_need = next_target_cashflow
 
+        personal_trade_events = [
+            event
+            for event in getattr(self, "_active_trade_events", [])
+            if event.get("account") == "personal"
+        ]
+        audit_years = (
+            sorted(
+                set(personal_dividend_income_by_year)
+                | set(personal_tax_ledger_by_year)
+                | {int(event["year"]) for event in personal_trade_events if event.get("year")}
+                | {int(row["year"]) for row in monthly_data}
+            )
+            if personal_enabled
+            else []
+        )
+        personal_annual_tax_audit = []
+        for tax_year in audit_years:
+            ledger = personal_tax_ledger_by_year.get(tax_year, {})
+            annual_sales = [
+                event for event in personal_trade_events if int(event.get("year") or 0) == tax_year
+            ]
+            payment_year = int(ledger.get("payment_year") or 0)
+            payment_month = int(ledger.get("payment_month") or 0)
+            dividend_tax_detail = ledger or self.tax_engine.calculate_us_dividend_tax(
+                personal_dividend_income_by_year.get(tax_year, 0.0),
+                other_financial_income=personal_external_financial_income,
+                other_comprehensive_tax_base=personal_other_comprehensive_tax_base,
+            )
+            realized_gain = sum(float(event.get("realized_gain") or 0.0) for event in annual_sales)
+            capital_tax_detail = ledger or self.tax_engine.calculate_us_capital_gains_tax(
+                realized_gain
+            )
+            funding_sales = [
+                event
+                for event in personal_trade_events
+                if event.get("cash_obligation")
+                and (
+                    (
+                        event.get("cash_obligation") != "annual_tax"
+                        and int(event.get("year") or 0) == tax_year
+                    )
+                    or (
+                        event.get("cash_obligation") == "annual_tax"
+                        and int(event.get("year") or 0) == payment_year
+                        and int(event.get("month") or 0) == payment_month
+                    )
+                )
+            ]
+            year_rows = [row for row in monthly_data if int(row["year"]) == tax_year]
+            personal_annual_tax_audit.append(
+                {
+                    "tax_year": tax_year,
+                    "payment_year": payment_year or None,
+                    "payment_month": payment_month or None,
+                    "gross_dividend": personal_dividend_income_by_year.get(tax_year, 0.0),
+                    "foreign_withholding_tax": personal_foreign_withholding_by_year.get(
+                        tax_year, 0.0
+                    ),
+                    "foreign_tax_credit": float(
+                        dividend_tax_detail.get("foreign_tax_credit") or 0.0
+                    ),
+                    "domestic_additional_tax": float(
+                        dividend_tax_detail.get("domestic_additional_tax") or 0.0
+                    ),
+                    "sale_proceeds": sum(
+                        float(event.get("sale_proceeds") or 0.0) for event in annual_sales
+                    ),
+                    "cost_basis_sold": sum(
+                        float(event.get("cost_basis_sold") or 0.0) for event in annual_sales
+                    ),
+                    "realized_gain": realized_gain,
+                    "annual_deduction": float(capital_tax_detail.get("annual_deduction") or 0.0),
+                    "taxable_gain": float(capital_tax_detail.get("taxable_gain") or 0.0),
+                    "capital_gains_tax": float(capital_tax_detail.get("capital_gains_tax") or 0.0),
+                    "health_insurance_total": sum(
+                        float(row.get("personal_health_insurance") or 0.0) for row in year_rows
+                    ),
+                    "ending_cost_basis": (
+                        float(year_rows[-1].get("personal_cost_basis") or 0.0) if year_rows else 0.0
+                    ),
+                    "tax_payment": float(ledger.get("tax_payment") or 0.0),
+                    "is_comprehensive": bool(dividend_tax_detail.get("is_comprehensive", False)),
+                    "funding_sales": funding_sales,
+                }
+            )
+
         return {
             "summary": {
                 "total_survival_years": survival_m // 12,
@@ -735,6 +828,7 @@ class ProjectionEngine:
             "personal_tax_ledger": [
                 personal_tax_ledger_by_year[year] for year in sorted(personal_tax_ledger_by_year)
             ],
+            "personal_annual_tax_audit": personal_annual_tax_audit,
         }
 
     def _build_account_state(
@@ -1857,10 +1951,13 @@ class ProjectionEngine:
         sim_year: int,
         sim_month: int,
         amount: float,
+        *,
+        obligation_type: str = "personal_obligation",
     ) -> float:
         due = max(0.0, amount)
         if due <= 0:
             return 0.0
+        event_start = len(getattr(self, "_active_trade_events", []))
         if personal_assets["SGOV Buffer"] < due:
             self._transfer_from_sequence(
                 personal_assets,
@@ -1879,6 +1976,9 @@ class ProjectionEngine:
                     ("Growth Engine", 0.0),
                 ),
             )
+        for event in getattr(self, "_active_trade_events", [])[event_start:]:
+            if event.get("account") == "personal":
+                event["cash_obligation"] = obligation_type
         paid = min(due, personal_assets["SGOV Buffer"])
         personal_assets["SGOV Buffer"] -= paid
         return paid

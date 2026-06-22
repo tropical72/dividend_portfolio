@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 
@@ -7,24 +6,21 @@ from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture(autouse=True)
-def setup_test_env(tmp_path):
-    """테스트 환경 격리: 임시 디렉토리를 데이터 디렉토리로 설정"""
+def setup_test_env(tmp_path, monkeypatch):
+    """현재 FastAPI 모듈의 backend를 임시 저장소 인스턴스로 교체한다."""
+    import src.backend.main as main_module
+    from src.backend.api import DividendBackend
+
     data_dir = tmp_path / "data"
     data_dir.mkdir()
-
-    # 환경 변수 설정
-    os.environ["APP_DATA_DIR"] = str(data_dir)
-
-    # 메인 앱 모듈 재로드 (새로운 환경 변수 반영)
-    import src.backend.main
-
-    importlib.reload(src.backend.main)
-
+    monkeypatch.setenv("APP_DATA_DIR", str(data_dir))
+    isolated_backend = DividendBackend(
+        data_dir=str(data_dir),
+        defaults_dir=main_module.DEFAULTS_DIR,
+        ensure_default_master_bundle=True,
+    )
+    monkeypatch.setattr(main_module, "backend", isolated_backend)
     yield
-
-    # 환경 변수 복구 (선택 사항)
-    if "APP_DATA_DIR" in os.environ:
-        del os.environ["APP_DATA_DIR"]
 
 
 @pytest.mark.asyncio

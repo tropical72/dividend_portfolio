@@ -42,6 +42,12 @@
 - **[TEST-SYS-MIG-01] Antigravity CLI 마이그레이션 검증**
     - 시나리오: 프로젝트 내 `GEMINI.md`가 `ANTIGRAVITY.md`로 변경되었으며, 협업 가이드 내 모든 명칭이 Antigravity CLI로 갱신되었는가? 또한 `.gemini/` 폴더가 `.antigravity/`로 정상 변경되었는가?
 
+- **[TEST-GLB-18] 테스트 인프라 정상화:**
+    - 전체 pytest가 수집 오류 없이 완료되는지 확인한다.
+    - API 테스트가 임시 backend를 사용해 실행 순서와 실제 사용자 데이터에 독립적인지 확인한다.
+    - 기본 watchlist와 portfolio 시드 개수를 하드코딩하지 않고 상태 변화량으로 검증한다.
+    - legacy `target_monthly_cashflow`만 저장된 기본 설정이 동일한 `household_monthly_need`로 승격되는지 확인한다.
+
 ## [Manual/UX] 수동 테스트
 - **[UX-SYS-03] 통합 실행 스크립트 (run_dev.py) 검증**
     - 체크리스트:

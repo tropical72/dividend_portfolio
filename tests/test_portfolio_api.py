@@ -2,21 +2,25 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.backend.api import DividendBackend
-from src.backend.main import app, backend
+from src.backend.main import app
 
 client = TestClient(app)
 
 
 @pytest.fixture
 def clean_data():
-    """테스트 전 포트폴리오 데이터 초기화 (API 사용)"""
-    backend.portfolios = []
-    res = client.get("/api/portfolios")
-    if res.status_code == 200:
-        for p in res.json().get("data", []):
-            client.delete(f"/api/portfolios/{p['id']}")
-    backend.portfolios = []
-    yield
+    """기본 번들 시딩 없이 빈 포트폴리오 상태를 격리한다."""
+    import src.backend.main as main_module
+
+    live_backend = main_module.backend
+    original_seed_mode = live_backend.ensure_default_master_bundle
+    live_backend.ensure_default_master_bundle = False
+    live_backend.portfolios = []
+    live_backend.master_portfolios = []
+    try:
+        yield
+    finally:
+        live_backend.ensure_default_master_bundle = original_seed_mode
 
 
 def test_get_portfolios_empty(clean_data):

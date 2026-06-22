@@ -997,13 +997,30 @@ class DividendBackend:
 
     def _ensure_retirement_config_defaults(self) -> None:
         """은퇴 설정에 필요한 기본 스키마를 보강합니다."""
+        stored_simulation_params = deepcopy(
+            cast(Dict[str, Any], self.retirement_config.get("simulation_params") or {})
+        )
         self.retirement_config = self._deep_merge_dict(
             self._get_default_retirement_config(),
             self.retirement_config,
         )
-        self.retirement_config["simulation_params"] = self._normalize_retirement_simulation_fields(
-            cast(Optional[Dict[str, Any]], self.retirement_config.get("simulation_params"))
-        )
+        if stored_simulation_params:
+            normalized_stored_params = self._normalize_retirement_simulation_fields(
+                stored_simulation_params
+            )
+            self.retirement_config["simulation_params"] = self._deep_merge_dict(
+                cast(Dict[str, Any], self._get_default_retirement_config()["simulation_params"]),
+                normalized_stored_params,
+            )
+        else:
+            self.retirement_config["simulation_params"] = (
+                self._normalize_retirement_simulation_fields(
+                    cast(
+                        Optional[Dict[str, Any]],
+                        self.retirement_config.get("simulation_params"),
+                    )
+                )
+            )
         self.retirement_config["corp_params"] = self._normalize_corporate_cost_fields(
             cast(Optional[Dict[str, Any]], self.retirement_config.get("corp_params"))
         )

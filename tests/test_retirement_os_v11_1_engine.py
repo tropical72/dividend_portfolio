@@ -1406,6 +1406,48 @@ def test_personal_us_dividend_withholding_is_deducted_in_payment_month():
     assert month["personal_balance"] == pytest.approx(121020000.0)
 
 
+def test_personal_annual_tax_audit_is_empty_when_personal_account_is_disabled():
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 100.0, "pension": 0.0, "personal": 0.0},
+        params={**base_params(), "personal_enabled": False},
+        months=12,
+    )
+
+    assert result["personal_annual_tax_audit"] == []
+
+
+def test_personal_annual_tax_audit_estimates_tax_before_following_may_payment():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 6,
+            "personal_enabled": True,
+            "personal_withdrawal_target": 0.0,
+            "personal_property_assessed_value": 0.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}},
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "SGOV Buffer": {"dy": 0.12, "pa": 0.0, "tr": 0.12}
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 120000000.0},
+        params=params,
+        months=1,
+    )
+
+    audit = result["personal_annual_tax_audit"][0]
+    assert audit["payment_year"] is None
+    assert audit["foreign_tax_credit"] == pytest.approx(audit["foreign_withholding_tax"])
+    assert audit["domestic_additional_tax"] > 0
+    assert audit["annual_deduction"] == pytest.approx(2500000.0)
+
+
 def test_personal_dividend_domestic_tax_is_paid_in_following_may():
     params = base_params()
     params.update(
@@ -1438,6 +1480,15 @@ def test_personal_dividend_domestic_tax_is_paid_in_following_may():
         may["personal_dividend_additional_tax"] + may["personal_capital_gains_tax"]
     )
     assert result["personal_tax_ledger"][0]["tax_year"] == 2026
+    annual_audit = result["personal_annual_tax_audit"][0]
+    assert annual_audit["tax_year"] == 2026
+    assert annual_audit["payment_year"] == 2027
+    assert annual_audit["payment_month"] == 5
+    assert annual_audit["gross_dividend"] > 0
+    assert annual_audit["foreign_withholding_tax"] > 0
+    assert annual_audit["ending_cost_basis"] > 0
+    assert "health_insurance_total" in annual_audit
+    assert "funding_sales" in annual_audit
 
 
 def test_personal_health_income_is_reflected_after_configured_lag():
@@ -1496,6 +1547,7 @@ def test_personal_tax_payment_uses_existing_donor_and_trade_event_rules():
         2027,
         5,
         30.0,
+        obligation_type="annual_tax",
     )
 
     assert paid == 30.0
@@ -1511,5 +1563,6 @@ def test_personal_tax_payment_uses_existing_donor_and_trade_event_rules():
             "sale_proceeds": 30.0,
             "cost_basis_sold": 18.0,
             "realized_gain": 12.0,
+            "cash_obligation": "annual_tax",
         }
     ]

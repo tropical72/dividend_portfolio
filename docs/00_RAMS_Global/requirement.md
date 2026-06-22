@@ -47,6 +47,9 @@
     - **Portfolio Designer:** 각 카테고리 헤더에 해당 카테고리의 `기대주가상승률`과 합산된 `TR`을 실시간으로 표시한다.
     - **Retirement Simulation:** 국민연금 수령 시작 연령(60~70세)과 월 예상 수령액 설정을 보강하여 Phase 3 시뮬레이션에 반영한다.
 
+- **[REQ-GLB-18.1] 테스트 실행 독립성:** 테스트는 실행 순서, 실제 사용자 데이터, 앱 기본 시드 개수에 의존하지 않아야 한다. 삭제된 UI 스택을 참조하는 테스트는 현재 React/Playwright 계약으로 대체한다.
+- **[REQ-GLB-18.2] 설정 호환 우선순위:** 저장된 legacy `target_monthly_cashflow`만 존재하면 해당 값을 canonical `household_monthly_need`로 승격하고 내장 기본값보다 우선 적용한다.
+
 ## [REQ-GLB-16] 자산군별 PA 시나리오 3중화 (Phase 1)
 - **[REQ-GLB-16.1] 5개 자산군 x 3 시나리오 설정:** `SGOV Buffer`, `Bond Buffer`, `High Income`, `Dividend Growth`, `Growth Engine`에 대해 `conservative / base / optimistic` 3가지 PA 기본값을 저장/수정할 수 있어야 한다.
 - **[REQ-GLB-16.2] 구버전 설정 호환성:** 기존 단일 `appreciation_rates` 구조와 `fixed_income` 레거시 값은 신규 3시나리오 구조의 `base` 시나리오로 안전하게 이관되어야 한다.

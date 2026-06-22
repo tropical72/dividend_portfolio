@@ -157,6 +157,7 @@
 - **Health Insurance Ledger:** 재산세 과세표준 기반 재산분은 매월 부과한다. 금융소득분은 최소 반영금액과 신고자료 반영 지연연도/월을 정책값으로 적용하며 양도차익은 제외한다.
 - **Funding:** Personal SGOV가 세금과 건보료보다 부족하면 `Bond Buffer -> High Income -> Dividend Growth -> Growth Engine` donor 순서로 현금을 조달하고 실제 매도 이벤트를 남긴다.
 - **Audit Contract:** 월별 응답은 gross dividend, foreign withholding, domestic additional tax, capital gains tax, health premium과 반영 소득연도를 제공하고, 연간 응답은 세금연도와 납부연월, 공제, 세율, 취득원가를 제공한다.
+- **Annual Audit View:** `personal_annual_tax_audit`는 세금연도 기준 집계와 납부연월을 결합하며, 해당 납부를 위해 발생한 `cash_obligation` 거래 이벤트를 포함한다. UI는 월별 계산을 재집계하지 않고 이 계약을 표로 렌더링한다.
 - **Known Boundary:** 종목별 lot, 실제 체결환율, 증권사별 원천징수 차이, 국내 상장 ETF 과세, 손실 이월은 1차 범위에 포함하지 않는다.
 
 ---

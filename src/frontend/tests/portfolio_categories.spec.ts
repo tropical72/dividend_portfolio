@@ -174,6 +174,20 @@ test("should save personal portfolio, connect master, and render retirement acco
   await acquireE2ELock();
   try {
     originalState = await captureBackendState(request);
+    const configResponse = await request.post(
+      "http://127.0.0.1:8000/api/retirement/config",
+      {
+        data: {
+          personal_account_params: {
+            initial_investment: 480000000,
+            initial_cost_basis: 480000000,
+            monthly_withdrawal_target: 2000000,
+          },
+        },
+      },
+    );
+    expect(configResponse.ok()).toBeTruthy();
+
     await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
     await page.getByTestId("nav-asset-setup").click({ force: true });
     await page.getByTestId("portfolio-subtab-design").click({ force: true });
@@ -226,6 +240,14 @@ test("should save personal portfolio, connect master, and render retirement acco
     await expect(
       page.getByTestId("retirement-personal-tax-audit"),
     ).toBeVisible();
+    const annualTaxAudit = page.getByTestId(
+      "retirement-personal-annual-tax-audit",
+    );
+    await expect(annualTaxAudit).toBeVisible();
+    await expect(annualTaxAudit).toContainText("Sale Proceeds");
+    await expect(annualTaxAudit).toContainText("Cost Basis Sold");
+    await expect(annualTaxAudit).toContainText("Annual Deduction");
+    await expect(annualTaxAudit).toContainText("Taxable Gain");
   } finally {
     if (originalState) await restoreBackendState(request, originalState);
     await releaseE2ELock();
