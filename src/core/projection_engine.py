@@ -196,6 +196,10 @@ class ProjectionEngine:
         personal_foreign_withholding_by_year: Dict[int, float] = {}
         personal_tax_ledger_by_year: Dict[int, Dict[str, Any]] = {}
         monthly_data = []
+        cumulative_household_need = 0.0
+        cumulative_household_paid = 0.0
+        cumulative_household_shortfall = 0.0
+        first_household_shortfall_date = None
 
         for index in range(1, months + 1):
             sim_month = (start_month + index - 1) % 12 or 12
@@ -204,7 +208,13 @@ class ProjectionEngine:
             phase = self._resolve_phase(age, private_pension_start_age, national_pension_start_age)
 
             self._apply_planned_cashflows(
-                corp_assets, pension_assets, planned_cashflows, sim_year, sim_month
+                corp_assets,
+                pension_assets,
+                planned_cashflows,
+                sim_year,
+                sim_month,
+                corp_enabled=corp_enabled,
+                pension_enabled=pension_enabled,
             )
             corp_realized_income = self._apply_monthly_returns(
                 "corp",
@@ -267,6 +277,12 @@ class ProjectionEngine:
                 else 0.0
             )
             national_income = national_pension_amount if phase == "Phase 3" else 0.0
+            personal_monthly_need = personal_withdrawal_target
+            if personal_enabled and not corp_enabled:
+                personal_monthly_need = max(
+                    personal_withdrawal_target,
+                    current_total_need - pension_income - national_income,
+                )
             target_net_salary = self._net_salary_to_household(corp_salary, employee_count)
             household_shortfall = max(
                 0.0, current_total_need - pension_income - national_income - target_net_salary
@@ -388,8 +404,7 @@ class ProjectionEngine:
                 pension_draw = min(pension_income, pension_assets["SGOV Buffer"])
                 pension_assets["SGOV Buffer"] -= pension_draw
 
-            personal_draw = min(personal_withdrawal_target, personal_assets["SGOV Buffer"])
-            personal_assets["SGOV Buffer"] -= personal_draw
+            personal_draw = self._consume_personal_sgov(personal_assets, personal_monthly_need)
 
             corp_draw = min(corp_monthly_need, corp_assets["SGOV Buffer"])
             corp_assets["SGOV Buffer"] -= corp_draw
@@ -437,6 +452,11 @@ class ProjectionEngine:
                 - shareholder_loan_payment
                 - personal_draw,
             )
+            cumulative_household_need += current_total_need
+            cumulative_household_shortfall += household_shortfall
+            cumulative_household_paid += current_total_need - household_shortfall
+            if household_shortfall > 0 and first_household_shortfall_date is None:
+                first_household_shortfall_date = f"{sim_year}-{sim_month:02d}"
 
             pre_review_corp_sgov_months = self._months_cover(
                 corp_assets["SGOV Buffer"], corp_monthly_need
@@ -463,7 +483,9 @@ class ProjectionEngine:
                     inflation_action,
                     next_target_cashflow,
                 ) = self._run_may_review(
-                    corp_assets=corp_assets,
+                    corp_assets=(
+                        personal_assets if personal_enabled and not corp_enabled else corp_assets
+                    ),
                     pension_assets=pension_assets,
                     current_total_need=current_total_need,
                     inflation_rate=inflation_rate,
@@ -476,7 +498,14 @@ class ProjectionEngine:
                     employee_count=employee_count,
                     corporate_monthly_operating_cost=corporate_monthly_operating_cost,
                     loan_balance=loan_balance,
-                    corporate_rules=corporate_rules,
+                    corporate_rules=(
+                        corporate_rules
+                        if corp_enabled
+                        else {
+                            "may_sgov_target_months": pension_rules["sgov_target_months"],
+                            "bond_floor_months": pension_rules["bond_floor_months"],
+                        }
+                    ),
                 )
                 growth_used = self._run_may_rebalance(
                     corp_assets=corp_assets,
@@ -510,8 +539,8 @@ class ProjectionEngine:
                     params,
                     sim_year,
                     sim_month,
-                    target_amount=personal_withdrawal_target * pension_rules["sgov_target_months"],
-                    monthly_need=personal_withdrawal_target,
+                    target_amount=personal_monthly_need * pension_rules["sgov_target_months"],
+                    monthly_need=personal_monthly_need,
                     bond_upper_months=pension_rules["bond_upper_months"],
                     bond_floor_months=pension_rules["bond_floor_months"],
                     account_key="personal",
@@ -525,8 +554,8 @@ class ProjectionEngine:
                     sim_year,
                     sim_month,
                     target_category="Bond Buffer",
-                    target_amount=personal_withdrawal_target * pension_rules["bond_target_months"],
-                    floor_amount=personal_withdrawal_target * pension_rules["bond_floor_months"],
+                    target_amount=personal_monthly_need * pension_rules["bond_target_months"],
+                    floor_amount=personal_monthly_need * pension_rules["bond_floor_months"],
                     donor_order=("High Income", "Dividend Growth", "Growth Engine"),
                 )
                 self._cap_buffer_and_deploy_surplus(
@@ -537,8 +566,8 @@ class ProjectionEngine:
                     params,
                     sim_year,
                     sim_month,
-                    sgov_cap=personal_withdrawal_target * pension_rules["sgov_target_months"],
-                    bond_cap=personal_withdrawal_target * pension_rules["bond_upper_months"],
+                    sgov_cap=personal_monthly_need * pension_rules["sgov_target_months"],
+                    bond_cap=personal_monthly_need * pension_rules["bond_upper_months"],
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
@@ -595,7 +624,7 @@ class ProjectionEngine:
                 params,
                 sim_year,
                 sim_month,
-                personal_withdrawal_target,
+                personal_monthly_need,
                 pension_rules,
                 account_key="personal",
             )
@@ -820,6 +849,10 @@ class ProjectionEngine:
                 "is_permanent": survival_m >= months,
                 "sgov_exhaustion_date": sgov_exhaustion_date,
                 "growth_asset_sell_start_date": growth_sell_date,
+                "cumulative_household_need": cumulative_household_need,
+                "cumulative_household_paid": cumulative_household_paid,
+                "cumulative_household_shortfall": cumulative_household_shortfall,
+                "first_household_shortfall_date": first_household_shortfall_date,
             },
             "survival_months": survival_m,
             "monthly_data": monthly_data,
@@ -978,8 +1011,16 @@ class ProjectionEngine:
         planned_cashflows: list,
         sim_year: int,
         sim_month: int,
+        *,
+        corp_enabled: bool = True,
+        pension_enabled: bool = True,
     ) -> None:
         for event in planned_cashflows:
+            entity = event.get("entity", "CORP").lower()
+            if (entity == "corp" and not corp_enabled) or (
+                entity != "corp" and not pension_enabled
+            ):
+                continue
             if int(event["year"]) != sim_year or int(event["month"]) != sim_month:
                 continue
             amount = float(event["amount"])
@@ -1265,7 +1306,11 @@ class ProjectionEngine:
     ) -> float:
         if tax_year in assessed_tax_by_year:
             return assessed_tax_by_year[tax_year]
-        realized_income = realized_income_by_year.get(tax_year, 0.0)
+        realized_income = realized_income_by_year.get(tax_year, 0.0) + sum(
+            float(event.get("realized_gain") or 0.0)
+            for event in getattr(self, "_active_trade_events", [])
+            if event.get("account") == "corp" and int(event.get("year") or 0) == tax_year
+        )
         deductible_expenses = deductible_expenses_by_year.get(tax_year, 0.0)
         tax_base = max(0.0, realized_income - deductible_expenses)
         assessed_tax = self.tax_engine.calculate_corp_tax(tax_base)
@@ -1942,6 +1987,18 @@ class ProjectionEngine:
                 sim_month=sim_month,
             )
 
+    def _consume_personal_sgov(self, personal_assets: Dict[str, float], amount: float) -> float:
+        balance = max(0.0, personal_assets["SGOV Buffer"])
+        paid = min(max(0.0, amount), balance)
+        if paid <= 0:
+            return 0.0
+        basis = getattr(self, "_active_cost_basis_by_account", {}).get("personal", {})
+        current_basis = max(0.0, float(basis.get("SGOV Buffer", 0.0)))
+        basis_reduction = current_basis * paid / balance if balance > 0 else 0.0
+        basis["SGOV Buffer"] = max(0.0, current_basis - basis_reduction)
+        personal_assets["SGOV Buffer"] -= paid
+        return paid
+
     def _pay_personal_cash_obligation(
         self,
         personal_assets: Dict[str, float],
@@ -1979,9 +2036,7 @@ class ProjectionEngine:
         for event in getattr(self, "_active_trade_events", [])[event_start:]:
             if event.get("account") == "personal":
                 event["cash_obligation"] = obligation_type
-        paid = min(due, personal_assets["SGOV Buffer"])
-        personal_assets["SGOV Buffer"] -= paid
-        return paid
+        return self._consume_personal_sgov(personal_assets, due)
 
     def _transfer(
         self,

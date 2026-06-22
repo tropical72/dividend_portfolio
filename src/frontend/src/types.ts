@@ -342,6 +342,10 @@ export interface SimulationResult {
     is_permanent: boolean;
     sgov_exhaustion_date: string;
     growth_asset_sell_start_date: string;
+    cumulative_household_need?: number;
+    cumulative_household_paid?: number;
+    cumulative_household_shortfall?: number;
+    first_household_shortfall_date?: string | null;
   };
   survival_months: number;
   monthly_data: MonthlySimulationData[];

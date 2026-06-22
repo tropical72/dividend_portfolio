@@ -248,6 +248,22 @@ test("should save personal portfolio, connect master, and render retirement acco
     await expect(annualTaxAudit).toContainText("Cost Basis Sold");
     await expect(annualTaxAudit).toContainText("Annual Deduction");
     await expect(annualTaxAudit).toContainText("Taxable Gain");
+    await expect(
+      page.getByTestId("retirement-household-cashflow-summary"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("retirement-personal-zero-capital-warning"),
+    ).toHaveCount(0);
+
+    const zeroCapitalResponse = await request.post(
+      "http://127.0.0.1:8000/api/retirement/config",
+      { data: { personal_account_params: { initial_investment: 0 } } },
+    );
+    expect(zeroCapitalResponse.ok()).toBeTruthy();
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByTestId("retirement-personal-zero-capital-warning"),
+    ).toBeVisible();
   } finally {
     if (originalState) await restoreBackendState(request, originalState);
     await releaseE2ELock();

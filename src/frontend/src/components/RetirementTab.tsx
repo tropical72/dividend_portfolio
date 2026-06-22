@@ -280,6 +280,14 @@ export function RetirementTab() {
   if (!simulationData || !config) return null;
 
   const summary = simulationData.summary || {};
+  const activeMaster = masterPortfolios.find((master) => master.is_active);
+  const corpActive = activeMaster ? Boolean(activeMaster.corp_id) : true;
+  const pensionActive = activeMaster ? Boolean(activeMaster.pension_id) : true;
+  const personalActive = activeMaster
+    ? Boolean(activeMaster.personal_id)
+    : true;
+  const showPersonalZeroCapitalWarning =
+    personalActive && config.personal_account_params.initial_investment <= 0;
   const monthlyData = simulationData.monthly_data || [];
   const householdMonthlyNeed =
     config.simulation_params.household_monthly_need ??
@@ -311,17 +319,22 @@ export function RetirementTab() {
     age: startAge,
     phase: initialPhase,
     total_net_worth:
-      config.corp_params.initial_investment +
-      config.pension_params.initial_investment +
-      config.pension_params.severance_reserve +
-      config.pension_params.other_reserve +
-      config.personal_account_params.initial_investment,
-    corp_balance: config.corp_params.initial_investment,
-    pension_balance:
-      config.pension_params.initial_investment +
-      config.pension_params.severance_reserve +
-      config.pension_params.other_reserve,
-    personal_balance: config.personal_account_params.initial_investment,
+      (corpActive ? config.corp_params.initial_investment : 0) +
+      (pensionActive
+        ? config.pension_params.initial_investment +
+          config.pension_params.severance_reserve +
+          config.pension_params.other_reserve
+        : 0) +
+      (personalActive ? config.personal_account_params.initial_investment : 0),
+    corp_balance: corpActive ? config.corp_params.initial_investment : 0,
+    pension_balance: pensionActive
+      ? config.pension_params.initial_investment +
+        config.pension_params.severance_reserve +
+        config.pension_params.other_reserve
+      : 0,
+    personal_balance: personalActive
+      ? config.personal_account_params.initial_investment
+      : 0,
     loan_balance: config.corp_params.initial_shareholder_loan,
     target_cashflow: householdMonthlyNeed,
     net_salary: 0,
@@ -1147,6 +1160,16 @@ export function RetirementTab() {
                     </span>
                   </h2>
                 )}
+                {showPersonalZeroCapitalWarning && (
+                  <div
+                    data-testid="retirement-personal-zero-capital-warning"
+                    className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs font-semibold text-amber-900"
+                  >
+                    {isKorean
+                      ? "활성 개인운용 전략의 초기 투자금이 0원입니다. 포트폴리오 비중은 적용되지만 개인계좌 운용자산은 생성되지 않습니다."
+                      : "The active personal strategy has zero initial capital. Portfolio weights are loaded, but no personal assets are invested."}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
                   <InlineHint
                     label={t("retirement.shockFlag")}
@@ -1204,6 +1227,38 @@ export function RetirementTab() {
                     tooltip={t("retirement.cashExhaustTooltip")}
                     testId="retirement-metric-cash-exhaust"
                   />
+                </div>
+                <div
+                  data-testid="retirement-household-cashflow-summary"
+                  className="mt-4 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs sm:grid-cols-3"
+                >
+                  {[
+                    [
+                      isKorean ? "누적 가계 필요액" : "Required household cash",
+                      summary.cumulative_household_need,
+                    ],
+                    [
+                      isKorean ? "누적 실지급액" : "Paid household cash",
+                      summary.cumulative_household_paid,
+                    ],
+                    [
+                      isKorean ? "누적 미충족액" : "Household shortfall",
+                      summary.cumulative_household_shortfall,
+                    ],
+                  ].map(([label, value]) => (
+                    <div key={String(label)}>
+                      <div className="text-slate-500">{label}</div>
+                      <div className="mt-1 font-bold text-slate-800">
+                        {Number(value || 0).toLocaleString("ko-KR")}원
+                      </div>
+                    </div>
+                  ))}
+                  {summary.first_household_shortfall_date && (
+                    <div className="text-amber-700 sm:col-span-3">
+                      {isKorean ? "최초 미충족" : "First shortfall"}:{" "}
+                      {summary.first_household_shortfall_date}
+                    </div>
+                  )}
                 </div>
               </div>
               {strategyRulesSummary && (

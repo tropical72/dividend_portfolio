@@ -158,6 +158,9 @@
 - **Funding:** Personal SGOV가 세금과 건보료보다 부족하면 `Bond Buffer -> High Income -> Dividend Growth -> Growth Engine` donor 순서로 현금을 조달하고 실제 매도 이벤트를 남긴다.
 - **Audit Contract:** 월별 응답은 gross dividend, foreign withholding, domestic additional tax, capital gains tax, health premium과 반영 소득연도를 제공하고, 연간 응답은 세금연도와 납부연월, 공제, 세율, 취득원가를 제공한다.
 - **Annual Audit View:** `personal_annual_tax_audit`는 세금연도 기준 집계와 납부연월을 결합하며, 해당 납부를 위해 발생한 `cash_obligation` 거래 이벤트를 포함한다. UI는 월별 계산을 재집계하지 않고 이 계약을 표로 렌더링한다.
+- **Personal Operation Cashflow:** Corporate가 비활성이고 Personal이 활성인 경우 Personal SGOV가 가계 부족분을 지급한다. 월 목표는 사용자 최소 인출액과 `가계필요액 - 개인연금 - 국민연금` 중 큰 값이며, 지급 시 SGOV 취득원가를 비례 감소시킨다.
+- **Active Account Boundary:** 예정 현금흐름, 정기점검, Stress 판정은 활성 계좌만 대상으로 한다. Personal-only의 5월 A/B/C는 Personal SGOV/Bond와 Personal/Pension 활성자산을 사용한다.
+- **Household Completeness Ledger:** Summary는 누적 가계 필요액, 실지급액, 미충족액, 최초 미충족 연월을 제공하며 최종자산과 함께 표시한다.
 - **Known Boundary:** 종목별 lot, 실제 체결환율, 증권사별 원천징수 차이, 국내 상장 ETF 과세, 손실 이월은 1차 범위에 포함하지 않는다.
 
 ---

@@ -1566,3 +1566,141 @@ def test_personal_tax_payment_uses_existing_donor_and_trade_event_rules():
             "cash_obligation": "annual_tax",
         }
     ]
+
+
+def test_inactive_corporate_planned_cashflow_is_ignored():
+    params = base_params()
+    params.update({"simulation_start_month": 1, "corp_enabled": False, "personal_enabled": True})
+    params["planned_cashflows"] = [
+        {"year": 2026, "month": 1, "amount": 100.0, "type": "INFLOW", "entity": "CORP"}
+    ]
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0},
+        params=params,
+        months=1,
+    )
+
+    month = result["monthly_data"][0]
+    assert month["corp_balance"] == 0.0
+    assert month["total_net_worth"] == pytest.approx(month["personal_balance"])
+
+
+def test_personal_only_mode_auto_draws_phase_household_gap():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "pension_withdrawal_target": 0.0,
+            "personal_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 1.0},
+        "category_return_rates": {"SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0}},
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0}, params=params, months=1
+    )
+
+    assert result["monthly_data"][0]["personal_draw"] == 10.0
+    assert result["monthly_data"][0]["household_shortfall"] == 0.0
+
+
+def test_personal_may_review_uses_personal_buffers_when_corporate_is_disabled():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_month": 5,
+            "household_monthly_need": 1_000_000.0,
+            "target_monthly_cashflow": 1_000_000.0,
+            "personal_withdrawal_target": 0.0,
+            "inflation_rate": 0.10,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"SGOV Buffer": 0.30, "Bond Buffer": 0.20, "Growth Engine": 0.50},
+        "category_return_rates": {},
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 120_000_000.0},
+        params=params,
+        months=1,
+    )
+
+    may = result["monthly_data"][0]
+    assert may["stress"] is False
+    assert may["inflation_action"] == "approved"
+
+
+def test_household_cashflow_summary_matches_monthly_ledger():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "personal_withdrawal_target": 0.0,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {"strategy_weights": {"SGOV Buffer": 1.0}}
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 15.0}, params=params, months=2
+    )
+
+    summary = result["summary"]
+    assert summary["cumulative_household_need"] == 20.0
+    assert summary["cumulative_household_paid"] == 15.0
+    assert summary["cumulative_household_shortfall"] == 5.0
+    assert summary["first_household_shortfall_date"] == "2026-06"
+
+
+def test_personal_sgov_withdrawal_reduces_cost_basis_without_taxable_sale():
+    params = base_params()
+    params.update(
+        {
+            "household_monthly_need": 10.0,
+            "target_monthly_cashflow": 10.0,
+            "personal_withdrawal_target": 0.0,
+            "personal_initial_cost_basis": 60.0,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_enabled": True,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {"strategy_weights": {"SGOV Buffer": 1.0}}
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100.0}, params=params, months=1
+    )
+
+    assert result["monthly_data"][0]["personal_draw"] == 10.0
+    assert result["ending_cost_basis"]["personal"]["SGOV Buffer"] == pytest.approx(54.0)
+    assert result["trade_events"] == []
+
+
+def test_corporate_tax_includes_realized_gain_from_trade_events():
+    engine = make_engine()
+    engine._active_trade_events = [{"account": "corp", "year": 2026, "realized_gain": 100.0}]
+
+    assessed = engine._annual_corp_tax_for_year(
+        2026,
+        realized_income_by_year={2026: 0.0},
+        deductible_expenses_by_year={2026: 0.0},
+        assessed_tax_by_year={},
+    )
+
+    assert assessed == pytest.approx(11.0)

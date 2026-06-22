@@ -238,6 +238,14 @@
 - [x] **T-01-22.4 UI:** Retirement 상세에 연도별 감사표와 재원 매도 상세를 구현한다.
 - [x] **T-01-22.5 Validation:** 관련 pytest, Playwright 및 품질 게이트를 통과한다.
 
+### [Phase 23] 개인운용 Retirement 현금흐름 정합화 (T-01-23)
+
+- [x] **T-01-23.1 SDD:** 활성 계좌 이벤트 경계, 자동 가계 인출, 개인 5월 판정, 미충족 KPI 계약을 정의한다.
+- [x] **T-01-23.2 TDD:** 비활성 이벤트, Phase별 개인 인출, 개인 Stress, 가계 미충족 요약 실패 테스트를 작성한다.
+- [x] **T-01-23.3 Engine/API:** 계좌 경계와 개인운용 현금흐름·Stress·요약 계약을 구현한다.
+- [x] **T-01-23.4 UI:** 초기자산 0 경고와 가계 현금흐름 완전성 KPI를 Retirement에 노출한다.
+- [x] **T-01-23.5 Validation:** 전체 Pytest, 품질 게이트, Playwright와 실사용 두 전략 재검증을 완료한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**
