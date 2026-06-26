@@ -653,6 +653,16 @@ export function SettingsTab({
   const corporateOperatingCost =
     (retireConfig.corp_params.monthly_bookkeeping_fee ?? 0) +
     (retireConfig.corp_params.annual_corp_tax_adjustment_fee ?? 0) / 12;
+  const personalSplitMode =
+    retireConfig.personal_account_params.split_mode || "single";
+  const personalSelfInitial =
+    retireConfig.personal_account_params.self_initial_investment ?? 0;
+  const personalSpouseInitial =
+    retireConfig.personal_account_params.spouse_initial_investment ?? 0;
+  const personalInitialInvestmentTotal =
+    personalSplitMode === "couple"
+      ? personalSelfInitial + personalSpouseInitial
+      : retireConfig.personal_account_params.initial_investment;
   const activeMaster = masterPortfolios.find((master) => master.is_active);
   const activeCorpPortfolio = portfolios.find(
     (portfolio) => portfolio.id === activeMaster?.corp_id,
@@ -970,13 +980,89 @@ export function SettingsTab({
                   : "Household need is the only withdrawal target. Pension income is applied first, and only the remaining gap is paid from the active operating account SGOV."}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
+                  <label
+                    className={
+                      isKorean
+                        ? "text-xs font-bold text-slate-400"
+                        : "text-[11px] font-black uppercase text-slate-500"
+                    }
+                  >
+                    {isKorean ? "개인운용 방식" : "Personal Account Mode"}
+                  </label>
+                  <select
+                    value={personalSplitMode}
+                    onChange={(e) =>
+                      setRetireConfig({
+                        ...retireConfig,
+                        personal_account_params: {
+                          ...retireConfig.personal_account_params,
+                          split_mode: e.target.value as "single" | "couple",
+                        },
+                      })
+                    }
+                    className="h-11 rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm font-bold text-slate-200 outline-none"
+                    data-testid="settings-personal-split-mode"
+                  >
+                    <option value="single">
+                      {isKorean ? "1인 운용" : "Single"}
+                    </option>
+                    <option value="couple">
+                      {isKorean ? "본인 / 배우자 2인 운용" : "Self / Spouse"}
+                    </option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
+                  <label
+                    className={
+                      isKorean
+                        ? "text-xs font-bold text-slate-400"
+                        : "text-[11px] font-black uppercase text-slate-500"
+                    }
+                  >
+                    {isKorean ? "금융소득 배분" : "Income Allocation"}
+                  </label>
+                  <select
+                    value={
+                      retireConfig.personal_account_params.income_allocation ||
+                      "split_50_50"
+                    }
+                    onChange={(e) =>
+                      setRetireConfig({
+                        ...retireConfig,
+                        personal_account_params: {
+                          ...retireConfig.personal_account_params,
+                          income_allocation: e.target.value as
+                            | "split_50_50"
+                            | "self_100",
+                        },
+                      })
+                    }
+                    className="h-11 rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm font-bold text-slate-200 outline-none"
+                    data-testid="settings-personal-income-allocation"
+                  >
+                    <option value="split_50_50">
+                      {isKorean ? "본인 50% / 배우자 50%" : "50% / 50%"}
+                    </option>
+                    <option value="self_100">
+                      {isKorean ? "본인 100%" : "Self 100%"}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputGroup
                   label={t("settings.initialCapital")}
-                  value={
-                    retireConfig.personal_account_params.initial_investment
-                  }
+                  value={personalInitialInvestmentTotal}
                   isCurrency
-                  tooltip={t("settings.initialCapitalTooltip")}
+                  tooltip={
+                    personalSplitMode === "couple"
+                      ? isKorean
+                        ? "2인 운용에서는 본인/배우자 초기 운용금액의 합계가 시뮬레이션에 반영됩니다."
+                        : "In couple mode, this is the read-only sum of self and spouse capital."
+                      : t("settings.initialCapitalTooltip")
+                  }
+                  readOnly={personalSplitMode === "couple"}
                   onChange={(v) =>
                     setRetireConfig({
                       ...retireConfig,
@@ -987,11 +1073,57 @@ export function SettingsTab({
                     })
                   }
                 />
+                {personalSplitMode === "couple" && (
+                  <>
+                    <InputGroup
+                      label={
+                        isKorean ? "본인 초기 운용금액" : "Self Initial Capital"
+                      }
+                      value={
+                        retireConfig.personal_account_params
+                          .self_initial_investment ?? 0
+                      }
+                      isCurrency
+                      testId="settings-personal-self-initial-investment"
+                      onChange={(v) =>
+                        setRetireConfig({
+                          ...retireConfig,
+                          personal_account_params: {
+                            ...retireConfig.personal_account_params,
+                            self_initial_investment: parseInt(v) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <InputGroup
+                      label={
+                        isKorean
+                          ? "배우자 초기 운용금액"
+                          : "Spouse Initial Capital"
+                      }
+                      value={
+                        retireConfig.personal_account_params
+                          .spouse_initial_investment ?? 0
+                      }
+                      isCurrency
+                      testId="settings-personal-spouse-initial-investment"
+                      onChange={(v) =>
+                        setRetireConfig({
+                          ...retireConfig,
+                          personal_account_params: {
+                            ...retireConfig.personal_account_params,
+                            spouse_initial_investment: parseInt(v) || 0,
+                          },
+                        })
+                      }
+                    />
+                  </>
+                )}
                 <InputGroup
                   label={isKorean ? "초기 취득원가" : "Initial Cost Basis"}
                   value={
                     retireConfig.personal_account_params.initial_cost_basis ||
-                    retireConfig.personal_account_params.initial_investment
+                    personalInitialInvestmentTotal
                   }
                   isCurrency
                   testId="settings-personal-initial-cost-basis"
@@ -2770,6 +2902,7 @@ function InputGroup({
   tooltipAlign = "left",
   testId,
   fractionDigits,
+  readOnly = false,
 }: {
   label: string;
   value: number;
@@ -2780,6 +2913,7 @@ function InputGroup({
   tooltipAlign?: "left" | "right";
   testId?: string;
   fractionDigits?: number;
+  readOnly?: boolean;
 }) {
   const { isKorean } = useI18n();
   const formatDisplayValue = (
@@ -2866,7 +3000,9 @@ function InputGroup({
               setInputValue(formatDisplayValue(value, fractionDigits));
             }
           }}
+          readOnly={readOnly}
           onChange={(e) => {
+            if (readOnly) return;
             const sanitized = e.target.value.replace(/[^\d.]/g, "");
             const parts = sanitized.split(".");
             const normalized =
@@ -2876,7 +3012,12 @@ function InputGroup({
             setInputValue(formatDisplayValue(normalized));
             onChange(normalized);
           }}
-          className="w-full bg-slate-950/50 border border-slate-800 rounded-xl h-11 px-4 pr-16 text-sm font-black text-slate-200 outline-none focus:border-emerald-500 transition-all"
+          className={cn(
+            "w-full rounded-xl border border-slate-800 h-11 px-4 pr-16 text-sm font-black outline-none transition-all",
+            readOnly
+              ? "bg-slate-900/70 text-slate-400 cursor-not-allowed"
+              : "bg-slate-950/50 text-slate-200 focus:border-emerald-500",
+          )}
         />
         {(isCurrency || unit) && (
           <span

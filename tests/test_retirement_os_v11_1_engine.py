@@ -2184,3 +2184,183 @@ def test_pension_disabled_stress_does_not_create_personal_boost_income():
     assert _operating_path(corporate, "corp") == pytest.approx(
         _operating_path(personal, "personal")
     )
+
+
+def test_personal_couple_split_keeps_each_owner_under_health_income_threshold():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_split_mode": "couple",
+            "personal_income_allocation": "split_50_50",
+            "personal_external_financial_income": 18_000_000.0,
+            "personal_property_assessed_value": 0.0,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+        }
+    )
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100_000_000.0},
+        params=params,
+        months=12,
+    )
+
+    november = next(
+        row for row in result["monthly_data"] if row["year"] == 2026 and row["month"] == 11
+    )
+    assert november["personal_health_income_by_owner"] == {"self": 0.0, "spouse": 0.0}
+    assert november["personal_health_income"] == 0.0
+    audit = result["personal_annual_tax_audit"][0]
+    assert audit["external_financial_income_by_owner"] == {
+        "self": 9_000_000.0,
+        "spouse": 9_000_000.0,
+    }
+
+
+def test_personal_couple_self_100_applies_health_income_to_self_only():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_split_mode": "couple",
+            "personal_income_allocation": "self_100",
+            "personal_external_financial_income": 18_000_000.0,
+            "personal_property_assessed_value": 0.0,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+        }
+    )
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100_000_000.0},
+        params=params,
+        months=12,
+    )
+
+    november = next(
+        row for row in result["monthly_data"] if row["year"] == 2026 and row["month"] == 11
+    )
+    assert november["personal_health_income_by_owner"] == {
+        "self": 18_000_000.0,
+        "spouse": 0.0,
+    }
+    assert november["personal_health_income"] == 18_000_000.0
+    assert november["personal_health_insurance_by_owner"]["self"] > 0.0
+    assert november["personal_health_insurance_by_owner"]["spouse"] == 0.0
+
+
+def test_personal_couple_dividend_split_and_comprehensive_tax_isolation():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_split_mode": "couple",
+            "personal_income_allocation": "split_50_50",
+            "personal_external_financial_income": 0.0,
+            "personal_other_comprehensive_tax_base": 0.0,
+            "personal_property_assessed_value": 0.0,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+        }
+    )
+    params["portfolio_stats"]["personal"] = {
+        "strategy_weights": {"Dividend Growth": 1.0},
+        "category_return_rates": {
+            "Dividend Growth": {"dy": 0.03, "pa": 0.0, "tr": 0.03},
+        },
+    }
+    params.setdefault("category_return_rates", {})["personal"] = {
+        "Dividend Growth": {"dy": 0.03, "pa": 0.0, "tr": 0.03},
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 1_200_000_000.0},
+        params=params,
+        months=12,
+    )
+
+    audit = next(row for row in result["personal_annual_tax_audit"] if row["tax_year"] == 2026)
+    assert audit["gross_dividend"] == pytest.approx(36_000_000.0)
+    assert audit["gross_dividend_by_owner"] == pytest.approx(
+        {"self": 18_000_000.0, "spouse": 18_000_000.0}
+    )
+    assert audit["is_comprehensive"] is False
+    assert audit["general_calculated_tax"] == pytest.approx(0.0)
+    assert audit["comparison_calculated_tax"] == pytest.approx(0.0)
+    assert audit["domestic_additional_tax"] == pytest.approx(144_000.0)
+
+
+def test_personal_health_income_threshold_is_strictly_greater_than_limit():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_split_mode": "couple",
+            "personal_income_allocation": "split_50_50",
+            "personal_external_financial_income": 20_000_000.0,
+            "personal_property_assessed_value": 0.0,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+        }
+    )
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100_000_000.0},
+        params=params,
+        months=12,
+    )
+
+    november = next(
+        row for row in result["monthly_data"] if row["year"] == 2026 and row["month"] == 11
+    )
+    assert november["personal_health_income_by_owner"] == {"self": 0.0, "spouse": 0.0}
+    assert november["personal_health_income"] == 0.0
+
+
+def test_personal_couple_property_health_premium_uses_household_assessed_value_once():
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": 1,
+            "personal_enabled": True,
+            "corp_enabled": False,
+            "pension_enabled": False,
+            "personal_split_mode": "couple",
+            "personal_income_allocation": "split_50_50",
+            "personal_external_financial_income": 0.0,
+            "personal_property_assessed_value": 1_000_000_000.0,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+        }
+    )
+    expected = make_engine().tax_engine.calculate_local_health_insurance_detailed(
+        1_000_000_000.0, 0.0
+    )["total_premium"]
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 0.0, "pension": 0.0, "personal": 100_000_000.0},
+        params=params,
+        months=1,
+    )
+
+    month = result["monthly_data"][0]
+    assert month["personal_health_insurance"] == pytest.approx(expected)
+    assert month["personal_health_insurance_by_owner"] == {"self": 0.0, "spouse": 0.0}

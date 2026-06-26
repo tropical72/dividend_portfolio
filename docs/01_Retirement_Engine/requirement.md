@@ -118,6 +118,7 @@
   - **[REQ-RAMS-3.2.37] Operating Account 전략 단일 구현:** Corporate와 Personal의 5월·8월·11월 버퍼 보충, Bond band, donor 순서, surplus 배치, 분배금 성장·Stress cut은 하나의 공통 Operating Account 컴포넌트와 `strategy_rules.corporate`/`distribution_rules.corp`/`distribution_yield_overrides.corp` 정책을 사용해야 한다. Personal 전용 복사 구현이나 별도 정책 키를 두지 않는다.
   - **[REQ-RAMS-3.2.38] 운용 동등성 불변조건:** 세금, 건강보험, 급여, 운영비, 주주대여금, 과세 주주분배를 0으로 하고 동일 초기자산·포트폴리오·가계 필요액을 주면 Corporate와 Personal의 월별 카테고리 잔액, 실제 거래, 분배금 run-rate, Shock/Stress 상태와 세전 총자산 경로가 일치해야 한다.
   - **[REQ-RAMS-3.2.39] BOOST 계좌 경계:** BOOST는 활성 Pension 계좌의 보조 인출 기능이다. Pension이 비활성이면 BOOST 금액과 Pension 수입은 0이어야 하며, Personal 자산을 Pension 수입으로 대체해서는 안 된다. Shock 및 5월 Stress의 주식가치 기준은 활성 Operating Account와 활성 Pension 자산만 포함한다.
+  - **[REQ-RAMS-3.2.40] 개인운용 2인 금융소득 분산:** Personal 운용은 `본인/배우자` 최대 2인 모드를 지원해야 한다. 2인 모드에서는 초기 개인운용금액을 본인/배우자별로 입력하되 동일 Personal 포트폴리오 비중을 적용하고, 금융소득 배분은 `50:50` 또는 `본인 100%` 중 선택한다. 지역건보 금융소득 반영 기준은 사람별 금융소득(개인운용 배당/이자 + 외부 금융소득)에 독립 적용하며, 재산세 과세표준액은 가구 단일값으로 유지한다.
 
 - **[REQ-RAMS-3.3] 자산군별 PA/DY/TR 적용 엔진:**
   - **[REQ-RAMS-3.3.1] 자산군별 독립 성장률:** 월 수익 계산은 계정 평균 수익률 1개가 아니라 전략 카테고리별 `PA`, `DY`, `TR`을 독립 적용해야 한다.

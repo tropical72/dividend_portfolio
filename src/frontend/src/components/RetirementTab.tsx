@@ -358,6 +358,20 @@ export function RetirementTab() {
   const personalTaxFundingSales = personalAnnualTaxAudit.flatMap((audit) =>
     audit.funding_sales.map((sale) => ({ ...sale, taxYear: audit.tax_year })),
   );
+  const personalOwnerLabels: Record<string, string> = {
+    self: isKorean ? "본인" : "Self",
+    spouse: isKorean ? "배우자" : "Spouse",
+  };
+  const personalOwnerKeys = Array.from(
+    new Set([
+      ...Object.keys(
+        personalTaxAuditRow?.personal_health_income_by_owner || {},
+      ),
+      ...Object.keys(
+        personalTaxAuditRow?.personal_health_insurance_by_owner || {},
+      ),
+    ]),
+  );
   const strategyRulesSummary = simulationData.meta?.strategy_rules_summary;
   const pensionSgovTargetMonths =
     strategyRulesSummary?.pension_sgov_target_months ??
@@ -1631,6 +1645,73 @@ export function RetirementTab() {
                 ))}
               </div>
             )}
+            {personalOwnerKeys.length > 0 && (
+              <div
+                data-testid="retirement-personal-owner-health-audit"
+                className="grid grid-cols-1 gap-3 border-b border-sky-100 bg-white p-5 text-xs md:grid-cols-2"
+              >
+                {personalOwnerKeys.map((owner) => {
+                  const income = Number(
+                    personalTaxAuditRow.personal_health_income_by_owner?.[
+                      owner
+                    ] || 0,
+                  );
+                  const premium = Number(
+                    personalTaxAuditRow.personal_health_insurance_by_owner?.[
+                      owner
+                    ] || 0,
+                  );
+                  return (
+                    <div
+                      key={owner}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-bold text-slate-700">
+                          {personalOwnerLabels[owner] || owner}
+                        </div>
+                        <div
+                          className={cn(
+                            "rounded-full px-2 py-1 text-[11px] font-bold",
+                            income > 0
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-emerald-100 text-emerald-700",
+                          )}
+                        >
+                          {income > 0
+                            ? isKorean
+                              ? "건보 반영"
+                              : "Included"
+                            : isKorean
+                              ? "기준 미만"
+                              : "Below Threshold"}
+                        </div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="text-slate-500">
+                            {isKorean ? "건보 반영 금융소득" : "Health Income"}
+                          </div>
+                          <div className="mt-1 font-bold text-slate-800">
+                            {income.toLocaleString("ko-KR")}원
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500">
+                            {isKorean
+                              ? "소득분 월 건보료"
+                              : "Monthly Income-based Premium"}
+                          </div>
+                          <div className="mt-1 font-bold text-slate-800">
+                            {premium.toLocaleString("ko-KR")}원
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {personalAnnualTaxAudit.length > 0 && (
               <div
                 data-testid="retirement-personal-annual-tax-audit"
@@ -1640,12 +1721,16 @@ export function RetirementTab() {
                   Personal Annual Tax Audit
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1750px] text-right text-xs">
+                  <table className="w-full min-w-[2100px] text-right text-xs">
                     <thead className="bg-slate-50 text-slate-500">
                       <tr>
                         <th className="px-3 py-2 text-left">Tax Year</th>
                         <th className="px-3 py-2">Payment</th>
                         <th className="px-3 py-2">Gross Dividend</th>
+                        <th className="px-3 py-2">Self Dividend</th>
+                        <th className="px-3 py-2">Spouse Dividend</th>
+                        <th className="px-3 py-2">Self External</th>
+                        <th className="px-3 py-2">Spouse External</th>
                         <th className="px-3 py-2">U.S. Withholding</th>
                         <th className="px-3 py-2">Foreign Tax Credit</th>
                         <th className="px-3 py-2">General Tax</th>
@@ -1678,6 +1763,11 @@ export function RetirementTab() {
                           </td>
                           {[
                             audit.gross_dividend,
+                            audit.gross_dividend_by_owner?.self || 0,
+                            audit.gross_dividend_by_owner?.spouse || 0,
+                            audit.external_financial_income_by_owner?.self || 0,
+                            audit.external_financial_income_by_owner?.spouse ||
+                              0,
                             audit.foreign_withholding_tax,
                             audit.foreign_tax_credit,
                             audit.general_calculated_tax,

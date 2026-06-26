@@ -92,6 +92,16 @@ class ProjectionEngine:
             p("personal_other_comprehensive_tax_base", 0.0)
         )
         personal_property_assessed_value = float(p("personal_property_assessed_value", 0.0))
+        personal_split_mode = str(p("personal_split_mode", "single")).lower()
+        personal_owner_count = 2 if personal_split_mode == "couple" else 1
+        personal_income_allocation = str(p("personal_income_allocation", "split_50_50")).lower()
+        personal_owner_weights = self._personal_owner_weights(
+            personal_owner_count, personal_income_allocation
+        )
+        personal_external_financial_income_by_owner = {
+            owner: personal_external_financial_income * weight
+            for owner, weight in personal_owner_weights.items()
+        }
         if not corp_enabled:
             loan_balance = 0.0
             corp_salary = 0.0
@@ -220,6 +230,9 @@ class ProjectionEngine:
         corp_tax_assessed_by_year: Dict[int, float] = {}
         corp_tax_prepay_by_year: Dict[int, float] = {}
         personal_dividend_income_by_year: Dict[int, float] = {}
+        personal_dividend_income_by_owner_year: Dict[str, Dict[int, float]] = {
+            owner: {} for owner in personal_owner_weights
+        }
         personal_foreign_withholding_by_year: Dict[int, float] = {}
         personal_tax_ledger_by_year: Dict[int, Dict[str, Any]] = {}
         monthly_data = []
@@ -292,6 +305,11 @@ class ProjectionEngine:
                 personal_foreign_withholding_by_year.get(sim_year, 0.0)
                 + personal_foreign_withholding_paid
             )
+            for owner, weight in personal_owner_weights.items():
+                owner_income = personal_dividend_income_by_owner_year.setdefault(owner, {})
+                owner_income[sim_year] = (
+                    owner_income.get(sim_year, 0.0) + personal_gross_dividend * weight
+                )
             corp_realized_income_by_year[sim_year] = (
                 corp_realized_income_by_year.get(sim_year, 0.0) + corp_realized_income
             )
@@ -369,10 +387,11 @@ class ProjectionEngine:
                 assessed_dividend = personal_dividend_income_by_year.get(
                     personal_tax_assessment_year, 0.0
                 )
-                dividend_tax_detail = self.tax_engine.calculate_us_dividend_tax(
-                    assessed_dividend,
-                    other_financial_income=personal_external_financial_income,
-                    other_comprehensive_tax_base=personal_other_comprehensive_tax_base,
+                dividend_tax_detail = self._personal_dividend_tax_detail(
+                    personal_dividend_income_by_owner_year,
+                    personal_external_financial_income_by_owner,
+                    personal_other_comprehensive_tax_base,
+                    personal_tax_assessment_year,
                 )
                 realized_gain = sum(
                     float(event.get("realized_gain", 0.0))
@@ -415,15 +434,28 @@ class ProjectionEngine:
                 if sim_month >= reflection_month
                 else sim_year - reflection_lag - 1
             )
-            reflected_financial_income = (
-                personal_dividend_income_by_year.get(reflected_income_year, 0.0)
-                + personal_external_financial_income
-            )
-            health_income = (
-                reflected_financial_income
-                if reflected_financial_income >= self.tax_engine.health_financial_income_threshold
-                else 0.0
-            )
+            personal_health_by_owner = {}
+            personal_health_income_by_owner = {}
+            personal_health_detail_by_owner = {}
+            for owner in personal_owner_weights:
+                reflected_financial_income = personal_dividend_income_by_owner_year.get(
+                    owner, {}
+                ).get(reflected_income_year, 0.0) + personal_external_financial_income_by_owner.get(
+                    owner, 0.0
+                )
+                owner_health_income = (
+                    reflected_financial_income
+                    if reflected_financial_income
+                    > self.tax_engine.health_financial_income_threshold
+                    else 0.0
+                )
+                owner_health_detail = self.tax_engine.calculate_local_health_insurance_detailed(
+                    0.0, owner_health_income
+                )
+                personal_health_income_by_owner[owner] = owner_health_income
+                personal_health_detail_by_owner[owner] = owner_health_detail
+                personal_health_by_owner[owner] = float(owner_health_detail["total_premium"])
+            health_income = sum(personal_health_income_by_owner.values())
             personal_health_detail = self.tax_engine.calculate_local_health_insurance_detailed(
                 personal_property_assessed_value, health_income
             )
@@ -731,6 +763,8 @@ class ProjectionEngine:
                     "personal_health_insurance": personal_health_insurance,
                     "personal_health_income_year": reflected_income_year,
                     "personal_health_income": health_income,
+                    "personal_health_income_by_owner": personal_health_income_by_owner,
+                    "personal_health_insurance_by_owner": personal_health_by_owner,
                     "personal_health_property_points": personal_health_detail["property_points"],
                     "corp_bookkeeping_paid": actual_bookkeeping_paid,
                     "corp_tax_adjustment_fee_paid": actual_tax_adjustment_fee_paid,
@@ -803,10 +837,11 @@ class ProjectionEngine:
             ]
             payment_year = int(ledger.get("payment_year") or 0)
             payment_month = int(ledger.get("payment_month") or 0)
-            dividend_tax_detail = ledger or self.tax_engine.calculate_us_dividend_tax(
-                personal_dividend_income_by_year.get(tax_year, 0.0),
-                other_financial_income=personal_external_financial_income,
-                other_comprehensive_tax_base=personal_other_comprehensive_tax_base,
+            dividend_tax_detail = ledger or self._personal_dividend_tax_detail(
+                personal_dividend_income_by_owner_year,
+                personal_external_financial_income_by_owner,
+                personal_other_comprehensive_tax_base,
+                tax_year,
             )
             realized_gain = sum(float(event.get("realized_gain") or 0.0) for event in annual_sales)
             capital_tax_detail = ledger or self.tax_engine.calculate_us_capital_gains_tax(
@@ -835,6 +870,13 @@ class ProjectionEngine:
                     "payment_year": payment_year or None,
                     "payment_month": payment_month or None,
                     "gross_dividend": personal_dividend_income_by_year.get(tax_year, 0.0),
+                    "gross_dividend_by_owner": {
+                        owner: yearly.get(tax_year, 0.0)
+                        for owner, yearly in personal_dividend_income_by_owner_year.items()
+                    },
+                    "external_financial_income_by_owner": dict(
+                        personal_external_financial_income_by_owner
+                    ),
                     "foreign_withholding_tax": personal_foreign_withholding_by_year.get(
                         tax_year, 0.0
                     ),
@@ -901,6 +943,45 @@ class ProjectionEngine:
             ],
             "personal_annual_tax_audit": personal_annual_tax_audit,
         }
+
+    def _personal_dividend_tax_detail(
+        self,
+        dividend_income_by_owner_year: Dict[str, Dict[int, float]],
+        external_financial_income_by_owner: Dict[str, float],
+        self_other_comprehensive_tax_base: float,
+        tax_year: int,
+    ) -> Dict[str, Any]:
+        details_by_owner: Dict[str, Dict[str, Any]] = {}
+        numeric_totals: Dict[str, float] = {}
+        bool_totals: Dict[str, bool] = {"is_comprehensive": False}
+
+        for owner, yearly_income in dividend_income_by_owner_year.items():
+            detail = self.tax_engine.calculate_us_dividend_tax(
+                float(yearly_income.get(tax_year, 0.0)),
+                other_financial_income=float(external_financial_income_by_owner.get(owner, 0.0)),
+                other_comprehensive_tax_base=(
+                    self_other_comprehensive_tax_base if owner == "self" else 0.0
+                ),
+            )
+            details_by_owner[owner] = detail
+            for key, value in detail.items():
+                if isinstance(value, bool):
+                    bool_totals[key] = bool_totals.get(key, False) or value
+                elif isinstance(value, (int, float)):
+                    numeric_totals[key] = numeric_totals.get(key, 0.0) + float(value)
+
+        return {
+            **numeric_totals,
+            **bool_totals,
+            "dividend_tax_by_owner": details_by_owner,
+        }
+
+    def _personal_owner_weights(self, owner_count: int, allocation: str) -> Dict[str, float]:
+        if owner_count <= 1:
+            return {"self": 1.0}
+        if allocation in {"self_100", "owner_100", "primary_100"}:
+            return {"self": 1.0, "spouse": 0.0}
+        return {"self": 0.5, "spouse": 0.5}
 
     def _build_account_state(
         self,

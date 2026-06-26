@@ -88,6 +88,7 @@
 | D-GLB-12.5.2a | Watchlist 상태/에러/확인 메시지 번역 키 이관 | T-GLB-12.5.2a | TEST-SYS-I18N-05 | Done | - | 2026.06.26 |
 | D-GLB-12.5.2b | Portfolio/Retirement 상태/에러/확인 메시지 번역 키 이관 | T-GLB-12.5.2b | TEST-SYS-I18N-06 | Done | - | 2026.06.26 |
 | D-GLB-13.2.2 | 국민연금 Settings UI 보강 구현 상태 문서 정합화 | T-GLB-13.2.2 | TEST-SYS-STR-01 | Done | - | 2026.06.26 |
+| D-01-28 | 개인운용 2인 금융소득 분산 및 건보 기준 | T-01-28 | TEST-SUR-39 | Done | - | 2026.06.26 |
 | REQ-GLB-13   | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1   | TEST-SYS-STR-01  | Done        | 2830367           | 2026.04.17-18.15 |
 | D-GLB-13.4 | 자산군별 PA 차등 적용 및 국민연금 입력값 결과 반영 검증 | T-GLB-13.4 | TEST-SYS-STR-05 / TEST-SYS-STR-06 | Done | - | 2026.06.26 |
 | REQ-GLB-16   | 자산군별 PA 시나리오 3중화 (Phase 1)          | T-GLB-16.1 ~ T-GLB-16.4 | TEST-SYS-STR-02 / TEST-SYS-STR-03 | Done | 2608b2d           | 2026.05.15       |

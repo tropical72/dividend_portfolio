@@ -385,6 +385,14 @@ async def run_retirement_simulation(
     annual_corp_tax_adjustment_fee = float(corp_params.get("annual_corp_tax_adjustment_fee") or 0)
     pension_params = config["pension_params"]
     personal_account_params = config.get("personal_account_params", {})
+    personal_split_mode = str(personal_account_params.get("split_mode") or "single")
+    personal_self_initial = float(personal_account_params.get("self_initial_investment") or 0.0)
+    personal_spouse_initial = float(personal_account_params.get("spouse_initial_investment") or 0.0)
+    personal_initial_investment = (
+        personal_self_initial + personal_spouse_initial
+        if personal_split_mode == "couple" and (personal_self_initial + personal_spouse_initial) > 0
+        else float(personal_account_params.get("initial_investment") or 0.0)
+    )
     initial_assets = {
         "corp": corp_params["initial_investment"],
         "pension": (
@@ -392,7 +400,7 @@ async def run_retirement_simulation(
             + (pension_params.get("other_reserve") or 0)
             + (pension_params["initial_investment"])
         ),
-        "personal": float(personal_account_params.get("initial_investment") or 0.0),
+        "personal": personal_initial_investment,
     }
 
     # 3. 활성 가정(Assumption) 추출
@@ -538,12 +546,14 @@ async def run_retirement_simulation(
             personal_account_params.get("monthly_withdrawal_target") or 0.0
         ),
         "personal_initial_cost_basis": float(
-            personal_account_params.get("initial_cost_basis")
-            or personal_account_params.get("initial_investment")
-            or 0.0
+            personal_account_params.get("initial_cost_basis") or personal_initial_investment or 0.0
         ),
         "personal_external_financial_income": float(
             personal_account_params.get("external_financial_income") or 0.0
+        ),
+        "personal_split_mode": personal_split_mode,
+        "personal_income_allocation": str(
+            personal_account_params.get("income_allocation") or "split_50_50"
         ),
         "personal_other_comprehensive_tax_base": float(
             personal_account_params.get("other_comprehensive_tax_base") or 0.0

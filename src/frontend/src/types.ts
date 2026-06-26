@@ -190,6 +190,10 @@ export interface RetirementConfig {
   };
   personal_account_params: {
     initial_investment: number;
+    self_initial_investment?: number;
+    spouse_initial_investment?: number;
+    split_mode?: "single" | "couple";
+    income_allocation?: "split_50_50" | "self_100";
     initial_cost_basis?: number;
     monthly_withdrawal_target: number;
     external_financial_income?: number;
@@ -273,6 +277,8 @@ export interface MonthlySimulationData {
   personal_health_insurance?: number;
   personal_health_income_year?: number;
   personal_health_income?: number;
+  personal_health_income_by_owner?: Record<string, number>;
+  personal_health_insurance_by_owner?: Record<string, number>;
   personal_health_property_points?: number;
   shareholder_loan_payment?: number;
   shareholder_distribution_gross?: number;
@@ -323,6 +329,8 @@ export interface PersonalAnnualTaxAudit {
   payment_year?: number | null;
   payment_month?: number | null;
   gross_dividend: number;
+  gross_dividend_by_owner?: Record<string, number>;
+  external_financial_income_by_owner?: Record<string, number>;
   foreign_withholding_tax: number;
   foreign_tax_credit: number;
   general_calculated_tax: number;

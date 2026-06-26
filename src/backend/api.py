@@ -879,6 +879,8 @@ class DividendBackend:
                 "external_financial_income": 0,
                 "other_comprehensive_tax_base": 0,
                 "property_assessed_value": 0,
+                "split_mode": "single",
+                "income_allocation": "split_50_50",
             },
             "personal_params": {
                 "real_estate_price": 620000000,
