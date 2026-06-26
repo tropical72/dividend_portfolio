@@ -273,6 +273,14 @@
 
 검증 기준일(2026-06-22) `개인-sgiv-vgit-goog` 30년 Asset 비교에서 Operating Portfolio는 Personal 포트폴리오로 선택되었다. 1년차 개인 배당 19,917,876.69원과 실제 실현차익 11,553,040.10원만 세금 원장에 반영되고 미실현 PA 99,368,959.90원은 비과세로 순자산에만 남았다. 법인도 배당 19,917,876.69원과 실제 실현차익 11,387,621.75원만 과세 후보이며 급여·운영비·회사보험 차감 후 과세표준은 0원이었다.
 
+### [Phase 27] Operating Account 공통 컴포넌트화 (T-01-27)
+
+- [x] **T-01-27.1 Audit/SDD:** 동일조건 실행에서 기본 경로는 일치하지만 분배금 정책, Shock Stress cut, Pension 비활성 BOOST, 5월 오케스트레이션이 분기됨을 재현하고 공통화 계약을 정의한다.
+- [x] **T-01-27.2 TDD:** 월별 잔액·거래·run-rate 완전 동등성, Corporate 정책의 Personal 재사용, Pension 비활성 BOOST 금지 실패 테스트를 작성한다.
+- [x] **T-01-27.3 Core Library:** Operating Account 선택·정책 키·5월/8월/11월 리밸런싱을 공통 컴포넌트로 추출하고 복사 경로를 제거한다.
+- [x] **T-01-27.4 Shock/Stress:** 활성 Operating Account 기준가와 공통 Stress cut을 적용하고 Pension 비활성 시 BOOST를 차단한다.
+- [x] **T-01-27.5 Validation:** 전체 회귀, 360개월 동일조건 Personal/Corporate 동등성 및 품질 게이트를 통과한다.
+
 ### [Execution Order] 구현 착수 순서 (승인 후 작업 기준)
 
 1. **Frontend/Backend 타입 정렬**

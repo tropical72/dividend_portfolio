@@ -190,6 +190,10 @@
 - **[TEST-SUR-33] 비교 엔진 개인 배당세 단일화 [REGRESSION]:** 금융소득 2,400만 원·기타 종합소득 0원에서 Cost Comparison 개인 배당 총세액이 비교산출세액 3,696,000원과 일치하고, 외국 원천세 3,600,000원과 국내 추가세 96,000원을 분리하는지 검증한다.
 - **[TEST-SUR-34] 실현·미실현 과세 경계 [REGRESSION]:** DY 0·PA 양수·실제 매도 0인 경우 개인 배당세, 양도세, 건보 소득과 법인 과세표준이 모두 0이며 순자산만 증가하는지 검증한다.
 - **[TEST-SUR-35] 비교 스케줄 Operating Account 경계 [REGRESSION]:** Personal 비교 스케줄은 Personal 자산과 30/27개월 규칙을, Corporate 비교 스케줄은 Corporate 자산과 같은 운용 포트폴리오 통계를 사용하며 Pension 24개월 규칙으로 대체되지 않는지 검증한다. 직접 운용자산 DY/TR도 같은 Operating Portfolio 단독 통계와 일치해야 한다.
+- **[TEST-SUR-36] Operating Account 완전 동등성 [REGRESSION]:** 비세무·비용 경로를 제거한 동일 입력에서 360개월 Corporate/Personal 월별 5개 카테고리 잔액, 거래 이벤트, 기말 분배금 run-rate와 세전 총자산이 일치하는지 검증한다.
+- **[TEST-SUR-37] Operating 정책 단일 키 [REGRESSION]:** `distribution_rules.corp`와 `distribution_yield_overrides.corp`만 설정해도 Personal에 동일한 분배금 성장·신규 매수 DY·Shock Stress cut이 적용되고 별도 `personal` 정책이 필요하지 않은지 검증한다.
+- **[TEST-SUR-38] Pension 비활성 BOOST 경계 [REGRESSION]:** 동일한 5월 Stress에서 Corporate/Personal의 Stress와 자산 경로가 일치하고, Pension이 비활성이면 Personal 경로에 BOOST 수입이 생성되지 않는지 검증한다.
+
 - **[TEST-UI-RULE-14] 인출 설정 단일화 [REGRESSION]:** Settings에 월 가계필요비용만 인출 목표로 표시되고 Personal 별도 인출 입력은 없으며 Pension 입력은 월 개인연금 수령액으로 표시되는지 검증한다.
 - **[TEST-UI-RULE-15] 취득원가 설명 [REGRESSION]:** 개인 취득원가 입력 도움말이 평가액/수익률에는 영향이 없고 실현손익·양도세 원장에만 사용됨을 명시하는지 검증한다.
 

@@ -86,6 +86,7 @@
 | REQ-SYS-02.4 | Playwright 백엔드 상태 snapshot/restore 격리  | T-GLB-11.4.1 | TEST-SYS-2.2.2   | Done        | d665e97           | 2026.04.16-17.02 |
 | REQ-SYS-05   | UI 다국어 지원 (ko/en)                        | T-GLB-12.5   | TEST-SYS-I18N-03 | Done        | fcf36b4           | 2026.04.17-15.50 |
 | REQ-GLB-13   | 자산군별 기대주가상승률 차등화 및 용어 표준화 | T-GLB-13.1   | TEST-SYS-STR-01  | Done        | 2830367           | 2026.04.17-18.15 |
+| D-GLB-13.4 | 자산군별 PA 차등 적용 및 국민연금 입력값 결과 반영 검증 | T-GLB-13.4 | TEST-SYS-STR-05 / TEST-SYS-STR-06 | Done | - | 2026.06.26 |
 | REQ-GLB-16   | 자산군별 PA 시나리오 3중화 (Phase 1)          | T-GLB-16.1 ~ T-GLB-16.4 | TEST-SYS-STR-02 / TEST-SYS-STR-03 | Done | 2608b2d           | 2026.05.15       |
 | D-GLB-18.1 | 레거시 Kivy 테스트 제거, API 상태 격리 및 설정 병합 우선순위 정상화 | T-GLB-18 | TEST-GLB-18 | Done | - | 2026.06.22 |
 | REQ-SYS-03.5 | 공개 저장소 기본값과 로컬 런타임 데이터 분리  | T-GLB-14.1   | TEST-SYS-1.3.2   | Done        | 75902aa           | 2026.04.25-01.42 |
@@ -144,6 +145,7 @@
 | D-RAMS-24.1 | Operating Account 단일 가계 인출·공통 버퍼·법인 과세 지급 정합화 | T-01-24 | TEST-SUR-29 ~ 32 / TEST-UI-RULE-14 ~ 15 | Done | - | 2026.06.22 |
 | D-RAMS-25.1 | 금융소득 종합과세 소득세법 제62조 비교과세 정합화 | T-01-25 | TEST-SUR-19 | Done | - | 2026.06.22 |
 | D-RAMS-26.1 | 실현·미실현 과세 경계 및 Cost Comparison 세금/리밸런싱 엔진 단일화 | T-01-26 | TEST-SUR-33 ~ 35 | Done | - | 2026.06.22 |
+| D-RAMS-27.1 | Operating Account 공통 컴포넌트화 및 Corporate/Personal 운용 동등성 | T-01-27 | TEST-SUR-36 ~ 38 | Done | - | 2026.06.23 |
 | D-PRT-11.1 | 개인 일반계좌 Portfolio Designer/Master/Retirement UI 통합 | T-02-11 | TEST-PRT-10 | Done | - | 2026.06.19 |
 | D-PRT-12.1 | 법인운용과 개인운용의 마스터 전략 동시 구성 금지 및 기존 개인 리밸런싱 전략 재사용 | T-02-12 | TEST-PRT-11 | Done | - | 2026.06.21 |
 | D-PRT-13.1 | Corporate/Personal 버퍼 개월수 환산 분모를 공통 가계 필요액으로 통일 | T-02-13 | TEST-PRT-12 | Done | - | 2026.06.22 |

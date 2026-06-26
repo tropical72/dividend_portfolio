@@ -115,6 +115,10 @@
   - **[REQ-RAMS-3.2.34] 금액 잔차 정규화:** gross-up, 원천징수, 비율 배분에서 발생한 `1e-6원` 미만의 부동소수점 잔차는 가계 미충족액으로 기록하지 않는다. 비금전적 잔차 때문에 최초 미충족 연월이나 생존기간이 변경되어서는 안 된다.
   - **[REQ-RAMS-3.2.35] 비교 시뮬레이터 세금 엔진 단일화:** Cost Comparison의 개인 배당세·외국납부세액공제·금융소득 종합과세는 Retirement와 동일한 `TaxEngine.calculate_us_dividend_tax`를 사용해야 한다. 별도 15.4%/26.4% 단순식을 유지해서는 안 되며, PA 미실현이익은 배당세·양도세·건보 소득에 포함하지 않는다.
   - **[REQ-RAMS-3.2.36] 비교 수익률 계좌 경계:** Cost Comparison의 직접 운용자산 DY/TR과 실제 리밸런싱 스케줄은 선택 마스터의 Corporate 또는 Personal Operating Portfolio 단독 통계를 사용한다. 별도 고정자산으로 제외된 Pension 포트폴리오 수익률을 직접 운용자산에 합산하지 않는다.
+  - **[REQ-RAMS-3.2.37] Operating Account 전략 단일 구현:** Corporate와 Personal의 5월·8월·11월 버퍼 보충, Bond band, donor 순서, surplus 배치, 분배금 성장·Stress cut은 하나의 공통 Operating Account 컴포넌트와 `strategy_rules.corporate`/`distribution_rules.corp`/`distribution_yield_overrides.corp` 정책을 사용해야 한다. Personal 전용 복사 구현이나 별도 정책 키를 두지 않는다.
+  - **[REQ-RAMS-3.2.38] 운용 동등성 불변조건:** 세금, 건강보험, 급여, 운영비, 주주대여금, 과세 주주분배를 0으로 하고 동일 초기자산·포트폴리오·가계 필요액을 주면 Corporate와 Personal의 월별 카테고리 잔액, 실제 거래, 분배금 run-rate, Shock/Stress 상태와 세전 총자산 경로가 일치해야 한다.
+  - **[REQ-RAMS-3.2.39] BOOST 계좌 경계:** BOOST는 활성 Pension 계좌의 보조 인출 기능이다. Pension이 비활성이면 BOOST 금액과 Pension 수입은 0이어야 하며, Personal 자산을 Pension 수입으로 대체해서는 안 된다. Shock 및 5월 Stress의 주식가치 기준은 활성 Operating Account와 활성 Pension 자산만 포함한다.
+
 - **[REQ-RAMS-3.3] 자산군별 PA/DY/TR 적용 엔진:**
   - **[REQ-RAMS-3.3.1] 자산군별 독립 성장률:** 월 수익 계산은 계정 평균 수익률 1개가 아니라 전략 카테고리별 `PA`, `DY`, `TR`을 독립 적용해야 한다.
   - **[REQ-RAMS-3.3.2] 수식 정합성:** 각 카테고리는 `TR = DY + PA`를 만족해야 하며, 장기 시뮬레이션의 PA 낙관 편향을 막기 위해 월 변환은 `월 PA = (1 + 연 PA)^(1/12) - 1`, `월 DY = 연 DY / 12`를 사용한다.

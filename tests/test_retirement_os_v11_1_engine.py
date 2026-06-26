@@ -288,6 +288,99 @@ def test_category_specific_pa_dy_tr_are_applied_independently():
     assert month1["corp_growth_balance"] > 60000
 
 
+def test_appreciation_rates_keep_sgov_flat_while_growth_compounds_upward():
+    """Settings 자산군별 PA는 SGOV 정체와 Growth Engine 우상향을 분리해 만들어야 한다."""
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_month": 12,
+            "target_monthly_cashflow": 0.0,
+            "household_monthly_need": 0.0,
+            "pension_withdrawal_target": 0.0,
+            "national_pension_amount": 0.0,
+            "pension_enabled": False,
+            "personal_enabled": False,
+        }
+    )
+    params["portfolio_stats"]["corp"] = {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "strategy_weights": {
+            "SGOV Buffer": 0.50,
+            "Bond Buffer": 0.0,
+            "High Income": 0.0,
+            "Dividend Growth": 0.0,
+            "Growth Engine": 0.50,
+        },
+    }
+    params["category_return_rates"] = {}
+    params["appreciation_rates"] = {
+        "cash_sgov": 0.0,
+        "bond_buffer": 0.0,
+        "high_income": 0.0,
+        "dividend_stocks": 0.0,
+        "growth_stocks": 0.12,
+    }
+
+    result = make_engine()._execute_loop(
+        initial_assets={"corp": 120000.0, "pension": 0.0, "personal": 0.0},
+        params=params,
+        months=4,
+    )
+
+    last_month = result["monthly_data"][-1]
+    expected_growth_balance = 60000.0 * (1.12 ** (4.0 / 12.0))
+
+    assert last_month["corp_sgov_balance"] == pytest.approx(60000.0)
+    assert last_month["corp_growth_balance"] == pytest.approx(expected_growth_balance)
+    assert last_month["corp_growth_balance"] > last_month["corp_sgov_balance"]
+
+
+def test_national_pension_amount_changes_phase_three_corporate_need_and_asset_path():
+    """국민연금 월 수령액 변경은 Phase 3 법인 필요액과 자산 경로를 즉시 바꿔야 한다."""
+
+    def run_with_national_pension(amount: float) -> dict:
+        params = base_params()
+        params.update(
+            {
+                "simulation_start_year": 2026,
+                "simulation_start_month": 1,
+                "birth_year": 1961,
+                "birth_month": 1,
+                "private_pension_start_age": 65,
+                "national_pension_start_age": 65,
+                "target_monthly_cashflow": 1000.0,
+                "household_monthly_need": 1000.0,
+                "pension_withdrawal_target": 0.0,
+                "national_pension_amount": amount,
+                "pension_enabled": False,
+                "personal_enabled": False,
+            }
+        )
+        params["portfolio_stats"]["corp"]["strategy_weights"] = {
+            "SGOV Buffer": 1.0,
+            "Bond Buffer": 0.0,
+            "High Income": 0.0,
+            "Dividend Growth": 0.0,
+            "Growth Engine": 0.0,
+        }
+        return make_engine()._execute_loop(
+            initial_assets={"corp": 12000.0, "pension": 0.0, "personal": 0.0},
+            params=params,
+            months=1,
+        )
+
+    no_pension = run_with_national_pension(0.0)["monthly_data"][0]
+    full_pension = run_with_national_pension(1000.0)["monthly_data"][0]
+
+    assert no_pension["phase"] == "Phase 3"
+    assert full_pension["phase"] == "Phase 3"
+    assert no_pension["corp_monthly_need"] == pytest.approx(1000.0)
+    assert full_pension["corp_monthly_need"] == pytest.approx(0.0)
+    assert no_pension["corp_sgov_balance"] == pytest.approx(11000.0)
+    assert full_pension["corp_sgov_balance"] == pytest.approx(12000.0)
+
+
 def test_may_rebalance_scales_distribution_run_rate_after_growth_sale():
     """5월 리밸런싱에서 Growth를 일부 매도하면 다음 달 법인 실현소득도 비례 감소해야 한다."""
     params = base_params()
@@ -1604,7 +1697,15 @@ def test_personal_tax_payment_uses_existing_donor_and_trade_event_rules():
 
 def test_inactive_corporate_planned_cashflow_is_ignored():
     params = base_params()
-    params.update({"simulation_start_month": 1, "corp_enabled": False, "personal_enabled": True})
+    params.update(
+        {
+            "simulation_start_month": 1,
+            "household_monthly_need": 0.0,
+            "target_monthly_cashflow": 0.0,
+            "corp_enabled": False,
+            "personal_enabled": True,
+        }
+    )
     params["planned_cashflows"] = [
         {"year": 2026, "month": 1, "amount": 100.0, "type": "INFLOW", "entity": "CORP"}
     ]
@@ -1857,3 +1958,229 @@ def test_sub_won_float_residual_does_not_create_household_shortfall():
     assert result["monthly_data"][0]["household_shortfall"] == 0.0
     assert result["summary"]["cumulative_household_shortfall"] == 0.0
     assert result["summary"]["first_household_shortfall_date"] is None
+
+
+OPERATING_CATEGORIES = (
+    "SGOV Buffer",
+    "Bond Buffer",
+    "High Income",
+    "Dividend Growth",
+    "Growth Engine",
+)
+
+
+def _run_tax_neutral_operating_account(
+    account_key: str,
+    *,
+    months: int = 18,
+    initial_assets: float = 1000000000.0,
+    start_month: int = 5,
+    inflation_rate: float = 0.0,
+    distribution_rules: dict | None = None,
+    distribution_yield_overrides: dict | None = None,
+    monthly_return_overrides: dict | None = None,
+):
+    params = base_params()
+    params.update(
+        {
+            "simulation_start_year": 2026,
+            "simulation_start_month": start_month,
+            "birth_year": 1970,
+            "birth_month": 1,
+            "private_pension_start_age": 0,
+            "national_pension_start_age": 200,
+            "household_monthly_need": 1000000.0,
+            "target_monthly_cashflow": 1000000.0,
+            "inflation_rate": inflation_rate,
+            "national_pension_amount": 0.0,
+            "pension_withdrawal_target": 0.0,
+            "personal_withdrawal_target": 0.0,
+            "corp_salary": 0.0,
+            "monthly_bookkeeping_fee": 0.0,
+            "annual_corp_tax_adjustment_fee": 0.0,
+            "employee_count": 0,
+            "initial_shareholder_loan": 0.0,
+            "shareholder_distribution_withholding_rate": 0.0,
+            "corp_enabled": account_key == "corp",
+            "pension_enabled": False,
+            "personal_enabled": account_key == "personal",
+            "personal_initial_cost_basis": initial_assets,
+            "personal_property_assessed_value": 0.0,
+        }
+    )
+    rates = {
+        "SGOV Buffer": {"dy": 0.0, "pa": 0.0, "tr": 0.0},
+        "Bond Buffer": {"dy": 0.04, "pa": 0.0, "tr": 0.04},
+        "High Income": {"dy": 0.06, "pa": 0.0, "tr": 0.06},
+        "Dividend Growth": {"dy": 0.03, "pa": 0.0, "tr": 0.03},
+        "Growth Engine": {"dy": 0.01, "pa": 0.0, "tr": 0.01},
+    }
+    stats = {
+        "dividend_yield": 0.0,
+        "expected_return": 0.0,
+        "strategy_weights": {
+            "SGOV Buffer": 0.05,
+            "Bond Buffer": 0.15,
+            "High Income": 0.20,
+            "Dividend Growth": 0.25,
+            "Growth Engine": 0.35,
+        },
+        "category_return_rates": rates,
+    }
+    params["portfolio_stats"] = {
+        "corp": stats,
+        "pension": {},
+        "personal": stats,
+    }
+    params["category_return_rates"] = {
+        "corp": rates,
+        "pension": {},
+        "personal": rates,
+    }
+    params["distribution_rules"] = distribution_rules or {}
+    params["distribution_yield_overrides"] = distribution_yield_overrides or {}
+    params["monthly_return_overrides"] = monthly_return_overrides or {}
+    tax_engine = TaxEngine(
+        {
+            "corp_tax_nominal_rate": 0.0,
+            "corp_tax_low_rate": 0.0,
+            "corp_tax_high_rate": 0.0,
+            "us_dividend_foreign_withholding_rate": 0.0,
+            "domestic_dividend_tax_rate": 0.0,
+            "financial_income_comprehensive_threshold": 1e30,
+            "us_capital_gains_tax_rate": 0.0,
+            "health_financial_income_threshold": 1e30,
+        }
+    )
+    balances = {
+        "corp": initial_assets if account_key == "corp" else 0.0,
+        "pension": 0.0,
+        "personal": initial_assets if account_key == "personal" else 0.0,
+    }
+    return ProjectionEngine(tax_engine)._execute_loop(balances, params, months)
+
+
+def _operating_path(result: dict, account_key: str) -> list[tuple]:
+    prefix = "corp" if account_key == "corp" else "personal"
+    return [
+        tuple(
+            row[f"{prefix}_{category}_balance"]
+            for category in ("sgov", "bond", "high_income", "dividend", "growth")
+        )
+        for row in result["monthly_data"]
+    ]
+
+
+def _operating_events(result: dict) -> list[tuple]:
+    return [
+        (
+            event["year"],
+            event["month"],
+            event["from_category"],
+            event["to_category"],
+            event["sale_proceeds"],
+            event["cost_basis_sold"],
+            event["realized_gain"],
+        )
+        for event in result["trade_events"]
+    ]
+
+
+def test_personal_default_state_uses_operating_account_buffer_policy():
+    engine = make_engine()
+    common = {
+        "initial_balance": 1000000000.0,
+        "account_stats": {},
+        "phase": "Phase 1",
+        "household_monthly_need": 1000000.0,
+        "pension_withdrawal_target": 0.0,
+        "national_pension_amount": 0.0,
+        "corp_salary": 0.0,
+        "employee_count": 0,
+        "loan_balance": 0.0,
+        "monthly_bookkeeping_fee": 0.0,
+    }
+
+    corporate = engine._build_account_state(account_type="corp", **common)
+    personal = engine._build_account_state(account_type="personal", **common)
+
+    assert personal == pytest.approx(corporate)
+    assert personal["SGOV Buffer"] == pytest.approx(30000000.0)
+
+
+def test_corporate_and_personal_share_one_operating_account_path():
+    corporate = _run_tax_neutral_operating_account("corp", months=360)
+    personal = _run_tax_neutral_operating_account("personal", months=360)
+
+    assert _operating_path(corporate, "corp") == pytest.approx(
+        _operating_path(personal, "personal")
+    )
+    assert _operating_events(corporate) == pytest.approx(_operating_events(personal))
+    assert corporate["ending_distribution_run_rates"]["corp"] == pytest.approx(
+        personal["ending_distribution_run_rates"]["personal"]
+    )
+
+
+def test_personal_reuses_corporate_distribution_policy_and_shock_cut():
+    rules = {
+        "corp": {
+            "Dividend Growth": {"growth_rate": 0.12, "stress_cut_rate": 0.5},
+            "Growth Engine": {"stress_cut_rate": 0.5},
+        }
+    }
+    overrides = {"corp": {"Dividend Growth": 0.05}}
+    shock = {
+        account: {
+            "Growth Engine": {
+                month: {"dy": 0.01, "pa": -0.99}
+                for month in ("2026-06", "2026-07", "2026-08", "2026-09")
+            }
+        }
+        for account in ("corp", "personal")
+    }
+    corporate = _run_tax_neutral_operating_account(
+        "corp",
+        months=6,
+        start_month=6,
+        distribution_rules=rules,
+        distribution_yield_overrides=overrides,
+        monthly_return_overrides=shock,
+    )
+    personal = _run_tax_neutral_operating_account(
+        "personal",
+        months=6,
+        start_month=6,
+        distribution_rules=rules,
+        distribution_yield_overrides=overrides,
+        monthly_return_overrides=shock,
+    )
+
+    assert [row["shock_flag"] for row in corporate["monthly_data"]] == [
+        row["shock_flag"] for row in personal["monthly_data"]
+    ]
+    assert _operating_path(corporate, "corp") == pytest.approx(
+        _operating_path(personal, "personal")
+    )
+    assert corporate["ending_distribution_run_rates"]["corp"] == pytest.approx(
+        personal["ending_distribution_run_rates"]["personal"]
+    )
+
+
+def test_pension_disabled_stress_does_not_create_personal_boost_income():
+    corporate = _run_tax_neutral_operating_account(
+        "corp", months=3, initial_assets=25000000.0, inflation_rate=0.025
+    )
+    personal = _run_tax_neutral_operating_account(
+        "personal", months=3, initial_assets=25000000.0, inflation_rate=0.025
+    )
+
+    assert [row["stress"] for row in corporate["monthly_data"]] == [
+        row["stress"] for row in personal["monthly_data"]
+    ]
+    assert [row["boost_amount"] for row in personal["monthly_data"]] == [0.0, 0.0, 0.0]
+    assert [row["corp_draw"] for row in corporate["monthly_data"]] == pytest.approx(
+        [row["personal_draw"] for row in personal["monthly_data"]]
+    )
+    assert _operating_path(corporate, "corp") == pytest.approx(
+        _operating_path(personal, "personal")
+    )

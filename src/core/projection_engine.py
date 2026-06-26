@@ -1,6 +1,11 @@
 from copy import deepcopy
 from typing import Any, Dict
 
+from src.core.operating_account import (
+    OperatingAccountContext,
+    operating_policy_key,
+    select_operating_account,
+)
 from src.core.tax_engine import TaxEngine
 
 
@@ -174,6 +179,16 @@ class ProjectionEngine:
         personal_distribution_run_rates = self._build_distribution_run_rates(
             "personal", personal_assets, personal_stats, params
         )
+        operating_account = select_operating_account(
+            corp_enabled=corp_enabled,
+            personal_enabled=personal_enabled,
+            corp_assets=corp_assets,
+            personal_assets=personal_assets,
+            corp_distribution_run_rates=corp_distribution_run_rates,
+            personal_distribution_run_rates=personal_distribution_run_rates,
+            corp_stats=corp_stats,
+            personal_stats=personal_stats,
+        )
         self._active_cost_basis_by_account = {
             "corp": dict(corp_assets),
             "pension": dict(pension_assets),
@@ -282,7 +297,9 @@ class ProjectionEngine:
             )
 
             current_total_need = approved_total_need
-            current_boost_amount = boost_amount if boost_months_remaining > 0 else 0.0
+            current_boost_amount = (
+                boost_amount if pension_enabled and boost_months_remaining > 0 else 0.0
+            )
             pension_income = (
                 pension_withdrawal_target + current_boost_amount
                 if phase in {"Phase 2", "Phase 3"}
@@ -339,6 +356,9 @@ class ProjectionEngine:
                 )
                 if corp_enabled
                 else 0.0
+            )
+            operating_monthly_need = (
+                personal_monthly_need if operating_account.key == "personal" else corp_monthly_need
             )
 
             personal_tax_payment = 0.0
@@ -511,18 +531,16 @@ class ProjectionEngine:
             inflation_action = "none"
             next_target_cashflow = current_total_need
             boost_reference_base = crash20_base
-            pre_review_equity_value = self._equity_value(corp_assets) + self._equity_value(
-                pension_assets
-            )
+            pre_review_equity_value = self._equity_value(operating_account.assets)
+            if pension_enabled:
+                pre_review_equity_value += self._equity_value(pension_assets)
             if sim_month == main_review_month:
                 (
                     current_stress,
                     inflation_action,
                     next_target_cashflow,
                 ) = self._run_may_review(
-                    corp_assets=(
-                        personal_assets if personal_enabled and not corp_enabled else corp_assets
-                    ),
+                    corp_assets=operating_account.assets,
                     pension_assets=pension_assets,
                     current_total_need=current_total_need,
                     inflation_rate=inflation_rate,
@@ -541,17 +559,10 @@ class ProjectionEngine:
                         shareholder_distribution_withholding_rate
                     ),
                 )
-                growth_used = self._run_may_rebalance(
-                    corp_assets=corp_assets,
-                    pension_assets=pension_assets,
-                    corp_distribution_run_rates=corp_distribution_run_rates,
-                    pension_distribution_run_rates=pension_distribution_run_rates,
-                    corp_stats=corp_stats,
-                    pension_stats=pension_stats,
-                    params=params,
-                    sim_year=sim_year,
-                    sim_month=sim_month,
-                    corp_monthly_need=self._corporate_cash_need(
+                operating_review_need = (
+                    max(0.0, next_target_cashflow - pension_income - national_income)
+                    if operating_account.key == "personal"
+                    else self._corporate_cash_need(
                         household_need=next_target_cashflow,
                         phase=phase,
                         pension_withdrawal_target=pension_withdrawal_target,
@@ -560,51 +571,25 @@ class ProjectionEngine:
                         employee_count=employee_count,
                         corporate_monthly_operating_cost=monthly_bookkeeping_fee,
                         loan_balance=loan_balance,
-                    ),
-                    pension_withdrawal_target=pension_withdrawal_target,
+                    )
+                )
+                growth_used = self._run_operating_account_rebalance(
+                    operating_account=operating_account,
+                    params=params,
+                    sim_year=sim_year,
+                    sim_month=sim_month,
+                    monthly_need=operating_review_need,
                     corporate_rules=corporate_rules,
+                )
+                growth_used += self._run_pension_may_rebalance(
+                    pension_assets=pension_assets,
+                    pension_distribution_run_rates=pension_distribution_run_rates,
+                    pension_stats=pension_stats,
+                    params=params,
+                    sim_year=sim_year,
+                    sim_month=sim_month,
+                    pension_withdrawal_target=pension_withdrawal_target,
                     pension_rules=pension_rules,
-                )
-
-                personal_review_need = max(
-                    0.0, next_target_cashflow - pension_income - national_income
-                )
-                self._fill_corp_sgov(
-                    personal_assets,
-                    personal_distribution_run_rates,
-                    "personal",
-                    personal_stats,
-                    params,
-                    sim_year,
-                    sim_month,
-                    target_amount=personal_review_need * corporate_rules["may_sgov_target_months"],
-                    monthly_need=personal_review_need,
-                    bond_upper_months=corporate_rules["bond_upper_months"],
-                    bond_floor_months=corporate_rules["bond_floor_months"],
-                )
-                self._fill_bucket(
-                    personal_assets,
-                    personal_distribution_run_rates,
-                    "personal",
-                    personal_stats,
-                    params,
-                    sim_year,
-                    sim_month,
-                    target_category="Bond Buffer",
-                    target_amount=personal_review_need * corporate_rules["bond_target_months"],
-                    floor_amount=personal_review_need * corporate_rules["bond_floor_months"],
-                    donor_order=("High Income", "Dividend Growth", "Growth Engine"),
-                )
-                self._cap_buffer_and_deploy_surplus(
-                    personal_assets,
-                    personal_distribution_run_rates,
-                    "personal",
-                    personal_stats,
-                    params,
-                    sim_year,
-                    sim_month,
-                    sgov_cap=personal_review_need * corporate_rules["may_sgov_target_months"],
-                    bond_cap=personal_review_need * corporate_rules["bond_upper_months"],
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
@@ -620,43 +605,24 @@ class ProjectionEngine:
                 )
                 shock_flag = False
             elif sim_month == corporate_mini_review_month:
-                self._run_august_corporate_review(
-                    personal_assets if personal_enabled and not corp_enabled else corp_assets,
-                    (
-                        personal_distribution_run_rates
-                        if personal_enabled and not corp_enabled
-                        else corp_distribution_run_rates
-                    ),
-                    personal_stats if personal_enabled and not corp_enabled else corp_stats,
+                self._run_operating_account_august_review(
+                    operating_account,
                     params,
                     sim_year,
                     sim_month,
-                    (
-                        personal_monthly_need
-                        if personal_enabled and not corp_enabled
-                        else corp_monthly_need
-                    ),
-                    account_key=("personal" if personal_enabled and not corp_enabled else "corp"),
+                    operating_monthly_need,
                 )
             elif sim_month == corporate_semi_review_month:
                 growth_used = self._run_november_rebalance(
-                    personal_assets if personal_enabled and not corp_enabled else corp_assets,
-                    (
-                        personal_distribution_run_rates
-                        if personal_enabled and not corp_enabled
-                        else corp_distribution_run_rates
-                    ),
-                    personal_stats if personal_enabled and not corp_enabled else corp_stats,
+                    operating_account.assets,
+                    operating_account.distribution_run_rates,
+                    operating_account.stats,
                     params,
                     sim_year,
                     sim_month,
-                    (
-                        personal_monthly_need
-                        if personal_enabled and not corp_enabled
-                        else corp_monthly_need
-                    ),
+                    operating_monthly_need,
                     corporate_rules,
-                    account_key=("personal" if personal_enabled and not corp_enabled else "corp"),
+                    account_key=operating_account.key,
                 )
                 if growth_used > 0 and growth_sell_date == "None":
                     growth_sell_date = f"{sim_year}-{sim_month:02d}"
@@ -690,21 +656,33 @@ class ProjectionEngine:
                 crash20_triggered = True
                 shock_flag = True
             if crash20_triggered:
-                boost_amount = self._boost_amount_for_drawdown(equity_value, boost_reference_base)
-                boost_months_remaining = 6 if boost_amount > 0 else 0
-                self._apply_distribution_stress_cut(corp_distribution_run_rates, params, "corp")
-                self._apply_distribution_stress_cut(
-                    pension_distribution_run_rates, params, "pension"
+                boost_amount = (
+                    self._boost_amount_for_drawdown(equity_value, boost_reference_base)
+                    if pension_enabled
+                    else 0.0
                 )
+                boost_months_remaining = 6 if boost_amount > 0 else 0
+                self._apply_distribution_stress_cut(
+                    operating_account.distribution_run_rates, params, operating_account.key
+                )
+                if pension_enabled:
+                    self._apply_distribution_stress_cut(
+                        pension_distribution_run_rates, params, "pension"
+                    )
             elif sim_month == main_review_month and current_stress:
-                boost_amount = self._boost_amount_for_drawdown(
-                    pre_review_equity_value, boost_reference_base
+                boost_amount = (
+                    self._boost_amount_for_drawdown(pre_review_equity_value, boost_reference_base)
+                    if pension_enabled
+                    else 0.0
                 )
                 boost_months_remaining = 6 if boost_amount > 0 else 0
-                self._apply_distribution_stress_cut(corp_distribution_run_rates, params, "corp")
                 self._apply_distribution_stress_cut(
-                    pension_distribution_run_rates, params, "pension"
+                    operating_account.distribution_run_rates, params, operating_account.key
                 )
+                if pension_enabled:
+                    self._apply_distribution_stress_cut(
+                        pension_distribution_run_rates, params, "pension"
+                    )
 
             corp_sgov_months = self._months_cover(corp_assets["SGOV Buffer"], corp_monthly_need)
             corp_bond_months = self._months_cover(corp_assets["Bond Buffer"], corp_monthly_need)
@@ -715,7 +693,7 @@ class ProjectionEngine:
                 pension_assets["Bond Buffer"], pension_withdrawal_target
             )
 
-            if corp_assets["SGOV Buffer"] <= 0 and sgov_exhaustion_date == "Permanent":
+            if operating_account.assets["SGOV Buffer"] <= 0 and sgov_exhaustion_date == "Permanent":
                 sgov_exhaustion_date = f"{sim_year}-{sim_month:02d}"
 
             survival_m = index
@@ -912,6 +890,11 @@ class ProjectionEngine:
             "survival_months": survival_m,
             "monthly_data": monthly_data,
             "trade_events": list(getattr(self, "_active_trade_events", [])),
+            "ending_distribution_run_rates": {
+                "corp": deepcopy(corp_distribution_run_rates),
+                "pension": deepcopy(pension_distribution_run_rates),
+                "personal": deepcopy(personal_distribution_run_rates),
+            },
             "ending_cost_basis": deepcopy(getattr(self, "_active_cost_basis_by_account", {})),
             "personal_tax_ledger": [
                 personal_tax_ledger_by_year[year] for year in sorted(personal_tax_ledger_by_year)
@@ -947,7 +930,9 @@ class ProjectionEngine:
                 float(legacy_weights.get("Fixed", 0.0)) if account_type == "pension" else 0.0
             ),
             "High Income": (
-                float(legacy_weights.get("Fixed", 0.0)) if account_type == "corp" else 0.0
+                float(legacy_weights.get("Fixed", 0.0))
+                if account_type in {"corp", "personal"}
+                else 0.0
             ),
             "Dividend Growth": float(legacy_weights.get("Dividend", 0.0)),
             "Growth Engine": float(legacy_weights.get("Growth", 0.0)),
@@ -1023,7 +1008,7 @@ class ProjectionEngine:
         if initial_balance <= 0:
             return {category: 0.0 for category in self.CATEGORY_ORDER}
 
-        if account_type == "corp":
+        if account_type in {"corp", "personal"}:
             pension_income = pension_withdrawal_target if phase in {"Phase 2", "Phase 3"} else 0.0
             national_income = national_pension_amount if phase == "Phase 3" else 0.0
             monthly_need = max(0.0, household_monthly_need - pension_income - national_income)
@@ -1032,7 +1017,9 @@ class ProjectionEngine:
             monthly_need = pension_withdrawal_target
             stock_dividend_ratio = 0.75
 
-        sgov_target = max(0.0, monthly_need * (30.0 if account_type == "corp" else 24.0))
+        sgov_target = max(
+            0.0, monthly_need * (30.0 if account_type in {"corp", "personal"} else 24.0)
+        )
         bond_target = max(0.0, monthly_need * 18.0)
 
         sgov_balance = min(initial_balance, sgov_target)
@@ -1194,7 +1181,7 @@ class ProjectionEngine:
         self, params: Dict[str, Any], account_key: str, category: str
     ) -> Dict[str, Any]:
         distribution_rules = params.get("distribution_rules", {})
-        account_rules = distribution_rules.get(account_key, {})
+        account_rules = distribution_rules.get(operating_policy_key(account_key), {})
         if category in account_rules:
             return account_rules[category] or {}
         default_rules = distribution_rules.get("default", {})
@@ -1276,7 +1263,9 @@ class ProjectionEngine:
         params: Dict[str, Any],
     ) -> float:
         distribution_override = (
-            params.get("distribution_yield_overrides", {}).get(account_key, {}).get(category)
+            params.get("distribution_yield_overrides", {})
+            .get(operating_policy_key(account_key), {})
+            .get(category)
         )
         if distribution_override is not None:
             return max(0.0, float(distribution_override))
@@ -1521,50 +1510,66 @@ class ProjectionEngine:
             return 1000000.0
         return 0.0
 
-    def _run_may_rebalance(
+    def _run_operating_account_rebalance(
         self,
-        corp_assets: Dict[str, float],
-        pension_assets: Dict[str, float],
-        corp_distribution_run_rates: Dict[str, float],
-        pension_distribution_run_rates: Dict[str, float],
-        corp_stats: Dict[str, Any],
-        pension_stats: Dict[str, Any],
+        operating_account: OperatingAccountContext,
         params: Dict[str, Any],
         sim_year: int,
         sim_month: int,
-        corp_monthly_need: float,
-        pension_withdrawal_target: float,
+        monthly_need: float,
         corporate_rules: Dict[str, float],
-        pension_rules: Dict[str, float],
     ) -> float:
-        growth_used = 0.0
-        growth_used += self._fill_corp_sgov(
-            corp_assets,
-            corp_distribution_run_rates,
-            "corp",
-            corp_stats,
+        growth_used = self._fill_operating_sgov(
+            operating_account.assets,
+            operating_account.distribution_run_rates,
+            operating_account.key,
+            operating_account.stats,
             params,
             sim_year,
             sim_month,
-            corp_monthly_need * corporate_rules["may_sgov_target_months"],
-            corp_monthly_need,
+            monthly_need * corporate_rules["may_sgov_target_months"],
+            monthly_need,
             corporate_rules["bond_upper_months"],
             corporate_rules["bond_floor_months"],
         )
         growth_used += self._fill_bucket(
-            corp_assets,
-            corp_distribution_run_rates,
-            "corp",
-            corp_stats,
+            operating_account.assets,
+            operating_account.distribution_run_rates,
+            operating_account.key,
+            operating_account.stats,
             params,
             sim_year,
             sim_month,
             target_category="Bond Buffer",
-            target_amount=corp_monthly_need * corporate_rules["bond_target_months"],
-            floor_amount=corp_monthly_need * corporate_rules["bond_floor_months"],
+            target_amount=monthly_need * corporate_rules["bond_target_months"],
+            floor_amount=monthly_need * corporate_rules["bond_floor_months"],
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
         )
-        growth_used += self._fill_pension_sgov(
+        self._cap_buffer_and_deploy_surplus(
+            operating_account.assets,
+            operating_account.distribution_run_rates,
+            operating_account.key,
+            operating_account.stats,
+            params,
+            sim_year,
+            sim_month,
+            sgov_cap=monthly_need * corporate_rules["may_sgov_target_months"],
+            bond_cap=monthly_need * corporate_rules["bond_upper_months"],
+        )
+        return growth_used
+
+    def _run_pension_may_rebalance(
+        self,
+        pension_assets: Dict[str, float],
+        pension_distribution_run_rates: Dict[str, float],
+        pension_stats: Dict[str, Any],
+        params: Dict[str, Any],
+        sim_year: int,
+        sim_month: int,
+        pension_withdrawal_target: float,
+        pension_rules: Dict[str, float],
+    ) -> float:
+        growth_used = self._fill_pension_sgov(
             pension_assets,
             pension_distribution_run_rates,
             pension_stats,
@@ -1588,17 +1593,6 @@ class ProjectionEngine:
             target_amount=pension_withdrawal_target * pension_rules["bond_target_months"],
             floor_amount=pension_withdrawal_target * pension_rules["bond_floor_months"],
             donor_order=("High Income", "Dividend Growth", "Growth Engine"),
-        )
-        self._cap_buffer_and_deploy_surplus(
-            corp_assets,
-            corp_distribution_run_rates,
-            "corp",
-            corp_stats,
-            params,
-            sim_year,
-            sim_month,
-            sgov_cap=corp_monthly_need * corporate_rules["may_sgov_target_months"],
-            bond_cap=corp_monthly_need * corporate_rules["bond_upper_months"],
         )
         self._cap_buffer_and_deploy_surplus(
             pension_assets,
@@ -1625,7 +1619,7 @@ class ProjectionEngine:
         corporate_rules: Dict[str, float],
         account_key: str = "corp",
     ) -> float:
-        growth_used = self._fill_corp_sgov(
+        growth_used = self._fill_operating_sgov(
             corp_assets,
             corp_distribution_run_rates,
             account_key,
@@ -1664,33 +1658,30 @@ class ProjectionEngine:
         )
         return growth_used
 
-    def _run_august_corporate_review(
+    def _run_operating_account_august_review(
         self,
-        corp_assets: Dict[str, float],
-        corp_distribution_run_rates: Dict[str, float],
-        corp_stats: Dict[str, Any],
+        operating_account: OperatingAccountContext,
         params: Dict[str, Any],
         sim_year: int,
         sim_month: int,
         corp_monthly_need: float,
-        account_key: str = "corp",
     ) -> None:
-        if corp_monthly_need <= 0 or corp_assets["SGOV Buffer"] >= corp_monthly_need:
+        if corp_monthly_need <= 0 or operating_account.assets["SGOV Buffer"] >= corp_monthly_need:
             return
         self._transfer(
-            corp_assets,
+            operating_account.assets,
             "Bond Buffer",
             "SGOV Buffer",
-            corp_monthly_need - corp_assets["SGOV Buffer"],
-            distribution_run_rates=corp_distribution_run_rates,
-            account_key=account_key,
-            account_stats=corp_stats,
+            corp_monthly_need - operating_account.assets["SGOV Buffer"],
+            distribution_run_rates=operating_account.distribution_run_rates,
+            account_key=operating_account.key,
+            account_stats=operating_account.stats,
             params=params,
             sim_year=sim_year,
             sim_month=sim_month,
         )
 
-    def _fill_corp_sgov(
+    def _fill_operating_sgov(
         self,
         corp_assets: Dict[str, float],
         corp_distribution_run_rates: Dict[str, float],

@@ -39,6 +39,11 @@
 - **[TEST-SYS-STR-04] Retirement / Cost Comparison 시나리오 계산 정합성**
     - 시나리오: 동일 DY, 다른 카테고리 mix의 master portfolio 두 개를 비교할 때, 선택한 PA 시나리오에 따라 `PA / TR` 및 시뮬레이션 메타가 합리적으로 달라지는가?
 
+- **[TEST-SYS-STR-05] 자산군별 PA 차등 적용 엔진 검증**
+    - 시나리오: `appreciation_rates`에서 SGOV PA를 0%, Growth Engine PA를 양수로 설정하면 같은 초기금액에서도 SGOV는 정체되고 Growth Engine은 복리 월 변환 기준으로 상승하는가?
+- **[TEST-SYS-STR-06] 국민연금 입력값 Phase 3 반영 검증**
+    - 시나리오: 같은 Phase 3 입력에서 `national_pension_amount`를 변경하면 법인 필요 현금 생성액과 SGOV 잔액 경로가 즉시 달라지는가?
+
 - **[TEST-SYS-MIG-01] Antigravity CLI 마이그레이션 검증**
     - 시나리오: 프로젝트 내 `GEMINI.md`가 `ANTIGRAVITY.md`로 변경되었으며, 협업 가이드 내 모든 명칭이 Antigravity CLI로 갱신되었는가? 또한 `.gemini/` 폴더가 `.antigravity/`로 정상 변경되었는가?
 
