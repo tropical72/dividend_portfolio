@@ -31,79 +31,42 @@ export function WatchlistTab({
   onAddToPortfolio: (stocks: Stock[], category: PortfolioCategory) => void;
   accountType: AccountType;
 }) {
-  const { isKorean } = useI18n();
-  const copy = isKorean
-    ? {
-        addDone: "추가 완료",
-        addFailed: "추가 실패",
-        serverError: "서버 통신 오류",
-        deleteDoneSuffix: "개 종목 삭제 완료",
-        partialDeleteFailed: "일부 삭제 실패",
-        deleteError: "삭제 중 오류가 발생했습니다.",
-        deleteSelected: "개 삭제",
-        confirmDelete: "삭제하시겠습니까?",
-        deleteSelectedDesc: "선택한 항목을 모두 제거합니다.",
-        deleteOneSuffix: "종목을 제거합니다.",
-        cancel: "취소",
-        delete: "삭제",
-        selectCategory: "카테고리 선택",
-        addToWhichCategory: "선택한 종목을 어느 카테고리에 추가할까요?",
-        addToPortfolio: "포트폴리오에 추가",
-        cannotDeleteDefault: "기본 종목은 삭제할 수 없습니다",
-        deleteStock: "종목 삭제",
-        watchlist: "관심종목",
-        addSelected: "포트폴리오 추가",
-        enterTicker: "티커 입력",
-        adding: "추가 중...",
-        add: "추가",
-        selectAllStocks: "모든 종목 선택",
-        name: "이름",
-        price: "가격",
-        yield: "배당률",
-        cycle: "주기",
-        oneYearReturn: "1년 수익률",
-        exDiv: "배당락",
-        lastAmount: "최근 금액",
-        monthly: "월평균",
-        action: "작업",
-        noStocks: "추가된 종목이 없습니다.",
-      }
-    : {
-        addDone: "Added",
-        addFailed: "Add failed",
-        serverError: "Server communication error",
-        deleteDoneSuffix: " stocks deleted",
-        partialDeleteFailed: "Partial delete failed",
-        deleteError: "An error occurred while deleting.",
-        deleteSelected: " Delete",
-        confirmDelete: "Delete this item?",
-        deleteSelectedDesc: "Remove all selected items.",
-        deleteOneSuffix: " will be removed.",
-        cancel: "Cancel",
-        delete: "Delete",
-        selectCategory: "Select Category",
-        addToWhichCategory:
-          "Which category should receive the selected stocks?",
-        addToPortfolio: "Add to Portfolio",
-        cannotDeleteDefault: "Default stocks cannot be deleted",
-        deleteStock: "Delete Stock",
-        watchlist: "Watchlist",
-        addSelected: "Add to Portfolio",
-        enterTicker: "Enter Ticker",
-        adding: "Adding...",
-        add: "Add",
-        selectAllStocks: "Select all stocks",
-        name: "Name",
-        price: "Price",
-        yield: "Yield",
-        cycle: "Cycle",
-        oneYearReturn: "1-Yr Rtn",
-        exDiv: "Ex-Div",
-        lastAmount: "Last Amt",
-        monthly: "Monthly",
-        action: "Act",
-        noStocks: "No stocks added yet.",
-      };
+  const { t } = useI18n();
+  const copy = {
+    addDone: t("watchlist.addDone"),
+    addFailed: t("watchlist.addFailed"),
+    serverError: t("watchlist.serverError"),
+    deleteDoneSuffix: t("watchlist.deleteDoneSuffix"),
+    partialDeleteFailed: t("watchlist.partialDeleteFailed"),
+    deleteError: t("watchlist.deleteError"),
+    deleteSelected: t("watchlist.deleteSelected"),
+    confirmDelete: t("watchlist.confirmDelete"),
+    deleteSelectedDesc: t("watchlist.deleteSelectedDesc"),
+    deleteOneSuffix: t("watchlist.deleteOneSuffix"),
+    cancel: t("watchlist.cancel"),
+    delete: t("watchlist.delete"),
+    selectCategory: t("watchlist.selectCategory"),
+    addToWhichCategory: t("watchlist.addToWhichCategory"),
+    addToPortfolio: t("watchlist.addToPortfolio"),
+    cannotDeleteDefault: t("watchlist.cannotDeleteDefault"),
+    deleteStock: t("watchlist.deleteStock"),
+    watchlist: t("watchlist.title"),
+    addSelected: t("watchlist.addSelected"),
+    enterTicker: t("watchlist.enterTicker"),
+    adding: t("watchlist.adding"),
+    add: t("watchlist.add"),
+    selectAllStocks: t("watchlist.selectAllStocks"),
+    name: t("watchlist.name"),
+    price: t("watchlist.price"),
+    yield: t("watchlist.yield"),
+    cycle: t("watchlist.cycle"),
+    oneYearReturn: t("watchlist.oneYearReturn"),
+    exDiv: t("watchlist.exDiv"),
+    lastAmount: t("watchlist.lastAmount"),
+    monthly: t("watchlist.monthly"),
+    action: t("watchlist.action"),
+    noStocks: t("watchlist.noStocks"),
+  };
   const [ticker, setTicker] = useState("");
   const [country, setCountry] = useState("US");
   const [watchlist, setWatchlist] = useState<Stock[]>([]);
@@ -298,57 +261,25 @@ export function WatchlistTab({
   const categoryOptions =
     accountType === "Corporate"
       ? [
-          [
-            "SGOV Buffer",
-            isKorean
-              ? "생존 버퍼와 현금 대기 자산"
-              : "Survival buffer and cash waiting assets",
-            "bg-blue-400",
-          ],
-          [
-            "Bond Buffer",
-            isKorean
-              ? "채권 기반 중기 완충 버퍼"
-              : "Bond-based mid-term buffer",
-            "bg-cyan-400",
-          ],
-          [
-            "High Income",
-            isKorean ? "고인컴 현금흐름 블록" : "High-income cashflow block",
-            "bg-amber-400",
-          ],
+          ["SGOV Buffer", t("watchlist.corpSgovDesc"), "bg-blue-400"],
+          ["Bond Buffer", t("watchlist.corpBondDesc"), "bg-cyan-400"],
+          ["High Income", t("watchlist.corpHighIncomeDesc"), "bg-amber-400"],
           [
             "Dividend Growth",
-            isKorean ? "배당성장 보강 자산" : "Dividend growth support assets",
+            t("watchlist.dividendGrowthDesc"),
             "bg-emerald-400",
           ],
-          [
-            "Growth Engine",
-            isKorean ? "최후 보호 성장 엔진" : "Last-resort growth engine",
-            "bg-fuchsia-400",
-          ],
+          ["Growth Engine", t("watchlist.corpGrowthDesc"), "bg-fuchsia-400"],
         ]
       : [
-          [
-            "SGOV Buffer",
-            isKorean ? "단기 인출 버퍼" : "Short-term withdrawal buffer",
-            "bg-blue-400",
-          ],
-          [
-            "Bond Buffer",
-            isKorean ? "중기 완충 채권 버퍼" : "Mid-term bond buffer",
-            "bg-amber-400",
-          ],
+          ["SGOV Buffer", t("watchlist.pensionSgovDesc"), "bg-blue-400"],
+          ["Bond Buffer", t("watchlist.pensionBondDesc"), "bg-amber-400"],
           [
             "Dividend Growth",
-            isKorean ? "배당성장 보강 자산" : "Dividend growth support assets",
+            t("watchlist.dividendGrowthDesc"),
             "bg-emerald-400",
           ],
-          [
-            "Growth Engine",
-            isKorean ? "은퇴 후반 성장 엔진" : "Late-retirement growth engine",
-            "bg-fuchsia-400",
-          ],
+          ["Growth Engine", t("watchlist.pensionGrowthDesc"), "bg-fuchsia-400"],
         ];
 
   return (
