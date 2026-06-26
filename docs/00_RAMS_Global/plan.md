@@ -63,8 +63,9 @@
     - [x] **T-GLB-12.4.2** `RetirementTab.tsx`와 `SettingsTab.tsx`의 사용자 노출 문자열을 한국어/영어 모두 지원하도록 전환한다.
 - **T-GLB-12.5: [Frontend] 나머지 관리 화면 확장**
     - [x] **T-GLB-12.5.1** `Portfolio Manager`와 `Watchlist`를 동일 번역 계층으로 이관한다.
-    - [ ] **T-GLB-12.5.2** 토스트/에러/경고 메시지의 문자열 출처를 정리한다.
+    - [x] **T-GLB-12.5.2** 토스트/에러/경고 메시지의 문자열 출처를 정리한다.
     - [x] **T-GLB-12.5.2a** `WatchlistTab` 상태/에러/확인 메시지와 카테고리 설명을 `watchlist.*` 번역 키로 이관한다.
+    - [x] **T-GLB-12.5.2b** `PortfolioTab`, `PortfolioDashboard`, `RetirementTab`의 상태/에러/확인 fallback을 도메인별 번역 키로 이관하고 `CostComparisonTab`의 기존 키 기반 fallback 경로를 확인한다.
 - **T-GLB-12.6: [Validation] 다국어 회귀 검증**
     - [x] **T-GLB-12.6.1** 언어 저장/재로드 유지와 즉시 전환을 검증하는 Playwright 스펙을 작성한다.
     - [x] **T-GLB-12.6.2** 핵심 화면이 언어별로 혼용 없이 렌더링되는지 회귀 검증한다.
@@ -75,7 +76,7 @@
     - [x] **T-GLB-13.1.2** `ProjectionEngine`이 종목의 카테고리 정보를 읽어 해당 `기대주가상승률(PA)`을 적용하도록 로직 수정.
 - **T-GLB-13.2: [Frontend] Settings 탭 UI 개편**
     - [x] **T-GLB-13.2.1** '자산군별 기대주가상승률' 설정 섹션 구현 (입력창 + 기본값 복구 버튼).
-    - [ ] **T-GLB-13.2.2** '은퇴 수입(국민연금)' 설정 섹션 보강 (시작 연령 및 수령액).
+    - [x] **T-GLB-13.2.2** '은퇴 수입(국민연금)' 설정 섹션 보강 (시작 연령 및 수령액).
 - **T-GLB-13.3: [Frontend] Portfolio Designer 및 용어 통일**
     - [x] **T-GLB-13.3.1** 카테고리별 헤더에 `배당수익률 | 기대주가상승률 | TR` 수치 노출 로직 추가.
     - [x] **T-GLB-13.3.2** 전체 소스코드 내 수익률 관련 레이블을 표준 용어(TR, 배당수익률, 기대주가상승률)로 일괄 치환.

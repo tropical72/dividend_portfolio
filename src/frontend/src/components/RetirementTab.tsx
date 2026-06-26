@@ -246,7 +246,7 @@ export function RetirementTab() {
         setIsSwitcherOpen(false);
         await fetchData(activeId, paScenario);
       } else {
-        setErrorMessage(data.message || "전략을 활성화할 수 없습니다.");
+        setErrorMessage(data.message || t("retirement.activateFailed"));
       }
     } catch (err) {
       console.error(err);

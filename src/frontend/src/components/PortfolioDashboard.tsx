@@ -42,11 +42,13 @@ export function PortfolioDashboard({
   onLoad: (p: Portfolio) => void;
   paRates: AppreciationRateSet;
 }) {
-  const { isKorean } = useI18n();
+  const { isKorean, t } = useI18n();
   const copy = isKorean
     ? {
-        deleteMasterConfirm: "이 마스터 전략을 삭제하시겠습니까?",
-        masterDeleteFailed: "전략을 삭제할 수 없습니다.",
+        deleteMasterConfirm: t(
+          "portfolioDashboard.message.deleteMasterConfirm",
+        ),
+        masterDeleteFailed: t("portfolioDashboard.message.masterDeleteFailed"),
         renameTitle: "이름 변경",
         syncData: "데이터 동기화 중...",
         masterStrategy: "마스터 전략",
@@ -108,8 +110,10 @@ export function PortfolioDashboard({
         monthlyKrw: "월간 (KRW)",
       }
     : {
-        deleteMasterConfirm: "Delete this master strategy?",
-        masterDeleteFailed: "Unable to delete the strategy.",
+        deleteMasterConfirm: t(
+          "portfolioDashboard.message.deleteMasterConfirm",
+        ),
+        masterDeleteFailed: t("portfolioDashboard.message.masterDeleteFailed"),
         renameTitle: "Rename",
         syncData: "Synchronizing Data...",
         masterStrategy: "Master Strategy",
@@ -666,14 +670,11 @@ export function PortfolioDashboard({
     name: string,
   ) => {
     e.stopPropagation();
-    if (
-      !window.confirm(
-        isKorean
-          ? `"${name}" 포트폴리오를 삭제하시겠습니까?`
-          : `Delete portfolio "${name}"?`,
-      )
-    )
-      return;
+    const confirmMessage =
+      t("portfolioDashboard.message.deletePortfolioPrefix") +
+      name +
+      t("portfolioDashboard.message.deletePortfolioSuffix");
+    if (!window.confirm(confirmMessage)) return;
     try {
       const res = await fetch(`http://localhost:8000/api/portfolios/${id}`, {
         method: "DELETE",
@@ -685,7 +686,10 @@ export function PortfolioDashboard({
         next.delete(id);
         setSelectedIds(next);
       } else {
-        alert(result.message);
+        alert(
+          result.message ||
+            t("portfolioDashboard.message.portfolioDeleteFailed"),
+        );
       }
     } catch (err) {
       console.error(err);

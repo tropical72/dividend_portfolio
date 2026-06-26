@@ -34,6 +34,10 @@
     - 시나리오: 번역 키가 누락된 경우 앱이 깨지지 않고 정의된 fallback 언어 문자열 또는 안전한 placeholder로 렌더링되는가?
 - **[TEST-SYS-I18N-05] Watchlist 상태 메시지 번역 키 검증**
     - 시나리오: `WatchlistTab`의 추가/삭제 토스트, 서버 에러 fallback, 삭제 확인 모달, 카테고리 설명이 `watchlist.*` 번역 키에서 렌더링되고 화면 내부 한/영 분기 객체에 의존하지 않는가?
+- **[TEST-SYS-I18N-06] Portfolio/Retirement 상태 메시지 번역 키 검증**
+    - 시나리오: `PortfolioTab`, `PortfolioDashboard`, `RetirementTab`의 토스트, alert, confirm, error fallback이 각 도메인 번역 키에서 렌더링되고 하드코딩 문구에 의존하지 않는가?
+- **[TEST-SYS-STR-01] 국민연금 Settings UI 보강 검증**
+    - 시나리오: Settings 은퇴 수입 섹션에서 국민연금 시작 연령과 월 수령액을 수정/저장할 수 있고, Retirement 시뮬레이션 Phase 3 결과에 반영되는가?
 - **[TEST-SYS-STR-02] PA 시나리오 설정 정규화**
     - 시나리오: 구버전 단일 `appreciation_rates` 또는 `fixed_income` 저장값을 로드하면 `conservative / base / optimistic` 구조로 정규화되고, legacy 값은 `base` 시나리오에 보존되는가?
 - **[TEST-SYS-STR-03] 화면별 PA 시나리오 전환**
